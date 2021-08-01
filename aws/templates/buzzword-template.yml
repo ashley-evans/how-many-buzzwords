@@ -1,0 +1,93 @@
+Description: Overall template for the Buzzword Application AWS Stack
+Resources:
+  WibbleLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: wibble.handler
+      Role:
+        Fn::GetAtt:
+        - LambdaBasicExecutionRole
+        - Arn
+      Runtime: nodejs14.x
+      Code: ../functions
+      Description: Returns a wibble result
+      Timeout: 10
+  LambdaBasicExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+  BuzzwordHTTPGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: Buzzword HTTP API Gateway
+      Description: Lambda Proxy
+      ProtocolType: HTTP
+  WibbleFunctionIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    DependsOn: WibbleLambda
+    Properties:
+      ApiId:
+        Ref: BuzzwordHTTPGateway
+      Description: Proxy Integration to the Wibble Lambda Function
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Join:
+        - ''
+        - - 'arn:'
+          - Ref: AWS::Partition
+          - ':apigateway:'
+          - Ref: AWS::Region
+          - :lambda:path/2015-03-31/functions/
+          - Fn::GetAtt:
+            - WibbleLambda
+            - Arn
+          - /invocations
+      PayloadFormatVersion: '2.0'
+  WibbleFunctionRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: BuzzwordHTTPGateway
+      RouteKey: ANY /wibble
+      Target:
+        Fn::Join:
+        - /
+        - - integrations
+          - Ref: WibbleFunctionIntegration
+  WibbleFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+        - WibbleLambda
+        - Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+        - ''
+        - - 'arn:aws:execute-api:'
+          - Ref: AWS::Region
+          - ':'
+          - Ref: AWS::AccountId
+          - ':'
+          - Ref: BuzzwordHTTPGateway
+          - /*/*/wibble
+  BuzzwordProductionStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId:
+        Ref: BuzzwordHTTPGateway
+      StageName: prod
+      Description: Buzzword Production Stage
+      AutoDeploy: true
