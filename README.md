@@ -1,6 +1,13 @@
 # how-many-buzzwords
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
+## Cloudformation Template Validation
+
+Run the following command to validate your Cloudformation template definition:
+```shell
+aws cloudformation validate-template --template-body file://template.file
+```
+
 ## Setup
 
 In order to setup this application from scratch the AWS CLI (Version 2.x) must be installed onto your machine. See the AWS documentation here for more information:
@@ -10,9 +17,9 @@ Once the CLI has been installed, then run the following commands:
 ```shell
 aws cloudformation deploy --template-file ./aws/templates/lambda-bucket-template.yml --stack-name function-bucket-stack
 
-aws cloudformation package --template-file ./aws/templates/buzzword-template.yml --s3-bucket buzzword-lambda-bucket --output-template-file ./aws/output-template.yml
+aws cloudformation package --template-file ./aws/templates/buzzword-template.yml --s3-bucket buzzword-lambda-bucket --output-template-file ./aws/templates/output-template.yml
 
-aws cloudformation deploy --template-file ./aws/output-template.yml --stack-name buzzword-stack --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file ./aws/templates/output-template.yml --stack-name buzzword-stack --capabilities CAPABILITY_NAMED_IAM
 ```
 
 ## Teardown
