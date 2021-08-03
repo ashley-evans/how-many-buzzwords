@@ -1,7 +1,9 @@
 # NPM
 
 node_modules/
+/aws/deploy_node_modules/
 
 # AWS Stack Output
 
 output-template.yml
+local-lambda-output.txt

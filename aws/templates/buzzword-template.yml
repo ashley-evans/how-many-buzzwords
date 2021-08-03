@@ -1,21 +1,32 @@
 Description: Overall template for the Buzzword Application AWS Stack
 Resources:
+  NodeModuleDependencyLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes: 
+        - nodejs14.x
+      Content: ../deployment_dependencies/
+      Description: Production node module dependency layer
+      LayerName: node-module-dependency-layer
   WibbleLambda:
     Type: AWS::Lambda::Function
+    DependsOn: NodeModuleDependencyLayer
     Properties:
       Handler: wibble.handler
       Role:
         Fn::GetAtt:
-        - LambdaBasicExecutionRole
+        - LambdaDBAccessRole
         - Arn
       Runtime: nodejs14.x
       Code: ../functions
-      Description: Returns a wibble result
+      Description: Inserts a wibble entry into the Wibble DynamoDB table
+      Layers:
+        - Ref: NodeModuleDependencyLayer
       Timeout: 10
-  LambdaBasicExecutionRole:
+  LambdaDBAccessRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: LambdaBasicExecutionRole
+      RoleName: LambdaDBAccessRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -26,6 +37,18 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: /
+      Policies:
+        - PolicyName: LambdaReadWriteDynamoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - Fn::GetAtt:
+                    - WibbleDynamoDB
+                    - Arn
+                Effect: Allow
   BuzzwordHTTPGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -91,3 +114,16 @@ Resources:
       StageName: prod
       Description: Buzzword Production Stage
       AutoDeploy: true
+  WibbleDynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "WibbleTable"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: pk
+          KeyType: HASH

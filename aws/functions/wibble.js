@@ -1,13 +1,34 @@
-exports.handler = async function (event, context) {
-    return formatResponse(JSON.stringify('wibble'));
+const { PutItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { StatusCodes } = require('http-status-codes');
+
+exports.handler = async () => {
+    return putItem(`wibble-${Date.now()}`);
 };
 
-const formatResponse = function (body) {
+const formatResponse = (statusCode, body) => {
     return {
-        statusCode: 200,
+        statusCode,
         headers: {
             'Content-Type': 'application/json'
         },
         body
     };
+};
+
+const putItem = async (itemToInsert) => {
+    const ddbClient = new DynamoDBClient({});
+    const params = {
+        TableName: 'WibbleTable',
+        Item: {
+            pk: { S: itemToInsert }
+        }
+    };
+
+    try {
+        await ddbClient.send(new PutItemCommand(params));
+
+        return formatResponse(StatusCodes.OK, 'Insert Success');
+    } catch (error) {
+        return formatResponse(StatusCodes.INTERNAL_SERVER_ERROR, JSON.stringify(error));
+    }
 };
