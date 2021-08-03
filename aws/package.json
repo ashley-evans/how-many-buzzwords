@@ -2,6 +2,7 @@
     "name": "buzzwords-aws-lambda-functions",
     "version": "1.0.0",
     "devDependencies": {
+        "aws-sdk-client-mock": "^0.5.3",
         "eslint": "^7.32.0",
         "eslint-config-standard": "^16.0.3",
         "eslint-plugin-import": "^2.23.4",
@@ -12,5 +13,9 @@
     },
     "scripts": {
         "test": "jest"
+    },
+    "dependencies": {
+        "@aws-sdk/client-dynamodb": "^3.24.0",
+        "http-status-codes": "^2.1.4"
     }
 }
