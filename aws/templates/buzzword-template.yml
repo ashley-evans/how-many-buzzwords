@@ -24,10 +24,10 @@ Resources:
       LayerName: node-module-dependency-layer
     Metadata:
       BuildMethod: makefile
-  LambdaDBAccessRole:
+  WibbleFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: LambdaDBAccessRole
+      RoleName: WibbleFunctionRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -50,13 +50,15 @@ Resources:
                     - WibbleDynamoDB
                     - Arn
                 Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   WibbleLambda:
     Type: AWS::Serverless::Function
     Properties:
       Handler: wibble.handler
       Role:
         Fn::GetAtt:
-        - LambdaDBAccessRole
+        - WibbleFunctionRole
         - Arn
       Runtime: nodejs14.x
       CodeUri: ../functions/wibble

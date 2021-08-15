@@ -23,6 +23,8 @@ test('handler returns success when DB insert succeeds', async () => {
 });
 
 test('handler returns failure error when DB insert fails', async () => {
+    // Ignore Console error output for this test, as we expect the error to occur
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     const expectedError = { error: 'Test Error' };
     ddbMock.on(PutItemCommand)
         .rejects(expectedError);

@@ -29,6 +29,7 @@ const putItem = async (itemToInsert) => {
 
         return formatResponse(StatusCodes.OK, 'Insert Success');
     } catch (error) {
+        console.error(error);
         return formatResponse(StatusCodes.INTERNAL_SERVER_ERROR, JSON.stringify(error));
     }
 };
