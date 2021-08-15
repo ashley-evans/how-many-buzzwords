@@ -29,8 +29,9 @@ chmod u+x ./deploy.sh
 
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
-aws cloudformation delete-stack --stack-name buzzword-bucket-stack
-aws cloudformation delete-stack --stack-name buzzword-stack
+cd ./aws/scripts
+chmod u+x ./teardown.sh
+./teardown.sh
 ```
 
 ## Local Testing of Lambda functions
