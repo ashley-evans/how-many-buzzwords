@@ -6,7 +6,11 @@ Some buzzwords are incredibly overused, a simple tool tool to find the biggest c
 The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
 - AWS CLI - More information can be found here: https://aws.amazon.com/cli/
 - SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
- 
+
+In order to execute the teardown script, jq must be installed.
+```shell
+sudo apt-get install jq
+```
 
 ## Cloudformation Template Validation
 
