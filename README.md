@@ -1,19 +1,24 @@
 # how-many-buzzwords
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
+## Requirements
+
+The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
+- AWS CLI - More information can be found here: https://aws.amazon.com/cli/
+- SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+ 
+
 ## Cloudformation Template Validation
 
-Run the following command to validate your Cloudformation template definition:
+Run the following command to validate the stack template definition:
 ```shell
-aws cloudformation validate-template --template-body file://template.file
+sam validate --template ./aws/templates/buzzword-bucket-template.yml
+sam validate --template ./aws/templates/buzzword-template.yml
 ```
 
 ## Setup
 
-In order to setup this application from scratch the AWS CLI (Version 2.x) must be installed onto your machine. See the AWS documentation here for more information:
-- https://aws.amazon.com/cli/
-
-Once the CLI has been installed, then run the following commands:
+Run the following commands to deploy the buzzword stack:
 ```shell
 cd ./aws/scripts
 chmod u+x ./deploy.sh
@@ -24,22 +29,15 @@ chmod u+x ./deploy.sh
 
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
-aws cloudformation delete-stack --stack-name function-bucket-stack
+aws cloudformation delete-stack --stack-name buzzword-bucket-stack
 aws cloudformation delete-stack --stack-name buzzword-stack
 ```
 
 ## Local Testing of Lambda functions
 
-A lambda function can be ran locally using the SAM CLI tool. See the SAM CLI documentation here for more information on setup:
-- https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
-
-Once the SAM CLI tool and its requirements have been installed, a local lambda service can be started locally by running:
+Run the following commands to invoke lambda functions locally:
 ```shell
-sam local start-lambda --template ./aws/templates/buzzword-template.yml 
-```
-
-Once started, a lambda function can be invoked by running:
-```shell
+sam local start-lambda --template ./aws/templates/buzzword-template.yml
 aws lambda invoke --function-name "INSERT_NAME_OF_LAMBDA_RESOURCE" --endpoint-url "http://127.0.0.1:3001" --no-verify-ssl local-lambda-output.txt
 ```
 

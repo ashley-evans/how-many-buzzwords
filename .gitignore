@@ -5,5 +5,5 @@ node_modules/
 
 # AWS Stack Output
 
-output-template.yml
+.aws-sam/
 local-lambda-output.txt
