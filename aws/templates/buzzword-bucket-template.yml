@@ -1,9 +1,9 @@
-Description: Cloud Formation Template for S3 Bucket that contains Lambda Zipped Code
+Description: Cloud Formation Template for S3 Bucket that contains dependencies for Buzzword Stack
 Resources:
-  BuzzwordLambdaBucket:
+  BuzzwordBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: buzzword-lambda-bucket
+      BucketName: buzzword-bucket
       AccessControl: Private
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true

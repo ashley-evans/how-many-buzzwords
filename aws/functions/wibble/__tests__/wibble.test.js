@@ -2,7 +2,7 @@ const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 const { StatusCodes } = require('http-status-codes');
 
-const { handler } = require('../functions/wibble');
+const { handler } = require('../wibble');
 
 const ddbMock = mockClient(DynamoDBClient);
 

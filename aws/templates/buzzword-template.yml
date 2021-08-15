@@ -1,28 +1,29 @@
+Transform: AWS::Serverless-2016-10-31
 Description: Overall template for the Buzzword Application AWS Stack
 Resources:
+  WibbleDynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "WibbleTable"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: pk
+          KeyType: HASH
   NodeModuleDependencyLayer:
-    Type: AWS::Lambda::LayerVersion
+    Type: AWS::Serverless::LayerVersion
     Properties:
       CompatibleRuntimes: 
         - nodejs14.x
-      Content: ../deployment_dependencies/
+      ContentUri: ../
       Description: Production node module dependency layer
       LayerName: node-module-dependency-layer
-  WibbleLambda:
-    Type: AWS::Lambda::Function
-    DependsOn: NodeModuleDependencyLayer
-    Properties:
-      Handler: wibble.handler
-      Role:
-        Fn::GetAtt:
-        - LambdaDBAccessRole
-        - Arn
-      Runtime: nodejs14.x
-      Code: ../functions
-      Description: Inserts a wibble entry into the Wibble DynamoDB table
-      Layers:
-        - Ref: NodeModuleDependencyLayer
-      Timeout: 10
+    Metadata:
+      BuildMethod: makefile
   LambdaDBAccessRole:
     Type: AWS::IAM::Role
     Properties:
@@ -49,81 +50,31 @@ Resources:
                     - WibbleDynamoDB
                     - Arn
                 Effect: Allow
-  BuzzwordHTTPGateway:
-    Type: AWS::ApiGatewayV2::Api
+  WibbleLambda:
+    Type: AWS::Serverless::Function
     Properties:
-      Name: Buzzword HTTP API Gateway
-      Description: Lambda Proxy
-      ProtocolType: HTTP
-  WibbleFunctionIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    DependsOn: WibbleLambda
-    Properties:
-      ApiId:
-        Ref: BuzzwordHTTPGateway
-      Description: Proxy Integration to the Wibble Lambda Function
-      IntegrationType: AWS_PROXY
-      IntegrationUri:
-        Fn::Join:
-        - ''
-        - - 'arn:'
-          - Ref: AWS::Partition
-          - ':apigateway:'
-          - Ref: AWS::Region
-          - :lambda:path/2015-03-31/functions/
-          - Fn::GetAtt:
-            - WibbleLambda
-            - Arn
-          - /invocations
-      PayloadFormatVersion: '2.0'
-  WibbleFunctionRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId:
-        Ref: BuzzwordHTTPGateway
-      RouteKey: ANY /wibble
-      Target:
-        Fn::Join:
-        - /
-        - - integrations
-          - Ref: WibbleFunctionIntegration
-  WibbleFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName:
+      Handler: wibble.handler
+      Role:
         Fn::GetAtt:
-        - WibbleLambda
+        - LambdaDBAccessRole
         - Arn
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn:
-        Fn::Join:
-        - ''
-        - - 'arn:aws:execute-api:'
-          - Ref: AWS::Region
-          - ':'
-          - Ref: AWS::AccountId
-          - ':'
-          - Ref: BuzzwordHTTPGateway
-          - /*/*/wibble
-  BuzzwordProductionStage:
-    Type: AWS::ApiGatewayV2::Stage
+      Runtime: nodejs14.x
+      CodeUri: ../functions/wibble
+      Description: Inserts a wibble entry into the Wibble DynamoDB table
+      Layers:
+        - Ref: NodeModuleDependencyLayer
+      Timeout: 10
+      Events:
+        ApiGatewayEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: 
+              Ref: BuzzwordHTTPGateway
+            Method: ANY
+            Path: /wibble
+            PayloadFormatVersion: '2.0'
+  BuzzwordHTTPGateway:
+    Type: AWS::Serverless::HttpApi
     Properties:
-      ApiId:
-        Ref: BuzzwordHTTPGateway
+      Description: Lambda Proxy
       StageName: prod
-      Description: Buzzword Production Stage
-      AutoDeploy: true
-  WibbleDynamoDB:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: "WibbleTable"
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        -
-          AttributeName: pk
-          AttributeType: S
-      KeySchema:
-        -
-          AttributeName: pk
-          KeyType: HASH

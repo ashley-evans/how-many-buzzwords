@@ -1,28 +1,13 @@
 #!/bin/bash
 
-echo "Building Dependencies for Production"
+echo "Deploying S3 Bucket for Buzzword Stack Dependencies"
 
-rm -rf ../node_modules
+aws cloudformation deploy --template-file ../templates/buzzword-bucket-template.yml --stack-name buzzword-bucket-stack
 
-npm --prefix ../ install --production
+echo "Building Buzzword Stack"
 
-mkdir -p ../deployment_dependencies/nodejs/
-cp -r ../node_modules/ ../deployment_dependencies/nodejs/node_modules/
-
-echo "Deploying S3 Bucket for Lambda Code"
-
-aws cloudformation deploy --template-file ../templates/lambda-bucket-template.yml --stack-name function-bucket-stack
-
-echo "Packaging Buzzword Stack"
-
-aws cloudformation package --template-file ../templates/buzzword-template.yml --s3-bucket buzzword-lambda-bucket --output-template-file ../templates/output-template.yml
-
-rm -rf ../deployment_dependencies
+sam build --template-file ../templates/buzzword-template.yml
 
 echo "Deploying Buzzword Stack"
 
-aws cloudformation deploy --template-file ../templates/output-template.yml --stack-name buzzword-stack --capabilities CAPABILITY_NAMED_IAM
-
-echo "Restoring previous dependencies"
-
-npm --prefix ../ install
+sam deploy --config-file ./samconfig.toml
