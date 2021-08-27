@@ -45,10 +45,17 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:PutItem
-                Resource:
-                  - Fn::GetAtt:
-                    - WibbleDynamoDB
-                    - Arn
+                Resource: !GetAtt WibbleDynamoDB.Arn
+                Effect: Allow
+        - PolicyName: BuzzwordMessageSQSPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt BuzzwordSQSQueue.Arn
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -67,16 +74,47 @@ Resources:
         - Ref: NodeModuleDependencyLayer
       Timeout: 10
       Events:
-        ApiGatewayEvent:
-          Type: HttpApi
+        BuzzwordQueueEvent:
+          Type: SQS
           Properties:
-            ApiId: 
-              Ref: BuzzwordHTTPGateway
-            Method: ANY
-            Path: /wibble
-            PayloadFormatVersion: '2.0'
+            Queue: !GetAtt BuzzwordSQSQueue.Arn
+            BatchSize: 10
+  BuzzwordSQSQueue:
+    Type: AWS::SQS::Queue
+  SendMessageBuzzwordPolicy:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SendMessageBuzzwordPolicy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: BuzzwordSendMessagePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt BuzzwordSQSQueue.Arn
+                Effect: Allow
+  BuzzwordAPIAccessLogs:
+    Type: AWS::Logs::LogGroup
   BuzzwordHTTPGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
-      Description: Lambda Proxy
       StageName: prod
+      AccessLogSettings:
+        DestinationArn: !GetAtt BuzzwordAPIAccessLogs.Arn
+        Format: '{ "requestId":"$context.requestId", "errorMessage":"$context.error.message", "integrationErrorMessage":"$context.integrationErrorMessage" }'
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./buzzword-api-gateway-openapi-definition.yml
