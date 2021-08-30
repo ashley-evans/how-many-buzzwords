@@ -12,6 +12,13 @@ In order to execute the teardown script, jq must be installed.
 sudo apt-get install jq
 ```
 
+## Install Dependencies
+
+Run the following command to install all of the dependencies for the buzzword project:
+```shell
+find ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" -name package.json -execdir npm ci \;
+```
+
 ## Cloudformation Template Validation
 
 Run the following command to validate the stack template definition:

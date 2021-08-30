@@ -1,0 +1,28 @@
+name: Integrate - Run tests and validate AWS templates
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node_version: '14'
+      - name: Install Dependencies
+        run: |
+          find -name package.json -execdir npm ci \;
+      - name: Run Unit Tests
+        run: |
+          npm --prefix ./aws/ run test
+  validate:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v2
+        - uses: aws-actions/setup-sam@v1
+        - name: Validate Templates
+          run: |
+            sam validate --template ./aws/templates/buzzword-bucket-template.yml
+            sam validate --template ./aws/templates/buzzword-template.yml
+    
