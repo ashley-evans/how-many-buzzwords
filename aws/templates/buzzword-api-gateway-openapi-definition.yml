@@ -1,0 +1,29 @@
+openapi: "3.0.1"
+info:
+  title: "buzzword-stack-api-gateway"
+  description: "Gateway to Buzzword Stack Resources"
+  version: "1.0"
+paths:
+  /wibble:
+    x-amazon-apigateway-any-method:
+      responses:
+        default:
+          description: "Default response for ANY /wibble request"
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/buzzword-sqs-send-message-integration"
+components:
+  x-amazon-apigateway-integrations:
+    buzzword-sqs-send-message-integration:
+      integrationSubtype: "SQS-SendMessage"
+      credentials:
+        Fn::GetAtt:
+        - "SendMessageBuzzwordPolicy"
+        - "Arn"
+      requestParameters:
+        MessageBody: "$request.body.MessageBody"
+        QueueUrl: 
+          Ref: "BuzzwordSQSQueue"
+      payloadFormatVersion: "1.0"
+      type: "aws_proxy"
+      connectionType: "INTERNET"
+x-amazon-apigateway-importexport-version: "1.0"

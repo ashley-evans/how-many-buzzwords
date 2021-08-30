@@ -3,6 +3,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 const { StatusCodes } = require('http-status-codes');
 
 const { handler } = require('../wibble');
+const { TABLE_NAME } = require('../constants');
 
 const ddbMock = mockClient(DynamoDBClient);
 
@@ -10,29 +11,45 @@ beforeEach(() => {
     ddbMock.reset();
 });
 
-test('handler returns success when DB insert succeeds', async () => {
-    ddbMock.on(PutItemCommand)
-        .resolves({ Item: undefined });
+test('handler returns OK when DB inserts succeed for multiple records', async () => {
+    const event = {
+        Records: [
+            { body: 'Test 1' },
+            { body: 'Test 2' }
+        ]
+    };
 
-    const response = await handler();
+    const response = await handler(event);
 
     expect(response).toBeDefined();
     expect(response.statusCode).toBe(StatusCodes.OK);
-    expect(response.headers['Content-Type']).toBe('application/json');
-    expect(response.body).toBe('Insert Success');
+    expect(ddbMock.calls()).toHaveLength(event.Records.length);
 });
 
-test('handler returns failure error when DB insert fails', async () => {
+test('handler returns failure if one DB insert fails', async () => {
     // Ignore Console error output for this test, as we expect the error to occur
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    const expectedError = { error: 'Test Error' };
-    ddbMock.on(PutItemCommand)
-        .rejects(expectedError);
+    const failureBody = 'failure';
+    const event = {
+        Records: [
+            { body: 'success' },
+            { body: failureBody }
+        ]
+    };
+    ddbMock
+        .on(PutItemCommand)
+        .resolves()
+        .on(PutItemCommand, {
+            TableName: TABLE_NAME,
+            Item: {
+                pk: { S: failureBody }
+            }
+        })
+        .rejects();
 
-    const response = await handler();
+    const response = await handler(event);
 
     expect(response).toBeDefined();
     expect(response.statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-    expect(response.headers['Content-Type']).toBe('application/json');
-    expect(response.body).toBe(JSON.stringify(expectedError));
+    expect(ddbMock.calls()).toHaveLength(event.Records.length);
 });

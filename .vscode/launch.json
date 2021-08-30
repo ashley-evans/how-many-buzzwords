@@ -2,14 +2,45 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Attach to Local SAM Resources",
             "type": "node",
             "request": "attach",
-            "name": "Attach to Local SAM Resources",
             "port": 9229,
             "address": "localhost",
             "localRoot": "${workspaceFolder}/aws/functions",
             "remoteRoot": "/var/task",
             "protocol": "inspector"
+        },
+        {
+            "name": "Debug Jest Tests (All) - AWS",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceRoot}/aws/node_modules/.bin/jest",
+                "--runInBand",
+                "-c",
+                "${workspaceRoot}/aws/package.json"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "port": 9229
+        },
+        {
+            "name": "Debug Jest Tests (Current File) - AWS",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "${fileBasename}",
+                "--inspect-brk",
+                "${workspaceRoot}/aws/node_modules/.bin/jest",
+                "--runInBand",
+                "-c",
+                "${workspaceRoot}/aws/package.json"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "port": 9229
         }
     ]
 }
