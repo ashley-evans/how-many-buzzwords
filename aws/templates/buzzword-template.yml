@@ -4,7 +4,6 @@ Resources:
   WibbleDynamoDB:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: "WibbleTable"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         -
@@ -21,13 +20,11 @@ Resources:
         - nodejs14.x
       ContentUri: ../
       Description: Production node module dependency layer
-      LayerName: node-module-dependency-layer
     Metadata:
       BuildMethod: makefile
   WibbleFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: WibbleFunctionRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -79,12 +76,14 @@ Resources:
           Properties:
             Queue: !GetAtt BuzzwordSQSQueue.Arn
             BatchSize: 10
+      Environment:
+        Variables:
+          tableName: !Ref WibbleDynamoDB
   BuzzwordSQSQueue:
     Type: AWS::SQS::Queue
   SendMessageBuzzwordPolicy:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: SendMessageBuzzwordPolicy
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

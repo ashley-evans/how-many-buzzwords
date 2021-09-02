@@ -3,9 +3,13 @@ const { mockClient } = require('aws-sdk-client-mock');
 const { StatusCodes } = require('http-status-codes');
 
 const { handler } = require('../wibble');
-const { TABLE_NAME } = require('../constants');
 
 const ddbMock = mockClient(DynamoDBClient);
+const TABLE_NAME = 'test';
+
+beforeAll(() => {
+    process.env.tableName = TABLE_NAME;
+});
 
 beforeEach(() => {
     ddbMock.reset();
