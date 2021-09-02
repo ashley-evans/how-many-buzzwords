@@ -1,0 +1,44 @@
+Description: IAM Users and Policies for CI and CD pipeline tasks
+Resources:
+  BuzzwordValidateTemplateGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/IAMFullAccess
+  BuzzwordValidateUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups:
+        - !Ref BuzzwordValidateTemplateGroup
+  BuzzwordValidateUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref BuzzwordValidateUser
+  BuzzwordValidateUserCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Ref BuzzwordValidateUserAccessKey
+      SecretString: !Sub '{ "ACCESS_KEY": "${BuzzwordValidateUserAccessKey}", "SECRET_KEY": "${BuzzwordValidateUserAccessKey.SecretAccessKey}"}'
+  BuzzwordDeployTemplateGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  BuzzwordDeployUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups:
+        - !Ref BuzzwordValidateTemplateGroup
+        - !Ref BuzzwordDeployTemplateGroup
+  BuzzwordDeployUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref BuzzwordDeployUser
+  BuzzwordDeployUserCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Ref BuzzwordDeployUserAccessKey
+      SecretString: !Sub '{ "ACCESS_KEY": "${BuzzwordDeployUserAccessKey}", "SECRET_KEY": "${BuzzwordDeployUserAccessKey.SecretAccessKey}"}'

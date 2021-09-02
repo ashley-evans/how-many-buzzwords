@@ -25,11 +25,12 @@ Run the following command to validate the stack template definition:
 ```shell
 sam validate --template ./aws/templates/buzzword-bucket-template.yml
 sam validate --template ./aws/templates/buzzword-template.yml
+sam validate --template ./aws/templates/buzzword-ci-users.yml
 ```
 
 ## Setup
 
-Run the following commands to deploy the buzzword stack:
+Run the following commands to deploy a development buzzword stack:
 ```shell
 cd ./aws/scripts
 chmod u+x ./deploy.sh
@@ -59,3 +60,21 @@ sam local start-lambda --debug-port 9229 --template ./aws/templates/buzzword-tem
 ```
 
 Once the lambda has been invoked, then you can attach the debugger to the process using the VS Code debug configuration called "Attach to Local SAM resources"
+
+## CI Setup
+
+The CI pipeline requires access to two users to perform both template validation and stack deployment. These user's can be created using the following command:
+```shell
+aws cloudformation deploy --template-file ./aws/templates/buzzword-ci-users.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
+```
+
+The following GitHub secrets should be created with the following values (Referring to the resources in the `buzzword-ci-users.yml` file):
+
+| Name                           | Value                               |
+| ------------------------------ | ----------------------------------- |
+| VALIDATE_AWS_ACCESS_KEY_ID     | BuzzwordValidateUser's `ACCESS_KEY` |
+| VALIDATE_AWS_SECRET_ACCESS_KEY | BuzzwordValidateUser's `SECRET_KEY` |
+| DEPLOY_AWS_ACCESS_KEY_ID       | BuzzwordDeployUser's `ACCESS_KEY`   |
+| DEPLOY_AWS_SECRET_ACCESS_KEY   | BuzzwordDeployUser's `SECRET_KEY`   |
+
+The above values can be found in the AWS Secret Manager secret named the same as the user's `AccessKeyId`
