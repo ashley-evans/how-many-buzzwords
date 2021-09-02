@@ -1,6 +1,6 @@
 # how-many-buzzwords
 
-[![Test (All), Validate (All), and Deploy (Master Only)](https://github.com/ashley-evans/how-many-buzzwords/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ashley-evans/how-many-buzzwords/actions/workflows/ci.yml)
+[![Validate and Deploy](https://github.com/ashley-evans/how-many-buzzwords/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ashley-evans/how-many-buzzwords/actions/workflows/ci.yml)
 
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 

@@ -1,4 +1,4 @@
-name: Test (All), Validate (All), and Deploy (Master Only)
+name: Validate and Deploy
 on: [push]
 
 jobs:
