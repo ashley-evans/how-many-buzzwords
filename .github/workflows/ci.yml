@@ -1,5 +1,5 @@
 name: Test (All), Validate (All), and Deploy (Master Only)
-on: [push, pull_request]
+on: [push]
 
 jobs:
   test:
