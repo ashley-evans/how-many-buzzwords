@@ -1,22 +1,39 @@
 #!/bin/bash
 
-echo "Deleting Buzzword Stack"
+usage() { echo "Usage: -s [Name of Buzzword Stack to be deleted]" 1>&2; exit 1; }
 
-aws cloudformation delete-stack --stack-name buzzword-stack
-aws cloudformation wait stack-delete-complete --stack-name buzzword-stack
+while getopts "s:" opt; do
+    case $opt in
+        s)
+            stack=$OPTARG
+            ;;
+        \?)
+            usage
+            ;;
+    esac
+done
 
-echo "Emptying Buzzword Bucket before deletion"
+if [ -z $stack ]; then
+    stack="buzzword-stack-dev"
+fi
 
-aws s3 rm s3://buzzword-bucket --recursive
+if ! aws cloudformation describe-stacks --stack-name $stack &>/dev/null ; then
+    echo "Stack: \"$stack\" does not exist" >&2
+    exit 1
+fi
 
-echo "Deleting Buzzword Bucket Stack"
+echo "Deleting stack ($stack)"
 
-aws cloudformation delete-stack --stack-name buzzword-bucket-stack
-aws cloudformation wait stack-delete-complete --stack-name buzzword-bucket-stack
+aws cloudformation delete-stack --stack-name $stack
+aws cloudformation wait stack-delete-complete --stack-name $stack
 
-echo "Deleting existing logs"
+echo "Emptying Buzzword Bucket of templates related to stack ($stack)"
 
-aws logs describe-log-groups --log-group-name-prefix /aws/lambda/buzzword-stack-WibbleLambda | jq -r '.logGroups[].logGroupName' | while read logGroupName; do
+aws s3 rm "s3://buzzword-bucket/$stack" --recursive
+
+echo "Deleting existing logs related to stack ($stack)"
+
+aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/$stack-WibbleLambda" | jq -r ".logGroups[].logGroupName" | while read logGroupName; do
     echo "Deleting log group: ${logGroupName}"
     aws logs delete-log-group --log-group-name $logGroupName
 done

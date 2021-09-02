@@ -1,6 +1,5 @@
 const { PutItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { StatusCodes } = require('http-status-codes');
-const { TABLE_NAME } = require('./constants');
 
 exports.handler = async (event) => {
     let responseCode = StatusCodes.OK;
@@ -23,7 +22,7 @@ const formatResponse = (statusCode) => {
 const putItem = async (itemToInsert) => {
     const ddbClient = new DynamoDBClient({});
     const params = {
-        TableName: TABLE_NAME,
+        TableName: process.env.tableName,
         Item: {
             pk: { S: itemToInsert }
         }

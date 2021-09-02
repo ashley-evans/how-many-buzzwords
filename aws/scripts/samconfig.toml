@@ -1,10 +1,16 @@
 version = 0.1
-[default]
-[default.deploy]
 [default.deploy.parameters]
-stack_name = "buzzword-stack"
+stack_name = "buzzword-stack-dev"
 s3_bucket = "buzzword-bucket"
-s3_prefix = "buzzword-stack"
+s3_prefix = "buzzword-stack-dev"
 region = "eu-west-2"
 confirm_changeset = true
-capabilities = "CAPABILITY_NAMED_IAM"
+capabilities = "CAPABILITY_IAM"
+
+[production.deploy.parameters]
+stack_name = "buzzword-stack-prod"
+s3_bucket = "buzzword-bucket"
+s3_prefix = "buzzword-stack-prod"
+region = "eu-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
