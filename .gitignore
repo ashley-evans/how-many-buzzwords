@@ -7,3 +7,6 @@ node_modules/
 
 .aws-sam/
 local-lambda-output.txt
+
+# Apify Output
+apify_storage/

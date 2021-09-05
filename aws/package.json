@@ -18,6 +18,8 @@
         "test": "jest"
     },
     "jest": {
-        "modulePathIgnorePatterns": [".aws-sam"]
+        "modulePathIgnorePatterns": [
+            ".aws-sam"
+        ]
     }
 }
