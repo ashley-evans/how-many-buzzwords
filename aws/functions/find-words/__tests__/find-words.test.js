@@ -1,8 +1,8 @@
 const nock = require('nock');
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
-const rimraf = require('rimraf');
 const { StatusCodes } = require('http-status-codes');
+const localStorageEmulator = require('./helpers/local-storage-emulator');
 
 const { handler } = require('../find-words');
 
@@ -21,7 +21,9 @@ nock(ENTRY_POINT_URL)
         {
             'content-type': 'text/html'
         }
-    );
+    )
+    .persist();
+
 nock(ENTRY_POINT_URL)
     .get('/sub-page-1')
     .reply(
@@ -30,11 +32,26 @@ nock(ENTRY_POINT_URL)
         {
             'content-type': 'text/html'
         }
-    );
+    )
+    .persist();
+
+nock(ENTRY_POINT_URL)
+    .get('/circle')
+    .reply(
+        200,
+        readFile('circle.html'),
+        {
+            'content-type': 'text/html'
+        }
+    )
+    .persist();
 
 beforeAll(async () => {
-    process.env.APIFY_LOCAL_STORAGE_DIR = LOCAL_STORAGE_DIR;
-    fs.mkdirSync(LOCAL_STORAGE_DIR);
+    await localStorageEmulator.init(LOCAL_STORAGE_DIR);
+});
+
+beforeEach(async () => {
+    await localStorageEmulator.clean();
 });
 
 test('handler returns list of pages accessible from URL', async () => {
@@ -54,9 +71,26 @@ test('handler returns list of pages accessible from URL', async () => {
     expect(content).toHaveLength(2);
     expect(content).toContainEqual({ url: ENTRY_POINT_URL });
     expect(content).toContainEqual({ url: `${ENTRY_POINT_URL}sub-page-1` });
-});
+}, 99999);
 
-afterAll(() => {
-    delete process.env.APIFY_LOCAL_STORAGE_DIR;
-    rimraf.sync(LOCAL_STORAGE_DIR);
+test('handler returns only unique pages accessible from URL', async () => {
+    const event = {
+        Records: [
+            { body: `${ENTRY_POINT_URL}circle` }
+        ]
+    };
+
+    const response = await handler(event);
+
+    expect(response).toBeDefined();
+    expect(response.statusCode).toBe(StatusCodes.OK);
+    expect(response.headers['Content-Type']).toBe('application/json');
+
+    const content = JSON.parse(response.body);
+    expect(content).toHaveLength(1);
+    expect(content[0]).toEqual({ url: `${ENTRY_POINT_URL}circle` });
+}, 99999);
+
+afterAll(async () => {
+    await localStorageEmulator.destroy();
 });
