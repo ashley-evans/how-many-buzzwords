@@ -1,11 +1,11 @@
 const Apify = require('apify');
 const { StatusCodes } = require('http-status-codes');
+const { PutItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 
-let processed;
 let requestQueue;
+const ddbClient = new DynamoDBClient({});
 
 exports.handler = async (event) => {
-    processed = [];
     const requestList = await Apify.openRequestList(
         null,
         event.Records.map(record => record.body)
@@ -30,21 +30,39 @@ exports.handler = async (event) => {
 const crawlPage = async ({ request, $ }) => {
     console.log(`Visiting ${request.url}`);
 
-    await Apify.utils.enqueueLinks({
-        $,
-        requestQueue,
-        baseUrl: request.loadedUrl
-    });
+    const baseUrl = request.userData.baseUrl ? request.userData.baseUrl : request.url;
+    const currentDepth = request.userData.depth ? request.userData.depth : 0;
 
-    processed.push({ url: request.url });
+    if (currentDepth < process.env.maxCrawlDepth) {
+        await Apify.utils.enqueueLinks({
+            $,
+            requestQueue,
+            baseUrl: request.loadedUrl,
+            transformRequestFunction: request => {
+                request.userData.baseUrl = baseUrl;
+                request.userData.depth = currentDepth + 1;
+                return request;
+            }
+        });
+    }
+
+    await putChildPage(baseUrl, request.url);
+};
+
+const putChildPage = async (base, child) => {
+    const params = {
+        TableName: process.env.tableName,
+        Item: {
+            BaseUrl: { S: base },
+            ChildUrl: { S: child }
+        }
+    };
+
+    await ddbClient.send(new PutItemCommand(params));
 };
 
 const formatResponse = (statusCode) => {
     return {
-        statusCode,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(processed)
+        statusCode
     };
 };

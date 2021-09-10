@@ -1,0 +1,79 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Overall template for the Buzzword Application AWS Stack
+Resources:
+  PageKeywordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: BaseUrl
+          AttributeType: S
+        - 
+          AttributeName: ChildUrl
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: BaseUrl
+          KeyType: HASH
+        - 
+          AttributeName: ChildUrl
+          KeyType: RANGE
+  FindWordsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: 
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt PageKeywordsTable.Arn
+                Effect: Allow
+        - PolicyName: BuzzwordMessageSQSPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt BuzzwordSQSQueue.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  FindWordsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: find-words.handler
+      Role:
+        Fn::GetAtt:
+        - FindWordsFunctionRole
+        - Arn
+      Runtime: nodejs14.x
+      CodeUri: ./find-words.js
+      Description: Crawls a batch of URLs and stores child URLs in DynamoDB
+      Layers:
+        - Ref: NodeModuleDependencyLayer
+      Timeout: 10
+      Events:
+        BuzzwordQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt BuzzwordSQSQueue.Arn
+            BatchSize: 10
+      Environment:
+        Variables:
+          tableName: !Ref PageKeywordsTable
+          maxCrawlDepth: 20
