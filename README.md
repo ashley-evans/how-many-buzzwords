@@ -81,3 +81,5 @@ The following GitHub secrets should be created with the following values (Referr
 | DEPLOY_AWS_SECRET_ACCESS_KEY   | BuzzwordDeployUser's `SECRET_KEY`   |
 
 The above values can be found in the AWS Secret Manager secret named the same as the user's `AccessKeyId`
+
+The template validation performed by the CI pipeline searches for `.yml` files that are suffixed with `-template`, therefore, if you wish for a template file to be validated then simply suffix the file with `-template`.

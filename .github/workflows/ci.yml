@@ -28,8 +28,7 @@ jobs:
           aws-region: eu-west-2
       - name: Validate Templates
         run: |
-          sam validate --template ./aws/templates/buzzword-bucket-template.yml
-          sam validate --template ./aws/templates/buzzword-template.yml
+          find -name *-template.yml -execdir sam validate --template {} \;
   deploy:
     runs-on: ubuntu-latest
     needs: [test, validate]
