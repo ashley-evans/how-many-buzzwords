@@ -16,7 +16,7 @@
         "@aws-sdk/client-dynamodb": "^3.24.0"
     },
     "scripts": {
-        "test": "jest"
+        "test": "jest --verbose"
     },
     "jest": {
         "modulePathIgnorePatterns": [

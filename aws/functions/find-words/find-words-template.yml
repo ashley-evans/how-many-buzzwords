@@ -77,3 +77,4 @@ Resources:
         Variables:
           tableName: !Ref PageKeywordsTable
           maxCrawlDepth: 20
+          errorLoggingEnabled: true

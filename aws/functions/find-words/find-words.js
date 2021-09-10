@@ -2,18 +2,50 @@ const Apify = require('apify');
 const { StatusCodes } = require('http-status-codes');
 const { PutItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 
+const middy = require('@middy/core');
+const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
+const httpErrorHandler = require('@middy/http-error-handler');
+const validator = require('@middy/validator');
+
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
 
-exports.handler = async (event) => {
+const INPUT_SCHEMA = {
+    type: 'object',
+    required: ['Records'],
+    properties: {
+        Records: {
+            type: 'array',
+            items: {
+                type: 'object',
+                required: ['body'],
+                properties: {
+                    body: {
+                        type: 'object',
+                        required: ['url'],
+                        properties: {
+                            url: {
+                                type: 'string',
+                                pattern: '(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                            },
+                            depth: { type: 'integer' }
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
+const baseHandler = async (event) => {
     const requestList = await Apify.openRequestList(
         null,
         event.Records.map(record => {
-            const body = JSON.parse(record.body);
+            const { url, depth } = record.body;
             return {
-                url: body.url,
+                url: url,
                 userData: {
-                    maxCrawlDepth: body.depth
+                    maxCrawlDepth: depth
                 }
             };
         })
@@ -73,4 +105,13 @@ const formatResponse = (statusCode) => {
     return {
         statusCode
     };
+};
+
+const handler = middy(baseHandler)
+    .use(sqsJsonBodyHandler())
+    .use(validator({ inputSchema: INPUT_SCHEMA }))
+    .use(httpErrorHandler(process.env.errorLoggingEnabled === 'false' ? { logger: false } : undefined));
+
+module.exports = {
+    handler
 };

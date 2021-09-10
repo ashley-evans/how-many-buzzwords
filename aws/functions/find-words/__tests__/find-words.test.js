@@ -6,33 +6,61 @@ const { mockClient } = require('aws-sdk-client-mock');
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('./helpers/http-mock');
 
-const { handler } = require('../find-words');
-
 const ENTRY_POINT_URL = 'http://example.com/';
 const LOCAL_STORAGE_DIR = path.join(__dirname, '/apify_storage/');
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth/');
 const TABLE_NAME = 'test';
 
+process.env.tableName = TABLE_NAME;
+process.env.maxCrawlDepth = 20;
+process.env.errorLoggingEnabled = false;
+
 const ddbMock = mockClient(DynamoDBClient);
+
+const { handler } = require('../find-words');
 
 const createEvent = (url, depth) => {
     return {
         Records: [
-            { body: JSON.stringify({ url, depth }) }
+            {
+                body: JSON.stringify({ url, depth }),
+                eventSource: 'aws:sqs'
+            }
         ]
     };
 };
 
 beforeAll(async () => {
     await localStorageEmulator.init(LOCAL_STORAGE_DIR);
-    process.env.tableName = TABLE_NAME;
-    process.env.maxCrawlDepth = 20;
 });
 
 beforeEach(async () => {
     await localStorageEmulator.clean();
     ddbMock.reset();
+});
+
+test.each([
+    ['record with invalid JSON body', 'test test'],
+    ['record with missing url', JSON.stringify({ depth: 20 })],
+    ['record with invalid url (numeric)', JSON.stringify({ url: 20 })],
+    ['record with invalid depth', JSON.stringify({ url: 'test', depth: 'test' })]
+])('handler rejects %s', async (message, body) => {
+    const event = {
+        Records: [
+            {
+                body,
+                eventSource: 'aws:sqs'
+            }
+        ]
+    };
+    ddbMock.on(PutItemCommand).resolves();
+
+    const response = await handler(event);
+
+    expect(response.body).toEqual('Event object failed validation');
+    expect(response.headers['Content-Type']).toEqual('text/plain');
+    expect(response.statusCode).toEqual(400);
 });
 
 test('handler inserts list of child pages accessible from base url to dynamo db', async () => {
