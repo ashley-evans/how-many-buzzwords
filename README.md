@@ -26,9 +26,7 @@ find ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" -name package.json -execd
 
 Run the following command to validate the stack template definition:
 ```shell
-sam validate --template ./aws/templates/buzzword-bucket-template.yml
-sam validate --template ./aws/templates/buzzword-template.yml
-sam validate --template ./aws/templates/buzzword-ci-users.yml
+find -name *-template.yml -execdir sam validate --template {} \;
 ```
 
 ## Setup
