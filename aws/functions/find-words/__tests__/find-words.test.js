@@ -1,6 +1,5 @@
 const { readdirSync } = require('fs-extra');
 const path = require('path');
-const nock = require('nock');
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 
@@ -17,6 +16,14 @@ const TABLE_NAME = 'test';
 
 const ddbMock = mockClient(DynamoDBClient);
 
+const createEvent = (url, depth) => {
+    return {
+        Records: [
+            { body: JSON.stringify({ url, depth }) }
+        ]
+    };
+};
+
 beforeAll(async () => {
     await localStorageEmulator.init(LOCAL_STORAGE_DIR);
     process.env.tableName = TABLE_NAME;
@@ -31,11 +38,7 @@ beforeEach(async () => {
 test('handler inserts list of child pages accessible from base url to dynamo db', async () => {
     mockURLFromFile(ENTRY_POINT_URL, '/', path.join(ASSET_FOLDER, 'entry-point.html'), false);
     mockURLFromFile(ENTRY_POINT_URL, '/sub-page-1', path.join(ASSET_FOLDER, 'sub-page-1.html'), false);
-    const event = {
-        Records: [
-            { body: ENTRY_POINT_URL }
-        ]
-    };
+    const event = createEvent(ENTRY_POINT_URL);
     ddbMock.on(PutItemCommand).resolves();
 
     await handler(event);
@@ -65,11 +68,7 @@ test('handler inserts list of child pages accessible from base url to dynamo db'
 
 test('handler only inserts one entry to dynamo db when page refers to itself', async () => {
     mockURLFromFile(ENTRY_POINT_URL, '/circle', path.join(ASSET_FOLDER, 'circle.html'), true);
-    const event = {
-        Records: [
-            { body: `${ENTRY_POINT_URL}circle` }
-        ]
-    };
+    const event = createEvent(`${ENTRY_POINT_URL}circle`);
     ddbMock.on(PutItemCommand).resolves();
 
     await handler(event);
@@ -88,26 +87,46 @@ test('handler only inserts one entry to dynamo db when page refers to itself', a
     });
 });
 
-test('handler defaults to only crawl to maximum depth', async () => {
-    readdirSync(DEPTH_FOLDER).forEach(file => {
-        const fileName = file.split('.')[0];
-        mockURLFromFile(ENTRY_POINT_URL, `/${fileName}`, path.join(DEPTH_FOLDER, file), true);
+describe('depth testing', () => {
+    beforeAll(() => {
+        readdirSync(DEPTH_FOLDER).forEach(file => {
+            const fileName = file.split('.')[0];
+            mockURLFromFile(ENTRY_POINT_URL, `/${fileName}`, path.join(DEPTH_FOLDER, file), true);
+        });
     });
-    const event = {
-        Records: [
-            { body: `${ENTRY_POINT_URL}depth-0` }
-        ]
-    };
-    ddbMock.on(PutItemCommand).resolves();
 
-    await handler(event);
-    const dynamoDbCallsArguments = ddbMock.calls().map(call => call.args);
+    beforeEach(() => {
+        ddbMock.on(PutItemCommand).resolves();
+    });
 
-    expect(dynamoDbCallsArguments).toHaveLength(parseInt(process.env.maxCrawlDepth) + 1);
-});
+    test('handler defaults to only crawl to maximum depth', async () => {
+        const event = createEvent(`${ENTRY_POINT_URL}depth-0`);
 
-afterEach(() => {
-    nock.cleanAll();
+        await handler(event);
+        const dynamoDbCalls = ddbMock.calls();
+
+        expect(dynamoDbCalls).toHaveLength(parseInt(process.env.maxCrawlDepth) + 1);
+    });
+
+    test('handler crawls to specified depth (less than max) for a given starting point', async () => {
+        const expectedDepth = 10;
+        const event = createEvent(`${ENTRY_POINT_URL}depth-0`, expectedDepth);
+
+        await handler(event);
+        const dynamoDbCalls = ddbMock.calls();
+
+        expect(dynamoDbCalls).toHaveLength(expectedDepth + 1);
+    });
+
+    test('handler crawls to maximum depth given larger specified depth', async () => {
+        const expectedDepth = process.env.maxCrawlDepth + 10;
+        const event = createEvent(`${ENTRY_POINT_URL}depth-0`, expectedDepth);
+
+        await handler(event);
+        const dynamoDbCalls = ddbMock.calls();
+
+        expect(dynamoDbCalls).toHaveLength(parseInt(process.env.maxCrawlDepth) + 1);
+    });
 });
 
 afterAll(async () => {

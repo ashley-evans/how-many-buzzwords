@@ -8,11 +8,17 @@ const ddbClient = new DynamoDBClient({});
 exports.handler = async (event) => {
     const requestList = await Apify.openRequestList(
         null,
-        event.Records.map(record => record.body)
+        event.Records.map(record => {
+            const body = JSON.parse(record.body);
+            return {
+                url: body.url,
+                userData: {
+                    maxCrawlDepth: body.depth
+                }
+            };
+        })
     );
     requestQueue = await Apify.openRequestQueue();
-
-    event.Records.map(async record => await requestQueue.addRequest({ url: record.body }));
 
     const crawler = new Apify.CheerioCrawler({
         requestList,
@@ -21,19 +27,20 @@ exports.handler = async (event) => {
     });
 
     await crawler.run();
-
     await requestQueue.drop();
-
     return formatResponse(StatusCodes.OK);
 };
 
 const crawlPage = async ({ request, $ }) => {
     console.log(`Visiting ${request.url}`);
 
-    const baseUrl = request.userData.baseUrl ? request.userData.baseUrl : request.url;
-    const currentDepth = request.userData.depth ? request.userData.depth : 0;
+    const userData = request.userData;
+    const maximumDepthEnv = parseInt(process.env.maxCrawlDepth);
+    const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
+    const currentDepth = userData.depth ? userData.depth : 0;
+    const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv ? userData.maxCrawlDepth : maximumDepthEnv;
 
-    if (currentDepth < process.env.maxCrawlDepth) {
+    if (currentDepth < maxCrawlDepth) {
         await Apify.utils.enqueueLinks({
             $,
             requestQueue,
@@ -41,6 +48,7 @@ const crawlPage = async ({ request, $ }) => {
             transformRequestFunction: request => {
                 request.userData.baseUrl = baseUrl;
                 request.userData.depth = currentDepth + 1;
+                request.userData.maxCrawlDepth = maxCrawlDepth;
                 return request;
             }
         });
