@@ -18,7 +18,7 @@ process.env.errorLoggingEnabled = false;
 
 const ddbMock = mockClient(DynamoDBClient);
 
-const { handler } = require('../find-words');
+const { handler } = require('../crawl-urls');
 
 const createEvent = (url, depth) => {
     return {
@@ -32,6 +32,8 @@ const createEvent = (url, depth) => {
 };
 
 beforeAll(async () => {
+    mockURLFromFile(ENTRY_POINT_URL, '/', path.join(ASSET_FOLDER, 'entry-point.html'), true);
+    mockURLFromFile(ENTRY_POINT_URL, '/sub-page-1', path.join(ASSET_FOLDER, 'sub-page-1.html'), true);
     await localStorageEmulator.init(LOCAL_STORAGE_DIR);
 });
 
@@ -40,32 +42,7 @@ beforeEach(async () => {
     ddbMock.reset();
 });
 
-test.each([
-    ['record with invalid JSON body', 'test test'],
-    ['record with missing url', JSON.stringify({ depth: 20 })],
-    ['record with invalid url (numeric)', JSON.stringify({ url: 20 })],
-    ['record with invalid depth', JSON.stringify({ url: 'test', depth: 'test' })]
-])('handler rejects %s', async (message, body) => {
-    const event = {
-        Records: [
-            {
-                body,
-                eventSource: 'aws:sqs'
-            }
-        ]
-    };
-    ddbMock.on(PutItemCommand).resolves();
-
-    const response = await handler(event);
-
-    expect(response.body).toEqual('Event object failed validation');
-    expect(response.headers['Content-Type']).toEqual('text/plain');
-    expect(response.statusCode).toEqual(400);
-});
-
 test('handler inserts list of child pages accessible from base url to dynamo db', async () => {
-    mockURLFromFile(ENTRY_POINT_URL, '/', path.join(ASSET_FOLDER, 'entry-point.html'), false);
-    mockURLFromFile(ENTRY_POINT_URL, '/sub-page-1', path.join(ASSET_FOLDER, 'sub-page-1.html'), false);
     const event = createEvent(ENTRY_POINT_URL);
     ddbMock.on(PutItemCommand).resolves();
 
@@ -112,6 +89,40 @@ test('handler only inserts one entry to dynamo db when page refers to itself', a
             BaseUrl: { S: `${ENTRY_POINT_URL}circle` },
             ChildUrl: { S: `${ENTRY_POINT_URL}circle` }
         }
+    });
+});
+
+test('handler returns success when given valid url record', async () => {
+    const event = createEvent(ENTRY_POINT_URL);
+    ddbMock.on(PutItemCommand).resolves();
+
+    const response = await handler(event);
+
+    expect(response.statusCode).toEqual(200);
+});
+
+describe('input validation', () => {
+    test.each([
+        ['record with invalid JSON body', 'test test'],
+        ['record with missing url', JSON.stringify({ depth: 20 })],
+        ['record with invalid url (numeric)', JSON.stringify({ url: 20 })],
+        ['record with invalid depth', JSON.stringify({ url: 'test', depth: 'test' })]
+    ])('handler rejects %s', async (message, body) => {
+        const event = {
+            Records: [
+                {
+                    body,
+                    eventSource: 'aws:sqs'
+                }
+            ]
+        };
+        ddbMock.on(PutItemCommand).resolves();
+
+        const response = await handler(event);
+
+        expect(response.body).toEqual('Event object failed validation');
+        expect(response.headers['Content-Type']).toEqual('text/plain');
+        expect(response.statusCode).toEqual(400);
     });
 });
 
