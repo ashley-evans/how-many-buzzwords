@@ -52,7 +52,7 @@ const baseHandler = async (event) => {
     );
     requestQueue = await Apify.openRequestQueue();
 
-    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl);
+    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl) * event.Records.length;
     const crawler = new Apify.CheerioCrawler({
         requestList,
         requestQueue,

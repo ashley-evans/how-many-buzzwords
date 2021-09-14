@@ -23,14 +23,16 @@ const ddbMock = mockClient(DynamoDBClient);
 
 const { handler } = require('../crawl-urls');
 
-const createEvent = (url, depth) => {
+const createRecord = (url, depth) => {
     return {
-        Records: [
-            {
-                body: JSON.stringify({ url, depth }),
-                eventSource: 'aws:sqs'
-            }
-        ]
+        body: JSON.stringify({ url, depth }),
+        eventSource: 'aws:sqs'
+    };
+};
+
+const createEvent = (...records) => {
+    return {
+        Records: records
     };
 };
 
@@ -50,7 +52,7 @@ beforeEach(async () => {
 });
 
 test('handler inserts list of child pages accessible from base url to dynamo db', async () => {
-    const event = createEvent(ENTRY_POINT_URL);
+    const event = createEvent(createRecord(ENTRY_POINT_URL));
     ddbMock.on(PutItemCommand).resolves();
 
     await handler(event);
@@ -80,7 +82,7 @@ test('handler inserts list of child pages accessible from base url to dynamo db'
 
 test('handler only inserts one entry to dynamo db when page refers to itself', async () => {
     mockURLFromFile(ENTRY_POINT_URL, '/circle', path.join(ASSET_FOLDER, 'circle.html'), false);
-    const event = createEvent(`${ENTRY_POINT_URL}circle`);
+    const event = createEvent(createRecord(`${ENTRY_POINT_URL}circle`));
     ddbMock.on(PutItemCommand).resolves();
 
     await handler(event);
@@ -102,7 +104,7 @@ test('handler only inserts one entry to dynamo db when page refers to itself', a
 test('handler only inserts one entry to dynamo db when page refers to another domain', async () => {
     mockURLFromFile(ENTRY_POINT_URL, '/external', path.join(ASSET_FOLDER, 'external.html'), false);
     mockURLFromFile(EXTERNAL_URL, '/', path.join(ASSET_FOLDER, 'external.html'), false);
-    const event = createEvent(`${ENTRY_POINT_URL}external`);
+    const event = createEvent(createRecord(`${ENTRY_POINT_URL}external`));
     ddbMock.on(PutItemCommand).resolves();
 
     await handler(event);
@@ -122,7 +124,7 @@ test('handler only inserts one entry to dynamo db when page refers to another do
 });
 
 test('handler returns success when given valid url record', async () => {
-    const event = createEvent(ENTRY_POINT_URL);
+    const event = createEvent(createRecord(ENTRY_POINT_URL));
     ddbMock.on(PutItemCommand).resolves();
 
     const response = await handler(event);
@@ -132,19 +134,11 @@ test('handler returns success when given valid url record', async () => {
 
 describe('input validation', () => {
     test.each([
-        ['record with invalid JSON body', 'test test'],
-        ['record with missing url', JSON.stringify({ depth: 20 })],
-        ['record with invalid url (numeric)', JSON.stringify({ url: 20 })],
-        ['record with invalid depth', JSON.stringify({ url: 'test', depth: 'test' })]
-    ])('handler rejects %s', async (message, body) => {
-        const event = {
-            Records: [
-                {
-                    body,
-                    eventSource: 'aws:sqs'
-                }
-            ]
-        };
+        ['record with invalid JSON body', createEvent({ body: 'test test', eventSource: 'aws:sqs' })],
+        ['record with missing url', createEvent(createRecord(undefined, 20))],
+        ['record with invalid url (numeric)', createEvent(createRecord(20))],
+        ['record with invalid depth', createEvent(createRecord('test', 'test'))]
+    ])('handler rejects %s', async (message, event) => {
         ddbMock.on(PutItemCommand).resolves();
 
         const response = await handler(event);
@@ -161,7 +155,7 @@ describe('depth', () => {
     });
 
     test('handler defaults to only crawl to maximum depth', async () => {
-        const event = createEvent(`${ENTRY_POINT_URL}depth-0`);
+        const event = createEvent(createRecord(`${ENTRY_POINT_URL}depth-0`));
 
         await handler(event);
         const dynamoDbCalls = ddbMock.calls();
@@ -171,7 +165,7 @@ describe('depth', () => {
 
     test('handler crawls to specified depth (less than max) for a given starting point', async () => {
         const expectedDepth = 10;
-        const event = createEvent(`${ENTRY_POINT_URL}depth-0`, expectedDepth);
+        const event = createEvent(createRecord(`${ENTRY_POINT_URL}depth-0`, expectedDepth));
 
         await handler(event);
         const dynamoDbCalls = ddbMock.calls();
@@ -181,7 +175,7 @@ describe('depth', () => {
 
     test('handler crawls to maximum depth given larger specified depth', async () => {
         const expectedDepth = process.env.maxCrawlDepth + 10;
-        const event = createEvent(`${ENTRY_POINT_URL}depth-0`, expectedDepth);
+        const event = createEvent(createRecord(`${ENTRY_POINT_URL}depth-0`, expectedDepth));
 
         await handler(event);
         const dynamoDbCalls = ddbMock.calls();
@@ -191,7 +185,7 @@ describe('depth', () => {
 });
 
 describe('max request', () => {
-    const EXPECTED_MAX_REQUESTS = 10;
+    const EXPECTED_MAX_REQUESTS = 5;
 
     beforeAll(() => {
         // Set to lower value for testing
@@ -199,13 +193,48 @@ describe('max request', () => {
         ddbMock.on(PutItemCommand).resolves();
     });
 
-    test('handler defaults to crawl to maximum number of pages', async () => {
-        const event = createEvent(`${ENTRY_POINT_URL}depth-0`);
+    test('handler defaults to crawl to maximum number of pages for a single record', async () => {
+        const event = createEvent(createRecord(`${ENTRY_POINT_URL}depth-0`));
 
         await handler(event);
         const dynamoDbCalls = ddbMock.calls();
 
         expect(dynamoDbCalls).toHaveLength(EXPECTED_MAX_REQUESTS);
+    });
+
+    test('handler crawls to max number of pages per record', async () => {
+        const firstRecordLowerBound = 0;
+        const secondRecordLowerBound = 10;
+        const event = createEvent(
+            createRecord(`${ENTRY_POINT_URL}depth-${firstRecordLowerBound}`),
+            createRecord(`${ENTRY_POINT_URL}depth-${secondRecordLowerBound}`)
+        );
+
+        await handler(event);
+        const dynamoDbCallsArguments = ddbMock.calls().map(call => call.args);
+
+        expect(dynamoDbCallsArguments).toHaveLength(EXPECTED_MAX_REQUESTS * event.Records.length);
+
+        // Ensure that equal number of crawl operations have been performed for each record
+        const dynamoDbArgumentInputs = dynamoDbCallsArguments.map(args => args[0].input);
+        for (let i = 0; i < EXPECTED_MAX_REQUESTS; i++) {
+            const firstRecordIndex = i + firstRecordLowerBound;
+            expect(dynamoDbArgumentInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                Item: {
+                    BaseUrl: { S: `${ENTRY_POINT_URL}depth-${firstRecordLowerBound}` },
+                    ChildUrl: { S: `${ENTRY_POINT_URL}depth-${firstRecordIndex}` }
+                }
+            });
+            const secondRecordIndex = i + secondRecordLowerBound;
+            expect(dynamoDbArgumentInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                Item: {
+                    BaseUrl: { S: `${ENTRY_POINT_URL}depth-${secondRecordLowerBound}` },
+                    ChildUrl: { S: `${ENTRY_POINT_URL}depth-${secondRecordIndex}` }
+                }
+            });
+        }
     });
 
     afterAll(() => {
