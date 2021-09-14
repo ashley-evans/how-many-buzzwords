@@ -26,9 +26,7 @@ find ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" -name package.json -execd
 
 Run the following command to validate the stack template definition:
 ```shell
-sam validate --template ./aws/templates/buzzword-bucket-template.yml
-sam validate --template ./aws/templates/buzzword-template.yml
-sam validate --template ./aws/templates/buzzword-ci-users.yml
+find ! -path "*/.aws-sam/*" -name *-template.yml -execdir sam validate --template {} \;
 ```
 
 ## Setup
@@ -81,3 +79,5 @@ The following GitHub secrets should be created with the following values (Referr
 | DEPLOY_AWS_SECRET_ACCESS_KEY   | BuzzwordDeployUser's `SECRET_KEY`   |
 
 The above values can be found in the AWS Secret Manager secret named the same as the user's `AccessKeyId`
+
+The template validation performed by the CI pipeline searches for `.yml` files that are suffixed with `-template`, therefore, if you wish for a template file to be validated then simply suffix the file with `-template`.

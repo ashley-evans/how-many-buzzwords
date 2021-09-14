@@ -4,25 +4,27 @@ info:
   description: "Gateway to Buzzword Stack Resources"
   version: "1.0"
 paths:
-  /wibble:
+  /crawl:
     x-amazon-apigateway-any-method:
       responses:
         default:
-          description: "Default response for ANY /wibble request"
+          description: "Default response for ANY /crawl request"
       x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/buzzword-sqs-send-message-integration"
+        $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
 components:
   x-amazon-apigateway-integrations:
-    buzzword-sqs-send-message-integration:
+    crawl-urls-sqs-send-message-integration:
       integrationSubtype: "SQS-SendMessage"
       credentials:
         Fn::GetAtt:
-        - "SendMessageBuzzwordPolicy"
-        - "Arn"
+        - "CrawlURLsLambdaApplication"
+        - "Outputs.AccessRole"
       requestParameters:
         MessageBody: "$request.body.MessageBody"
-        QueueUrl: 
-          Ref: "BuzzwordSQSQueue"
+        QueueUrl:
+          Fn::GetAtt:
+          - "CrawlURLsLambdaApplication"
+          - "Outputs.QueueURL"
       payloadFormatVersion: "1.0"
       type: "aws_proxy"
       connectionType: "INTERNET"

@@ -1,0 +1,121 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Template for Crawl URLs lambda function's resources
+Parameters:
+  NodeDependencyLayerLogicalID:
+    Type: String
+    Description: 'Logical ID of the layer containing common Node Dependencies'
+Resources:
+  CrawlURLsSQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 720 # Six times Lambda Function Timeout as per AWS recommendations
+      ReceiveMessageWaitTimeSeconds: 20
+  CrawlURLSQSAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CrawlURLsSendMessagePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt CrawlURLsSQSQueue.Arn
+                Effect: Allow
+  URLsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: BaseUrl
+          AttributeType: S
+        - 
+          AttributeName: ChildUrl
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: BaseUrl
+          KeyType: HASH
+        - 
+          AttributeName: ChildUrl
+          KeyType: RANGE
+  CrawlURLsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: URLsTableWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt URLsTable.Arn
+                Effect: Allow
+        - PolicyName: CrawlURLsSQSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt CrawlURLsSQSQueue.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  CrawlURLsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: crawl-urls.handler
+      Role:
+        Fn::GetAtt:
+        - CrawlURLsFunctionRole
+        - Arn
+      Runtime: nodejs14.x
+      CodeUri: .
+      Description: Crawls a batch of URLs and stores child URLs in DynamoDB
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Timeout: 120
+      MemorySize: 256
+      Events:
+        BuzzwordQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt CrawlURLsSQSQueue.Arn
+            BatchSize: 2
+      Environment:
+        Variables:
+          tableName: !Ref URLsTable
+          maxRequestsPerCrawl: 50
+          maxCrawlDepth: 20
+          errorLoggingEnabled: true
+          APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
+Outputs:
+  QueueURL:
+    Description: The URL of the Crawl URLs SQS Queue
+    Value: !Ref CrawlURLsSQSQueue
+  AccessRole:
+    Description: IAM Role required to access the Crawl URLs SQS Queue
+    Value: !GetAtt CrawlURLSQSAccessRole.Arn

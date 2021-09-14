@@ -1,18 +1,6 @@
 Transform: AWS::Serverless-2016-10-31
 Description: Overall template for the Buzzword Application AWS Stack
 Resources:
-  WibbleDynamoDB:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        -
-          AttributeName: pk
-          AttributeType: S
-      KeySchema:
-        -
-          AttributeName: pk
-          KeyType: HASH
   NodeModuleDependencyLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -22,91 +10,19 @@ Resources:
       Description: Production node module dependency layer
     Metadata:
       BuildMethod: makefile
-  WibbleFunctionRole:
-    Type: AWS::IAM::Role
+  CrawlURLsLambdaApplication:
+    Type: AWS::Serverless::Application
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: LambdaReadWriteDynamoPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - dynamodb:PutItem
-                Resource: !GetAtt WibbleDynamoDB.Arn
-                Effect: Allow
-        - PolicyName: BuzzwordMessageSQSPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource: !GetAtt BuzzwordSQSQueue.Arn
-                Effect: Allow
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  WibbleLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: wibble.handler
-      Role:
-        Fn::GetAtt:
-        - WibbleFunctionRole
-        - Arn
-      Runtime: nodejs14.x
-      CodeUri: ../functions/wibble
-      Description: Inserts a wibble entry into the Wibble DynamoDB table
-      Layers:
-        - Ref: NodeModuleDependencyLayer
-      Timeout: 10
-      Events:
-        BuzzwordQueueEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt BuzzwordSQSQueue.Arn
-            BatchSize: 10
-      Environment:
-        Variables:
-          tableName: !Ref WibbleDynamoDB
-  BuzzwordSQSQueue:
-    Type: AWS::SQS::Queue
-  SendMessageBuzzwordPolicy:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: BuzzwordSendMessagePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:SendMessage
-                Resource: !GetAtt BuzzwordSQSQueue.Arn
-                Effect: Allow
+      Location: ../functions/crawl-urls/crawl-urls-template.yml
+      Parameters:
+        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   BuzzwordAPIAccessLogs:
     Type: AWS::Logs::LogGroup
   BuzzwordHTTPGateway:
     Type: AWS::Serverless::HttpApi
+    DependsOn:
+      - BuzzwordAPIAccessLogs
+      - CrawlURLsLambdaApplication
     Properties:
       StageName: prod
       AccessLogSettings:
