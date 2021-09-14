@@ -7,6 +7,9 @@ Parameters:
 Resources:
   CrawlURLsSQSQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 720 # Six times Lambda Function Timeout as per AWS recommendations
+      ReceiveMessageWaitTimeSeconds: 20
   CrawlURLSQSAccessRole:
     Type: AWS::IAM::Role
     Properties:
@@ -84,7 +87,7 @@ Resources:
   CrawlURLsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: find-words.handler
+      Handler: crawl-urls.handler
       Role:
         Fn::GetAtt:
         - CrawlURLsFunctionRole
@@ -94,18 +97,21 @@ Resources:
       Description: Crawls a batch of URLs and stores child URLs in DynamoDB
       Layers:
         - Ref: NodeDependencyLayerLogicalID
-      Timeout: 10
+      Timeout: 120
+      MemorySize: 256
       Events:
         BuzzwordQueueEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt CrawlURLsSQSQueue.Arn
-            BatchSize: 10
+            BatchSize: 2
       Environment:
         Variables:
           tableName: !Ref URLsTable
+          maxRequestsPerCrawl: 50
           maxCrawlDepth: 20
           errorLoggingEnabled: true
+          APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
 Outputs:
   QueueURL:
     Description: The URL of the Crawl URLs SQS Queue

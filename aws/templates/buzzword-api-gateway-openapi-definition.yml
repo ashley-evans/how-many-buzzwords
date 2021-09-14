@@ -10,7 +10,7 @@ paths:
         default:
           description: "Default response for ANY /crawl request"
       x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/buzzword-sqs-send-message-integration"
+        $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
 components:
   x-amazon-apigateway-integrations:
     crawl-urls-sqs-send-message-integration:

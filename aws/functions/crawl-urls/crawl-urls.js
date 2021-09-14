@@ -52,10 +52,17 @@ const baseHandler = async (event) => {
     );
     requestQueue = await Apify.openRequestQueue();
 
+    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl);
     const crawler = new Apify.CheerioCrawler({
         requestList,
         requestQueue,
-        handlePageFunction: crawlPage
+        handlePageFunction: crawlPage,
+        preNavigationHooks: [
+            async (crawlingContext, requestAsBrowserOptions) => {
+                requestAsBrowserOptions.http2 = false;
+            }
+        ],
+        maxRequestsPerCrawl
     });
 
     await crawler.run();
@@ -68,11 +75,13 @@ const crawlPage = async ({ request, $ }) => {
 
     const userData = request.userData;
     const maximumDepthEnv = parseInt(process.env.maxCrawlDepth);
-    const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
     const currentDepth = userData.depth ? userData.depth : 0;
     const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv ? userData.maxCrawlDepth : maximumDepthEnv;
+    const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
 
     if (currentDepth < maxCrawlDepth) {
+        const baseUrlHostName = (new URL(baseUrl).hostname).replace('www.', '');
+
         await Apify.utils.enqueueLinks({
             $,
             requestQueue,
@@ -82,7 +91,12 @@ const crawlPage = async ({ request, $ }) => {
                 request.userData.depth = currentDepth + 1;
                 request.userData.maxCrawlDepth = maxCrawlDepth;
                 return request;
-            }
+            },
+            pseudoUrls: [
+                new Apify.PseudoUrl(
+                    new RegExp(`(^|\\s)https?://(www.)?${baseUrlHostName}([-a-zA-Z0-9()@:%_+.~#?&//=]*)`)
+                )
+            ]
         });
     }
 
