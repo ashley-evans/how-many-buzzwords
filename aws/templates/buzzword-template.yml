@@ -13,7 +13,7 @@ Resources:
   CrawlURLsLambdaApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../functions/crawl-urls/crawl-urls-template.yml
+      Location: ../applications/crawl/crawl-template.yml
       Parameters:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   BuzzwordAPIAccessLogs:
