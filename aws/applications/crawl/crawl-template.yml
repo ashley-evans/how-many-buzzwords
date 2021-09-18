@@ -111,6 +111,8 @@ Resources:
           maxCrawlDepth: 20
           errorLoggingEnabled: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
+  PublishURLsTopic:
+      Type: AWS::SNS::Topic
   PublishURLFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -136,9 +138,17 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt URLsTable.StreamArn
                 Effect: Allow
+        - PolicyName: PublishURLsTopicPublishPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - sns:Publish
+                Resource: !Ref PublishURLsTopic
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  PublishURLLambda:
+  PublishURLsLambda:
     Type: AWS::Serverless::Function
     Properties:
       Handler: publish-urls.handler
@@ -146,15 +156,15 @@ Resources:
       Runtime: nodejs14.x
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
-      Layers:
-        - Ref: NodeDependencyLayerLogicalID
       Events:
         URLsTableStreamEvent:
           Type: DynamoDB
           Properties:
-            BatchSize: 1
             Stream: !GetAtt URLsTable.StreamArn
             StartingPosition: LATEST
+      Environment:
+        Variables:
+          targetSNSArn: !Ref PublishURLsTopic
 Outputs:
   QueueURL:
     Description: The URL of the Crawl URLs SQS Queue
@@ -162,3 +172,6 @@ Outputs:
   AccessRole:
     Description: IAM Role required to access the Crawl URLs SQS Queue
     Value: !GetAtt CrawlURLSQSAccessRole.Arn
+  PublishURLsTopicARN:
+    Description: The ARN for the Publish URLS SNS Topic
+    Value: !Ref PublishURLsTopic

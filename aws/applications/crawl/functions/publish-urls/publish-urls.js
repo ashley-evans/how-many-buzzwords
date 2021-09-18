@@ -1,5 +1,6 @@
 const middy = require('@middy/core');
 const validator = require('@middy/validator');
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
 const INPUT_SCHEMA = {
     type: 'object',
@@ -49,8 +50,26 @@ const INPUT_SCHEMA = {
     }
 };
 
-const baseHandler = (event) => {
-    console.log(JSON.stringify(event));
+const client = new SNSClient({});
+
+const baseHandler = async (event) => {
+    const records = event.Records;
+    for (let i = 0; i < records.length; i++) {
+        const recordNewImage = records[i].dynamodb.NewImage;
+        const baseUrl = recordNewImage.BaseUrl.S;
+        const childUrl = recordNewImage.ChildUrl.S;
+        await publishMessage(baseUrl, childUrl);
+    }
+};
+
+const publishMessage = async (baseUrl, childUrl) => {
+    const publishParams = {
+        Message: JSON.stringify({ baseUrl, childUrl }),
+        TargetArn: process.env.targetSNSArn
+    };
+
+    const command = new PublishCommand(publishParams);
+    await client.send(command);
 };
 
 const handler = middy(baseHandler)
