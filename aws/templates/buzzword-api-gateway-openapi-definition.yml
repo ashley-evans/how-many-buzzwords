@@ -17,13 +17,13 @@ components:
       integrationSubtype: "SQS-SendMessage"
       credentials:
         Fn::GetAtt:
-        - "CrawlURLsLambdaApplication"
+        - "CrawlApplication"
         - "Outputs.AccessRole"
       requestParameters:
         MessageBody: "$request.body.MessageBody"
         QueueUrl:
           Fn::GetAtt:
-          - "CrawlURLsLambdaApplication"
+          - "CrawlApplication"
           - "Outputs.QueueURL"
       payloadFormatVersion: "1.0"
       type: "aws_proxy"

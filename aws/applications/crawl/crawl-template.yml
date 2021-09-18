@@ -1,5 +1,5 @@
 Transform: AWS::Serverless-2016-10-31
-Description: Template for Crawl URLs application's resources
+Description: Template for Crawl application's resources
 Parameters:
   NodeDependencyLayerLogicalID:
     Type: String
@@ -50,7 +50,8 @@ Resources:
         - 
           AttributeName: ChildUrl
           KeyType: RANGE
-      StreamViewType: NEW_IMAGE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
   CrawlURLsFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -110,50 +111,50 @@ Resources:
           maxCrawlDepth: 20
           errorLoggingEnabled: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
-    PublishURLFunctionRole:
-      Type: AWS::IAM::Role
-      Properties:
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
-            Action:
-            - sts:AssumeRole
-        Path: /
-        Policies:
-          - PolicyName: URLsTableReadStreamPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Action:
-                    - dynamodb:DescribeStream
-                    - dynamodb:GetRecords
-                    - dynamodb:GetShardIterator
-                    - dynamodb:ListStreams
-                  Resource: !GetAtt URLsTable.StreamArn
-                  Effect: Allow
-        ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-    PublishURLLambda:
-      Type: AWS::Serverless::Function
-      Properties:
-        Handler: publish-url.handler
-        Role: !GetAtt PublishURLFunctionRole.Arn
-        Runtime: nodejs14.x
-        CodeUri: .
-        Description: Crawls a batch of URLs and stores child URLs in DynamoDB
-        Layers:
-          - Ref: NodeDependencyLayerLogicalID
-        Events:
-          URLsTableStreamEvent:
-            Type: DynamoDB
-            Properties:
-              BatchSize: 1
-              Stream: !GetAtt URLsTable.StreamArn
-              StartingPosition: LATEST
+  PublishURLFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: URLsTableReadStreamPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !GetAtt URLsTable.StreamArn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  PublishURLLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: publish-urls.handler
+      Role: !GetAtt PublishURLFunctionRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/publish-urls
+      Description: Publishes crawled URLs to an SNS Topic for subscribers
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Events:
+        URLsTableStreamEvent:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 1
+            Stream: !GetAtt URLsTable.StreamArn
+            StartingPosition: LATEST
 Outputs:
   QueueURL:
     Description: The URL of the Crawl URLs SQS Queue

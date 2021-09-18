@@ -10,7 +10,7 @@ Resources:
       Description: Production node module dependency layer
     Metadata:
       BuildMethod: makefile
-  CrawlURLsLambdaApplication:
+  CrawlApplication:
     Type: AWS::Serverless::Application
     Properties:
       Location: ../applications/crawl/crawl-template.yml
@@ -22,7 +22,7 @@ Resources:
     Type: AWS::Serverless::HttpApi
     DependsOn:
       - BuzzwordAPIAccessLogs
-      - CrawlURLsLambdaApplication
+      - CrawlApplication
     Properties:
       StageName: prod
       AccessLogSettings:

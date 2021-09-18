@@ -1,0 +1,8 @@
+{
+    "name": "buzzword-aws-publish-urls-lambda",
+    "version": "1.0.0",
+    "dependencies": {
+        "@middy/core": "^2.5.1",
+        "@middy/validator": "^2.5.1"
+    }
+}
