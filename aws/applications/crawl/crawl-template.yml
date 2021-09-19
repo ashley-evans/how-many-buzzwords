@@ -156,6 +156,8 @@ Resources:
       Runtime: nodejs14.x
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
       Events:
         URLsTableStreamEvent:
           Type: DynamoDB

@@ -13,10 +13,12 @@
         "jest": "^27.0.6"
     },
     "dependencies": {
-        "@aws-sdk/client-dynamodb": "^3.24.0"
+        "@middy/core": "^2.5.1",
+        "@middy/validator": "^2.5.1"
     },
     "scripts": {
-        "test": "jest --verbose"
+        "ci": "find ! -path \"*/node_modules/*\" ! -path \"*/.aws-sam/*\" -name package.json -execdir npm ci \\;",
+        "test": "node --experimental-vm-modules node_modules/.bin/jest --verbose"
     },
     "jest": {
         "modulePathIgnorePatterns": [
