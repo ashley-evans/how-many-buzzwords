@@ -16,13 +16,44 @@ Resources:
       Location: ../applications/crawl/crawl-template.yml
       Parameters:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
+  KeywordsApplication:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ../applications/keywords/keywords-template.yml
+  KeywordPublishURLSQSPolicy:
+    Type: AWS::SQS::QueuePolicy
+    DependsOn:
+      - CrawlApplication
+      - KeywordsApplication
+    Properties:
+      Queues:
+        - !GetAtt KeywordsApplication.Outputs.QueueURL
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt KeywordsApplication.Outputs.QueueARN
+  CrawledURLsSubscription:
+    Type: AWS::SNS::Subscription
+    DependsOn:
+      - KeywordPublishURLSQSPolicy
+    Properties:
+      TopicArn: !GetAtt CrawlApplication.Outputs.TopicARN
+      Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
+      Protocol: sqs
+      RawMessageDelivery: true
   BuzzwordAPIAccessLogs:
     Type: AWS::Logs::LogGroup
   BuzzwordHTTPGateway:
     Type: AWS::Serverless::HttpApi
     DependsOn:
       - BuzzwordAPIAccessLogs
-      - CrawlApplication
+      - CrawledURLsSubscription
     Properties:
       StageName: prod
       AccessLogSettings:

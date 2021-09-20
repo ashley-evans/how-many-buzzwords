@@ -1,0 +1,15 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Template for Crawl application's resources
+Resources:
+  KeywordURLsSQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 180
+      ReceiveMessageWaitTimeSeconds: 20
+Outputs:
+  QueueARN:
+    Description: The ARN of the Keyword URLs SQS Queue
+    Value: !GetAtt KeywordURLsSQSQueue.Arn
+  QueueURL:
+    Description: The URL of the Keyword URLs SQS Queue
+    Value: !Ref KeywordURLsSQSQueue
