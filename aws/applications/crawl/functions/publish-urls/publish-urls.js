@@ -69,7 +69,11 @@ const publishMessage = async (baseUrl, childUrl) => {
     };
 
     const command = new PublishCommand(publishParams);
-    await client.send(command);
+    try {
+        await client.send(command);
+    } catch (ex) {
+        console.error(JSON.stringify(ex));
+    }
 };
 
 const handler = middy(baseHandler)
