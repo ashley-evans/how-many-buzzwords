@@ -24,7 +24,6 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     DependsOn:
       - CrawlApplication
-      - KeywordsApplication
     Properties:
       Queues:
         - !GetAtt KeywordsApplication.Outputs.QueueURL
