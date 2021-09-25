@@ -1,11 +1,56 @@
 Transform: AWS::Serverless-2016-10-31
-Description: Template for Crawl application's resources
+Description: Template for Keywords application's resources
+Parameters:
+  NodeDependencyLayerLogicalID:
+    Type: String
+    Description: 'Logical ID of the layer containing common Node Dependencies'
 Resources:
   KeywordURLsSQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 180
       ReceiveMessageWaitTimeSeconds: 20
+  FindKeywordsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: KeywordURLsSQSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt KeywordURLsSQSQueue.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  FindKeywordsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: find-keywords.handler
+      Role: !GetAtt FindKeywordsFunctionRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/find-keywords
+      Description: Crawls a batch of URLs and stores child URLs in DynamoDB
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Events:
+        KeywordURLsQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt KeywordURLsSQSQueue.Arn
 Outputs:
   QueueARN:
     Description: The ARN of the Keyword URLs SQS Queue

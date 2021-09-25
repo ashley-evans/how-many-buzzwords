@@ -14,6 +14,7 @@
     },
     "dependencies": {
         "@middy/core": "^2.5.1",
+        "@middy/sqs-json-body-parser": "^2.5.1",
         "@middy/validator": "^2.5.1"
     },
     "scripts": {

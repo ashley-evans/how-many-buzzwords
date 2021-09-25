@@ -20,6 +20,8 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ../applications/keywords/keywords-template.yml
+      Parameters:
+        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordPublishURLSQSPolicy:
     Type: AWS::SQS::QueuePolicy
     DependsOn:
