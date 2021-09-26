@@ -2,7 +2,8 @@
     "name": "buzzword-aws-find-keywords-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "retext": "^8.1.0",
-        "retext-keywords": "^7.1.0"
+        "node-fetch": "^2.6.5",
+        "retext": "^7.0.1",
+        "retext-keywords": "^6.0.0"
     }
 }

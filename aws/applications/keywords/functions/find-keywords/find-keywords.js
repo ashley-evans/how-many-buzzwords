@@ -1,6 +1,7 @@
 const middy = require('@middy/core');
 const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const validator = require('@middy/validator');
+const fetch = require('node-fetch');
 
 const INPUT_SCHEMA = {
     type: 'object',
@@ -33,7 +34,10 @@ const INPUT_SCHEMA = {
 };
 
 const baseHandler = async (event) => {
-    return true;
+    for (let i = 0; i < event.Records.length; i++) {
+        const { baseUrl, childUrl } = event.Records[i].body;
+        await fetch(childUrl);
+    }
 };
 
 const handler = middy(baseHandler)

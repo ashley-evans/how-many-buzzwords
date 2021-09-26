@@ -1,7 +1,7 @@
 const { handler } = require('../find-keywords');
+const path = require('path');
 
-const EXPECTED_BASE_URL = 'http://www.test.com/';
-const EXPECTED_CHILD_URL = 'http://www.test.com/test';
+const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 
 const createEvent = (...records) => {
     return {
@@ -15,6 +15,15 @@ const createRecord = (baseUrl, childUrl) => {
     };
 };
 
+const createChildURL = (baseUrl, childRoute) => {
+    return `${baseUrl}${childRoute}`;
+};
+
+const EXPECTED_BASE_URL = 'http://www.test.com';
+const EXPECTED_CHILD_ROUTE = '/term-extraction';
+const ASSET_FOLDER = path.join(__dirname, '/assets/');
+const EXPECTED_CHILD_URL = createChildURL(EXPECTED_BASE_URL, EXPECTED_CHILD_ROUTE);
+
 describe('input validation', () => {
     test.each([
         ['event with no records', {}],
@@ -27,4 +36,55 @@ describe('input validation', () => {
     ])('returns failed validation error given event with %s', async (message, input) => {
         await expect(handler(input)).rejects.toThrowError('Event object failed validation');
     });
+});
+
+test.each([
+    [
+        'a single record',
+        [
+            {
+                baseUrl: EXPECTED_BASE_URL,
+                childRoute: EXPECTED_CHILD_ROUTE,
+                assetPath: 'term-extraction.html'
+            }
+        ]
+    ],
+    [
+        'multiple records',
+        [
+            {
+                baseUrl: EXPECTED_BASE_URL,
+                childRoute: EXPECTED_CHILD_ROUTE,
+                assetPath: 'term-extraction.html'
+            },
+            {
+                baseUrl: EXPECTED_BASE_URL,
+                childRoute: '/empty',
+                assetPath: 'empty.html'
+            }
+        ]
+    ]
+])('handler call expected url(s) given %s', async (message, routeDetails) => {
+    const mockURLs = [];
+    const records = [];
+    for (let i = 0; i < routeDetails.length; i++) {
+        const currentRouteDetails = routeDetails[i];
+        const mockURL = mockURLFromFile(
+            currentRouteDetails.baseUrl,
+            currentRouteDetails.childRoute,
+            path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
+            false
+        );
+        mockURLs.push(mockURL);
+
+        const childURL = createChildURL(currentRouteDetails.baseUrl, currentRouteDetails.childRoute);
+        records.push(createRecord(currentRouteDetails.baseUrl, childURL));
+    }
+
+    console.log(JSON.stringify(createEvent(...records)));
+    await handler(createEvent(...records));
+
+    for (let i = 0; i < mockURLs.length; i++) {
+        expect(mockURLs[i].isDone()).toBeTruthy();
+    }
 });
