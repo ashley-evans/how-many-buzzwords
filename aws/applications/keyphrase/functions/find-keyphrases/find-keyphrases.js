@@ -12,7 +12,7 @@ const toString = require('nlcst-to-string');
 
 const escapeRegExp = require('lodash.escaperegexp');
 
-const { PutItemCommand, DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, PutItemCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
@@ -95,6 +95,26 @@ const countKeyPhrases = (text, keyPhrases) => {
     return keyPhraseOccurances;
 };
 
+const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
+    for (const phraseOccurance of keyPhraseOccurances) {
+        const params = {
+            TableName: process.env.TABLE_NAME,
+            Key: {
+                BaseUrl: { S: baseUrl },
+                KeyPhrase: { S: phraseOccurance.phrase }
+            },
+            ProjectionExpression: 'Occurances'
+        };
+
+        const result = await ddbClient.send(new GetItemCommand(params));
+        if (result) {
+            phraseOccurance.occurances = phraseOccurance.occurances + result.Item
+        }
+    }
+
+    return keyPhraseOccurances;
+};
+
 const storeKeyPhrases = async (baseUrl, keyPhraseOccurances) => {
     for (const phraseOccurance of keyPhraseOccurances) {
         const params = {
@@ -118,8 +138,9 @@ const baseHandler = async (event) => {
         const text = getAllTextInHTML(body);
         const keyPhrases = await getKeyPhrases(text);
         const keyPhraseOccurances = countKeyPhrases(text, keyPhrases);
+        const combinedOccurances = await combinePreviousOccurances(baseUrl, keyPhraseOccurances);
 
-        await storeKeyPhrases(baseUrl, keyPhraseOccurances);
+        await storeKeyPhrases(baseUrl, combinedOccurances);
     }
 };
 

@@ -58,6 +58,7 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:PutItem
+                  - dynamodb:GetItem
                 Resource: !GetAtt KeyphrasesTable.Arn
                 Effect: Allow
       ManagedPolicyArns:
@@ -65,7 +66,7 @@ Resources:
   FindPhrasesLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: find-phrases.handler
+      Handler: find-keyphrases.handler
       Role: !GetAtt FindKeyphrasesFunctionRole.Arn
       Runtime: nodejs14.x
       CodeUri: ./functions/find-keyphrases

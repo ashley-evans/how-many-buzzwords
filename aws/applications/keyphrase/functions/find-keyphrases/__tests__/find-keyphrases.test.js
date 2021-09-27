@@ -1,6 +1,6 @@
-const { handler } = require('../find-phrases');
+const { handler } = require('../find-keyphrases');
 const path = require('path');
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
@@ -30,6 +30,10 @@ const EXPECTED_BASE_URL = 'http://www.test.com';
 const EXPECTED_CHILD_ROUTE = '/term-extraction';
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 const EXPECTED_CHILD_URL = createChildURL(EXPECTED_BASE_URL, EXPECTED_CHILD_ROUTE);
+
+beforeEach(() => {
+    ddbMock.reset();
+});
 
 describe('input validation', () => {
     test.each([
@@ -93,11 +97,6 @@ test.each([
 });
 
 describe('keyphrase extraction', () => {
-    beforeEach(() => {
-        ddbMock.reset();
-        ddbMock.on(PutItemCommand).resolves();
-    });
-
     test.each([
         [
             'a page with content',
@@ -135,7 +134,8 @@ describe('keyphrase extraction', () => {
             await handler(createEvent(createRecord(EXPECTED_BASE_URL, childURL)));
             const dynamoDbCallsArguments = ddbMock.calls().map(call => call.args);
 
-            expect(dynamoDbCallsArguments).toHaveLength(expectedOccurances.length);
+            // Should call GetItem and PutItem for each occurance
+            expect(dynamoDbCallsArguments).toHaveLength(expectedOccurances.length * 2);
 
             const dynamoDbArgumentInputs = dynamoDbCallsArguments.map(args => args[0].input);
 
@@ -150,4 +150,40 @@ describe('keyphrase extraction', () => {
                 });
             }
         });
+});
+
+test('updates keyphrase occurrance if already exists', async () => {
+    mockURLFromFile(
+        EXPECTED_BASE_URL,
+        EXPECTED_CHILD_ROUTE,
+        path.join(ASSET_FOLDER, 'term-extraction.html'),
+        false
+    );
+
+    const previousPhrase = 'term';
+    const expectedPrevious = 5;
+    ddbMock
+        .on(GetItemCommand, {
+            TableName: TABLE_NAME,
+            Key: {
+                BaseUrl: { S: EXPECTED_BASE_URL },
+                KeyPhrase: { S: previousPhrase }
+            },
+            ProjectionExpression: 'Occurances'
+        })
+        .resolves({
+            Item: expectedPrevious
+        });
+
+    await handler(createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)));
+
+    const dynamoDbArgumentInputs = ddbMock.calls().map(call => call.args[0].input);
+    expect(dynamoDbArgumentInputs).toContainEqual({
+        TableName: TABLE_NAME,
+        Item: {
+            BaseUrl: { S: EXPECTED_BASE_URL },
+            KeyPhrase: { S: previousPhrase },
+            Occurances: { N: expectedPrevious + 3 }
+        }
+    });
 });
