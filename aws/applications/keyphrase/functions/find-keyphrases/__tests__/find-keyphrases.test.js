@@ -1,4 +1,4 @@
-const { handler } = require('../find-keywords');
+const { handler } = require('../find-phrases');
 const path = require('path');
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
@@ -92,7 +92,7 @@ test.each([
     }
 });
 
-describe('keyword extraction', () => {
+describe('keyphrase extraction', () => {
     beforeEach(() => {
         ddbMock.reset();
         ddbMock.on(PutItemCommand).resolves();
@@ -122,7 +122,7 @@ describe('keyword extraction', () => {
             'empty.html',
             []
         ]
-    ])('stores keyword occurances to base URL entry in DynamoDB for %s',
+    ])('stores keyphrase occurances to base URL entry in DynamoDB for %s',
         async (message, childRoute, assetPath, expectedOccurances) => {
             mockURLFromFile(
                 EXPECTED_BASE_URL,
