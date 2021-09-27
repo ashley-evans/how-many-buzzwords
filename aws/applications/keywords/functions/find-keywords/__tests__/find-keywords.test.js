@@ -1,7 +1,14 @@
 const { handler } = require('../find-keywords');
 const path = require('path');
+const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { mockClient } = require('aws-sdk-client-mock');
 
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
+
+const TABLE_NAME = 'test';
+process.env.TABLE_NAME = TABLE_NAME;
+
+const ddbMock = mockClient(DynamoDBClient);
 
 const createEvent = (...records) => {
     return {
@@ -81,10 +88,56 @@ test.each([
         records.push(createRecord(currentRouteDetails.baseUrl, childURL));
     }
 
-    console.log(JSON.stringify(createEvent(...records)));
     await handler(createEvent(...records));
 
     for (let i = 0; i < mockURLs.length; i++) {
         expect(mockURLs[i].isDone()).toBeTruthy();
     }
+});
+
+describe('keyword extraction', () => {
+    beforeEach(() => {
+        ddbMock.reset();
+        ddbMock.on(PutItemCommand).resolves();
+    });
+
+    test('stores keyword occurances to base URL entry in DynamoDB for', async () => {
+        const expectedResults = [
+            { phrase: 'term', occurances: 3 },
+            { phrase: 'extraction', occurances: 7 },
+            { phrase: 'terminology', occurances: 4 },
+            { phrase: 'web', occurances: 4 },
+            { phrase: 'domain', occurances: 6 },
+            { phrase: 'terminology extraction', occurances: 3 },
+            { phrase: 'terms', occurances: 4 },
+            { phrase: 'term extraction', occurances: 2 },
+            { phrase: 'knowledge domain', occurances: 2 },
+            { phrase: 'communities', occurances: 2 }
+        ];
+        mockURLFromFile(
+            EXPECTED_BASE_URL,
+            EXPECTED_CHILD_ROUTE,
+            path.join(ASSET_FOLDER, 'term-extraction.html'),
+            false
+        );
+
+        await handler(createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)));
+        const dynamoDbCallsArguments = ddbMock.calls().map(call => call.args);
+
+        expect(dynamoDbCallsArguments).toHaveLength(expectedResults.length);
+        expect(dynamoDbCallsArguments[0]).toHaveLength(1);
+
+        const dynamoDbArgumentInputs = dynamoDbCallsArguments.map(args => args[0].input);
+
+        for (let i = 0; i < expectedResults.length; i++) {
+            expect(dynamoDbArgumentInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                Item: {
+                    BaseUrl: { S: EXPECTED_BASE_URL },
+                    KeyPhrase: { S: expectedResults[i].phrase },
+                    Occurances: { N: expectedResults[i].occurances }
+                }
+            });
+        }
+    });
 });

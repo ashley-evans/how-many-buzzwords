@@ -8,8 +8,26 @@ Resources:
   KeywordURLsSQSQueue:
     Type: AWS::SQS::Queue
     Properties:
-      VisibilityTimeout: 180
+      VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
       ReceiveMessageWaitTimeSeconds: 20
+  KeywordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: BaseUrl
+          AttributeType: S
+        - 
+          AttributeName: KeyPhrase
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: BaseUrl
+          KeyType: HASH
+        - 
+          AttributeName: KeyPhrase
+          KeyType: RANGE
   FindKeywordsFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -34,6 +52,14 @@ Resources:
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt KeywordURLsSQSQueue.Arn
                 Effect: Allow
+        - PolicyName: KeywordsWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt KeywordsTable.Arn
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   FindKeywordsLambda:
@@ -46,11 +72,15 @@ Resources:
       Description: Crawls a batch of URLs and stores child URLs in DynamoDB
       Layers:
         - Ref: NodeDependencyLayerLogicalID
+      Timeout: 30
       Events:
         KeywordURLsQueueEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt KeywordURLsSQSQueue.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref KeywordsTable
 Outputs:
   QueueARN:
     Description: The ARN of the Keyword URLs SQS Queue
