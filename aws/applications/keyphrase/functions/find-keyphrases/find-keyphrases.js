@@ -108,7 +108,7 @@ const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
 
         const result = await ddbClient.send(new GetItemCommand(params));
         if (result) {
-            phraseOccurance.occurances = phraseOccurance.occurances + result.Item
+            phraseOccurance.occurances = phraseOccurance.occurances + result.Item;
         }
     }
 
