@@ -107,8 +107,8 @@ const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
         };
 
         const result = await ddbClient.send(new GetItemCommand(params));
-        if (result) {
-            phraseOccurance.occurances = phraseOccurance.occurances + result.Item;
+        if (result?.Item?.Occurances?.N) {
+            phraseOccurance.occurances = phraseOccurance.occurances + parseInt(result.Item.Occurances.N);
         }
     }
 
@@ -122,7 +122,7 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurances) => {
             Item: {
                 BaseUrl: { S: baseUrl },
                 KeyPhrase: { S: phraseOccurance.phrase },
-                Occurances: { N: phraseOccurance.occurances }
+                Occurances: { N: phraseOccurance.occurances.toString() }
             }
         };
 

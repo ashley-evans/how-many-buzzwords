@@ -74,6 +74,7 @@ Resources:
       Layers:
         - Ref: NodeDependencyLayerLogicalID
       Timeout: 30
+      MemorySize: 256
       Events:
         KeyphrasesURLsQueueEvent:
           Type: SQS

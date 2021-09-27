@@ -145,7 +145,7 @@ describe('keyphrase extraction', () => {
                     Item: {
                         BaseUrl: { S: EXPECTED_BASE_URL },
                         KeyPhrase: { S: expectedOccurance.phrase },
-                        Occurances: { N: expectedOccurance.occurances }
+                        Occurances: { N: expectedOccurance.occurances.toString() }
                     }
                 });
             }
@@ -172,7 +172,11 @@ test('updates keyphrase occurrance if already exists', async () => {
             ProjectionExpression: 'Occurances'
         })
         .resolves({
-            Item: expectedPrevious
+            Item: {
+                Occurances: {
+                    N: expectedPrevious
+                }
+            }
         });
 
     await handler(createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)));
@@ -183,7 +187,7 @@ test('updates keyphrase occurrance if already exists', async () => {
         Item: {
             BaseUrl: { S: EXPECTED_BASE_URL },
             KeyPhrase: { S: previousPhrase },
-            Occurances: { N: expectedPrevious + 3 }
+            Occurances: { N: (expectedPrevious + 3).toString() }
         }
     });
 });
