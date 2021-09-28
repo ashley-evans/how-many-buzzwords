@@ -66,7 +66,7 @@ Once the lambda has been invoked, then you can attach the debugger to the proces
 
 The CI pipeline requires access to two users to perform both template validation and stack deployment. These user's can be created using the following command:
 ```shell
-aws cloudformation deploy --template-file ./aws/templates/buzzword-ci-users.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
+aws cloudformation deploy --template-file ./aws/templates/buzzword-ci-users-template.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
 ```
 
 The following GitHub secrets should be created with the following values (Referring to the resources in the `buzzword-ci-users.yml` file):
