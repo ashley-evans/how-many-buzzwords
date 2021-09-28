@@ -1,0 +1,92 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Template for Keyphrases application's resources
+Parameters:
+  NodeDependencyLayerLogicalID:
+    Type: String
+    Description: 'Logical ID of the layer containing common Node Dependencies'
+Resources:
+  KeyphrasesURLsSQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
+      ReceiveMessageWaitTimeSeconds: 20
+  KeyphrasesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: BaseUrl
+          AttributeType: S
+        - 
+          AttributeName: KeyPhrase
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: BaseUrl
+          KeyType: HASH
+        - 
+          AttributeName: KeyPhrase
+          KeyType: RANGE
+  FindKeyphrasesFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: KeyphraseURLsSQSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
+                Effect: Allow
+        - PolicyName: KeyphrasesTableWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                Resource: !GetAtt KeyphrasesTable.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  FindPhrasesLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: find-keyphrases.handler
+      Role: !GetAtt FindKeyphrasesFunctionRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/find-keyphrases
+      Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Timeout: 30
+      MemorySize: 256
+      Events:
+        KeyphrasesURLsQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt KeyphrasesURLsSQSQueue.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref KeyphrasesTable
+Outputs:
+  QueueARN:
+    Description: The ARN of the Keyphrases URLs SQS Queue
+    Value: !GetAtt KeyphrasesURLsSQSQueue.Arn
+  QueueURL:
+    Description: The URL of the Keyphrases URLs SQS Queue
+    Value: !Ref KeyphrasesURLsSQSQueue

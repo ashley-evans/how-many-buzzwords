@@ -10,13 +10,19 @@
         "eslint-plugin-jest": "^24.4.0",
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^5.1.0",
-        "jest": "^27.0.6"
+        "fs-extra": "^10.0.0",
+        "jest": "^27.0.6",
+        "nock": "^13.1.3"
     },
     "dependencies": {
-        "@aws-sdk/client-dynamodb": "^3.24.0"
+        "@aws-sdk/client-dynamodb": "^3.34.0",
+        "@middy/core": "^2.5.1",
+        "@middy/sqs-json-body-parser": "^2.5.1",
+        "@middy/validator": "^2.5.1"
     },
     "scripts": {
-        "test": "jest --verbose"
+        "ci": "find ! -path \"*/node_modules/*\" ! -path \"*/.aws-sam/*\" -name package.json -execdir npm ci \\;",
+        "test": "node node_modules/.bin/jest --verbose"
     },
     "jest": {
         "modulePathIgnorePatterns": [

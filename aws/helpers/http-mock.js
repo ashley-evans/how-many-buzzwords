@@ -15,6 +15,8 @@ const mockURLFromFile = (domainName, uri, filePath, persist) => {
     if (persist) {
         mock.persist();
     }
+
+    return mock;
 };
 
 const readFile = (filePath) => {

@@ -26,7 +26,7 @@ find ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" -name package.json -execd
 
 Run the following command to validate the stack template definition:
 ```shell
-find ! -path "*/.aws-sam/*" -name *-template.yml -execdir sam validate --template {} \;
+xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
 ## Setup

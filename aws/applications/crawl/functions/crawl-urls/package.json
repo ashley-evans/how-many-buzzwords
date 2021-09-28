@@ -2,15 +2,8 @@
     "name": "buzzword-aws-crawl-urls-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@middy/core": "^2.5.1",
         "@middy/http-error-handler": "^2.5.1",
-        "@middy/sqs-json-body-parser": "^2.5.1",
-        "@middy/validator": "^2.5.1",
         "apify": "^2.0.7",
         "http-status-codes": "^2.1.4"
-    },
-    "devDependencies": {
-        "fs-extra": "^10.0.0",
-        "nock": "^13.1.3"
     }
 }

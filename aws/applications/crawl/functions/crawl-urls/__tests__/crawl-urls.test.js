@@ -4,7 +4,7 @@ const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
-const { mockURLFromFile } = require('./helpers/http-mock');
+const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 
 const ENTRY_POINT_URL = 'http://example.com/';
 const EXTERNAL_URL = 'http://external-example.com/';
@@ -37,6 +37,7 @@ const createEvent = (...records) => {
 };
 
 beforeAll(async () => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
     mockURLFromFile(ENTRY_POINT_URL, '/', path.join(ASSET_FOLDER, 'entry-point.html'), true);
     mockURLFromFile(ENTRY_POINT_URL, '/sub-page-1', path.join(ASSET_FOLDER, 'sub-page-1.html'), true);
     readdirSync(DEPTH_FOLDER).forEach(file => {
