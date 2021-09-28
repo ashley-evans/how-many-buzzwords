@@ -28,6 +28,8 @@ Resources:
         - 
           AttributeName: KeyPhrase
           KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
   FindKeyphrasesFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -90,3 +92,6 @@ Outputs:
   QueueURL:
     Description: The URL of the Keyphrases URLs SQS Queue
     Value: !Ref KeyphrasesURLsSQSQueue
+  TableStream:
+    Description: The ARN of the Keyphrases Table's Stream
+    Value: !GetAtt KeyphrasesTable.StreamArn
