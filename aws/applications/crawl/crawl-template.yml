@@ -37,18 +37,14 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        -
-          AttributeName: BaseUrl
+        - AttributeName: BaseUrl
           AttributeType: S
-        - 
-          AttributeName: ChildUrl
+        - AttributeName: ChildUrl
           AttributeType: S
       KeySchema:
-        -
-          AttributeName: BaseUrl
+        - AttributeName: BaseUrl
           KeyType: HASH
-        - 
-          AttributeName: ChildUrl
+        - AttributeName: ChildUrl
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE

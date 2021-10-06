@@ -1,6 +1,7 @@
 openapi: "3.0.1"
 info:
-  title: "buzzword-stack-api-gateway"
+  title: 
+    Fn::Sub: "buzzword-http-gateway-${EnvironmentNameSuffix}"
   description: "Gateway to Buzzword Stack Resources"
   version: "1.0"
 paths:

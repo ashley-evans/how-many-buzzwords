@@ -1,0 +1,120 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Template for Socket application's resources
+Parameters:
+  ApiGatewayName:
+    Type: String
+    Description: The name of the Web Socket API Gateway
+  NodeDependencyLayerLogicalID:
+    Type: String
+    Description: 'Logical ID of the layer containing common Node Dependencies'
+Resources:
+  ActiveConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: ConnectionID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ConnectionID
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  ConnectionManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ManageConnectionTablePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt ActiveConnectionsTable.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  ConnectionManager:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: connection-manager.handler
+      Role: !GetAtt ConnectionManagerRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/connection-manager
+      Description: Manages active web socket connections
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ActiveConnectionsTable
+  SocketGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref ApiGatewayName
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+  ConnectionManagerAccessPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ConnectionManager
+      Principal: apigateway.amazonaws.com
+  ConnectionIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref SocketGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - !GetAtt ConnectionManager.Arn
+          - /invocations
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SocketGateway
+      RouteKey: $connect
+      AuthorizationType: NONE
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ConnectionIntegration
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SocketGateway
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ConnectionIntegration
+  ConnectionDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+    Properties:
+      ApiId: !Ref SocketGateway
+  SocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: prod
+      DeploymentId: !Ref ConnectionDeployment
+      ApiId: !Ref SocketGateway

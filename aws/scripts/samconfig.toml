@@ -6,6 +6,7 @@ s3_prefix = "buzzword-stack-dev"
 region = "eu-west-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "EnvironmentNameSuffix=dev"
 
 [production.deploy.parameters]
 stack_name = "buzzword-stack-prod"
@@ -14,3 +15,4 @@ s3_prefix = "buzzword-stack-prod"
 region = "eu-west-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "EnvironmentNameSuffix=prod"
