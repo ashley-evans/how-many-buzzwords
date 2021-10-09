@@ -10,6 +10,7 @@ parserOptions:
 rules: {
   indent: ["error", 4],
   semi: ["error", "always"],
+  max-len: ["error"],
   jest/no-disabled-tests: "warn",
   jest/no-focused-tests: "error",
   jest/no-identical-title: "error",

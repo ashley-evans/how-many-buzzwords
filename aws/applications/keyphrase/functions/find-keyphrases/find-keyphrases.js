@@ -12,7 +12,11 @@ const toString = require('nlcst-to-string');
 
 const escapeRegExp = require('lodash.escaperegexp');
 
-const { DynamoDBClient, PutItemCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const {
+    DynamoDBClient,
+    PutItemCommand,
+    GetItemCommand
+} = require('@aws-sdk/client-dynamodb');
 const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
@@ -31,11 +35,15 @@ const INPUT_SCHEMA = {
                         properties: {
                             baseUrl: {
                                 type: 'string',
-                                pattern: '(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                pattern: `(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0
+                                    -9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-z
+                                    A-Z0-9@:%_\\+.~#?&//=]*)`
                             },
                             childUrl: {
                                 type: 'string',
-                                pattern: '(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                pattern: `(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0
+                                    -9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-z
+                                    A-Z0-9@:%_\\+.~#?&//=]*)`
                             }
                         }
                     }
@@ -84,7 +92,10 @@ const getKeyPhrases = async (text) => {
 const countKeyPhrases = (text, keyPhrases) => {
     const keyPhraseOccurances = [];
     for (const phrase of keyPhrases) {
-        const occuranceExpression = new RegExp(`\\b${escapeRegExp(phrase)}\\b`, 'gi');
+        const occuranceExpression = new RegExp(
+            `\\b${escapeRegExp(phrase)}\\b`,
+            'gi'
+        );
         const occurances = (text.match(occuranceExpression) || []).length;
         keyPhraseOccurances.push({
             phrase,
@@ -108,7 +119,8 @@ const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
 
         const result = await ddbClient.send(new GetItemCommand(params));
         if (result?.Item?.Occurances?.N) {
-            phraseOccurance.occurances = phraseOccurance.occurances + parseInt(result.Item.Occurances.N);
+            phraseOccurance.occurances = phraseOccurance.occurances +
+                parseInt(result.Item.Occurances.N);
         }
     }
 
@@ -138,7 +150,10 @@ const baseHandler = async (event) => {
         const text = getAllTextInHTML(body);
         const keyPhrases = await getKeyPhrases(text);
         const keyPhraseOccurances = countKeyPhrases(text, keyPhrases);
-        const combinedOccurances = await combinePreviousOccurances(baseUrl, keyPhraseOccurances);
+        const combinedOccurances = await combinePreviousOccurances(
+            baseUrl,
+            keyPhraseOccurances
+        );
 
         await storeKeyPhrases(baseUrl, combinedOccurances);
     }

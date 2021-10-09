@@ -29,7 +29,10 @@ const createChildURL = (baseUrl, childRoute) => {
 const EXPECTED_BASE_URL = 'http://www.test.com';
 const EXPECTED_CHILD_ROUTE = '/term-extraction';
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
-const EXPECTED_CHILD_URL = createChildURL(EXPECTED_BASE_URL, EXPECTED_CHILD_ROUTE);
+const EXPECTED_CHILD_URL = createChildURL(
+    EXPECTED_BASE_URL,
+    EXPECTED_CHILD_ROUTE
+);
 
 beforeEach(() => {
     ddbMock.reset();
@@ -40,13 +43,28 @@ describe('input validation', () => {
         ['event with no records', {}],
         ['record with missing body', createEvent({})],
         ['record with non-object body', createEvent({ body: 'test' })],
-        ['record with missing BaseUrl value', createEvent(createRecord(undefined, EXPECTED_CHILD_URL))],
-        ['record with missing ChildUrl value', createEvent(createRecord(EXPECTED_BASE_URL, undefined))],
-        ['record with invalid BaseUrl value', createEvent(createRecord('not a url', EXPECTED_CHILD_URL))],
-        ['record with invalid ChildUrl value', createEvent(createRecord(EXPECTED_BASE_URL, 'not a url'))]
-    ])('returns failed validation error given event with %s', async (message, input) => {
-        await expect(handler(input)).rejects.toThrowError('Event object failed validation');
-    });
+        [
+            'record with missing BaseUrl value',
+            createEvent(createRecord(undefined, EXPECTED_CHILD_URL))
+        ],
+        [
+            'record with missing ChildUrl value',
+            createEvent(createRecord(EXPECTED_BASE_URL, undefined))
+        ],
+        [
+            'record with invalid BaseUrl value',
+            createEvent(createRecord('not a url', EXPECTED_CHILD_URL))
+        ],
+        [
+            'record with invalid ChildUrl value',
+            createEvent(createRecord(EXPECTED_BASE_URL, 'not a url'))
+        ]
+    ])('returns failed validation error given event with %s',
+        async (message, input) => {
+            await expect(handler(input)).rejects.toThrowError(
+                'Event object failed validation'
+            );
+        });
 });
 
 test.each([
@@ -85,7 +103,10 @@ test.each([
         );
         mockURLs.push(mockURL);
 
-        const childURL = createChildURL(EXPECTED_BASE_URL, currentRouteDetails.childRoute);
+        const childURL = createChildURL(
+            EXPECTED_BASE_URL,
+            currentRouteDetails.childRoute
+        );
         records.push(createRecord(EXPECTED_BASE_URL, childURL));
     }
 
@@ -131,13 +152,19 @@ describe('keyphrase extraction', () => {
             );
 
             const childURL = createChildURL(EXPECTED_BASE_URL, childRoute);
-            await handler(createEvent(createRecord(EXPECTED_BASE_URL, childURL)));
-            const dynamoDbCallsArguments = ddbMock.calls().map(call => call.args);
+            await handler(
+                createEvent(createRecord(EXPECTED_BASE_URL, childURL))
+            );
+            const dynamoDbCallsArguments = ddbMock.calls()
+                .map(call => call.args);
 
             // Should call GetItem and PutItem for each occurance
-            expect(dynamoDbCallsArguments).toHaveLength(expectedOccurances.length * 2);
+            expect(dynamoDbCallsArguments).toHaveLength(
+                expectedOccurances.length * 2
+            );
 
-            const dynamoDbArgumentInputs = dynamoDbCallsArguments.map(args => args[0].input);
+            const dynamoDbArgumentInputs = dynamoDbCallsArguments
+                .map(args => args[0].input);
 
             for (const expectedOccurance of expectedOccurances) {
                 expect(dynamoDbArgumentInputs).toContainEqual({
@@ -145,7 +172,9 @@ describe('keyphrase extraction', () => {
                     Item: {
                         BaseUrl: { S: EXPECTED_BASE_URL },
                         KeyPhrase: { S: expectedOccurance.phrase },
-                        Occurances: { N: expectedOccurance.occurances.toString() }
+                        Occurances: {
+                            N: expectedOccurance.occurances.toString()
+                        }
                     }
                 });
             }
@@ -179,9 +208,12 @@ test('updates keyphrase occurrance if already exists', async () => {
             }
         });
 
-    await handler(createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)));
+    await handler(
+        createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+    );
 
-    const dynamoDbArgumentInputs = ddbMock.calls().map(call => call.args[0].input);
+    const dynamoDbArgumentInputs = ddbMock.calls()
+        .map(call => call.args[0].input);
     expect(dynamoDbArgumentInputs).toContainEqual({
         TableName: TABLE_NAME,
         Item: {
