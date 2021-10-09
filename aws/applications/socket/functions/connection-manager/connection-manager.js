@@ -14,8 +14,8 @@ const INPUT_SCHEMA = {
                 },
                 domainName: {
                     type: 'string',
-                    pattern: `^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z
-                        0-9][a-z0-9-]{0,61}[a-z0-9]$`
+                    // eslint-disable-next-line max-len
+                    pattern: '^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$'
                 },
                 stage: {
                     type: 'string'
