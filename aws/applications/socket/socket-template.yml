@@ -13,10 +13,10 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: ConnectionID
+        - AttributeName: ConnectionId
           AttributeType: S
       KeySchema:
-        - AttributeName: ConnectionID
+        - AttributeName: ConnectionId
           KeyType: HASH
       StreamSpecification:
         StreamViewType: NEW_IMAGE
