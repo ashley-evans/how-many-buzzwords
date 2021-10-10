@@ -15,6 +15,16 @@ const INPUT_SCHEMA = {
     type: 'object',
     required: ['requestContext'],
     properties: {
+        queryStringParameters: {
+            type: 'object',
+            required: [process.env.SEARCH_KEY],
+            properties: {
+                [process.env.SEARCH_KEY]: {
+                    type: 'string',
+                    pattern: process.env.SEARCH_KEY_PATTERN
+                }
+            }
+        },
         requestContext: {
             type: 'object',
             required: ['connectionId', 'domainName', 'stage', 'routeKey'],
@@ -38,13 +48,14 @@ const INPUT_SCHEMA = {
     }
 };
 
-const storeConnection = async (connectionId, domainName, stage) => {
+const storeConnection = async (connectionId, domainName, stage, searchKey) => {
     const connectionEndpoint = `https://${domainName}/${stage}`;
     const params = {
         TableName: process.env.TABLE_NAME,
         Item: {
             ConnectionId: { S: connectionId },
-            ConnectionEndpoint: { S: connectionEndpoint }
+            ConnectionEndpoint: { S: connectionEndpoint },
+            SearchKey: { S: searchKey }
         }
     };
 
@@ -79,7 +90,8 @@ const baseHandler = async (event) => {
             await storeConnection(
                 requestContext.connectionId,
                 requestContext.domainName,
-                requestContext.stage
+                requestContext.stage,
+                event.queryStringParameters[process.env.SEARCH_KEY]
             );
 
             return createResponse(StatusCodes.OK, 'Connected successfully.');

@@ -7,23 +7,34 @@ const { CONNECT_ROUTE_KEY, DISCONNECT_ROUTE_KEY } = require('../constants');
 const EXPECTED_CONNECTION_ID = 'Gyvd8cAwLPECHlQ=';
 const EXPECTED_DOMAIN_NAME = 'test.test.com';
 const EXPECTED_STAGE = 'test';
+const EXPECTED_SEARCH_KEY = 'valid_key';
 
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
 process.env.ERROR_LOGGING_ENABLED = false;
+const SEARCH_KEY = 'baseUrl';
+process.env.SEARCH_KEY = SEARCH_KEY;
+process.env.SEARCH_KEY_PATTERN = EXPECTED_SEARCH_KEY;
 
 const ddbMock = mockClient(DynamoDBClient);
 
 const { handler } = require('../connection-manager');
 
-const createEvent = (connectionId, domainName, stage, routeKey) => {
+const createRequestContext = (connectionId, domainName, stage, routeKey) => {
     return {
-        requestContext: {
-            connectionId,
-            domainName,
-            stage,
-            routeKey
-        }
+        connectionId,
+        domainName,
+        stage,
+        routeKey
+    };
+};
+
+const createEvent = (requestContext, searchKey) => {
+    return {
+        queryStringParameters: {
+            [SEARCH_KEY]: searchKey
+        },
+        requestContext
     };
 };
 
@@ -37,51 +48,102 @@ beforeEach(() => {
 
 describe('input validation', () => {
     test.each([
-        ['event with missing requestContext', {}],
-        ['event with non-object requestContext', { requestContext: '' }],
+        [
+            'queryStringParameters with missing search key',
+            createEvent(
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_DOMAIN_NAME,
+                    EXPECTED_STAGE,
+                    CONNECT_ROUTE_KEY
+                )
+            )
+        ],
+        [
+            'queryStringParameters with invalid search key',
+            createEvent(
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_DOMAIN_NAME,
+                    EXPECTED_STAGE,
+                    CONNECT_ROUTE_KEY
+                ),
+                'not a valid search key'
+            )
+        ],
+        [
+            'event with missing requestContext',
+            {
+                queryStringParameters: {
+                    baseUrl: EXPECTED_SEARCH_KEY
+                }
+            }
+        ],
+        [
+            'event with non-object requestContext',
+            createEvent(
+                '',
+                EXPECTED_SEARCH_KEY
+            )
+        ],
         [
             'requestContext with missing connectionId',
             createEvent(
-                undefined,
-                EXPECTED_DOMAIN_NAME,
-                EXPECTED_STAGE,
-                CONNECT_ROUTE_KEY
+                createRequestContext(
+                    undefined,
+                    EXPECTED_DOMAIN_NAME,
+                    EXPECTED_STAGE,
+                    CONNECT_ROUTE_KEY
+                ),
+                EXPECTED_SEARCH_KEY
             )
         ],
         [
             'requestContext with missing domainName',
             createEvent(
-                EXPECTED_CONNECTION_ID,
-                undefined,
-                EXPECTED_STAGE,
-                CONNECT_ROUTE_KEY
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    undefined,
+                    EXPECTED_STAGE,
+                    CONNECT_ROUTE_KEY
+                ),
+                EXPECTED_SEARCH_KEY
             )
         ],
         [
             'requestContext with invalid domainName',
             createEvent(
-                EXPECTED_CONNECTION_ID,
-                'not a domain',
-                EXPECTED_STAGE,
-                CONNECT_ROUTE_KEY
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    'not a domain',
+                    EXPECTED_STAGE,
+                    CONNECT_ROUTE_KEY
+                ),
+                EXPECTED_SEARCH_KEY
             )
         ],
         [
             'requestContext with missing stage',
             createEvent(
-                EXPECTED_CONNECTION_ID,
-                EXPECTED_DOMAIN_NAME,
-                undefined,
-                CONNECT_ROUTE_KEY
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_DOMAIN_NAME,
+                    undefined,
+                    CONNECT_ROUTE_KEY
+                ),
+                EXPECTED_SEARCH_KEY
             )
         ],
         [
             'requestContext with missing routeKey',
             createEvent(
-                EXPECTED_CONNECTION_ID,
-                EXPECTED_DOMAIN_NAME,
-                EXPECTED_STAGE,
-                undefined
+                createRequestContext(
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_DOMAIN_NAME,
+                    EXPECTED_STAGE,
+                    undefined
+                ),
+                EXPECTED_SEARCH_KEY
             )
         ]
     ])('returns failed validation error given event with %s',
@@ -102,10 +164,13 @@ test(
     'connect event returns success on successful connection store',
     async () => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            CONNECT_ROUTE_KEY
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                CONNECT_ROUTE_KEY
+            ),
+            EXPECTED_SEARCH_KEY
         );
 
         const response = await handler(event);
@@ -120,13 +185,16 @@ test(
 );
 
 test(
-    'connect event stores connection id and endpoint in DynamoDB table',
+    'connect event stores connection details in DynamoDB table',
     async () => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            CONNECT_ROUTE_KEY
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                CONNECT_ROUTE_KEY
+            ),
+            EXPECTED_SEARCH_KEY
         );
         const expectedEndpoint =
             `https://${EXPECTED_DOMAIN_NAME}/${EXPECTED_STAGE}`;
@@ -144,6 +212,9 @@ test(
                 },
                 ConnectionEndpoint: {
                     S: expectedEndpoint
+                },
+                SearchKey: {
+                    S: EXPECTED_SEARCH_KEY
                 }
             }
         });
@@ -162,10 +233,13 @@ test.each([
 ])('%s does not delete connection information from DynamoDB table',
     async (message, routeKey) => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            routeKey
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                routeKey
+            ),
+            EXPECTED_SEARCH_KEY
         );
 
         await handler(event);
@@ -187,10 +261,13 @@ test(
     'disconnect event returns success on successful connection deletion',
     async () => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            DISCONNECT_ROUTE_KEY
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                DISCONNECT_ROUTE_KEY
+            ),
+            EXPECTED_SEARCH_KEY
         );
 
         const response = await handler(event);
@@ -207,10 +284,13 @@ test(
 test('disconnect event deletes connection information from DynamoDB table',
     async () => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            DISCONNECT_ROUTE_KEY
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                DISCONNECT_ROUTE_KEY
+            ),
+            EXPECTED_SEARCH_KEY
         );
 
         await handler(event);
@@ -238,13 +318,16 @@ test.each([
         'other event',
         'test'
     ]
-])('%s does not store connection id and endpoint in DynamoDB table',
+])('%s does not store connection details in DynamoDB table',
     async (message, routeKey) => {
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            routeKey
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                routeKey
+            ),
+            EXPECTED_SEARCH_KEY
         );
         const expectedEndpoint =
             `https://${EXPECTED_DOMAIN_NAME}/${EXPECTED_STAGE}`;
@@ -261,6 +344,9 @@ test.each([
                 },
                 ConnectionEndpoint: {
                     S: expectedEndpoint
+                },
+                SearchKey: {
+                    S: EXPECTED_SEARCH_KEY
                 }
             }
         });
@@ -281,10 +367,13 @@ test.each([
     async (message, routeKey) => {
         jest.spyOn(console, 'error').mockImplementation(() => {});
         const event = createEvent(
-            EXPECTED_CONNECTION_ID,
-            EXPECTED_DOMAIN_NAME,
-            EXPECTED_STAGE,
-            routeKey
+            createRequestContext(
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_DOMAIN_NAME,
+                EXPECTED_STAGE,
+                routeKey
+            ),
+            EXPECTED_SEARCH_KEY
         );
 
         ddbMock.rejects();
@@ -302,10 +391,13 @@ test.each([
 
 test('other event returns bad request error', async () => {
     const event = createEvent(
-        EXPECTED_CONNECTION_ID,
-        EXPECTED_DOMAIN_NAME,
-        EXPECTED_STAGE,
-        'test'
+        createRequestContext(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            'test'
+        ),
+        EXPECTED_SEARCH_KEY
     );
 
     const response = await handler(event);

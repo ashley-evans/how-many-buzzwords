@@ -7,6 +7,12 @@ Parameters:
   NodeDependencyLayerLogicalID:
     Type: String
     Description: 'Logical ID of the layer containing common Node Dependencies'
+  SearchKey:
+    Type: String
+    Description: The key to search for table updates
+  SearchKeyPattern:
+    Type: String
+    Description: RegEx pattern to validate the search key value
 Resources:
   ActiveConnectionsTable:
     Type: AWS::DynamoDB::Table
@@ -59,6 +65,8 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActiveConnectionsTable
           ERROR_LOGGING_ENABLED: true
+          SEARCH_KEY: !Ref SearchKey
+          SEARCH_KEY_PATTERN: !Ref SearchKeyPattern
   SocketGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -118,3 +126,47 @@ Resources:
       StageName: prod
       DeploymentId: !Ref ConnectionDeployment
       ApiId: !Ref SocketGateway
+  NewConnectionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ActiveConnectionsTableReadStreamPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !GetAtt ActiveConnectionsTable.StreamArn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
+  NewConnection:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: new-connection.handler
+      Role: !GetAtt NewConnectionRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/new-connection
+      Description: Provides new connections with current database state
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Events:
+        ActiveConnectionsStreamEvent:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt ActiveConnectionsTable.StreamArn
+            BatchSize: 1
+            StartingPosition: LATEST
