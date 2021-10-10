@@ -1,6 +1,6 @@
-const { handler } = require('../connection-manager');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
+const { StatusCodes } = require('http-status-codes');
 
 const { CONNECT_ROUTE_KEY, DISCONNECT_ROUTE_KEY } = require('../constants');
 
@@ -10,8 +10,11 @@ const EXPECTED_STAGE = 'test';
 
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
+process.env.ERROR_LOGGING_ENABLED = false;
 
 const ddbMock = mockClient(DynamoDBClient);
+
+const { handler } = require('../connection-manager');
 
 const createEvent = (connectionId, domainName, stage, routeKey) => {
     return {
@@ -23,6 +26,10 @@ const createEvent = (connectionId, domainName, stage, routeKey) => {
         }
     };
 };
+
+beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+});
 
 beforeEach(() => {
     ddbMock.reset();
@@ -79,15 +86,42 @@ describe('input validation', () => {
         ]
     ])('returns failed validation error given event with %s',
         async (message, input) => {
-            await expect(handler(input)).rejects.toThrowError(
-                'Event object failed validation'
-            );
+            const response = await handler(input);
+
+            expect(response).toBeDefined();
+            expect(response.body).toEqual('Event object failed validation');
+            expect(response.headers).toEqual({
+                'Content-Type': 'text/plain'
+            });
+            expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
         }
     );
 });
 
-describe('incoming connect event', () => {
-    test('stores connection id and endpoint in DynamoDB table', async () => {
+test(
+    'connect event returns success on successful connection store',
+    async () => {
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            CONNECT_ROUTE_KEY
+        );
+
+        const response = await handler(event);
+
+        expect(response).toBeDefined();
+        expect(response.statusCode).toEqual(StatusCodes.OK);
+        expect(response.headers).toEqual({
+            'Content-Type': 'text/plain'
+        });
+        expect(response.body).toEqual('Connected successfully.');
+    }
+);
+
+test(
+    'connect event stores connection id and endpoint in DynamoDB table',
+    async () => {
         const event = createEvent(
             EXPECTED_CONNECTION_ID,
             EXPECTED_DOMAIN_NAME,
@@ -105,28 +139,181 @@ describe('incoming connect event', () => {
         expect(dynamoDbCallsInputs).toContainEqual({
             TableName: TABLE_NAME,
             Item: {
-                ConnectionId: EXPECTED_CONNECTION_ID,
-                ConnectionEndpoint: expectedEndpoint
+                ConnectionId: {
+                    S: EXPECTED_CONNECTION_ID
+                },
+                ConnectionEndpoint: {
+                    S: expectedEndpoint
+                }
             }
         });
-    });
-});
+    }
+);
 
-describe('incoming disconnect event', () => {
-    test(
-        'does not store connection id and endpoint in DynamoDB table',
-        async () => {
-            const event = createEvent(
-                EXPECTED_CONNECTION_ID,
-                EXPECTED_DOMAIN_NAME,
-                EXPECTED_STAGE,
-                DISCONNECT_ROUTE_KEY
-            );
+test.each([
+    [
+        'connect event',
+        CONNECT_ROUTE_KEY
+    ],
+    [
+        'other event',
+        'test'
+    ]
+])('%s does not delete connection information from DynamoDB table',
+    async (message, routeKey) => {
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            routeKey
+        );
 
-            await handler(event);
-            const dynamoDbCalls = ddbMock.calls();
+        await handler(event);
+        const dynamoDbCallsInputs = ddbMock.calls()
+            .map(call => call.args[0].input);
 
-            expect(dynamoDbCalls).toHaveLength(0);
-        }
+        expect(dynamoDbCallsInputs).not.toContainEqual({
+            TableName: TABLE_NAME,
+            Key: {
+                ConnectionId: {
+                    S: EXPECTED_CONNECTION_ID
+                }
+            }
+        });
+    }
+);
+
+test(
+    'disconnect event returns success on successful connection deletion',
+    async () => {
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            DISCONNECT_ROUTE_KEY
+        );
+
+        const response = await handler(event);
+
+        expect(response).toBeDefined();
+        expect(response.statusCode).toEqual(StatusCodes.OK);
+        expect(response.headers).toEqual({
+            'Content-Type': 'text/plain'
+        });
+        expect(response.body).toEqual('Disconnected successfully.');
+    }
+);
+
+test('disconnect event deletes connection information from DynamoDB table',
+    async () => {
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            DISCONNECT_ROUTE_KEY
+        );
+
+        await handler(event);
+        const dynamoDbCallsInputs = ddbMock.calls()
+            .map(call => call.args[0].input);
+
+        expect(dynamoDbCallsInputs).toHaveLength(1);
+        expect(dynamoDbCallsInputs).toContainEqual({
+            TableName: TABLE_NAME,
+            Key: {
+                ConnectionId: {
+                    S: EXPECTED_CONNECTION_ID
+                }
+            }
+        });
+    }
+);
+
+test.each([
+    [
+        'disconnect event',
+        DISCONNECT_ROUTE_KEY
+    ],
+    [
+        'other event',
+        'test'
+    ]
+])('%s does not store connection id and endpoint in DynamoDB table',
+    async (message, routeKey) => {
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            routeKey
+        );
+        const expectedEndpoint =
+            `https://${EXPECTED_DOMAIN_NAME}/${EXPECTED_STAGE}`;
+
+        await handler(event);
+        const dynamoDbCallsInputs = ddbMock.calls()
+            .map(call => call.args[0].input);
+
+        expect(dynamoDbCallsInputs).not.toContainEqual({
+            TableName: TABLE_NAME,
+            Item: {
+                ConnectionId: {
+                    S: EXPECTED_CONNECTION_ID
+                },
+                ConnectionEndpoint: {
+                    S: expectedEndpoint
+                }
+            }
+        });
+    }
+);
+
+test.each([
+    [
+        'connect event',
+        CONNECT_ROUTE_KEY
+    ],
+    [
+        'disconnect event',
+        DISCONNECT_ROUTE_KEY
+    ]
+])(
+    '%s returns internal server error on DynamoDB error',
+    async (message, routeKey) => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        const event = createEvent(
+            EXPECTED_CONNECTION_ID,
+            EXPECTED_DOMAIN_NAME,
+            EXPECTED_STAGE,
+            routeKey
+        );
+
+        ddbMock.rejects();
+
+        const response = await handler(event);
+
+        expect(response).toBeDefined();
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+        expect(response.headers).toEqual({
+            'Content-Type': 'text/plain'
+        });
+        expect(response.body).toEqual('Failed to process connection.');
+    }
+);
+
+test('other event returns bad request error', async () => {
+    const event = createEvent(
+        EXPECTED_CONNECTION_ID,
+        EXPECTED_DOMAIN_NAME,
+        EXPECTED_STAGE,
+        'test'
     );
+
+    const response = await handler(event);
+
+    expect(response).toBeDefined();
+    expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    expect(response.headers).toEqual({
+        'Content-Type': 'text/plain'
+    });
+    expect(response.body).toEqual('Cannot process connection.');
 });
