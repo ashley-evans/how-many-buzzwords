@@ -9,10 +9,16 @@ Parameters:
     Description: 'Logical ID of the layer containing common Node Dependencies'
   SearchKey:
     Type: String
-    Description: The key to search for table updates
+    Description: The key to search for relevant table updates
   SearchKeyPattern:
     Type: String
     Description: RegEx pattern to validate the search key value
+  TableName:
+    Type: String
+    Description: The name of the table to get updates from
+  TableArn:
+    Type: String
+    Description: The ARN of the table to get updates from
 Resources:
   ActiveConnectionsTable:
     Type: AWS::DynamoDB::Table
@@ -151,6 +157,14 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt ActiveConnectionsTable.StreamArn
                 Effect: Allow
+        - PolicyName: SearchTableQueryPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:Query
+                Resource: !Ref TableArn
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
   NewConnection:
@@ -172,4 +186,5 @@ Resources:
             StartingPosition: LATEST
       Environment:
         Variables:
+          TABLE_NAME: !Ref TableName
           SEARCH_KEY_PATTERN: !Ref SearchKeyPattern
