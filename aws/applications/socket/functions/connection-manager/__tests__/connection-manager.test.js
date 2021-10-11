@@ -146,7 +146,7 @@ describe('input validation', () => {
                 EXPECTED_SEARCH_KEY
             )
         ]
-    ])('returns failed validation error given event with %s',
+    ])('returns failed validation error given %s',
         async (message, input) => {
             const response = await handler(input);
 

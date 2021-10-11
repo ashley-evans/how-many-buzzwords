@@ -59,7 +59,7 @@ describe('input validation', () => {
             'record with invalid ChildUrl value',
             createEvent(createRecord(EXPECTED_BASE_URL, 'not a url'))
         ]
-    ])('returns failed validation error given event with %s',
+    ])('returns failed validation error given %s',
         async (message, input) => {
             await expect(handler(input)).rejects.toThrowError(
                 'Event object failed validation'

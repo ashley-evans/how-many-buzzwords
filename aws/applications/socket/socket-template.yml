@@ -170,3 +170,6 @@ Resources:
             Stream: !GetAtt ActiveConnectionsTable.StreamArn
             BatchSize: 1
             StartingPosition: LATEST
+      Environment:
+        Variables:
+          SEARCH_KEY_PATTERN: !Ref SearchKeyPattern
