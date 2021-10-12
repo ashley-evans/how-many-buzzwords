@@ -9,7 +9,7 @@ Parameters:
     Description: 'Logical ID of the layer containing common Node Dependencies'
   SearchKey:
     Type: String
-    Description: The key to search for relevant table updates
+    Description: The hash key to search for relevant table updates
   SearchKeyPattern:
     Type: String
     Description: RegEx pattern to validate the search key value
@@ -187,4 +187,5 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
+          SEARCH_KEY: !Ref SearchKey
           SEARCH_KEY_PATTERN: !Ref SearchKeyPattern

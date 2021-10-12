@@ -1,5 +1,8 @@
 const middy = require('@middy/core');
 const validator = require('@middy/validator');
+const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
+
+const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
     type: 'object',
@@ -63,7 +66,21 @@ const INPUT_SCHEMA = {
 };
 
 const baseHandler = async (event) => {
-    console.log(JSON.stringify(event));
+    for (const record of event.Records) {
+        const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
+        const params = {
+            TableName: process.env.TABLE_NAME,
+            KeyConditionExpression: '#sk = :searchvalue',
+            ExpressionAttributeNames: {
+                '#sk': process.env.SEARCH_KEY
+            },
+            ExpressionAttributeValues: {
+                ':searchvalue': searchKeyValue
+            }
+        };
+
+        await ddbClient.send(new QueryCommand(params));
+    }
 };
 
 const handler = middy(baseHandler)

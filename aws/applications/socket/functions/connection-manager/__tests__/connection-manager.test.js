@@ -12,7 +12,7 @@ const EXPECTED_SEARCH_KEY = 'valid_key';
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
 process.env.ERROR_LOGGING_ENABLED = false;
-const SEARCH_KEY = 'baseUrl';
+const SEARCH_KEY = 'BaseUrl';
 process.env.SEARCH_KEY = SEARCH_KEY;
 process.env.SEARCH_KEY_PATTERN = EXPECTED_SEARCH_KEY;
 
