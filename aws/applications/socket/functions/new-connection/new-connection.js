@@ -1,6 +1,10 @@
 const middy = require('@middy/core');
 const validator = require('@middy/validator');
 const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
+const {
+    ApiGatewayManagementApiClient,
+    PostToConnectionCommand
+} = require('@aws-sdk/client-apigatewaymanagementapi');
 
 const ddbClient = new DynamoDBClient({});
 
@@ -65,21 +69,43 @@ const INPUT_SCHEMA = {
     }
 };
 
+const queryCurrentState = async (searchKeyValue) => {
+    const params = {
+        TableName: process.env.TABLE_NAME,
+        KeyConditionExpression: '#sk = :searchvalue',
+        ExpressionAttributeNames: {
+            '#sk': process.env.SEARCH_KEY
+        },
+        ExpressionAttributeValues: {
+            ':searchvalue': searchKeyValue
+        }
+    };
+
+    return await ddbClient.send(new QueryCommand(params));
+};
+
+const postDataToClient = async (endpoint, clientId, data) => {
+    const apiGatewayClient = new ApiGatewayManagementApiClient({
+        endpoint
+    });
+
+    await apiGatewayClient.send(new PostToConnectionCommand({
+        ConnectionId: clientId,
+        Data: JSON.stringify(data)
+    }));
+};
+
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
-        const params = {
-            TableName: process.env.TABLE_NAME,
-            KeyConditionExpression: '#sk = :searchvalue',
-            ExpressionAttributeNames: {
-                '#sk': process.env.SEARCH_KEY
-            },
-            ExpressionAttributeValues: {
-                ':searchvalue': searchKeyValue
-            }
-        };
+        const recordValues = record.dynamodb.NewImage;
+        const searchKeyValue = recordValues.SearchKey.S;
+        const currentState = await queryCurrentState(searchKeyValue);
 
-        await ddbClient.send(new QueryCommand(params));
+        await postDataToClient(
+            recordValues.ConnectionEndpoint.S,
+            recordValues.ConnectionId.S,
+            currentState.Items
+        );
     }
 };
 

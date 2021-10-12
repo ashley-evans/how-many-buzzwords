@@ -1,4 +1,7 @@
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
+const {
+    ApiGatewayManagementApiClient
+} = require('@aws-sdk/client-apigatewaymanagementapi');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
@@ -12,6 +15,7 @@ process.env.SEARCH_KEY = SEARCH_KEY;
 process.env.SEARCH_KEY_PATTERN = EXPECTED_SEARCH_KEY_VALUE;
 
 const ddbMock = mockClient(DynamoDBClient);
+const apiMock = mockClient(ApiGatewayManagementApiClient);
 
 const { handler } = require('../new-connection');
 
@@ -32,10 +36,6 @@ const createRecord = (connectionEndpoint, connectionId, searchKey) => {
         }
     };
 };
-
-beforeEach(() => {
-    ddbMock.reset();
-});
 
 describe('input validation', () => {
     test.each([
@@ -89,7 +89,7 @@ describe('input validation', () => {
     );
 });
 
-test.each([
+describe.each([
     [
         'a single connection stream event',
         createEvent(
@@ -115,26 +115,77 @@ test.each([
             )
         )
     ]
-])('%s query dynamodb with search value', async (message, event) => {
-    await handler(event);
-    const dynamoDbCallsInputs = ddbMock.calls()
-        .map(call => call.args[0].input);
+])('%s', (message, event) => {
+    beforeAll(async () => {
+        for (const record of event.Records) {
+            const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
+            ddbMock
+                .on(QueryCommand, {
+                    TableName: TABLE_NAME,
+                    KeyConditionExpression: '#sk = :searchvalue',
+                    ExpressionAttributeNames: {
+                        '#sk': SEARCH_KEY
+                    },
+                    ExpressionAttributeValues: {
+                        ':searchvalue': searchKeyValue
+                    }
+                })
+                .resolves({
+                    Items: [
+                        {
+                            [SEARCH_KEY]: searchKeyValue
+                        }
+                    ]
+                });
+        }
 
-    expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
+        await handler(event);
+    });
 
-    for (const record of event.Records) {
-        const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
-        expect(dynamoDbCallsInputs).toContainEqual({
-            TableName: TABLE_NAME,
-            KeyConditionExpression: '#sk = :searchvalue',
-            ExpressionAttributeNames: {
-                '#sk': SEARCH_KEY
-            },
-            ExpressionAttributeValues: {
-                ':searchvalue': searchKeyValue
-            }
-        });
-    }
+    test('queries dynamodb with search value', () => {
+        const dynamoDbCallsInputs = ddbMock.calls()
+            .map(call => call.args[0].input);
+
+        expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
+
+        for (const record of event.Records) {
+            const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
+            expect(dynamoDbCallsInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                KeyConditionExpression: '#sk = :searchvalue',
+                ExpressionAttributeNames: {
+                    '#sk': SEARCH_KEY
+                },
+                ExpressionAttributeValues: {
+                    ':searchvalue': searchKeyValue
+                }
+            });
+        }
+    });
+
+    test('sends results from dynamodb to connection endpoint and id', () => {
+        const apiGatewayCallsInputs = apiMock.calls()
+            .map(call => call.args[0].input);
+
+        expect(apiGatewayCallsInputs).toHaveLength(event.Records.length);
+
+        for (const record of event.Records) {
+            const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
+            expect(apiGatewayCallsInputs).toContainEqual({
+                ConnectionId: EXPECTED_CONNECTION_ID,
+                Data: JSON.stringify([
+                    {
+                        [SEARCH_KEY]: searchKeyValue
+                    }
+                ])
+            });
+        }
+    });
+
+    afterAll(() => {
+        ddbMock.reset();
+        apiMock.reset();
+    });
 });
 
 /* ddbMock
