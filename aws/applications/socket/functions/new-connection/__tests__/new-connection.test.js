@@ -3,6 +3,11 @@ const {
     ApiGatewayManagementApiClient
 } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { mockClient } = require('aws-sdk-client-mock');
+const {
+    INSERT_EVENT_NAME,
+    MODIFY_EVENT_NAME,
+    REMOVE_EVENT_NAME
+} = require('../constants');
 
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
 const EXPECTED_CONNECTION_ID = 'Gyvd8cAwLPECHlQ=';
@@ -25,8 +30,14 @@ const createEvent = (...records) => {
     };
 };
 
-const createRecord = (connectionEndpoint, connectionId, searchKey) => {
+const createRecord = (
+    eventName,
+    connectionEndpoint,
+    connectionId,
+    searchKey
+) => {
     return {
+        eventName,
         dynamodb: {
             NewImage: {
                 ConnectionEndpoint: { S: connectionEndpoint },
@@ -37,33 +48,70 @@ const createRecord = (connectionEndpoint, connectionId, searchKey) => {
     };
 };
 
+beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+});
+
 describe('input validation', () => {
     test.each([
         ['event with missing records', { Records: undefined }],
         [
             'record with missing dynamoDB field',
-            createEvent({ dynamodb: undefined })
+            createEvent({ dynamodb: undefined, eventName: INSERT_EVENT_NAME })
         ],
         [
             'record with missing NewImage field',
             createEvent({ dynamodb: { NewImage: undefined } })
         ],
         [
+            'record with missing event name',
+            createEvent(
+                createRecord(
+                    undefined,
+                    EXPECTED_CONNECTION_ENDPOINT,
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            )
+        ],
+        [
             'record with missing connection endpoint',
-            createEvent(createRecord())
+            createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    undefined,
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            )
         ],
         [
             'record with invalid connection endpoint',
-            createEvent(createRecord('not a url'))
+            createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    'not a url',
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            )
         ],
         [
             'record with missing connection id',
-            createEvent(createRecord(EXPECTED_CONNECTION_ENDPOINT))
+            createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    EXPECTED_CONNECTION_ENDPOINT,
+                    undefined,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            )
         ],
         [
             'record with missing search key',
             createEvent(
                 createRecord(
+                    INSERT_EVENT_NAME,
                     EXPECTED_CONNECTION_ENDPOINT,
                     EXPECTED_CONNECTION_ID
                 )
@@ -73,7 +121,8 @@ describe('input validation', () => {
             'record with invalid search key',
             createEvent(
                 createRecord(
-                    EXPECTED_CONNECTION_ENDPOINT,
+                    INSERT_EVENT_NAME,
+                    undefined,
                     EXPECTED_CONNECTION_ID,
                     'invalid search key'
                 )
@@ -91,9 +140,10 @@ describe('input validation', () => {
 
 describe.each([
     [
-        'a single connection stream event',
+        'a single insert connection stream event',
         createEvent(
             createRecord(
+                INSERT_EVENT_NAME,
                 EXPECTED_CONNECTION_ENDPOINT,
                 EXPECTED_CONNECTION_ID,
                 EXPECTED_SEARCH_KEY_VALUE
@@ -101,21 +151,23 @@ describe.each([
         )
     ],
     [
-        'multiple connection stream events',
+        'multiple insert connection stream events',
         createEvent(
             createRecord(
+                INSERT_EVENT_NAME,
                 EXPECTED_CONNECTION_ENDPOINT,
                 EXPECTED_CONNECTION_ID,
                 `${EXPECTED_SEARCH_KEY_VALUE}1`
             ),
             createRecord(
+                INSERT_EVENT_NAME,
                 EXPECTED_CONNECTION_ENDPOINT,
                 EXPECTED_CONNECTION_ID,
                 `${EXPECTED_SEARCH_KEY_VALUE}2`
             )
         )
     ]
-])('%s', (message, event) => {
+])('happy path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
             const searchKeyValue = record.dynamodb.NewImage.SearchKey.S;
@@ -188,21 +240,48 @@ describe.each([
     });
 });
 
-/* ddbMock
-.on(QueryCommand, {
-    TableName: TABLE_NAME,
-    KeyConditionExpression: '#sk = :searchvalue',
-    ExpressionAttributeNames: {
-        '#sk': SEARCH_KEY
-    },
-    ExpressionAttributeValues: {
-        ':searchvalue': EXPECTED_SEARCH_KEY_VALUE
-    }
-})
-.resolves({
-    Items: [
-        {
-            [SEARCH_KEY]: EXPECTED_SEARCH_KEY_VALUE
-        }
+describe.each([
+    [
+        'a modify connection stream event',
+        createEvent(
+            createRecord(
+                MODIFY_EVENT_NAME,
+                EXPECTED_CONNECTION_ENDPOINT,
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_SEARCH_KEY_VALUE
+            )
+        )
+    ],
+    [
+        'a remove connection stream event',
+        createEvent(
+            createRecord(
+                REMOVE_EVENT_NAME,
+                EXPECTED_CONNECTION_ENDPOINT,
+                EXPECTED_CONNECTION_ID,
+                EXPECTED_SEARCH_KEY_VALUE
+            )
+        )
     ]
-}); */
+])('invalid event paths: %s', (message, event) => {
+    beforeAll(async () => {
+        await handler(event);
+    });
+
+    test('does not query dynamodb', () => {
+        const dynamoDbCalls = ddbMock.calls();
+
+        expect(dynamoDbCalls).toHaveLength(0);
+    });
+
+    test('does not send data to connection endpoint and id', () => {
+        const apiGatewayCalls = apiMock.calls();
+
+        expect(apiGatewayCalls).toHaveLength(0);
+    });
+
+    afterAll(() => {
+        ddbMock.reset();
+        apiMock.reset();
+    });
+});

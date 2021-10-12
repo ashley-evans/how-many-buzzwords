@@ -5,6 +5,7 @@ const {
     ApiGatewayManagementApiClient,
     PostToConnectionCommand
 } = require('@aws-sdk/client-apigatewaymanagementapi');
+const { INSERT_EVENT_NAME } = require('./constants');
 
 const ddbClient = new DynamoDBClient({});
 
@@ -16,8 +17,11 @@ const INPUT_SCHEMA = {
             type: 'array',
             items: {
                 type: 'object',
-                required: ['dynamodb'],
+                required: ['eventName', 'dynamodb'],
                 properties: {
+                    eventName: {
+                        type: 'string'
+                    },
                     dynamodb: {
                         type: 'object',
                         required: ['NewImage'],
@@ -99,13 +103,17 @@ const baseHandler = async (event) => {
     for (const record of event.Records) {
         const recordValues = record.dynamodb.NewImage;
         const searchKeyValue = recordValues.SearchKey.S;
-        const currentState = await queryCurrentState(searchKeyValue);
 
-        await postDataToClient(
-            recordValues.ConnectionEndpoint.S,
-            recordValues.ConnectionId.S,
-            currentState.Items
-        );
+        if (record.eventName !== INSERT_EVENT_NAME) {
+            console.log(`Received a ${record.eventName} event. Ignoring.`);
+        } else {
+            const currentState = await queryCurrentState(searchKeyValue);
+            await postDataToClient(
+                recordValues.ConnectionEndpoint.S,
+                recordValues.ConnectionId.S,
+                currentState.Items
+            );
+        }
     }
 };
 
