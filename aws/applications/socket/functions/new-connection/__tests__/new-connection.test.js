@@ -61,10 +61,6 @@ describe('input validation', () => {
             createEvent({ dynamodb: undefined, eventName: INSERT_EVENT_NAME })
         ],
         [
-            'record with missing NewImage field',
-            createEvent({ dynamodb: { NewImage: undefined } })
-        ],
-        [
             'record with missing event name',
             createEvent(
                 createRecord(
@@ -262,6 +258,17 @@ describe.each([
                 EXPECTED_CONNECTION_ID,
                 EXPECTED_SEARCH_KEY_VALUE
             )
+        )
+    ],
+    [
+        'a insert event with no new image field',
+        createEvent(
+            {
+                eventName: INSERT_EVENT_NAME,
+                dynamodb: {
+                    NewImage: undefined
+                }
+            }
         )
     ]
 ])('invalid event paths: %s', (message, event) => {

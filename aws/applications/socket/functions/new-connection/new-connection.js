@@ -110,10 +110,15 @@ const postDataToClient = async (endpoint, clientId, data) => {
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
+        const recordValues = record.dynamodb.NewImage;
         if (record.eventName !== INSERT_EVENT_NAME) {
-            console.log(`Received a ${record.eventName} event. Ignoring.`);
+            console.log(`Received a ${record.eventName} record. Ignoring.`);
+        } else if (!recordValues) {
+            console.log(
+                'Received a record with missing new image field: ' +
+                `${JSON.stringify(record)}. Ignoring.`
+            );
         } else {
-            const recordValues = record.dynamodb.NewImage;
             const searchKeyValue = recordValues.SearchKey.S;
             const currentState = await queryCurrentState(searchKeyValue);
             await postDataToClient(
