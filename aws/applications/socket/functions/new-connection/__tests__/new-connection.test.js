@@ -182,7 +182,7 @@ describe.each([
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: searchKeyValue
+                            [SEARCH_KEY]: { S: searchKeyValue }
                         }
                     ]
                 });
@@ -224,7 +224,7 @@ describe.each([
                 ConnectionId: EXPECTED_CONNECTION_ID,
                 Data: JSON.stringify([
                     {
-                        [SEARCH_KEY]: searchKeyValue
+                        [SEARCH_KEY]: { S: searchKeyValue }
                     }
                 ])
             });

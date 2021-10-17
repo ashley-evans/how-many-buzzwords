@@ -73,7 +73,7 @@ const INPUT_SCHEMA = {
     }
 };
 
-const queryCurrentState = async (searchKeyValue) => {
+const queryCurrentState = (searchKeyValue) => {
     const params = {
         TableName: process.env.TABLE_NAME,
         KeyConditionExpression: '#sk = :searchvalue',
@@ -85,7 +85,7 @@ const queryCurrentState = async (searchKeyValue) => {
         }
     };
 
-    return await ddbClient.send(new QueryCommand(params));
+    return ddbClient.send(new QueryCommand(params));
 };
 
 const postDataToClient = async (endpoint, clientId, data) => {
@@ -93,11 +93,13 @@ const postDataToClient = async (endpoint, clientId, data) => {
         endpoint
     });
 
+    const params = {
+        ConnectionId: clientId,
+        Data: JSON.stringify(data)
+    };
+
     try {
-        await apiGatewayClient.send(new PostToConnectionCommand({
-            ConnectionId: clientId,
-            Data: JSON.stringify(data)
-        }));
+        await apiGatewayClient.send(new PostToConnectionCommand(params));
     } catch (ex) {
         if (ex.message === GONE_EXCEPTION_MESSAGE ||
             ex instanceof GoneException) {
