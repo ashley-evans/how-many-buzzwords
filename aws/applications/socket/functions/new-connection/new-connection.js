@@ -6,7 +6,7 @@ const {
     PostToConnectionCommand,
     GoneException
 } = require('@aws-sdk/client-apigatewaymanagementapi');
-const { INSERT_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('./constants');
+const { INSERT_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('../constants');
 
 const ddbClient = new DynamoDBClient({});
 

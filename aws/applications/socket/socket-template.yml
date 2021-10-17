@@ -19,6 +19,9 @@ Parameters:
   TableArn:
     Type: String
     Description: The ARN of the table to get updates from
+  TableStreamArn:
+    Type: String
+    Description: The Stream ARN of the table to get updates from
 Resources:
   ActiveConnectionsTable:
     Type: AWS::DynamoDB::Table
@@ -132,6 +135,17 @@ Resources:
       StageName: prod
       DeploymentId: !Ref ConnectionDeployment
       ApiId: !Ref SocketGateway
+  WebSocketWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Provides ability to manage web socket api connections
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - execute-api:ManageConnections
+            Resource: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketGateway}/*"
+            Effect: Allow
   NewConnectionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -165,16 +179,9 @@ Resources:
                   - dynamodb:Query
                 Resource: !Ref TableArn
                 Effect: Allow
-        - PolicyName: WebSocketWritePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - execute-api:ManageConnections
-                Resource: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketGateway}/*"
-                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
+        - !Ref WebSocketWritePolicy
   NewConnection:
     Type: AWS::Serverless::Function
     Properties:
@@ -190,10 +197,67 @@ Resources:
           Type: DynamoDB
           Properties:
             Stream: !GetAtt ActiveConnectionsTable.StreamArn
-            BatchSize: 1
-            StartingPosition: LATEST
+            BatchSize: 10
+            StartingPosition: TRIM_HORIZON
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
           SEARCH_KEY: !Ref SearchKey
           SEARCH_KEY_PATTERN: !Ref SearchKeyPattern
+  UpdateConnectionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ActiveConnectionsTableQueryPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:Query
+                Resource: !GetAtt ActiveConnectionsTable.Arn
+                Effect: Allow
+        - PolicyName: SearchTableReadStreamPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !Ref TableStreamArn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
+        - !Ref WebSocketWritePolicy
+  UpdateConnections:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update-connections.handler
+      Role: !GetAtt UpdateConnectionsRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/update-connections
+      Description: Provides existing connections with relevant database updates
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Events:
+        UpdatesStreamEvent:
+          Type: DynamoDB
+          Properties:
+            Stream: !Ref TableStreamArn
+            BatchSize: 10
+            StartingPosition: TRIM_HORIZON
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+          SEARCH_KEY: !Ref SearchKey

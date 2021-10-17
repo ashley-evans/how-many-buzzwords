@@ -94,6 +94,6 @@ Outputs:
   TableArn:
     Description: The ARN of the Keyphrases Table
     Value: !GetAtt KeyphrasesTable.Arn
-  TableStream:
+  TableStreamArn:
     Description: The ARN of the Keyphrases Table's Stream
     Value: !GetAtt KeyphrasesTable.StreamArn

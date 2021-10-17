@@ -8,7 +8,7 @@ const {
     MODIFY_EVENT_NAME,
     REMOVE_EVENT_NAME,
     GONE_EXCEPTION_MESSAGE
-} = require('../constants');
+} = require('../../constants');
 
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
 const EXPECTED_CONNECTION_ID = 'Gyvd8cAwLPECHlQ=';
