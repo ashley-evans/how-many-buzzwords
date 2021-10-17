@@ -6,7 +6,8 @@ const { mockClient } = require('aws-sdk-client-mock');
 const {
     INSERT_EVENT_NAME,
     MODIFY_EVENT_NAME,
-    REMOVE_EVENT_NAME
+    REMOVE_EVENT_NAME,
+    GONE_EXCEPTION_MESSAGE
 } = require('../constants');
 
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
@@ -179,7 +180,7 @@ describe.each([
                         '#sk': SEARCH_KEY
                     },
                     ExpressionAttributeValues: {
-                        ':searchvalue': searchKeyValue
+                        ':searchvalue': { S: searchKeyValue }
                     }
                 })
                 .resolves({
@@ -209,7 +210,7 @@ describe.each([
                     '#sk': SEARCH_KEY
                 },
                 ExpressionAttributeValues: {
-                    ':searchvalue': searchKeyValue
+                    ':searchvalue': { S: searchKeyValue }
                 }
             });
         }
@@ -281,6 +282,98 @@ describe.each([
     });
 
     afterAll(() => {
+        ddbMock.reset();
+        apiMock.reset();
+    });
+});
+
+describe('Error handling', () => {
+    test(
+        'handler catches gone exception when client no longer available',
+        (done) => {
+            const expectedErrorMessage = GONE_EXCEPTION_MESSAGE;
+
+            const event = createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    EXPECTED_CONNECTION_ENDPOINT,
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            );
+            ddbMock
+                .on(QueryCommand)
+                .resolves({
+                    Items: [
+                        {
+                            [SEARCH_KEY]: EXPECTED_SEARCH_KEY_VALUE
+                        }
+                    ]
+                });
+            apiMock.rejects(expectedErrorMessage);
+
+            handler(event)
+                .then(() => {
+                    done();
+                })
+                .catch(ex => {
+                    if (ex.message === expectedErrorMessage) {
+                        done(
+                            `Received ${expectedErrorMessage} when not expected`
+                        );
+                    } else {
+                        done(
+                            `Received: (${ex}) when only GoneException thrown`
+                        );
+                    }
+                });
+        }
+    );
+
+    test(
+        'handler throws exception when api post fails for unexpected reason',
+        async () => {
+            const event = createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    EXPECTED_CONNECTION_ENDPOINT,
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            );
+            ddbMock
+                .on(QueryCommand)
+                .resolves({
+                    Items: [
+                        {
+                            [SEARCH_KEY]: EXPECTED_SEARCH_KEY_VALUE
+                        }
+                    ]
+                });
+            apiMock.rejects();
+
+            await expect(handler(event)).rejects.toThrowError();
+        }
+    );
+
+    test(
+        'handler throws exception when database query errors for any reason',
+        async () => {
+            const event = createEvent(
+                createRecord(
+                    INSERT_EVENT_NAME,
+                    EXPECTED_CONNECTION_ENDPOINT,
+                    EXPECTED_CONNECTION_ID,
+                    EXPECTED_SEARCH_KEY_VALUE
+                )
+            );
+            ddbMock.rejects();
+
+            await expect(handler(event)).rejects.toThrowError();
+        }
+    );
+
+    afterEach(() => {
         ddbMock.reset();
         apiMock.reset();
     });

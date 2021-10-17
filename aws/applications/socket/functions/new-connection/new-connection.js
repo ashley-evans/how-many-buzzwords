@@ -3,9 +3,10 @@ const validator = require('@middy/validator');
 const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
 const {
     ApiGatewayManagementApiClient,
-    PostToConnectionCommand
+    PostToConnectionCommand,
+    GoneException
 } = require('@aws-sdk/client-apigatewaymanagementapi');
-const { INSERT_EVENT_NAME } = require('./constants');
+const { INSERT_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('./constants');
 
 const ddbClient = new DynamoDBClient({});
 
@@ -24,7 +25,6 @@ const INPUT_SCHEMA = {
                     },
                     dynamodb: {
                         type: 'object',
-                        required: ['NewImage'],
                         properties: {
                             NewImage: {
                                 type: 'object',
@@ -81,7 +81,7 @@ const queryCurrentState = async (searchKeyValue) => {
             '#sk': process.env.SEARCH_KEY
         },
         ExpressionAttributeValues: {
-            ':searchvalue': searchKeyValue
+            ':searchvalue': { S: searchKeyValue }
         }
     };
 
@@ -93,20 +93,28 @@ const postDataToClient = async (endpoint, clientId, data) => {
         endpoint
     });
 
-    await apiGatewayClient.send(new PostToConnectionCommand({
-        ConnectionId: clientId,
-        Data: JSON.stringify(data)
-    }));
+    try {
+        await apiGatewayClient.send(new PostToConnectionCommand({
+            ConnectionId: clientId,
+            Data: JSON.stringify(data)
+        }));
+    } catch (ex) {
+        if (ex.message === GONE_EXCEPTION_MESSAGE ||
+            ex instanceof GoneException) {
+            console.log('Client unavailable, not repeating');
+        } else {
+            throw ex;
+        }
+    }
 };
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const recordValues = record.dynamodb.NewImage;
-        const searchKeyValue = recordValues.SearchKey.S;
-
         if (record.eventName !== INSERT_EVENT_NAME) {
             console.log(`Received a ${record.eventName} event. Ignoring.`);
         } else {
+            const recordValues = record.dynamodb.NewImage;
+            const searchKeyValue = recordValues.SearchKey.S;
             const currentState = await queryCurrentState(searchKeyValue);
             await postDataToClient(
                 recordValues.ConnectionEndpoint.S,

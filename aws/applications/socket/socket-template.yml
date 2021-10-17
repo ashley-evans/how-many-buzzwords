@@ -165,6 +165,14 @@ Resources:
                   - dynamodb:Query
                 Resource: !Ref TableArn
                 Effect: Allow
+        - PolicyName: WebSocketWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - execute-api:ManageConnections
+                Resource: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketGateway}/*"
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
   NewConnection:
