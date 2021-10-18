@@ -4,7 +4,8 @@ const {
 } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { mockClient } = require('aws-sdk-client-mock');
 const {
-    INSERT_EVENT_NAME
+    INSERT_EVENT_NAME,
+    MODIFY_EVENT_NAME
 } = require('../../constants');
 
 const TABLE_NAME = 'test';
@@ -34,6 +35,9 @@ const createRecord = (
     return {
         eventName,
         dynamodb: {
+            Keys: {
+                [SEARCH_KEY]: { S: searchKey }
+            },
             NewImage: {
                 [SEARCH_KEY]: { S: searchKey }
             }
@@ -49,12 +53,29 @@ describe('input validation', () => {
             createEvent({ dynamodb: undefined, eventName: INSERT_EVENT_NAME })
         ],
         [
-            'record with missing search key field',
-            createEvent(
-                createRecord(
-                    INSERT_EVENT_NAME
-                )
-            )
+            'record with missing keys field',
+            createEvent({ dynamodb: {}, eventName: INSERT_EVENT_NAME })
+        ],
+        [
+            'keys field with missing search key',
+            createEvent({
+                dynamodb: {
+                    Keys: {}
+                },
+                eventName: INSERT_EVENT_NAME
+            })
+        ],
+        [
+            'new image field with missing search key',
+            createEvent({
+                dynamodb: {
+                    Keys: {
+                        [SEARCH_KEY]: { S: SEARCH_KEY }
+                    },
+                    NewImage: {}
+                },
+                eventName: INSERT_EVENT_NAME
+            })
         ]
     ])(
         'returns failed validation error given %s',
@@ -88,8 +109,30 @@ describe.each([
                 `${EXPECTED_SEARCH_KEY_VALUE}2`
             )
         )
+    ],
+    [
+        'a single modify connection stream event',
+        createEvent(
+            createRecord(
+                MODIFY_EVENT_NAME,
+                EXPECTED_SEARCH_KEY_VALUE
+            )
+        )
+    ],
+    [
+        'multiple modify connection stream events',
+        createEvent(
+            createRecord(
+                MODIFY_EVENT_NAME,
+                `${EXPECTED_SEARCH_KEY_VALUE}1`
+            ),
+            createRecord(
+                MODIFY_EVENT_NAME,
+                `${EXPECTED_SEARCH_KEY_VALUE}2`
+            )
+        )
     ]
-])('happy path: %s', (message, event) => {
+])('update path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
             const searchKeyValue = record.dynamodb.NewImage[SEARCH_KEY].S;

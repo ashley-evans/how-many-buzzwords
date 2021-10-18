@@ -313,7 +313,7 @@ describe('Error handling', () => {
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: EXPECTED_SEARCH_KEY_VALUE
+                            [SEARCH_KEY]: { S: EXPECTED_SEARCH_KEY_VALUE }
                         }
                     ]
                 });
@@ -353,7 +353,7 @@ describe('Error handling', () => {
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: EXPECTED_SEARCH_KEY_VALUE
+                            [SEARCH_KEY]: { S: EXPECTED_SEARCH_KEY_VALUE }
                         }
                     ]
                 });

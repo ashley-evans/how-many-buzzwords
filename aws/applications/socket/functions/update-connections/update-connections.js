@@ -25,7 +25,23 @@ const INPUT_SCHEMA = {
                     },
                     dynamodb: {
                         type: 'object',
+                        required: ['Keys'],
                         properties: {
+                            Keys: {
+                                type: 'object',
+                                required: [SEARCH_KEY],
+                                properties: {
+                                    [SEARCH_KEY]: {
+                                        type: 'object',
+                                        required: ['S'],
+                                        properties: {
+                                            S: {
+                                                type: 'string'
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                             NewImage: {
                                 type: 'object',
                                 required: [SEARCH_KEY],
@@ -64,6 +80,19 @@ const getListeningClients = (clientSearchKey) => {
     return ddbClient.send(new QueryCommand(params));
 };
 
+const postDataToClient = async (endpoint, clientId, data) => {
+    const apiGatewayClient = new ApiGatewayManagementApiClient({
+        endpoint
+    });
+
+    const params = {
+        ConnectionId: clientId,
+        Data: JSON.stringify(data)
+    };
+
+    await apiGatewayClient.send(new PostToConnectionCommand(params));
+};
+
 const baseHandler = async (event) => {
     for (const record of event.Records) {
         const recordNewImage = record.dynamodb.NewImage;
@@ -71,16 +100,11 @@ const baseHandler = async (event) => {
         const clients = await getListeningClients(searchKeyValue);
 
         for (const client of clients.Items) {
-            const apiGatewayClient = new ApiGatewayManagementApiClient({
-                endpoint: client.ConnectionEndpoint.S
-            });
-
-            const params = {
-                ConnectionId: client.ConnectionId.S,
-                Data: JSON.stringify(recordNewImage)
-            };
-
-            await apiGatewayClient.send(new PostToConnectionCommand(params));
+            await postDataToClient(
+                client.ConnectionEndpoint.S,
+                client.ConnectionId.S,
+                recordNewImage
+            );
         }
     }
 };
