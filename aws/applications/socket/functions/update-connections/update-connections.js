@@ -3,8 +3,10 @@ const validator = require('@middy/validator');
 const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
 const {
     ApiGatewayManagementApiClient,
-    PostToConnectionCommand
+    PostToConnectionCommand,
+    GoneException
 } = require('@aws-sdk/client-apigatewaymanagementapi');
+const { REMOVE_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('../constants');
 
 const SEARCH_KEY = process.env.SEARCH_KEY;
 
@@ -90,20 +92,40 @@ const postDataToClient = async (endpoint, clientId, data) => {
         Data: JSON.stringify(data)
     };
 
-    await apiGatewayClient.send(new PostToConnectionCommand(params));
+    try {
+        await apiGatewayClient.send(new PostToConnectionCommand(params));
+    } catch (ex) {
+        if (ex.message === GONE_EXCEPTION_MESSAGE ||
+            ex instanceof GoneException) {
+            console.log('Client unavailable, not repeating');
+        } else {
+            throw ex;
+        }
+    }
 };
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const recordNewImage = record.dynamodb.NewImage;
-        const searchKeyValue = recordNewImage[SEARCH_KEY].S;
+        const recordKeys = record.dynamodb.Keys;
+        const searchKeyValue = recordKeys[SEARCH_KEY].S;
         const clients = await getListeningClients(searchKeyValue);
 
         for (const client of clients.Items) {
+            let dataValue;
+            if (record.eventName === REMOVE_EVENT_NAME) {
+                dataValue = recordKeys;
+            } else {
+                dataValue = record.dynamodb.NewImage;
+            }
+
+            const data = {
+                eventName: record.eventName,
+                value: dataValue
+            };
             await postDataToClient(
                 client.ConnectionEndpoint.S,
                 client.ConnectionId.S,
-                recordNewImage
+                data
             );
         }
     }
