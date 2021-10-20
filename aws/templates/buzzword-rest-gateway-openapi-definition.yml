@@ -6,7 +6,7 @@ info:
   version: "1.0"
 paths:
   /crawl:
-    x-amazon-apigateway-any-method:
+    post:
       responses:
         default:
           description: "Default response for ANY /crawl request"

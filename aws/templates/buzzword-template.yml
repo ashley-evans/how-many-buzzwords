@@ -53,18 +53,12 @@ Resources:
       Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
       Protocol: sqs
       RawMessageDelivery: true
-  BuzzwordHTTPAccessLogs:
-    Type: AWS::Logs::LogGroup
   BuzzwordHTTPGateway:
     Type: AWS::Serverless::HttpApi
     DependsOn:
-      - BuzzwordHTTPAccessLogs
       - CrawledURLsSubscription
     Properties:
       StageName: prod
-      AccessLogSettings:
-        DestinationArn: !GetAtt BuzzwordHTTPAccessLogs.Arn
-        Format: '{ "requestId":"$context.requestId", "errorMessage":"$context.error.message", "integrationErrorMessage":"$context.integrationErrorMessage" }'
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include

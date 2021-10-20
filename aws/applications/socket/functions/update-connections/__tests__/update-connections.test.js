@@ -8,16 +8,20 @@ const {
     MODIFY_EVENT_NAME,
     REMOVE_EVENT_NAME,
     GONE_EXCEPTION_MESSAGE
-} = require('../../constants');
+} = require('../constants');
 
 const TABLE_NAME = 'test';
-const SEARCH_KEY = 'BaseUrl';
+const INDEX_NAME = 'test_index';
+const SEARCH_KEY_TABLE = 'SearchKey';
+const SEARCH_KEY_EVENT = 'BaseUrl';
 const EXPECTED_SEARCH_KEY_VALUE = 'valid_key';
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
 const EXPECTED_CONNECTION_ID = 'Gyvd8cAwLPECHlQ=';
 
 process.env.TABLE_NAME = TABLE_NAME;
-process.env.SEARCH_KEY = SEARCH_KEY;
+process.env.INDEX_NAME = INDEX_NAME;
+process.env.SEARCH_KEY_TABLE = SEARCH_KEY_TABLE;
+process.env.SEARCH_KEY_EVENT = SEARCH_KEY_EVENT;
 
 const ddbMock = mockClient(DynamoDBClient);
 const apiMock = mockClient(ApiGatewayManagementApiClient);
@@ -46,7 +50,7 @@ const createRecord = (
 
 const createSearchKeyField = (value) => {
     return {
-        [SEARCH_KEY]: { S: value }
+        [SEARCH_KEY_EVENT]: { S: value }
     };
 };
 
@@ -148,13 +152,14 @@ describe.each([
 ])('update path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
             ddbMock
                 .on(QueryCommand, {
                     TableName: TABLE_NAME,
+                    IndexName: INDEX_NAME,
                     KeyConditionExpression: '#sk = :searchvalue',
                     ExpressionAttributeNames: {
-                        '#sk': SEARCH_KEY
+                        '#sk': SEARCH_KEY_TABLE
                     },
                     ExpressionAttributeValues: {
                         ':searchvalue': { S: searchKeyValue }
@@ -163,7 +168,7 @@ describe.each([
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: { S: searchKeyValue },
+                            SearchKey: { S: searchKeyValue },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
                             ConnectionEndpoint: {
                                 S: EXPECTED_CONNECTION_ENDPOINT
@@ -183,12 +188,13 @@ describe.each([
         expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
 
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
+                IndexName: INDEX_NAME,
                 KeyConditionExpression: '#sk = :searchvalue',
                 ExpressionAttributeNames: {
-                    '#sk': SEARCH_KEY
+                    '#sk': SEARCH_KEY_TABLE
                 },
                 ExpressionAttributeValues: {
                     ':searchvalue': { S: searchKeyValue }
@@ -246,13 +252,14 @@ describe.each([
 ])('remove path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
             ddbMock
                 .on(QueryCommand, {
                     TableName: TABLE_NAME,
+                    IndexName: INDEX_NAME,
                     KeyConditionExpression: '#sk = :searchvalue',
                     ExpressionAttributeNames: {
-                        '#sk': SEARCH_KEY
+                        '#sk': SEARCH_KEY_TABLE
                     },
                     ExpressionAttributeValues: {
                         ':searchvalue': { S: searchKeyValue }
@@ -261,7 +268,7 @@ describe.each([
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: { S: searchKeyValue },
+                            SearchKey: { S: searchKeyValue },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
                             ConnectionEndpoint: {
                                 S: EXPECTED_CONNECTION_ENDPOINT
@@ -281,12 +288,13 @@ describe.each([
         expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
 
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
+                IndexName: INDEX_NAME,
                 KeyConditionExpression: '#sk = :searchvalue',
                 ExpressionAttributeNames: {
-                    '#sk': SEARCH_KEY
+                    '#sk': SEARCH_KEY_TABLE
                 },
                 ExpressionAttributeValues: {
                     ':searchvalue': { S: searchKeyValue }
@@ -336,7 +344,9 @@ describe('Error handling', () => {
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: { S: EXPECTED_SEARCH_KEY_VALUE },
+                            [SEARCH_KEY_EVENT]: {
+                                S: EXPECTED_SEARCH_KEY_VALUE
+                            },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
                             ConnectionEndpoint: {
                                 S: EXPECTED_CONNECTION_ENDPOINT
@@ -372,7 +382,9 @@ describe('Error handling', () => {
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY]: { S: EXPECTED_SEARCH_KEY_VALUE },
+                            [SEARCH_KEY_EVENT]: {
+                                S: EXPECTED_SEARCH_KEY_VALUE
+                            },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
                             ConnectionEndpoint: {
                                 S: EXPECTED_CONNECTION_ENDPOINT

@@ -30,11 +30,20 @@ Resources:
       AttributeDefinitions:
         - AttributeName: ConnectionId
           AttributeType: S
+        - AttributeName: SearchKey
+          AttributeType: S
       KeySchema:
         - AttributeName: ConnectionId
           KeyType: HASH
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+      GlobalSecondaryIndexes:
+        - IndexName: SearchKeyIndex
+          KeySchema:
+            - AttributeName: SearchKey
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
   ConnectionManagerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -224,7 +233,9 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:Query
-                Resource: !GetAtt ActiveConnectionsTable.Arn
+                Resource:
+                  - !GetAtt ActiveConnectionsTable.Arn
+                  - !Sub "${ActiveConnectionsTable.Arn}/index/SearchKeyIndex"
                 Effect: Allow
         - PolicyName: SearchTableReadStreamPolicy
           PolicyDocument:
@@ -259,5 +270,7 @@ Resources:
             StartingPosition: TRIM_HORIZON
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
-          SEARCH_KEY: !Ref SearchKey
+          TABLE_NAME: !Ref ActiveConnectionsTable
+          INDEX_NAME: SearchKeyIndex
+          SEARCH_KEY_TABLE: SearchKey
+          SEARCH_KEY_EVENT: !Ref SearchKey

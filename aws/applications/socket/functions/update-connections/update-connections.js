@@ -6,9 +6,9 @@ const {
     PostToConnectionCommand,
     GoneException
 } = require('@aws-sdk/client-apigatewaymanagementapi');
-const { REMOVE_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('../constants');
+const { REMOVE_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('./constants');
 
-const SEARCH_KEY = process.env.SEARCH_KEY;
+const SEARCH_KEY_EVENT = process.env.SEARCH_KEY_EVENT;
 
 const ddbClient = new DynamoDBClient({});
 
@@ -31,9 +31,9 @@ const INPUT_SCHEMA = {
                         properties: {
                             Keys: {
                                 type: 'object',
-                                required: [SEARCH_KEY],
+                                required: [SEARCH_KEY_EVENT],
                                 properties: {
-                                    [SEARCH_KEY]: {
+                                    [SEARCH_KEY_EVENT]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -46,9 +46,9 @@ const INPUT_SCHEMA = {
                             },
                             NewImage: {
                                 type: 'object',
-                                required: [SEARCH_KEY],
+                                required: [SEARCH_KEY_EVENT],
                                 properties: {
-                                    [SEARCH_KEY]: {
+                                    [SEARCH_KEY_EVENT]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -70,9 +70,10 @@ const INPUT_SCHEMA = {
 const getListeningClients = (clientSearchKey) => {
     const params = {
         TableName: process.env.TABLE_NAME,
+        IndexName: process.env.INDEX_NAME,
         KeyConditionExpression: '#sk = :searchvalue',
         ExpressionAttributeNames: {
-            '#sk': SEARCH_KEY
+            '#sk': process.env.SEARCH_KEY_TABLE
         },
         ExpressionAttributeValues: {
             ':searchvalue': { S: clientSearchKey }
@@ -107,7 +108,7 @@ const postDataToClient = async (endpoint, clientId, data) => {
 const baseHandler = async (event) => {
     for (const record of event.Records) {
         const recordKeys = record.dynamodb.Keys;
-        const searchKeyValue = recordKeys[SEARCH_KEY].S;
+        const searchKeyValue = recordKeys[SEARCH_KEY_EVENT].S;
         const clients = await getListeningClients(searchKeyValue);
 
         for (const client of clients.Items) {
