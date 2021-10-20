@@ -10,11 +10,6 @@ The following CLI tools must be installed to validate, build, and test the buzzw
 - AWS CLI - More information can be found here: https://aws.amazon.com/cli/
 - SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
 
-In order to execute the teardown script, jq must be installed.
-```shell
-sudo apt-get install jq
-```
-
 ## Install Dependencies
 
 Run the following command to install all of the dependencies for the buzzword project:
@@ -40,11 +35,33 @@ chmod u+x ./deploy.sh
 
 ## Teardown
 
+
+In order to execute the teardown script, jq must be installed.
+```shell
+sudo apt-get install jq
+```
+
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
 cd ./aws/scripts
 chmod u+x ./teardown.sh
 ./teardown.sh
+```
+
+## Manually invoking the APIs
+
+In order to read the results of the buzzword search, wscat needs to be installed:
+```shell
+npm install -g wscat
+```
+
+The `test-invoke.sh` script can be ran to start a buzzword search on a given URL. The URL is specified in the `test-invoke.json` file.
+- Note the resource ID for the gateway will need to match the resource ID of the HTTP API Gateway of the stack at test.
+
+To retrieve the results, run the command, replacing the URL in the query string to match the one specified in the `test-invoke.json` file:
+- Note the resource ID for the gateway will need to match the resource ID of the WebSocket API Gateway of the stack at test.
+```
+wscat -c wss://${RESOURCE_ID}.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=${URL_HERE}
 ```
 
 ## Local Testing of Lambda functions

@@ -26,7 +26,8 @@ const INPUT_SCHEMA = {
                         properties: {
                             url: {
                                 type: 'string',
-                                pattern: '(http(s)?:\\/\\/.)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                // eslint-disable-next-line max-len
+                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
                             },
                             depth: { type: 'integer' }
                         }
@@ -52,7 +53,8 @@ const baseHandler = async (event) => {
     );
     requestQueue = await Apify.openRequestQueue();
 
-    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl) * event.Records.length;
+    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl) *
+        event.Records.length;
     const crawler = new Apify.CheerioCrawler({
         requestList,
         requestQueue,
@@ -76,7 +78,9 @@ const crawlPage = async ({ request, $ }) => {
     const userData = request.userData;
     const maximumDepthEnv = parseInt(process.env.maxCrawlDepth);
     const currentDepth = userData.depth ? userData.depth : 0;
-    const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv ? userData.maxCrawlDepth : maximumDepthEnv;
+    const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv
+        ? userData.maxCrawlDepth
+        : maximumDepthEnv;
     const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
 
     if (currentDepth < maxCrawlDepth) {
@@ -94,7 +98,10 @@ const crawlPage = async ({ request, $ }) => {
             },
             pseudoUrls: [
                 new Apify.PseudoUrl(
-                    new RegExp(`(^|\\s)https?://(www.)?${baseUrlHostName}([-a-zA-Z0-9()@:%_+.~#?&//=]*)`)
+                    new RegExp(
+                        `(^|\\s)https?://(www.)?${baseUrlHostName}([-a-zA-Z0-9(
+                        )@:%_+.~#?&//=]*)`
+                    )
                 )
             ]
         });
@@ -124,7 +131,13 @@ const formatResponse = (statusCode) => {
 const handler = middy(baseHandler)
     .use(sqsJsonBodyHandler())
     .use(validator({ inputSchema: INPUT_SCHEMA }))
-    .use(httpErrorHandler(process.env.errorLoggingEnabled === 'false' ? { logger: false } : undefined));
+    .use(
+        httpErrorHandler(
+            process.env.errorLoggingEnabled === 'false'
+                ? { logger: false }
+                : undefined
+        )
+    );
 
 module.exports = {
     handler

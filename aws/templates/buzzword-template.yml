@@ -1,5 +1,10 @@
 Transform: AWS::Serverless-2016-10-31
 Description: Overall template for the Buzzword Application AWS Stack
+Parameters:
+  EnvironmentNameSuffix:
+    Type: String
+    Default: dev
+    Description: Environment name to be suffixed to buzzword resources
 Resources:
   NodeModuleDependencyLayer:
     Type: AWS::Serverless::LayerVersion
@@ -48,20 +53,26 @@ Resources:
       Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
       Protocol: sqs
       RawMessageDelivery: true
-  BuzzwordAPIAccessLogs:
-    Type: AWS::Logs::LogGroup
   BuzzwordHTTPGateway:
     Type: AWS::Serverless::HttpApi
     DependsOn:
-      - BuzzwordAPIAccessLogs
       - CrawledURLsSubscription
     Properties:
       StageName: prod
-      AccessLogSettings:
-        DestinationArn: !GetAtt BuzzwordAPIAccessLogs.Arn
-        Format: '{ "requestId":"$context.requestId", "errorMessage":"$context.error.message", "integrationErrorMessage":"$context.integrationErrorMessage" }'
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: ./buzzword-api-gateway-openapi-definition.yml
+            Location: ./buzzword-rest-gateway-openapi-definition.yml
+  KeywordsSocketApplication:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ../applications/socket/socket-template.yml
+      Parameters:
+        ApiGatewayName: !Sub buzzword-keywords-socket-gateway-${EnvironmentNameSuffix}
+        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
+        SearchKey: BaseUrl
+        SearchKeyPattern: '(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)'
+        TableName: !GetAtt KeywordsApplication.Outputs.TableName
+        TableArn: !GetAtt KeywordsApplication.Outputs.TableArn
+        TableStreamArn: !GetAtt KeywordsApplication.Outputs.TableStreamArn

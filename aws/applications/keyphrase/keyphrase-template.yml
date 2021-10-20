@@ -15,19 +15,17 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        -
-          AttributeName: BaseUrl
+        - AttributeName: BaseUrl
           AttributeType: S
-        - 
-          AttributeName: KeyPhrase
+        - AttributeName: KeyPhrase
           AttributeType: S
       KeySchema:
-        -
-          AttributeName: BaseUrl
+        - AttributeName: BaseUrl
           KeyType: HASH
-        - 
-          AttributeName: KeyPhrase
+        - AttributeName: KeyPhrase
           KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
   FindKeyphrasesFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -90,3 +88,12 @@ Outputs:
   QueueURL:
     Description: The URL of the Keyphrases URLs SQS Queue
     Value: !Ref KeyphrasesURLsSQSQueue
+  TableName:
+    Description: The name of the Keyphrases Table
+    Value: !Ref KeyphrasesTable
+  TableArn:
+    Description: The ARN of the Keyphrases Table
+    Value: !GetAtt KeyphrasesTable.Arn
+  TableStreamArn:
+    Description: The ARN of the Keyphrases Table's Stream
+    Value: !GetAtt KeyphrasesTable.StreamArn

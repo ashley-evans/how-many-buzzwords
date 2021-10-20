@@ -1,10 +1,16 @@
-const { LOCAL_STORAGE_SUBDIRS, LOCAL_ENV_VARS, ENV_VARS } = require('@apify/consts');
+const {
+    LOCAL_STORAGE_SUBDIRS,
+    LOCAL_ENV_VARS,
+    ENV_VARS
+} = require('@apify/consts');
 const fs = require('fs-extra');
 const path = require('path');
 
 const DEFAULT_FOLDERS = Object.values(LOCAL_STORAGE_SUBDIRS)
     .concat([
-        `${LOCAL_STORAGE_SUBDIRS.keyValueStores}/${LOCAL_ENV_VARS[ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID]}`
+        `${LOCAL_STORAGE_SUBDIRS.keyValueStores}/${LOCAL_ENV_VARS[
+            ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID
+        ]}`
     ]);
 
 let localStorageDirectory;
