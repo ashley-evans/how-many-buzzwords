@@ -1,14 +1,23 @@
 const middy = require('@middy/core');
 const validator = require('@middy/validator');
-const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
+const {
+    DynamoDBClient,
+    QueryCommand,
+    DeleteItemCommand
+} = require('@aws-sdk/client-dynamodb');
 const {
     ApiGatewayManagementApiClient,
     PostToConnectionCommand,
     GoneException
 } = require('@aws-sdk/client-apigatewaymanagementapi');
-const { REMOVE_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('./constants');
+const {
+    dynamoDBEventTypes,
+    apiGatewayExceptionMessages,
+    activeConnectionsTableKeyFields
+} = require('./constants');
 
-const SEARCH_KEY_EVENT = process.env.SEARCH_KEY_EVENT;
+const SEARCH_KEY = process.env.SEARCH_KEY;
+const TABLE_NAME = process.env.TABLE_NAME;
 
 const ddbClient = new DynamoDBClient({});
 
@@ -31,9 +40,9 @@ const INPUT_SCHEMA = {
                         properties: {
                             Keys: {
                                 type: 'object',
-                                required: [SEARCH_KEY_EVENT],
+                                required: [SEARCH_KEY],
                                 properties: {
-                                    [SEARCH_KEY_EVENT]: {
+                                    [SEARCH_KEY]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -46,9 +55,9 @@ const INPUT_SCHEMA = {
                             },
                             NewImage: {
                                 type: 'object',
-                                required: [SEARCH_KEY_EVENT],
+                                required: [SEARCH_KEY],
                                 properties: {
-                                    [SEARCH_KEY_EVENT]: {
+                                    [SEARCH_KEY]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -73,7 +82,7 @@ const getListeningClients = (clientSearchKey) => {
         IndexName: process.env.INDEX_NAME,
         KeyConditionExpression: '#sk = :searchvalue',
         ExpressionAttributeNames: {
-            '#sk': process.env.SEARCH_KEY_TABLE
+            '#sk': activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
         },
         ExpressionAttributeValues: {
             ':searchvalue': { S: clientSearchKey }
@@ -96,9 +105,19 @@ const postDataToClient = async (endpoint, clientId, data) => {
     try {
         await apiGatewayClient.send(new PostToConnectionCommand(params));
     } catch (ex) {
-        if (ex.message === GONE_EXCEPTION_MESSAGE ||
+        if (ex.message === apiGatewayExceptionMessages.GONE_EXCEPTION ||
             ex instanceof GoneException) {
-            console.log('Client unavailable, not repeating');
+            console.log('Client unavailable, removing connection details');
+
+            const params2 = {
+                TableName: TABLE_NAME,
+                Key: {
+                    [activeConnectionsTableKeyFields.PRIMARY_INDEX_HASH]:
+                        clientId
+                }
+            };
+
+            await ddbClient.send(new DeleteItemCommand(params2));
         } else {
             throw ex;
         }
@@ -108,12 +127,12 @@ const postDataToClient = async (endpoint, clientId, data) => {
 const baseHandler = async (event) => {
     for (const record of event.Records) {
         const recordKeys = record.dynamodb.Keys;
-        const searchKeyValue = recordKeys[SEARCH_KEY_EVENT].S;
+        const searchKeyValue = recordKeys[SEARCH_KEY].S;
         const clients = await getListeningClients(searchKeyValue);
 
         for (const client of clients.Items) {
             let dataValue;
-            if (record.eventName === REMOVE_EVENT_NAME) {
+            if (record.eventName === dynamoDBEventTypes.REMOVE_EVENT_NAME) {
                 dataValue = recordKeys;
             } else {
                 dataValue = record.dynamodb.NewImage;

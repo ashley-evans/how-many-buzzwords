@@ -233,6 +233,7 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:Query
+                  - dynamodb:DeleteItem
                 Resource:
                   - !GetAtt ActiveConnectionsTable.Arn
                   - !Sub "${ActiveConnectionsTable.Arn}/index/SearchKeyIndex"
@@ -272,5 +273,4 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActiveConnectionsTable
           INDEX_NAME: SearchKeyIndex
-          SEARCH_KEY_TABLE: SearchKey
-          SEARCH_KEY_EVENT: !Ref SearchKey
+          SEARCH_KEY: !Ref SearchKey

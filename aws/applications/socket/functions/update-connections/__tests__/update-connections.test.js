@@ -4,24 +4,21 @@ const {
 } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { mockClient } = require('aws-sdk-client-mock');
 const {
-    INSERT_EVENT_NAME,
-    MODIFY_EVENT_NAME,
-    REMOVE_EVENT_NAME,
-    GONE_EXCEPTION_MESSAGE
+    dynamoDBEventTypes,
+    apiGatewayExceptionMessages,
+    activeConnectionsTableKeyFields
 } = require('../constants');
 
 const TABLE_NAME = 'test';
 const INDEX_NAME = 'test_index';
-const SEARCH_KEY_TABLE = 'SearchKey';
-const SEARCH_KEY_EVENT = 'BaseUrl';
+const SEARCH_KEY = 'BaseUrl';
 const EXPECTED_SEARCH_KEY_VALUE = 'valid_key';
 const EXPECTED_CONNECTION_ENDPOINT = 'https://test.test.com/prod';
 const EXPECTED_CONNECTION_ID = 'Gyvd8cAwLPECHlQ=';
 
 process.env.TABLE_NAME = TABLE_NAME;
 process.env.INDEX_NAME = INDEX_NAME;
-process.env.SEARCH_KEY_TABLE = SEARCH_KEY_TABLE;
-process.env.SEARCH_KEY_EVENT = SEARCH_KEY_EVENT;
+process.env.SEARCH_KEY = SEARCH_KEY;
 
 const ddbMock = mockClient(DynamoDBClient);
 const apiMock = mockClient(ApiGatewayManagementApiClient);
@@ -50,7 +47,7 @@ const createRecord = (
 
 const createSearchKeyField = (value) => {
     return {
-        [SEARCH_KEY_EVENT]: { S: value }
+        [SEARCH_KEY]: { S: value }
     };
 };
 
@@ -63,17 +60,23 @@ describe('input validation', () => {
         ['event with missing records', { Records: undefined }],
         [
             'record with missing dynamoDB field',
-            createEvent({ dynamodb: undefined, eventName: INSERT_EVENT_NAME })
+            createEvent({
+                dynamodb: undefined,
+                eventName: dynamoDBEventTypes.INSERT_EVENT_NAME
+            })
         ],
         [
             'record with missing keys field',
-            createEvent({ dynamodb: {}, eventName: INSERT_EVENT_NAME })
+            createEvent({
+                dynamodb: {},
+                eventName: dynamoDBEventTypes.INSERT_EVENT_NAME
+            })
         ],
         [
             'keys field with missing search key',
             createEvent(
                 createRecord(
-                    INSERT_EVENT_NAME,
+                    dynamoDBEventTypes.INSERT_EVENT_NAME,
                     createSearchKeyField()
                 )
             )
@@ -82,7 +85,7 @@ describe('input validation', () => {
             'new image field with missing search key',
             createEvent(
                 createRecord(
-                    INSERT_EVENT_NAME,
+                    dynamoDBEventTypes.INSERT_EVENT_NAME,
                     createSearchKeyField(EXPECTED_SEARCH_KEY_VALUE),
                     createSearchKeyField()
                 )
@@ -103,7 +106,7 @@ describe.each([
         'a single insert connection stream event',
         createEvent(
             createRecord(
-                INSERT_EVENT_NAME,
+                dynamoDBEventTypes.INSERT_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             )
@@ -113,12 +116,12 @@ describe.each([
         'multiple insert connection stream events',
         createEvent(
             createRecord(
-                INSERT_EVENT_NAME,
+                dynamoDBEventTypes.INSERT_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             ),
             createRecord(
-                INSERT_EVENT_NAME,
+                dynamoDBEventTypes.INSERT_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}2`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}2`)
             )
@@ -128,7 +131,7 @@ describe.each([
         'a single modify connection stream event',
         createEvent(
             createRecord(
-                MODIFY_EVENT_NAME,
+                dynamoDBEventTypes.MODIFY_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             )
@@ -138,12 +141,12 @@ describe.each([
         'multiple modify connection stream events',
         createEvent(
             createRecord(
-                MODIFY_EVENT_NAME,
+                dynamoDBEventTypes.MODIFY_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             ),
             createRecord(
-                MODIFY_EVENT_NAME,
+                dynamoDBEventTypes.MODIFY_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}2`),
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}2`)
             )
@@ -152,14 +155,15 @@ describe.each([
 ])('update path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
             ddbMock
                 .on(QueryCommand, {
                     TableName: TABLE_NAME,
                     IndexName: INDEX_NAME,
                     KeyConditionExpression: '#sk = :searchvalue',
                     ExpressionAttributeNames: {
-                        '#sk': SEARCH_KEY_TABLE
+                        '#sk':
+                            activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
                     },
                     ExpressionAttributeValues: {
                         ':searchvalue': { S: searchKeyValue }
@@ -188,13 +192,13 @@ describe.each([
         expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
 
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 IndexName: INDEX_NAME,
                 KeyConditionExpression: '#sk = :searchvalue',
                 ExpressionAttributeNames: {
-                    '#sk': SEARCH_KEY_TABLE
+                    '#sk': activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
                 },
                 ExpressionAttributeValues: {
                     ':searchvalue': { S: searchKeyValue }
@@ -231,7 +235,7 @@ describe.each([
         'a single remove connection stream event',
         createEvent(
             createRecord(
-                REMOVE_EVENT_NAME,
+                dynamoDBEventTypes.REMOVE_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             )
         )
@@ -240,11 +244,11 @@ describe.each([
         'multiple remove connection stream events',
         createEvent(
             createRecord(
-                REMOVE_EVENT_NAME,
+                dynamoDBEventTypes.REMOVE_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}1`)
             ),
             createRecord(
-                REMOVE_EVENT_NAME,
+                dynamoDBEventTypes.REMOVE_EVENT_NAME,
                 createSearchKeyField(`${EXPECTED_SEARCH_KEY_VALUE}2`)
             )
         )
@@ -252,14 +256,15 @@ describe.each([
 ])('remove path: %s', (message, event) => {
     beforeAll(async () => {
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
             ddbMock
                 .on(QueryCommand, {
                     TableName: TABLE_NAME,
                     IndexName: INDEX_NAME,
                     KeyConditionExpression: '#sk = :searchvalue',
                     ExpressionAttributeNames: {
-                        '#sk': SEARCH_KEY_TABLE
+                        '#sk':
+                            activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
                     },
                     ExpressionAttributeValues: {
                         ':searchvalue': { S: searchKeyValue }
@@ -288,13 +293,13 @@ describe.each([
         expect(dynamoDbCallsInputs).toHaveLength(event.Records.length);
 
         for (const record of event.Records) {
-            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY_EVENT].S;
+            const searchKeyValue = record.dynamodb.Keys[SEARCH_KEY].S;
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 IndexName: INDEX_NAME,
                 KeyConditionExpression: '#sk = :searchvalue',
                 ExpressionAttributeNames: {
-                    '#sk': SEARCH_KEY_TABLE
+                    '#sk': activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
                 },
                 ExpressionAttributeValues: {
                     ':searchvalue': { S: searchKeyValue }
@@ -329,22 +334,23 @@ describe.each([
 describe('Error handling', () => {
     const event = createEvent(
         createRecord(
-            REMOVE_EVENT_NAME,
+            dynamoDBEventTypes.REMOVE_EVENT_NAME,
             createSearchKeyField(EXPECTED_SEARCH_KEY_VALUE)
         )
     );
 
     test(
-        'handler catches gone exception when client no longer available',
-        (done) => {
-            const expectedErrorMessage = GONE_EXCEPTION_MESSAGE;
+        'handler removes client from dynamodb when client no longer available',
+        async () => {
+            const expectedErrorMessage =
+                apiGatewayExceptionMessages.GONE_EXCEPTION;
 
             ddbMock
                 .on(QueryCommand)
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY_EVENT]: {
+                            [SEARCH_KEY]: {
                                 S: EXPECTED_SEARCH_KEY_VALUE
                             },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
@@ -356,21 +362,16 @@ describe('Error handling', () => {
                 });
             apiMock.rejects(expectedErrorMessage);
 
-            handler(event)
-                .then(() => {
-                    done();
-                })
-                .catch(ex => {
-                    if (ex.message === expectedErrorMessage) {
-                        done(
-                            `Received ${expectedErrorMessage} when not expected`
-                        );
-                    } else {
-                        done(
-                            `Received: (${ex}) when only GoneException thrown`
-                        );
-                    }
-                });
+            await handler(event);
+            const dynamoDbCallsInputs = ddbMock.calls()
+                .map(call => call.args[0].input);
+
+            expect(dynamoDbCallsInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                Key: {
+                    ConnectionId: EXPECTED_CONNECTION_ID
+                }
+            });
         }
     );
 
@@ -382,7 +383,7 @@ describe('Error handling', () => {
                 .resolves({
                     Items: [
                         {
-                            [SEARCH_KEY_EVENT]: {
+                            [SEARCH_KEY]: {
                                 S: EXPECTED_SEARCH_KEY_VALUE
                             },
                             ConnectionId: { S: EXPECTED_CONNECTION_ID },
