@@ -21,9 +21,6 @@ const getAllTextInHTML = (html) => {
             if (!skipText) {
                 result = `${result} ${text}`.trim();
             }
-        },
-        onclosetag () {
-            skipText = false;
         }
     });
 
