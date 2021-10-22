@@ -4,6 +4,7 @@ const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
+const { keyPhraseTableKeyFields } = require('../constants');
 
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
@@ -170,8 +171,12 @@ describe('keyphrase extraction', () => {
                 expect(dynamoDbArgumentInputs).toContainEqual({
                     TableName: TABLE_NAME,
                     Item: {
-                        BaseUrl: { S: EXPECTED_BASE_URL },
-                        KeyPhrase: { S: expectedOccurance.phrase },
+                        [keyPhraseTableKeyFields.HASH_KEY]: {
+                            S: EXPECTED_BASE_URL
+                        },
+                        [keyPhraseTableKeyFields.SORT_KEY]: {
+                            S: expectedOccurance.phrase
+                        },
                         Occurances: {
                             N: expectedOccurance.occurances.toString()
                         }
@@ -195,8 +200,8 @@ test('updates keyphrase occurrance if already exists', async () => {
         .on(GetItemCommand, {
             TableName: TABLE_NAME,
             Key: {
-                BaseUrl: { S: EXPECTED_BASE_URL },
-                KeyPhrase: { S: previousPhrase }
+                [keyPhraseTableKeyFields.HASH_KEY]: { S: EXPECTED_BASE_URL },
+                [keyPhraseTableKeyFields.SORT_KEY]: { S: previousPhrase }
             },
             ProjectionExpression: 'Occurances'
         })
@@ -217,8 +222,8 @@ test('updates keyphrase occurrance if already exists', async () => {
     expect(dynamoDbArgumentInputs).toContainEqual({
         TableName: TABLE_NAME,
         Item: {
-            BaseUrl: { S: EXPECTED_BASE_URL },
-            KeyPhrase: { S: previousPhrase },
+            [keyPhraseTableKeyFields.HASH_KEY]: { S: EXPECTED_BASE_URL },
+            [keyPhraseTableKeyFields.SORT_KEY]: { S: previousPhrase },
             Occurances: { N: (expectedPrevious + 3).toString() }
         }
     });

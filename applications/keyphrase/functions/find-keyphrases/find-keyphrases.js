@@ -12,6 +12,7 @@ const toString = require('nlcst-to-string');
 const escapeRegExp = require('lodash.escaperegexp');
 
 const { getAllTextInHTML } = require('./parse-html');
+const { keyPhraseTableKeyFields } = require('./constants');
 
 const {
     DynamoDBClient,
@@ -97,8 +98,10 @@ const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
         const params = {
             TableName: process.env.TABLE_NAME,
             Key: {
-                BaseUrl: { S: baseUrl },
-                KeyPhrase: { S: phraseOccurance.phrase }
+                [keyPhraseTableKeyFields.HASH_KEY]: { S: baseUrl },
+                [keyPhraseTableKeyFields.SORT_KEY]: {
+                    S: phraseOccurance.phrase
+                }
             },
             ProjectionExpression: 'Occurances'
         };
@@ -118,8 +121,10 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurances) => {
         const params = {
             TableName: process.env.TABLE_NAME,
             Item: {
-                BaseUrl: { S: baseUrl },
-                KeyPhrase: { S: phraseOccurance.phrase },
+                [keyPhraseTableKeyFields.HASH_KEY]: { S: baseUrl },
+                [keyPhraseTableKeyFields.SORT_KEY]: {
+                    S: phraseOccurance.phrase
+                },
                 Occurances: { N: phraseOccurance.occurances.toString() }
             }
         };
