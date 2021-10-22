@@ -7,7 +7,7 @@
             "request": "attach",
             "port": 9229,
             "address": "localhost",
-            "localRoot": "${workspaceFolder}/aws/functions",
+            "localRoot": "${workspaceFolder}/functions",
             "remoteRoot": "/var/task",
             "protocol": "inspector"
         },
@@ -17,10 +17,10 @@
             "request": "launch",
             "runtimeArgs": [
                 "--inspect-brk",
-                "${workspaceRoot}/aws/node_modules/.bin/jest",
+                "${workspaceRoot}/node_modules/.bin/jest",
                 "--runInBand",
                 "-c",
-                "${workspaceRoot}/aws/package.json"
+                "${workspaceRoot}/package.json"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -33,10 +33,10 @@
             "runtimeArgs": [
                 "${fileBasename}",
                 "--inspect-brk",
-                "${workspaceRoot}/aws/node_modules/.bin/jest",
+                "${workspaceRoot}/node_modules/.bin/jest",
                 "--runInBand",
                 "-c",
-                "${workspaceRoot}/aws/package.json"
+                "${workspaceRoot}/package.json"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
