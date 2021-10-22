@@ -38,7 +38,7 @@ jobs:
           npm --prefix ./aws/ run lint
   deploy:
     runs-on: ubuntu-latest
-    needs: [test, validate]
+    needs: [test, validate, lint]
     if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v2
