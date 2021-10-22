@@ -1,10 +1,16 @@
 const { handler } = require('../find-keyphrases');
 const path = require('path');
-const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const {
+    DynamoDBClient,
+    QueryCommand
+} = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
-const { keyPhraseTableKeyFields } = require('../constants');
+const {
+    keyPhraseTableKeyFields,
+    keyPhraseTableNonKeyFields
+} = require('../constants');
 
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
@@ -125,16 +131,16 @@ describe('keyphrase extraction', () => {
             EXPECTED_CHILD_ROUTE,
             'term-extraction.html',
             [
-                { phrase: 'term', occurances: 3 },
-                { phrase: 'extraction', occurances: 7 },
-                { phrase: 'terminology', occurances: 4 },
-                { phrase: 'web', occurances: 4 },
-                { phrase: 'domain', occurances: 6 },
-                { phrase: 'terminology extraction', occurances: 3 },
-                { phrase: 'terms', occurances: 4 },
-                { phrase: 'term extraction', occurances: 2 },
-                { phrase: 'knowledge domain', occurances: 2 },
-                { phrase: 'communities', occurances: 2 }
+                { phrase: 'term', occurences: 3 },
+                { phrase: 'extraction', occurences: 7 },
+                { phrase: 'terminology', occurences: 4 },
+                { phrase: 'web', occurences: 4 },
+                { phrase: 'domain', occurences: 6 },
+                { phrase: 'terminology extraction', occurences: 3 },
+                { phrase: 'terms', occurences: 4 },
+                { phrase: 'term extraction', occurences: 2 },
+                { phrase: 'knowledge domain', occurences: 2 },
+                { phrase: 'communities', occurences: 2 }
             ]
         ],
         [
@@ -143,8 +149,8 @@ describe('keyphrase extraction', () => {
             'empty.html',
             []
         ]
-    ])('stores keyphrase occurances to base URL entry in DynamoDB for %s',
-        async (message, childRoute, assetPath, expectedOccurances) => {
+    ])('stores keyphrase occurences to base URL entry in DynamoDB for %s',
+        async (message, childRoute, assetPath, expectedOccurences) => {
             mockURLFromFile(
                 EXPECTED_BASE_URL,
                 childRoute,
@@ -159,15 +165,15 @@ describe('keyphrase extraction', () => {
             const dynamoDbCallsArguments = ddbMock.calls()
                 .map(call => call.args);
 
-            // Should call GetItem and PutItem for each occurance
+            // Should call Query once and PutItem for each occurence
             expect(dynamoDbCallsArguments).toHaveLength(
-                expectedOccurances.length * 2
+                expectedOccurences.length + 1
             );
 
             const dynamoDbArgumentInputs = dynamoDbCallsArguments
                 .map(args => args[0].input);
 
-            for (const expectedOccurance of expectedOccurances) {
+            for (const expectedOccurence of expectedOccurences) {
                 expect(dynamoDbArgumentInputs).toContainEqual({
                     TableName: TABLE_NAME,
                     Item: {
@@ -175,10 +181,10 @@ describe('keyphrase extraction', () => {
                             S: EXPECTED_BASE_URL
                         },
                         [keyPhraseTableKeyFields.SORT_KEY]: {
-                            S: expectedOccurance.phrase
+                            S: expectedOccurence.phrase
                         },
-                        Occurances: {
-                            N: expectedOccurance.occurances.toString()
+                        [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                            N: expectedOccurence.occurences.toString()
                         }
                     }
                 });
@@ -186,45 +192,146 @@ describe('keyphrase extraction', () => {
         });
 });
 
-test('updates keyphrase occurrance if already exists', async () => {
-    mockURLFromFile(
-        EXPECTED_BASE_URL,
-        EXPECTED_CHILD_ROUTE,
-        path.join(ASSET_FOLDER, 'term-extraction.html'),
-        false
-    );
-
-    const previousPhrase = 'term';
-    const expectedPrevious = 5;
-    ddbMock
-        .on(GetItemCommand, {
-            TableName: TABLE_NAME,
-            Key: {
-                [keyPhraseTableKeyFields.HASH_KEY]: { S: EXPECTED_BASE_URL },
-                [keyPhraseTableKeyFields.SORT_KEY]: { S: previousPhrase }
-            },
-            ProjectionExpression: 'Occurances'
-        })
-        .resolves({
-            Item: {
-                Occurances: {
-                    N: expectedPrevious
-                }
-            }
-        });
-
-    await handler(
-        createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
-    );
-
-    const dynamoDbArgumentInputs = ddbMock.calls()
-        .map(call => call.args[0].input);
-    expect(dynamoDbArgumentInputs).toContainEqual({
-        TableName: TABLE_NAME,
-        Item: {
-            [keyPhraseTableKeyFields.HASH_KEY]: { S: EXPECTED_BASE_URL },
-            [keyPhraseTableKeyFields.SORT_KEY]: { S: previousPhrase },
-            Occurances: { N: (expectedPrevious + 3).toString() }
-        }
+describe('previous keyphrase occurences', () => {
+    beforeEach(() => {
+        mockURLFromFile(
+            EXPECTED_BASE_URL,
+            EXPECTED_CHILD_ROUTE,
+            path.join(ASSET_FOLDER, 'term-extraction.html'),
+            false
+        );
     });
+
+    test('calls dynamodb to get previous keyphrases for URL', async () => {
+        await handler(
+            createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+        );
+        const dynamoDbCallsInputs = ddbMock.calls()
+            .map(call => call.args[0].input);
+
+        expect(dynamoDbCallsInputs).toContainEqual({
+            TableName: TABLE_NAME,
+            KeyConditionExpression: '#url = :searchUrl',
+            ExpressionAttributeNames: {
+                '#url': keyPhraseTableKeyFields.HASH_KEY
+            },
+            ExpressionAttributeValues: {
+                ':searchUrl': { S: EXPECTED_BASE_URL }
+            },
+            ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
+                `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+        });
+    });
+
+    test.each([
+        ['is a keyword on current page', 'term', 3],
+        ['not a keyword on current page', 'first', 2]
+    ])(
+        'updates dynamodb if previous keyword exists on page and %s',
+        async (message, previousKeyPhrase, expectedOccurences) => {
+            const previousOccurences = 5;
+
+            ddbMock
+                .on(QueryCommand, {
+                    TableName: TABLE_NAME,
+                    KeyConditionExpression: '#url = :searchUrl',
+                    ExpressionAttributeNames: {
+                        '#url': keyPhraseTableKeyFields.HASH_KEY
+                    },
+                    ExpressionAttributeValues: {
+                        ':searchUrl': { S: EXPECTED_BASE_URL }
+                    },
+                    ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
+                        `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+                })
+                .resolves({
+                    Items: [
+                        {
+                            [keyPhraseTableKeyFields.SORT_KEY]: {
+                                S: previousKeyPhrase
+                            },
+                            [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                                N: previousOccurences.toString()
+                            }
+                        }
+                    ]
+                });
+
+            await handler(
+                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+            );
+            const dynamoDbCallsInputs = ddbMock.calls()
+                .map(call => call.args[0].input);
+
+            expect(dynamoDbCallsInputs).toContainEqual({
+                TableName: TABLE_NAME,
+                Item: {
+                    [keyPhraseTableKeyFields.HASH_KEY]: {
+                        S: EXPECTED_BASE_URL
+                    },
+                    [keyPhraseTableKeyFields.SORT_KEY]: {
+                        S: previousKeyPhrase
+                    },
+                    [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                        N: (previousOccurences + expectedOccurences).toString()
+                    }
+                }
+            });
+        }
+    );
+
+    test(
+        'doesn\'t update dynamodb if previous keyword doesn\'t exist on page',
+        async () => {
+            const previousKeyPhrase = 'wibble';
+            const previousOccurences = '5';
+
+            ddbMock
+                .on(QueryCommand, {
+                    TableName: TABLE_NAME,
+                    KeyConditionExpression: '#url = :searchUrl',
+                    ExpressionAttributeNames: {
+                        '#url': keyPhraseTableKeyFields.HASH_KEY
+                    },
+                    ExpressionAttributeValues: {
+                        ':searchUrl': { S: EXPECTED_BASE_URL }
+                    },
+                    ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
+                        `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+                })
+                .resolves({
+                    Items: [
+                        {
+                            [keyPhraseTableKeyFields.SORT_KEY]: {
+                                S: previousKeyPhrase
+                            },
+                            [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                                N: previousOccurences
+                            }
+                        }
+                    ]
+                });
+
+            await handler(
+                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+            );
+            const dynamoDbCallsInputs = ddbMock.calls()
+                .map(call => call.args[0].input);
+
+            expect(dynamoDbCallsInputs).not.toContainEqual({
+                TableName: TABLE_NAME,
+                Item: {
+                    [keyPhraseTableKeyFields.HASH_KEY]: {
+                        S: EXPECTED_BASE_URL
+                    },
+                    [keyPhraseTableKeyFields.SORT_KEY]: {
+                        S: previousKeyPhrase
+                    },
+                    [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                        N: previousOccurences
+                    }
+                }
+            });
+        }
+    );
 });

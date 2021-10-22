@@ -3,6 +3,11 @@ const keyPhraseTableKeyFields = Object.freeze({
     SORT_KEY: 'KeyPhrase'
 });
 
+const keyPhraseTableNonKeyFields = Object.freeze({
+    OCCURENCES_FIELD: 'Occurences'
+});
+
 module.exports = {
-    keyPhraseTableKeyFields
+    keyPhraseTableKeyFields,
+    keyPhraseTableNonKeyFields
 };
