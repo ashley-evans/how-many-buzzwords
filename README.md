@@ -28,7 +28,7 @@ xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-l
 
 Run the following commands to deploy a development buzzword stack:
 ```shell
-cd ./aws/scripts
+cd ./scripts
 chmod u+x ./deploy.sh
 ./deploy.sh
 ```
@@ -43,7 +43,7 @@ sudo apt-get install jq
 
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
-cd ./aws/scripts
+cd ./scripts
 chmod u+x ./teardown.sh
 ./teardown.sh
 ```
@@ -68,13 +68,13 @@ wscat -c wss://${RESOURCE_ID}.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=$
 
 Run the following commands to invoke lambda functions locally:
 ```shell
-sam local start-lambda --template ./aws/templates/buzzword-template.yml
+sam local start-lambda --template ./templates/buzzword-template.yml
 aws lambda invoke --function-name "INSERT_NAME_OF_LAMBDA_RESOURCE" --endpoint-url "http://127.0.0.1:3001" --no-verify-ssl local-lambda-output.txt
 ```
 
 To debug the function locally, you can start the lambda function container in debug mode using the following command:
 ```shell
-sam local start-lambda --debug-port 9229 --template ./aws/templates/buzzword-template.yml 
+sam local start-lambda --debug-port 9229 --template ./templates/buzzword-template.yml 
 ```
 
 Once the lambda has been invoked, then you can attach the debugger to the process using the VS Code debug configuration called "Attach to Local SAM resources"
@@ -83,7 +83,7 @@ Once the lambda has been invoked, then you can attach the debugger to the proces
 
 The CI pipeline requires access to two users to perform both template validation and stack deployment. These user's can be created using the following command:
 ```shell
-aws cloudformation deploy --template-file ./aws/templates/buzzword-ci-users-template.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
+aws cloudformation deploy --template-file ./templates/buzzword-ci-users-template.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
 ```
 
 The following GitHub secrets should be created with the following values (Referring to the resources in the `buzzword-ci-users.yml` file):
