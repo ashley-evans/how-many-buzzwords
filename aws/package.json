@@ -23,6 +23,7 @@
         "http-status-codes": "^2.1.4"
     },
     "scripts": {
+        "lint": "eslint '.' --max-warnings 0 --ext .js,.jsx",
         "ci": "find ! -path \"*/node_modules/*\" ! -path \"*/.aws-sam/*\" -name package.json -execdir npm ci \\;",
         "test": "node node_modules/.bin/jest --verbose"
     },

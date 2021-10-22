@@ -23,6 +23,19 @@ jobs:
       - name: Validate Templates
         run: |
           xargs -n1 -r0a <(find -name *-template.yml -print0) cfn-lint
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install Dependencies
+        run: |
+          find -name package.json -execdir npm ci \;
+      - name: Run ESLint
+        run: |
+          npm --prefix ./aws/ run lint
   deploy:
     runs-on: ubuntu-latest
     needs: [test, validate]
