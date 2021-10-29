@@ -56,7 +56,7 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:PutItem
-                  - dynamodb:GetItem
+                  - dynamodb:Query
                 Resource: !GetAtt KeyphrasesTable.Arn
                 Effect: Allow
       ManagedPolicyArns:

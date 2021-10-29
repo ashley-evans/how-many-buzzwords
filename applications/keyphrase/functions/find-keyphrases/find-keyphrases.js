@@ -11,13 +11,19 @@ const toString = require('nlcst-to-string');
 
 const escapeRegExp = require('lodash.escaperegexp');
 
-const { getAllTextInHTML } = require('./parse-html');
-
 const {
     DynamoDBClient,
     PutItemCommand,
-    GetItemCommand
+    QueryCommand
 } = require('@aws-sdk/client-dynamodb');
+const { unmarshall } = require('@aws-sdk/util-dynamodb');
+
+const { getAllTextInHTML } = require('./parse-html');
+const {
+    keyPhraseTableKeyFields,
+    keyPhraseTableNonKeyFields
+} = require('./constants');
+
 const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
@@ -75,52 +81,83 @@ const getKeyPhrases = async (text) => {
     return keyPhrases;
 };
 
-const countKeyPhrases = (text, keyPhrases) => {
-    const keyPhraseOccurances = [];
-    for (const phrase of keyPhrases) {
-        const occuranceExpression = new RegExp(
-            `\\b${escapeRegExp(phrase)}\\b`,
-            'gi'
-        );
-        const occurances = (text.match(occuranceExpression) || []).length;
-        keyPhraseOccurances.push({
-            phrase,
-            occurances
-        });
-    }
+const getPreviousKeyPhrases = async (baseUrl) => {
+    const params = {
+        TableName: process.env.TABLE_NAME,
+        KeyConditionExpression: '#url = :searchUrl',
+        ExpressionAttributeNames: {
+            '#url': keyPhraseTableKeyFields.HASH_KEY
+        },
+        ExpressionAttributeValues: {
+            ':searchUrl': { S: baseUrl }
+        },
+        ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
+            `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+    };
 
-    return keyPhraseOccurances;
+    const result = await ddbClient.send(new QueryCommand(params));
+    return result?.Items
+        ? result.Items.map(item => unmarshall(item))
+        : [];
 };
 
-const combinePreviousOccurances = async (baseUrl, keyPhraseOccurances) => {
-    for (const phraseOccurance of keyPhraseOccurances) {
-        const params = {
-            TableName: process.env.TABLE_NAME,
-            Key: {
-                BaseUrl: { S: baseUrl },
-                KeyPhrase: { S: phraseOccurance.phrase }
-            },
-            ProjectionExpression: 'Occurances'
-        };
+const combineKeyPhrases = (currentPhrases, previousPhrases) => {
+    const previousSet = new Set(previousPhrases.map(
+        phrase => phrase[keyPhraseTableKeyFields.SORT_KEY])
+    );
+    const merged = previousPhrases.concat(
+        currentPhrases
+            .filter((phrase) => !previousSet.has(phrase))
+            .map((phrase) => ({
+                [keyPhraseTableKeyFields.SORT_KEY]: phrase
+            }))
+    );
 
-        const result = await ddbClient.send(new GetItemCommand(params));
-        if (result?.Item?.Occurances?.N) {
-            phraseOccurance.occurances = phraseOccurance.occurances +
-                parseInt(result.Item.Occurances.N);
+    return merged;
+};
+
+const countKeyPhrases = (text, keyPhraseOccurences) => {
+    const updatedOccurences = [];
+    for (const keyPhraseOccurence of keyPhraseOccurences) {
+        const occuranceExpression = new RegExp(
+            '\\b' +
+            escapeRegExp(
+                keyPhraseOccurence[keyPhraseTableKeyFields.SORT_KEY]
+            ) +
+            '\\b',
+            'gi'
+        );
+        const occurences = (text.match(occuranceExpression) || []).length;
+
+        if (occurences > 0) {
+            let previousOccurences = parseInt(
+                keyPhraseOccurence[keyPhraseTableNonKeyFields.OCCURENCES_FIELD]
+            );
+            previousOccurences = isNaN(previousOccurences)
+                ? 0
+                : previousOccurences;
+            updatedOccurences.push({
+                phrase: keyPhraseOccurence.KeyPhrase,
+                occurences: previousOccurences + occurences
+            });
         }
     }
 
-    return keyPhraseOccurances;
+    return updatedOccurences;
 };
 
-const storeKeyPhrases = async (baseUrl, keyPhraseOccurances) => {
-    for (const phraseOccurance of keyPhraseOccurances) {
+const storeKeyPhrases = async (baseUrl, keyPhraseOccurences) => {
+    for (const phraseOccurence of keyPhraseOccurences) {
         const params = {
             TableName: process.env.TABLE_NAME,
             Item: {
-                BaseUrl: { S: baseUrl },
-                KeyPhrase: { S: phraseOccurance.phrase },
-                Occurances: { N: phraseOccurance.occurances.toString() }
+                [keyPhraseTableKeyFields.HASH_KEY]: { S: baseUrl },
+                [keyPhraseTableKeyFields.SORT_KEY]: {
+                    S: phraseOccurence.phrase
+                },
+                [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                    N: phraseOccurence.occurences.toString()
+                }
             }
         };
 
@@ -134,14 +171,17 @@ const baseHandler = async (event) => {
         const { body } = await gotScraping.get(childUrl);
 
         const text = getAllTextInHTML(body);
+
         const keyPhrases = await getKeyPhrases(text);
-        const keyPhraseOccurances = countKeyPhrases(text, keyPhrases);
-        const combinedOccurances = await combinePreviousOccurances(
-            baseUrl,
-            keyPhraseOccurances
+        const previousKeyPhrases = await getPreviousKeyPhrases(baseUrl);
+        const combinedPhrases = combineKeyPhrases(
+            keyPhrases,
+            previousKeyPhrases
         );
 
-        await storeKeyPhrases(baseUrl, combinedOccurances);
+        const finalOccurances = countKeyPhrases(text, combinedPhrases);
+
+        await storeKeyPhrases(baseUrl, finalOccurances);
     }
 };
 
