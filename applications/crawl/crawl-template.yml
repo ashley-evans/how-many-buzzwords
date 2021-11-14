@@ -3,7 +3,7 @@ Description: Template for Crawl application's resources
 Parameters:
   NodeDependencyLayerLogicalID:
     Type: String
-    Description: 'Logical ID of the layer containing common Node Dependencies'
+    Description: Logical ID of the layer containing common Node Dependencies
 Resources:
   CrawlURLsSQSQueue:
     Type: AWS::SQS::Queue
@@ -163,6 +163,43 @@ Resources:
       Environment:
         Variables:
           targetSNSArn: !Ref PublishURLsTopic
+  URLsCRUDFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: urls-crud.handler
+      Runtime: nodejs14.x
+      CodeUri: ./functions/urls-crud
+      Description: CRUD function for the URLs Table
+      Policies:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - Version: '2012-10-17'
+        Statement:
+        - Sid: URLsTableCRUDPolicy
+          Effect: Allow
+          Action:
+          - dynamodb:Query
+          Resource: !GetAtt URLsTable.Arn
+  URLsCRUDAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeURLsCRUDFunctionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt URLsCRUDFunction.Arn
+                Effect: Allow
 Outputs:
   QueueURL:
     Description: The URL of the Crawl URLs SQS Queue
@@ -173,3 +210,9 @@ Outputs:
   TopicARN:
     Description: The ARN for the Publish URLS SNS Topic
     Value: !Ref PublishURLsTopic
+  URLCRUDFunctionARN:
+    Description: The ARN for the CRUD function for the URLs Table
+    Value: !GetAtt URLsCRUDFunction.Arn
+  URLCRUDFunctionAccessRole:
+    Description: The ARN of the IAM role required to allow api gateway to access the URLs CRUD function
+    Value: !GetAtt URLsCRUDAccessRole.Arn
