@@ -12,10 +12,6 @@ paths:
           description: "Default response for ANY /crawl request"
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
-  /urls:
-    get:
-      x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
   /urls/{baseUrl}:
     get:
       parameters: [
