@@ -27,5 +27,6 @@
         "!Select sequence",
         "!Split",
         "!Split sequence"
-    ]
+    ],
+    "jest.jestCommandLine": "node node_modules/.bin/jest"
 }
