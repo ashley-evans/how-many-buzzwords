@@ -179,6 +179,10 @@ Resources:
           Action:
           - dynamodb:Query
           Resource: !GetAtt URLsTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref URLsTable
+          ERROR_LOGGING_ENABLED: true
   URLsCRUDAccessRole:
     Type: AWS::IAM::Role
     Properties:
