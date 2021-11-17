@@ -12,6 +12,20 @@ paths:
           description: "Default response for ANY /crawl request"
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
+  /urls/{baseUrl}:
+    get:
+      parameters: [
+        {
+          name: "baseUrl",
+          in: "path",
+          required: true,
+          schema: {
+            type: "string"
+          }
+        }
+      ]
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
 components:
   x-amazon-apigateway-integrations:
     crawl-urls-sqs-send-message-integration:
@@ -29,4 +43,16 @@ components:
       payloadFormatVersion: "1.0"
       type: "aws_proxy"
       connectionType: "INTERNET"
+    urls-crud-read-integration:
+      type: "aws_proxy"
+      httpMethod: "POST"
+      uri:
+        Fn::GetAtt:
+        - "CrawlApplication"
+        - "Outputs.URLCRUDFunctionARN"
+      credentials:
+        Fn::GetAtt:
+        - "CrawlApplication"
+        - "Outputs.URLCRUDFunctionAccessRole"
+      payloadFormatVersion: "1.0"
 x-amazon-apigateway-importexport-version: "1.0"
