@@ -170,6 +170,8 @@ Resources:
       Runtime: nodejs14.x
       CodeUri: ./functions/urls-crud
       Description: CRUD function for the URLs Table
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
