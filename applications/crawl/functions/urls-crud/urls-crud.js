@@ -53,18 +53,28 @@ const getURLs = async (baseUrl) => {
 };
 
 const createResponse = (statusCode, body, contentType) => {
-    return {
+    const response = {
         statusCode,
-        body,
-        headers: {
-            'Content-Type': contentType
-        }
+        body
     };
+
+    if (contentType) {
+        response.headers = {
+            'Content-Type': contentType
+        };
+    }
+
+    return response;
 };
 
 const baseHandler = async (event) => {
     try {
         const response = await getURLs(event.pathParameters.baseUrl);
+        if (response.Items.length === 0) {
+            return createResponse(
+                StatusCodes.NOT_FOUND
+            );
+        }
 
         return createResponse(
             StatusCodes.OK,

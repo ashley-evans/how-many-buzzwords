@@ -16,6 +16,7 @@ const ddbMock = mockClient(DynamoDBClient);
 
 const { handler, supportedMethods } = require('../urls-crud');
 const { urlsTableKeyFields } = require('../constants');
+const { describe } = require('jest-circus');
 
 const createEvent = (httpMethod, baseUrl) => {
     return {
@@ -72,6 +73,7 @@ describe('GET route', () => {
         ];
 
         let response;
+        let dynamoDbCallsInputs;
 
         beforeAll(async () => {
             ddbMock.on(QueryCommand).resolves({
@@ -81,12 +83,12 @@ describe('GET route', () => {
             response = await handler(
                 createEvent(supportedMethods.GET, VALID_URL)
             );
+
+            dynamoDbCallsInputs = ddbMock.calls()
+                .map(call => call.args[0].input);
         });
 
         test('queries dynamodb with provided base URL parameter', async () => {
-            const dynamoDbCallsInputs = ddbMock.calls()
-                .map(call => call.args[0].input);
-
             expect(dynamoDbCallsInputs).toHaveLength(1);
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
@@ -130,6 +132,25 @@ describe('GET route', () => {
             });
             expect(response.statusCode).toEqual(
                 StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    );
+
+    test(
+        'returns not found error if no results are returned from dynamodb',
+        async () => {
+            ddbMock.on(QueryCommand).resolves({
+                Items: []
+            });
+
+            const response = await handler(
+                createEvent(supportedMethods.GET, VALID_URL)
+            );
+
+            expect(response).toBeDefined();
+            expect(response.body).not.toEqual(expect.anything());
+            expect(response.statusCode).toEqual(
+                StatusCodes.NOT_FOUND
             );
         }
     );
