@@ -69,7 +69,7 @@ beforeEach(async () => {
 });
 
 test(
-    'handler inserts list of child pages accessible from base url to dynamo db',
+    'handler inserts list of path names accessible from base url to dynamo db',
     async () => {
         const event = createEvent(createRecord(ENTRY_POINT_URL));
         ddbMock.on(PutItemCommand).resolves();
