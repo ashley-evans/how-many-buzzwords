@@ -39,12 +39,12 @@ Resources:
       AttributeDefinitions:
         - AttributeName: BaseUrl
           AttributeType: S
-        - AttributeName: ChildUrl
+        - AttributeName: Pathname
           AttributeType: S
       KeySchema:
         - AttributeName: BaseUrl
           KeyType: HASH
-        - AttributeName: ChildUrl
+        - AttributeName: Pathname
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE

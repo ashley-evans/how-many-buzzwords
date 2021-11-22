@@ -5,6 +5,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
+const { urlsTableKeyFields } = require('../constants');
 
 const ENTRY_POINT_URL = 'http://example.com/';
 const EXTERNAL_URL = 'http://external-example.com/';
@@ -86,15 +87,23 @@ test(
         expect(dynamoDbArgumentInputs).toContainEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: ENTRY_POINT_URL },
-                ChildUrl: { S: ENTRY_POINT_URL }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: ENTRY_POINT_URL
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: ENTRY_POINT_URL
+                }
             }
         });
         expect(dynamoDbArgumentInputs).toContainEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: ENTRY_POINT_URL },
-                ChildUrl: { S: `${ENTRY_POINT_URL}sub-page-1` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: ENTRY_POINT_URL
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: `${ENTRY_POINT_URL}sub-page-1`
+                }
             }
         });
     }
@@ -123,8 +132,12 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: `${ENTRY_POINT_URL}circle` },
-                ChildUrl: { S: `${ENTRY_POINT_URL}circle` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: `${ENTRY_POINT_URL}circle`
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: `${ENTRY_POINT_URL}circle`
+                }
             }
         });
     }
@@ -160,8 +173,12 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: `${ENTRY_POINT_URL}external` },
-                ChildUrl: { S: `${ENTRY_POINT_URL}external` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: `${ENTRY_POINT_URL}external`
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: `${ENTRY_POINT_URL}external`
+                }
             }
         });
     }
@@ -294,10 +311,10 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    BaseUrl: {
+                    [urlsTableKeyFields.HASH_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${firstRecordLowerBound}`
                     },
-                    ChildUrl: {
+                    [urlsTableKeyFields.SORT_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${firstRecordIndex}`
                     }
                 }
@@ -306,10 +323,10 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    BaseUrl: {
+                    [urlsTableKeyFields.HASH_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${secondRecordLowerBound}`
                     },
-                    ChildUrl: {
+                    [urlsTableKeyFields.SORT_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${secondRecordIndex}`
                     }
                 }

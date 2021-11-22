@@ -7,6 +7,8 @@ const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const httpErrorHandler = require('@middy/http-error-handler');
 const validator = require('@middy/validator');
 
+const { urlsTableKeyFields } = require('./constants');
+
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
 
@@ -107,15 +109,15 @@ const crawlPage = async ({ request, $ }) => {
         });
     }
 
-    await putChildPage(baseUrl, request.url);
+    await putItem(baseUrl, request.url);
 };
 
-const putChildPage = async (base, child) => {
+const putItem = async (hash, sort) => {
     const params = {
         TableName: process.env.TABLE_NAME,
         Item: {
-            BaseUrl: { S: base },
-            ChildUrl: { S: child }
+            [urlsTableKeyFields.HASH_KEY]: { S: hash },
+            [urlsTableKeyFields.SORT_KEY]: { S: sort }
         }
     };
 
