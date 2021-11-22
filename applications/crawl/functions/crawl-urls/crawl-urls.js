@@ -109,7 +109,7 @@ const crawlPage = async ({ request, $ }) => {
         });
     }
 
-    await putItem(baseUrl, request.url);
+    await putItem(baseUrl, new URL(request.url).pathname);
 };
 
 const putItem = async (hash, sort) => {

@@ -91,7 +91,7 @@ test(
                     S: ENTRY_POINT_URL
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
-                    S: ENTRY_POINT_URL
+                    S: '/'
                 }
             }
         });
@@ -102,7 +102,7 @@ test(
                     S: ENTRY_POINT_URL
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
-                    S: `${ENTRY_POINT_URL}sub-page-1`
+                    S: '/sub-page-1'
                 }
             }
         });
@@ -136,7 +136,7 @@ test(
                     S: `${ENTRY_POINT_URL}circle`
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
-                    S: `${ENTRY_POINT_URL}circle`
+                    S: '/circle'
                 }
             }
         });
@@ -177,7 +177,7 @@ test(
                     S: `${ENTRY_POINT_URL}external`
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
-                    S: `${ENTRY_POINT_URL}external`
+                    S: '/external'
                 }
             }
         });
@@ -315,7 +315,7 @@ describe('max request', () => {
                         S: `${ENTRY_POINT_URL}depth-${firstRecordLowerBound}`
                     },
                     [urlsTableKeyFields.SORT_KEY]: {
-                        S: `${ENTRY_POINT_URL}depth-${firstRecordIndex}`
+                        S: `/depth-${firstRecordIndex}`
                     }
                 }
             });
@@ -327,7 +327,7 @@ describe('max request', () => {
                         S: `${ENTRY_POINT_URL}depth-${secondRecordLowerBound}`
                     },
                     [urlsTableKeyFields.SORT_KEY]: {
-                        S: `${ENTRY_POINT_URL}depth-${secondRecordIndex}`
+                        S: `/depth-${secondRecordIndex}`
                     }
                 }
             });
