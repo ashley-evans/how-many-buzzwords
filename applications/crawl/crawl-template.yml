@@ -102,10 +102,10 @@ Resources:
             BatchSize: 2
       Environment:
         Variables:
-          tableName: !Ref URLsTable
-          maxRequestsPerCrawl: 50
-          maxCrawlDepth: 20
-          errorLoggingEnabled: true
+          TABLE_NAME: !Ref URLsTable
+          MAX_REQUESTS_PER_CRAWL: 50
+          MAX_CRAWL_DEPTH: 20
+          ERROR_LOGGING_ENABLED: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
   PublishURLsTopic:
       Type: AWS::SNS::Topic
@@ -162,7 +162,7 @@ Resources:
             StartingPosition: LATEST
       Environment:
         Variables:
-          targetSNSArn: !Ref PublishURLsTopic
+          TARGET_SNS_ARN: !Ref PublishURLsTopic
   URLsCRUDFunction:
     Type: AWS::Serverless::Function
     Properties:

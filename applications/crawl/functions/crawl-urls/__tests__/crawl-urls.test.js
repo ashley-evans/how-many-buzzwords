@@ -14,10 +14,10 @@ const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth/');
 const TABLE_NAME = 'test';
 const MAX_REQUESTS_PER_CRAWL = 50;
 
-process.env.tableName = TABLE_NAME;
-process.env.maxRequestsPerCrawl = MAX_REQUESTS_PER_CRAWL;
-process.env.maxCrawlDepth = 20;
-process.env.errorLoggingEnabled = false;
+process.env.TABLE_NAME = TABLE_NAME;
+process.env.MAX_REQUESTS_PER_CRAWL = MAX_REQUESTS_PER_CRAWL;
+process.env.MAX_CRAWL_DEPTH = 20;
+process.env.ERROR_LOGGING_ENABLED = false;
 
 const ddbMock = mockClient(DynamoDBClient);
 
@@ -208,7 +208,7 @@ describe('depth', () => {
         const dynamoDbCalls = ddbMock.calls();
 
         expect(dynamoDbCalls).toHaveLength(
-            parseInt(process.env.maxCrawlDepth) + 1
+            parseInt(process.env.MAX_CRAWL_DEPTH) + 1
         );
     });
 
@@ -231,7 +231,7 @@ describe('depth', () => {
     test(
         'handler crawls to maximum depth given larger specified depth',
         async () => {
-            const expectedDepth = process.env.maxCrawlDepth + 10;
+            const expectedDepth = process.env.MAX_CRAWL_DEPTH + 10;
             const event = createEvent(
                 createRecord(`${ENTRY_POINT_URL}depth-0`, expectedDepth)
             );
@@ -240,7 +240,7 @@ describe('depth', () => {
             const dynamoDbCalls = ddbMock.calls();
 
             expect(dynamoDbCalls).toHaveLength(
-                parseInt(process.env.maxCrawlDepth) + 1
+                parseInt(process.env.MAX_CRAWL_DEPTH) + 1
             );
         }
     );
@@ -251,7 +251,7 @@ describe('max request', () => {
 
     beforeAll(() => {
         // Set to lower value for testing
-        process.env.maxRequestsPerCrawl = EXPECTED_MAX_REQUESTS;
+        process.env.MAX_REQUESTS_PER_CRAWL = EXPECTED_MAX_REQUESTS;
         ddbMock.on(PutItemCommand).resolves();
     });
 
@@ -319,7 +319,7 @@ describe('max request', () => {
 
     afterAll(() => {
         // Reset to previous value
-        process.env.maxRequestsPerCrawl = MAX_REQUESTS_PER_CRAWL;
+        process.env.MAX_REQUESTS_PER_CRAWL = MAX_REQUESTS_PER_CRAWL;
     });
 });
 

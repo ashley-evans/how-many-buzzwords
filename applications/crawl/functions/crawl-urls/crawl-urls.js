@@ -53,7 +53,7 @@ const baseHandler = async (event) => {
     );
     requestQueue = await Apify.openRequestQueue();
 
-    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl) *
+    const maxRequestsPerCrawl = parseInt(process.env.MAX_REQUESTS_PER_CRAWL) *
         event.Records.length;
     const crawler = new Apify.CheerioCrawler({
         requestList,
@@ -76,7 +76,7 @@ const crawlPage = async ({ request, $ }) => {
     console.log(`Visiting ${request.url}`);
 
     const userData = request.userData;
-    const maximumDepthEnv = parseInt(process.env.maxCrawlDepth);
+    const maximumDepthEnv = parseInt(process.env.MAX_CRAWL_DEPTH);
     const currentDepth = userData.depth ? userData.depth : 0;
     const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv
         ? userData.maxCrawlDepth
@@ -112,7 +112,7 @@ const crawlPage = async ({ request, $ }) => {
 
 const putChildPage = async (base, child) => {
     const params = {
-        TableName: process.env.tableName,
+        TableName: process.env.TABLE_NAME,
         Item: {
             BaseUrl: { S: base },
             ChildUrl: { S: child }
@@ -133,7 +133,7 @@ const handler = middy(baseHandler)
     .use(validator({ inputSchema: INPUT_SCHEMA }))
     .use(
         httpErrorHandler(
-            process.env.errorLoggingEnabled === 'false'
+            process.env.ERROR_LOGGING_ENABLED === 'false'
                 ? { logger: false }
                 : undefined
         )
