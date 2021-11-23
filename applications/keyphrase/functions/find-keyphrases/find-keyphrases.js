@@ -21,7 +21,8 @@ const { unmarshall } = require('@aws-sdk/util-dynamodb');
 const { getAllTextInHTML } = require('./parse-html');
 const {
     keyPhraseTableKeyFields,
-    keyPhraseTableNonKeyFields
+    keyPhraseTableNonKeyFields,
+    urlsTableKeyFields
 } = require('./constants');
 
 const ddbClient = new DynamoDBClient({});
@@ -38,17 +39,19 @@ const INPUT_SCHEMA = {
                 properties: {
                     body: {
                         type: 'object',
-                        required: ['baseUrl', 'childUrl'],
+                        required: [
+                            urlsTableKeyFields.HASH_KEY,
+                            urlsTableKeyFields.SORT_KEY
+                        ],
                         properties: {
-                            baseUrl: {
+                            [urlsTableKeyFields.HASH_KEY]: {
                                 type: 'string',
                                 // eslint-disable-next-line max-len
                                 pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
                             },
-                            childUrl: {
+                            [urlsTableKeyFields.SORT_KEY]: {
                                 type: 'string',
-                                // eslint-disable-next-line max-len
-                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                pattern: '^/.*$'
                             }
                         }
                     }
@@ -167,13 +170,18 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurences) => {
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const { baseUrl, childUrl } = record.body;
+        const baseUrl = new URL(record.body[urlsTableKeyFields.HASH_KEY]);
+        const pathname = record.body[urlsTableKeyFields.SORT_KEY];
+        const childUrl = `http://${baseUrl.hostname}${pathname}`;
+
         const { body } = await gotScraping.get(childUrl);
 
         const text = getAllTextInHTML(body);
 
         const keyPhrases = await getKeyPhrases(text);
-        const previousKeyPhrases = await getPreviousKeyPhrases(baseUrl);
+        const previousKeyPhrases = await getPreviousKeyPhrases(
+            baseUrl.toString()
+        );
         const combinedPhrases = combineKeyPhrases(
             keyPhrases,
             previousKeyPhrases
@@ -181,7 +189,7 @@ const baseHandler = async (event) => {
 
         const finalOccurances = countKeyPhrases(text, combinedPhrases);
 
-        await storeKeyPhrases(baseUrl, finalOccurances);
+        await storeKeyPhrases(baseUrl.toString(), finalOccurances);
     }
 };
 
