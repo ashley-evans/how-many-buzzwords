@@ -2,6 +2,8 @@ const middy = require('@middy/core');
 const validator = require('@middy/validator');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
+const { urlsTableKeyFields } = require('./constants');
+
 const INPUT_SCHEMA = {
     type: 'object',
     required: ['Records'],
@@ -18,9 +20,12 @@ const INPUT_SCHEMA = {
                         properties: {
                             NewImage: {
                                 type: 'object',
-                                required: ['BaseUrl', 'ChildUrl'],
+                                required: [
+                                    urlsTableKeyFields.HASH_KEY,
+                                    urlsTableKeyFields.SORT_KEY
+                                ],
                                 properties: {
-                                    BaseUrl: {
+                                    [urlsTableKeyFields.HASH_KEY]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -31,14 +36,13 @@ const INPUT_SCHEMA = {
                                             }
                                         }
                                     },
-                                    ChildUrl: {
+                                    [urlsTableKeyFields.SORT_KEY]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
                                             S: {
                                                 type: 'string',
-                                                // eslint-disable-next-line max-len
-                                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                                pattern: '^/.*$'
                                             }
                                         }
                                     }
@@ -58,16 +62,19 @@ const baseHandler = async (event) => {
     const records = event.Records;
     for (let i = 0; i < records.length; i++) {
         const recordNewImage = records[i].dynamodb.NewImage;
-        const baseUrl = recordNewImage.BaseUrl.S;
-        const childUrl = recordNewImage.ChildUrl.S;
-        await publishMessage(baseUrl, childUrl);
+        const hashKeyValue = recordNewImage[urlsTableKeyFields.HASH_KEY].S;
+        const sortKeyValue = recordNewImage[urlsTableKeyFields.SORT_KEY].S;
+        await publishMessage(hashKeyValue, sortKeyValue);
     }
 };
 
-const publishMessage = async (baseUrl, childUrl) => {
+const publishMessage = async (hashKeyValue, sortKeyValue) => {
     const publishParams = {
-        Message: JSON.stringify({ baseUrl, childUrl }),
-        TargetArn: process.env.targetSNSArn
+        Message: JSON.stringify({
+            [urlsTableKeyFields.HASH_KEY]: hashKeyValue,
+            [urlsTableKeyFields.SORT_KEY]: sortKeyValue
+        }),
+        TargetArn: process.env.TARGET_SNS_ARN
     };
 
     const command = new PublishCommand(publishParams);
