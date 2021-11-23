@@ -54,13 +54,22 @@ beforeEach(() => {
 
 describe('input validation', () => {
     test.each([
-        ['event with no records', {}],
-        ['record with no DynamoDB field', createEvent({})],
+        [
+            'event with no records',
+            {}
+        ],
+        [
+            'record with no DynamoDB field',
+            createEvent({})
+        ],
         [
             'record with non-object DynamoDB field',
             createEvent({ dynamodb: 'test' })
         ],
-        ['record with missing NewImage field', createEvent({ dynamodb: {} })],
+        [
+            'record with missing NewImage field',
+            createEvent({ dynamodb: {} })
+        ],
         [
             'record with non-object NewImage field',
             createEvent({ dynamodb: { Newimage: 'test' } })
@@ -92,6 +101,10 @@ describe('input validation', () => {
         [
             'record with missing Pathname value',
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
+        ],
+        [
+            'record with valid BaseUrl in other text',
+            createEvent(createRecord(`invalid ${EXPECTED_BASE_URL}`))
         ],
         [
             'record with invalid BaseUrl value',
