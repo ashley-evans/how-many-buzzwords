@@ -37,6 +37,10 @@ describe('input validation', () => {
             createEvent(undefined, VALID_HOSTNAME)
         ],
         [
+            'valid url in other text',
+            createEvent(supportedMethods.GET, `invalid ${VALID_HOSTNAME}`)
+        ],
+        [
             'invalid base URL parameter',
             createEvent(supportedMethods.GET, 'invalid base url')
         ],
