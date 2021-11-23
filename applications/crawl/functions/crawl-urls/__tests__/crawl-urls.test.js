@@ -7,11 +7,15 @@ const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 const { urlsTableKeyFields } = require('../constants');
 
-const ENTRY_POINT_URL = 'http://example.com/';
-const EXTERNAL_URL = 'http://external-example.com/';
+const ENTRY_POINT_HOSTNAME = 'www.example.com';
+const ENTRY_POINT_URL = `http://${ENTRY_POINT_HOSTNAME}/`;
+const EXTERNAL_URL_HOSTNAME = 'www.external-example.com';
+const EXTERNAL_URL = `http://${EXTERNAL_URL_HOSTNAME}/`;
+
 const LOCAL_STORAGE_DIR = path.join(__dirname, '/apify_storage/');
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth/');
+
 const TABLE_NAME = 'test';
 const MAX_REQUESTS_PER_CRAWL = 50;
 
@@ -68,6 +72,26 @@ beforeEach(async () => {
     ddbMock.reset();
 });
 
+describe('input validation', () => {
+    test.each([
+        [
+            'record with invalid JSON body',
+            createEvent({ body: 'test test', eventSource: 'aws:sqs' })
+        ],
+        ['record with missing url', createEvent(createRecord(undefined, 20))],
+        ['record with invalid url (numeric)', createEvent(createRecord(20))],
+        ['record with invalid depth', createEvent(createRecord('test', 'test'))]
+    ])('handler rejects %s', async (message, event) => {
+        ddbMock.on(PutItemCommand).resolves();
+
+        const response = await handler(event);
+
+        expect(response.body).toEqual('Event object failed validation');
+        expect(response.headers['Content-Type']).toEqual('text/plain');
+        expect(response.statusCode).toEqual(400);
+    });
+});
+
 test(
     'handler inserts list of path names accessible from base url to dynamo db',
     async () => {
@@ -88,7 +112,7 @@ test(
             TableName: TABLE_NAME,
             Item: {
                 [urlsTableKeyFields.HASH_KEY]: {
-                    S: ENTRY_POINT_URL
+                    S: ENTRY_POINT_HOSTNAME
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
                     S: '/'
@@ -99,7 +123,7 @@ test(
             TableName: TABLE_NAME,
             Item: {
                 [urlsTableKeyFields.HASH_KEY]: {
-                    S: ENTRY_POINT_URL
+                    S: ENTRY_POINT_HOSTNAME
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
                     S: '/sub-page-1'
@@ -133,7 +157,7 @@ test(
             TableName: TABLE_NAME,
             Item: {
                 [urlsTableKeyFields.HASH_KEY]: {
-                    S: `${ENTRY_POINT_URL}circle`
+                    S: `${ENTRY_POINT_HOSTNAME}/circle`
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
                     S: '/circle'
@@ -174,7 +198,7 @@ test(
             TableName: TABLE_NAME,
             Item: {
                 [urlsTableKeyFields.HASH_KEY]: {
-                    S: `${ENTRY_POINT_URL}external`
+                    S: `${ENTRY_POINT_HOSTNAME}/external`
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
                     S: '/external'
@@ -191,26 +215,6 @@ test('handler returns success when given valid url record', async () => {
     const response = await handler(event);
 
     expect(response.statusCode).toEqual(200);
-});
-
-describe('input validation', () => {
-    test.each([
-        [
-            'record with invalid JSON body',
-            createEvent({ body: 'test test', eventSource: 'aws:sqs' })
-        ],
-        ['record with missing url', createEvent(createRecord(undefined, 20))],
-        ['record with invalid url (numeric)', createEvent(createRecord(20))],
-        ['record with invalid depth', createEvent(createRecord('test', 'test'))]
-    ])('handler rejects %s', async (message, event) => {
-        ddbMock.on(PutItemCommand).resolves();
-
-        const response = await handler(event);
-
-        expect(response.body).toEqual('Event object failed validation');
-        expect(response.headers['Content-Type']).toEqual('text/plain');
-        expect(response.statusCode).toEqual(400);
-    });
 });
 
 describe('depth', () => {
@@ -284,7 +288,7 @@ describe('max request', () => {
             const dynamoDbCalls = ddbMock.calls();
 
             expect(dynamoDbCalls).toHaveLength(EXPECTED_MAX_REQUESTS);
-        }
+        }, 100000
     );
 
     test('handler crawls to max number of pages per record', async () => {
@@ -312,7 +316,8 @@ describe('max request', () => {
                 TableName: TABLE_NAME,
                 Item: {
                     [urlsTableKeyFields.HASH_KEY]: {
-                        S: `${ENTRY_POINT_URL}depth-${firstRecordLowerBound}`
+                        S: `${ENTRY_POINT_HOSTNAME}/depth-` +
+                            firstRecordLowerBound.toString()
                     },
                     [urlsTableKeyFields.SORT_KEY]: {
                         S: `/depth-${firstRecordIndex}`
@@ -324,7 +329,8 @@ describe('max request', () => {
                 TableName: TABLE_NAME,
                 Item: {
                     [urlsTableKeyFields.HASH_KEY]: {
-                        S: `${ENTRY_POINT_URL}depth-${secondRecordLowerBound}`
+                        S: `${ENTRY_POINT_HOSTNAME}/depth-` +
+                            secondRecordLowerBound.toString()
                     },
                     [urlsTableKeyFields.SORT_KEY]: {
                         S: `/depth-${secondRecordIndex}`

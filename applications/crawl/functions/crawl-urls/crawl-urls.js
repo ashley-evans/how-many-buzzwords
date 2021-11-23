@@ -83,10 +83,21 @@ const crawlPage = async ({ request, $ }) => {
     const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv
         ? userData.maxCrawlDepth
         : maximumDepthEnv;
-    const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
+    const requestUrl = new URL(request.url);
+
+    let baseUrl;
+    if (userData.baseUrl) {
+        baseUrl = userData.baseUrl;
+    } else {
+        if (requestUrl.pathname === '/') {
+            baseUrl = requestUrl.hostname;
+        } else {
+            baseUrl = `${requestUrl.hostname}${requestUrl.pathname}`;
+        }
+    }
 
     if (currentDepth < maxCrawlDepth) {
-        const baseUrlHostName = (new URL(baseUrl).hostname).replace('www.', '');
+        const baseUrlRegexText = requestUrl.hostname.replace('www.', '');
 
         await Apify.utils.enqueueLinks({
             $,
@@ -101,7 +112,7 @@ const crawlPage = async ({ request, $ }) => {
             pseudoUrls: [
                 new Apify.PseudoUrl(
                     new RegExp(
-                        `(^|\\s)https?://(www.)?${baseUrlHostName}([-a-zA-Z0-9(
+                        `(^|\\s)https?://(www.)?${baseUrlRegexText}([-a-zA-Z0-9(
                         )@:%_+.~#?&//=]*)`
                     )
                 )
