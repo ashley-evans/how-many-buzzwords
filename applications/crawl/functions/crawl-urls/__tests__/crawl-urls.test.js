@@ -88,26 +88,24 @@ describe.each([
     ['with https protocol', `https://${ENTRY_POINT_HOSTNAME}`],
     ['without a protocol', ENTRY_POINT_HOSTNAME]
 ])('given valid url %s', (message, url) => {
-    let response;
+    let event;
 
     beforeAll(async () => {
-        const event = createEvent(createRecord(url));
+        event = createEvent(createRecord(url));
         ddbMock.on(PutItemCommand).resolves();
-
-        response = await handler(event);
     });
 
     test('handler returns success', async () => {
+        const response = await handler(event);
+
         expect(response.statusCode).toEqual(200);
     });
 
     test(
         'handler inserts all path names accessible from base url to dynamo',
         async () => {
-            const event = createEvent(createRecord(url));
-            ddbMock.on(PutItemCommand).resolves();
-
             await handler(event);
+
             const dynamoDbCallsArguments = ddbMock.calls().map(
                 call => call.args
             );
