@@ -33,7 +33,7 @@ const createRecord = (baseUrl, pathname) => {
     };
 };
 
-const EXPECTED_BASE_URL = 'http://www.test.com/';
+const EXPECTED_BASE_URL = 'www.test.com';
 const EXPECTED_PATHNAME = '/term-extraction';
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 
@@ -55,6 +55,18 @@ describe('input validation', () => {
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
         ],
         [
+            'record with BaseUrl with http protocol',
+            createEvent(
+                createRecord(`http://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with https protocol',
+            createEvent(
+                createRecord(`https://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
             'record with invalid BaseUrl value',
             createEvent(createRecord('not a url', EXPECTED_PATHNAME))
         ],
@@ -72,7 +84,7 @@ describe('input validation', () => {
 
 test.each([
     [
-        'a single record',
+        'a single pathname',
         [
             {
                 pathname: EXPECTED_PATHNAME,
@@ -81,7 +93,7 @@ test.each([
         ]
     ],
     [
-        'multiple records',
+        'multiple pathnames',
         [
             {
                 pathname: EXPECTED_PATHNAME,
@@ -93,30 +105,36 @@ test.each([
             }
         ]
     ]
-])('handler call expected url(s) given %s', async (message, routeDetails) => {
-    const mockURLs = [];
-    const records = [];
-    for (let i = 0; i < routeDetails.length; i++) {
-        const currentRouteDetails = routeDetails[i];
-        const mockURL = mockURLFromFile(
-            EXPECTED_BASE_URL,
-            currentRouteDetails.pathname,
-            path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
-            false
-        );
-        mockURLs.push(mockURL);
+])(
+    'handler call expected base url at all provided pathnames given %s',
+    async (message, routeDetails) => {
+        const mockURLs = [];
+        const records = [];
+        for (let i = 0; i < routeDetails.length; i++) {
+            const currentRouteDetails = routeDetails[i];
+            const mockURL = mockURLFromFile(
+                EXPECTED_BASE_URL,
+                currentRouteDetails.pathname,
+                path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
+                false
+            );
+            mockURLs.push(mockURL);
 
-        records.push(
-            createRecord(EXPECTED_BASE_URL, currentRouteDetails.pathname)
-        );
+            records.push(
+                createRecord(
+                    EXPECTED_BASE_URL,
+                    currentRouteDetails.pathname
+                )
+            );
+        }
+
+        await handler(createEvent(...records));
+
+        for (let i = 0; i < mockURLs.length; i++) {
+            expect(mockURLs[i].isDone()).toBeTruthy();
+        }
     }
-
-    await handler(createEvent(...records));
-
-    for (let i = 0; i < mockURLs.length; i++) {
-        expect(mockURLs[i].isDone()).toBeTruthy();
-    }
-});
+);
 
 describe('keyphrase extraction', () => {
     test.each([

@@ -47,7 +47,7 @@ const INPUT_SCHEMA = {
                             [urlsTableKeyFields.HASH_KEY]: {
                                 type: 'string',
                                 // eslint-disable-next-line max-len
-                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                pattern: '^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
                             },
                             [urlsTableKeyFields.SORT_KEY]: {
                                 type: 'string',
@@ -170,9 +170,9 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurences) => {
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const baseUrl = new URL(record.body[urlsTableKeyFields.HASH_KEY]);
+        const baseUrl = record.body[urlsTableKeyFields.HASH_KEY];
         const pathname = record.body[urlsTableKeyFields.SORT_KEY];
-        const childUrl = `${baseUrl.protocol}//${baseUrl.hostname}${pathname}`;
+        const childUrl = `http://${baseUrl}${pathname}`;
 
         const { body } = await gotScraping.get(childUrl);
 
@@ -180,7 +180,7 @@ const baseHandler = async (event) => {
 
         const keyPhrases = await getKeyPhrases(text);
         const previousKeyPhrases = await getPreviousKeyPhrases(
-            baseUrl.toString()
+            baseUrl
         );
         const combinedPhrases = combineKeyPhrases(
             keyPhrases,
@@ -189,7 +189,7 @@ const baseHandler = async (event) => {
 
         const finalOccurances = countKeyPhrases(text, combinedPhrases);
 
-        await storeKeyPhrases(baseUrl.toString(), finalOccurances);
+        await storeKeyPhrases(baseUrl, finalOccurances);
     }
 };
 
