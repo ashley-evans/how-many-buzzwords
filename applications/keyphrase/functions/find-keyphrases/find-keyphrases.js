@@ -172,7 +172,7 @@ const baseHandler = async (event) => {
     for (const record of event.Records) {
         const baseUrl = new URL(record.body[urlsTableKeyFields.HASH_KEY]);
         const pathname = record.body[urlsTableKeyFields.SORT_KEY];
-        const childUrl = `http://${baseUrl.hostname}${pathname}`;
+        const childUrl = `${baseUrl.protocol}//${baseUrl.hostname}${pathname}`;
 
         const { body } = await gotScraping.get(childUrl);
 
