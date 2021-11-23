@@ -69,9 +69,22 @@ describe('input validation', () => {
             'record with invalid JSON body',
             createEvent({ body: 'test test', eventSource: 'aws:sqs' })
         ],
-        ['record with missing url', createEvent(createRecord(undefined, 20))],
-        ['record with invalid url (numeric)', createEvent(createRecord(20))],
-        ['record with invalid depth', createEvent(createRecord('test', 'test'))]
+        [
+            'record with missing url',
+            createEvent(createRecord(undefined, 20))
+        ],
+        [
+            'record with valid url in other text',
+            createEvent(createRecord(`invalid ${ENTRY_POINT_HOSTNAME}`))
+        ],
+        [
+            'record with invalid url (numeric)',
+            createEvent(createRecord(20))
+        ],
+        [
+            'record with invalid depth',
+            createEvent(createRecord(ENTRY_POINT_HOSTNAME, 'test'))
+        ]
     ])('handler rejects %s', async (message, event) => {
         ddbMock.on(PutItemCommand).resolves();
 
