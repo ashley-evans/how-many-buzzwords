@@ -7,6 +7,8 @@ const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const httpErrorHandler = require('@middy/http-error-handler');
 const validator = require('@middy/validator');
 
+const { urlsTableKeyFields } = require('./constants');
+
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
 
@@ -53,7 +55,7 @@ const baseHandler = async (event) => {
     );
     requestQueue = await Apify.openRequestQueue();
 
-    const maxRequestsPerCrawl = parseInt(process.env.maxRequestsPerCrawl) *
+    const maxRequestsPerCrawl = parseInt(process.env.MAX_REQUESTS_PER_CRAWL) *
         event.Records.length;
     const crawler = new Apify.CheerioCrawler({
         requestList,
@@ -76,7 +78,7 @@ const crawlPage = async ({ request, $ }) => {
     console.log(`Visiting ${request.url}`);
 
     const userData = request.userData;
-    const maximumDepthEnv = parseInt(process.env.maxCrawlDepth);
+    const maximumDepthEnv = parseInt(process.env.MAX_CRAWL_DEPTH);
     const currentDepth = userData.depth ? userData.depth : 0;
     const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv
         ? userData.maxCrawlDepth
@@ -107,15 +109,15 @@ const crawlPage = async ({ request, $ }) => {
         });
     }
 
-    await putChildPage(baseUrl, request.url);
+    await putItem(baseUrl, new URL(request.url).pathname);
 };
 
-const putChildPage = async (base, child) => {
+const putItem = async (hashKeyValue, sortKeyValue) => {
     const params = {
-        TableName: process.env.tableName,
+        TableName: process.env.TABLE_NAME,
         Item: {
-            BaseUrl: { S: base },
-            ChildUrl: { S: child }
+            [urlsTableKeyFields.HASH_KEY]: { S: hashKeyValue },
+            [urlsTableKeyFields.SORT_KEY]: { S: sortKeyValue }
         }
     };
 
@@ -133,7 +135,7 @@ const handler = middy(baseHandler)
     .use(validator({ inputSchema: INPUT_SCHEMA }))
     .use(
         httpErrorHandler(
-            process.env.errorLoggingEnabled === 'false'
+            process.env.ERROR_LOGGING_ENABLED === 'false'
                 ? { logger: false }
                 : undefined
         )

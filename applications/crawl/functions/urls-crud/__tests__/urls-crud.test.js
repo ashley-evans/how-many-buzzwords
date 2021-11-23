@@ -16,7 +16,6 @@ const ddbMock = mockClient(DynamoDBClient);
 
 const { handler, supportedMethods } = require('../urls-crud');
 const { urlsTableKeyFields } = require('../constants');
-const { describe } = require('jest-circus');
 
 const createEvent = (httpMethod, baseUrl) => {
     return {
@@ -60,14 +59,14 @@ describe('input validation', () => {
 
 describe('GET route', () => {
     describe('Happy path', () => {
-        const expectedChildUrl = `${VALID_URL}/example`;
+        const expectedPathname = '/example';
         const expectedData = [
             {
                 [urlsTableKeyFields.HASH_KEY]: {
                     S: VALID_URL
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
-                    S: expectedChildUrl
+                    S: expectedPathname
                 }
             }
         ];

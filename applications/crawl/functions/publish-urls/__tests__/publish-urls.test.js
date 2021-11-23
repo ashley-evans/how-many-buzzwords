@@ -1,24 +1,26 @@
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const { mockClient } = require('aws-sdk-client-mock');
 
+const { urlsTableKeyFields } = require('../constants');
+
 const mockSNSClient = mockClient(SNSClient);
 
 const EXPECTED_BASE_URL = 'http://www.test.com/';
-const EXPECTED_CHILD_URL = 'http://www.test.com/test';
+const EXPECTED_PATHNAME = '/test';
 
-process.env.targetSNSArn = 'test:arn';
+process.env.TARGET_SNS_ARN = 'test:arn';
 
 const { handler } = require('../publish-urls');
 
-const createRecord = (baseUrl, childUrl) => {
+const createRecord = (baseUrl, pathname) => {
     return {
         dynamodb: {
             NewImage: {
-                ChildUrl: {
-                    S: childUrl
-                },
-                BaseUrl: {
+                [urlsTableKeyFields.HASH_KEY]: {
                     S: baseUrl
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: pathname
                 }
             }
         },
@@ -32,13 +34,13 @@ const createEvent = (...records) => {
     };
 };
 
-const createExpectedMessage = (baseUrl, childUrl) => {
+const createExpectedMessage = (baseUrl, pathname) => {
     return {
         Message: JSON.stringify({
-            baseUrl,
-            childUrl
+            [urlsTableKeyFields.HASH_KEY]: baseUrl,
+            [urlsTableKeyFields.SORT_KEY]: pathname
         }),
-        TargetArn: process.env.targetSNSArn
+        TargetArn: process.env.TARGET_SNS_ARN
     };
 };
 
@@ -65,39 +67,39 @@ describe('input validation', () => {
         ],
         [
             'record with missing BaseUrl field',
-            createEvent({ dynamodb: { NewImage: { ChildUrl: {} } } })
+            createEvent({ dynamodb: { NewImage: { Pathname: {} } } })
         ],
         [
             'record with non-object BaseUrl field',
             createEvent(
-                { dynamodb: { NewImage: { BaseUrl: 'test', ChildUrl: {} } } }
+                { dynamodb: { NewImage: { BaseUrl: 'test', Pathname: {} } } }
             )
         ],
         [
-            'record with missing ChildUrl field',
+            'record with missing Pathname field',
             createEvent({ dynamodb: { NewImage: { BaseUrl: {} } } })
         ],
         [
-            'record with non-object ChildUrl field',
+            'record with non-object Pathname field',
             createEvent(
-                { dynamodb: { NewImage: { BaseUrl: {}, ChildUrl: 'test' } } }
+                { dynamodb: { NewImage: { BaseUrl: {}, Pathname: 'test' } } }
             )
         ],
         [
             'record with missing BaseUrl value',
-            createEvent(createRecord(undefined, EXPECTED_CHILD_URL))
+            createEvent(createRecord(undefined, EXPECTED_PATHNAME))
         ],
         [
-            'record with missing ChildUrl value',
+            'record with missing Pathname value',
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
         ],
         [
             'record with invalid BaseUrl value',
-            createEvent(createRecord('not a url', EXPECTED_CHILD_URL))
+            createEvent(createRecord('not a url', EXPECTED_PATHNAME))
         ],
         [
-            'record with invalid ChildUrl value',
-            createEvent(createRecord(EXPECTED_BASE_URL, 'not a url'))
+            'record with invalid Pathname value',
+            createEvent(createRecord(EXPECTED_BASE_URL, 'not a pathname'))
         ]
     ])('returns failed validation error given %s',
         async (message, input) => {
@@ -111,20 +113,20 @@ describe('input validation', () => {
 test.each([
     [
         'a single record',
-        createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_BASE_URL)),
+        createEvent(createRecord(EXPECTED_BASE_URL, '/')),
         [
-            createExpectedMessage(EXPECTED_BASE_URL, EXPECTED_BASE_URL)
+            createExpectedMessage(EXPECTED_BASE_URL, '/')
         ]
     ],
     [
         'multiple records',
         createEvent(
-            createRecord(EXPECTED_BASE_URL, EXPECTED_BASE_URL),
-            createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)
+            createRecord(EXPECTED_BASE_URL, '/'),
+            createRecord(EXPECTED_BASE_URL, EXPECTED_PATHNAME)
         ),
         [
-            createExpectedMessage(EXPECTED_BASE_URL, EXPECTED_BASE_URL),
-            createExpectedMessage(EXPECTED_BASE_URL, EXPECTED_CHILD_URL)
+            createExpectedMessage(EXPECTED_BASE_URL, '/'),
+            createExpectedMessage(EXPECTED_BASE_URL, EXPECTED_PATHNAME)
         ]
     ]
 ])('publishes to SNS topic given %s',

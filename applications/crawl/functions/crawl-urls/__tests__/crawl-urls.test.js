@@ -5,6 +5,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
+const { urlsTableKeyFields } = require('../constants');
 
 const ENTRY_POINT_URL = 'http://example.com/';
 const EXTERNAL_URL = 'http://external-example.com/';
@@ -14,10 +15,10 @@ const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth/');
 const TABLE_NAME = 'test';
 const MAX_REQUESTS_PER_CRAWL = 50;
 
-process.env.tableName = TABLE_NAME;
-process.env.maxRequestsPerCrawl = MAX_REQUESTS_PER_CRAWL;
-process.env.maxCrawlDepth = 20;
-process.env.errorLoggingEnabled = false;
+process.env.TABLE_NAME = TABLE_NAME;
+process.env.MAX_REQUESTS_PER_CRAWL = MAX_REQUESTS_PER_CRAWL;
+process.env.MAX_CRAWL_DEPTH = 20;
+process.env.ERROR_LOGGING_ENABLED = false;
 
 const ddbMock = mockClient(DynamoDBClient);
 
@@ -68,7 +69,7 @@ beforeEach(async () => {
 });
 
 test(
-    'handler inserts list of child pages accessible from base url to dynamo db',
+    'handler inserts list of path names accessible from base url to dynamo db',
     async () => {
         const event = createEvent(createRecord(ENTRY_POINT_URL));
         ddbMock.on(PutItemCommand).resolves();
@@ -86,15 +87,23 @@ test(
         expect(dynamoDbArgumentInputs).toContainEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: ENTRY_POINT_URL },
-                ChildUrl: { S: ENTRY_POINT_URL }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: ENTRY_POINT_URL
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: '/'
+                }
             }
         });
         expect(dynamoDbArgumentInputs).toContainEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: ENTRY_POINT_URL },
-                ChildUrl: { S: `${ENTRY_POINT_URL}sub-page-1` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: ENTRY_POINT_URL
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: '/sub-page-1'
+                }
             }
         });
     }
@@ -123,8 +132,12 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: `${ENTRY_POINT_URL}circle` },
-                ChildUrl: { S: `${ENTRY_POINT_URL}circle` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: `${ENTRY_POINT_URL}circle`
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: '/circle'
+                }
             }
         });
     }
@@ -160,8 +173,12 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                BaseUrl: { S: `${ENTRY_POINT_URL}external` },
-                ChildUrl: { S: `${ENTRY_POINT_URL}external` }
+                [urlsTableKeyFields.HASH_KEY]: {
+                    S: `${ENTRY_POINT_URL}external`
+                },
+                [urlsTableKeyFields.SORT_KEY]: {
+                    S: '/external'
+                }
             }
         });
     }
@@ -208,7 +225,7 @@ describe('depth', () => {
         const dynamoDbCalls = ddbMock.calls();
 
         expect(dynamoDbCalls).toHaveLength(
-            parseInt(process.env.maxCrawlDepth) + 1
+            parseInt(process.env.MAX_CRAWL_DEPTH) + 1
         );
     });
 
@@ -231,7 +248,7 @@ describe('depth', () => {
     test(
         'handler crawls to maximum depth given larger specified depth',
         async () => {
-            const expectedDepth = process.env.maxCrawlDepth + 10;
+            const expectedDepth = process.env.MAX_CRAWL_DEPTH + 10;
             const event = createEvent(
                 createRecord(`${ENTRY_POINT_URL}depth-0`, expectedDepth)
             );
@@ -240,7 +257,7 @@ describe('depth', () => {
             const dynamoDbCalls = ddbMock.calls();
 
             expect(dynamoDbCalls).toHaveLength(
-                parseInt(process.env.maxCrawlDepth) + 1
+                parseInt(process.env.MAX_CRAWL_DEPTH) + 1
             );
         }
     );
@@ -251,7 +268,7 @@ describe('max request', () => {
 
     beforeAll(() => {
         // Set to lower value for testing
-        process.env.maxRequestsPerCrawl = EXPECTED_MAX_REQUESTS;
+        process.env.MAX_REQUESTS_PER_CRAWL = EXPECTED_MAX_REQUESTS;
         ddbMock.on(PutItemCommand).resolves();
     });
 
@@ -294,11 +311,11 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    BaseUrl: {
+                    [urlsTableKeyFields.HASH_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${firstRecordLowerBound}`
                     },
-                    ChildUrl: {
-                        S: `${ENTRY_POINT_URL}depth-${firstRecordIndex}`
+                    [urlsTableKeyFields.SORT_KEY]: {
+                        S: `/depth-${firstRecordIndex}`
                     }
                 }
             });
@@ -306,11 +323,11 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    BaseUrl: {
+                    [urlsTableKeyFields.HASH_KEY]: {
                         S: `${ENTRY_POINT_URL}depth-${secondRecordLowerBound}`
                     },
-                    ChildUrl: {
-                        S: `${ENTRY_POINT_URL}depth-${secondRecordIndex}`
+                    [urlsTableKeyFields.SORT_KEY]: {
+                        S: `/depth-${secondRecordIndex}`
                     }
                 }
             });
@@ -319,7 +336,7 @@ describe('max request', () => {
 
     afterAll(() => {
         // Reset to previous value
-        process.env.maxRequestsPerCrawl = MAX_REQUESTS_PER_CRAWL;
+        process.env.MAX_REQUESTS_PER_CRAWL = MAX_REQUESTS_PER_CRAWL;
     });
 });
 

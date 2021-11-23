@@ -9,7 +9,8 @@ const { mockClient } = require('aws-sdk-client-mock');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 const {
     keyPhraseTableKeyFields,
-    keyPhraseTableNonKeyFields
+    keyPhraseTableNonKeyFields,
+    urlsTableKeyFields
 } = require('../constants');
 
 const TABLE_NAME = 'test';
@@ -22,24 +23,19 @@ const createEvent = (...records) => {
         Records: records
     };
 };
-const createRecord = (baseUrl, childUrl) => {
+const createRecord = (baseUrl, pathname) => {
     return {
-        body: JSON.stringify({ baseUrl, childUrl }),
+        body: JSON.stringify({
+            [urlsTableKeyFields.HASH_KEY]: baseUrl,
+            [urlsTableKeyFields.SORT_KEY]: pathname
+        }),
         eventSource: 'aws:sqs'
     };
 };
 
-const createChildURL = (baseUrl, childRoute) => {
-    return `${baseUrl}${childRoute}`;
-};
-
-const EXPECTED_BASE_URL = 'http://www.test.com';
-const EXPECTED_CHILD_ROUTE = '/term-extraction';
+const EXPECTED_BASE_URL = 'http://www.test.com/';
+const EXPECTED_PATHNAME = '/term-extraction';
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
-const EXPECTED_CHILD_URL = createChildURL(
-    EXPECTED_BASE_URL,
-    EXPECTED_CHILD_ROUTE
-);
 
 beforeEach(() => {
     ddbMock.reset();
@@ -52,19 +48,19 @@ describe('input validation', () => {
         ['record with non-object body', createEvent({ body: 'test' })],
         [
             'record with missing BaseUrl value',
-            createEvent(createRecord(undefined, EXPECTED_CHILD_URL))
+            createEvent(createRecord(undefined, EXPECTED_PATHNAME))
         ],
         [
-            'record with missing ChildUrl value',
+            'record with missing Pathname value',
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
         ],
         [
             'record with invalid BaseUrl value',
-            createEvent(createRecord('not a url', EXPECTED_CHILD_URL))
+            createEvent(createRecord('not a url', EXPECTED_PATHNAME))
         ],
         [
-            'record with invalid ChildUrl value',
-            createEvent(createRecord(EXPECTED_BASE_URL, 'not a url'))
+            'record with invalid Pathname value',
+            createEvent(createRecord(EXPECTED_BASE_URL, 'not a pathname'))
         ]
     ])('returns failed validation error given %s',
         async (message, input) => {
@@ -79,7 +75,7 @@ test.each([
         'a single record',
         [
             {
-                childRoute: EXPECTED_CHILD_ROUTE,
+                pathname: EXPECTED_PATHNAME,
                 assetPath: 'term-extraction.html'
             }
         ]
@@ -88,11 +84,11 @@ test.each([
         'multiple records',
         [
             {
-                childRoute: EXPECTED_CHILD_ROUTE,
+                pathname: EXPECTED_PATHNAME,
                 assetPath: 'term-extraction.html'
             },
             {
-                childRoute: '/empty',
+                pathname: '/empty',
                 assetPath: 'empty.html'
             }
         ]
@@ -104,17 +100,15 @@ test.each([
         const currentRouteDetails = routeDetails[i];
         const mockURL = mockURLFromFile(
             EXPECTED_BASE_URL,
-            currentRouteDetails.childRoute,
+            currentRouteDetails.pathname,
             path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
             false
         );
         mockURLs.push(mockURL);
 
-        const childURL = createChildURL(
-            EXPECTED_BASE_URL,
-            currentRouteDetails.childRoute
+        records.push(
+            createRecord(EXPECTED_BASE_URL, currentRouteDetails.pathname)
         );
-        records.push(createRecord(EXPECTED_BASE_URL, childURL));
     }
 
     await handler(createEvent(...records));
@@ -128,7 +122,7 @@ describe('keyphrase extraction', () => {
     test.each([
         [
             'a page with content',
-            EXPECTED_CHILD_ROUTE,
+            EXPECTED_PATHNAME,
             'term-extraction.html',
             [
                 { phrase: 'term', occurences: 3 },
@@ -150,17 +144,16 @@ describe('keyphrase extraction', () => {
             []
         ]
     ])('stores keyphrase occurences to base URL entry in DynamoDB for %s',
-        async (message, childRoute, assetPath, expectedOccurences) => {
+        async (message, pathname, assetPath, expectedOccurences) => {
             mockURLFromFile(
                 EXPECTED_BASE_URL,
-                childRoute,
+                pathname,
                 path.join(ASSET_FOLDER, assetPath),
                 false
             );
 
-            const childURL = createChildURL(EXPECTED_BASE_URL, childRoute);
             await handler(
-                createEvent(createRecord(EXPECTED_BASE_URL, childURL))
+                createEvent(createRecord(EXPECTED_BASE_URL, pathname))
             );
             const dynamoDbCallsArguments = ddbMock.calls()
                 .map(call => call.args);
@@ -196,7 +189,7 @@ describe('previous keyphrase occurences', () => {
     beforeEach(() => {
         mockURLFromFile(
             EXPECTED_BASE_URL,
-            EXPECTED_CHILD_ROUTE,
+            EXPECTED_PATHNAME,
             path.join(ASSET_FOLDER, 'term-extraction.html'),
             false
         );
@@ -204,7 +197,7 @@ describe('previous keyphrase occurences', () => {
 
     test('calls dynamodb to get previous keyphrases for URL', async () => {
         await handler(
-            createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+            createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_PATHNAME))
         );
         const dynamoDbCallsInputs = ddbMock.calls()
             .map(call => call.args[0].input);
@@ -258,7 +251,7 @@ describe('previous keyphrase occurences', () => {
                 });
 
             await handler(
-                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_PATHNAME))
             );
             const dynamoDbCallsInputs = ddbMock.calls()
                 .map(call => call.args[0].input);
@@ -313,7 +306,7 @@ describe('previous keyphrase occurences', () => {
                 });
 
             await handler(
-                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_CHILD_URL))
+                createEvent(createRecord(EXPECTED_BASE_URL, EXPECTED_PATHNAME))
             );
             const dynamoDbCallsInputs = ddbMock.calls()
                 .map(call => call.args[0].input);
