@@ -44,7 +44,13 @@ const baseHandler = async (event) => {
     const requestList = await Apify.openRequestList(
         null,
         event.Records.map(record => {
-            const { url, depth } = record.body;
+            const { depth } = record.body;
+
+            let { url } = record.body;
+            if (!urlStartsWithProtocol(url)) {
+                url = `http://${url}`;
+            }
+
             return {
                 url: url,
                 userData: {
@@ -72,6 +78,10 @@ const baseHandler = async (event) => {
     await crawler.run();
     await requestQueue.drop();
     return formatResponse(StatusCodes.OK);
+};
+
+const urlStartsWithProtocol = (url) => {
+    return url.startsWith('http://') || url.startsWith('https://');
 };
 
 const crawlPage = async ({ request, $ }) => {
