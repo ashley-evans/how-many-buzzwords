@@ -5,7 +5,7 @@ const { urlsTableKeyFields } = require('../constants');
 
 const mockSNSClient = mockClient(SNSClient);
 
-const EXPECTED_BASE_URL = 'http://www.test.com/';
+const EXPECTED_BASE_URL = 'www.test.com';
 const EXPECTED_PATHNAME = '/test';
 
 process.env.TARGET_SNS_ARN = 'test:arn';

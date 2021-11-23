@@ -37,6 +37,10 @@ const INPUT_SCHEMA = {
     }
 };
 
+const removeUrlProtocol = (url) => {
+    return url.replace('http://', '').replace('https://', '');
+};
+
 const getURLs = async (baseUrl) => {
     const params = {
         TableName: process.env.TABLE_NAME,
@@ -68,8 +72,9 @@ const createResponse = (statusCode, body, contentType) => {
 };
 
 const baseHandler = async (event) => {
+    const baseUrl = removeUrlProtocol(event.pathParameters.baseUrl);
     try {
-        const response = await getURLs(event.pathParameters.baseUrl);
+        const response = await getURLs(baseUrl);
         if (response.Items.length === 0) {
             return createResponse(
                 StatusCodes.NOT_FOUND
