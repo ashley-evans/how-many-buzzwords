@@ -2,7 +2,7 @@ const nock = require('nock');
 const fs = require('fs-extra');
 
 const mockURLFromFile = (urlMatcher, pathname, filePath, persist) => {
-    if (!(urlMatcher instanceof RegExp || typeof urlMatcher === 'string')) {
+    if (!(urlMatcher instanceof RegExp) || typeof urlMatcher !== 'string') {
         throw new Error(`Provided urlMatcher value: ${urlMatcher} is not a ` +
             'Regular Expression or a String');
     }
