@@ -1,9 +1,10 @@
 const nock = require('nock');
 const fs = require('fs-extra');
+const escapeRegExp = require('lodash.escaperegexp');
 
-const mockURLFromFile = (domainName, uri, filePath, persist) => {
-    const mock = nock(domainName)
-        .get(uri)
+const mockURLFromFile = (urlText, pathname, filePath, persist) => {
+    const mock = nock(new RegExp(escapeRegExp(urlText)))
+        .get(pathname)
         .reply(
             200,
             readFile(filePath),
