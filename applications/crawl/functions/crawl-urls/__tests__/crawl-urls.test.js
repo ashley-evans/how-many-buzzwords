@@ -54,15 +54,7 @@ beforeAll(async () => {
         path.join(ASSET_FOLDER, 'sub-page-1.html'),
         true
     );
-    readdirSync(DEPTH_FOLDER).forEach(file => {
-        const fileName = file.split('.')[0];
-        mockURLFromFile(
-            ENTRY_POINT_HOSTNAME,
-            `/${fileName}`,
-            path.join(DEPTH_FOLDER, file),
-            true
-        );
-    });
+
     await localStorageEmulator.init(LOCAL_STORAGE_DIR);
 });
 
@@ -190,8 +182,8 @@ test(
 );
 
 test(
-    `handler only inserts one entry to dynamo db when page refers to another
-     domain`,
+    'handler only inserts one entry to dynamo when page refers to another ' +
+    'domain',
     async () => {
         mockURLFromFile(
             ENTRY_POINT_HOSTNAME,
@@ -234,6 +226,16 @@ test(
 
 describe('depth', () => {
     beforeAll(() => {
+        readdirSync(DEPTH_FOLDER).forEach(file => {
+            const fileName = file.split('.')[0];
+            mockURLFromFile(
+                ENTRY_POINT_HOSTNAME,
+                `/${fileName}`,
+                path.join(DEPTH_FOLDER, file),
+                true
+            );
+        });
+
         ddbMock.on(PutItemCommand).resolves();
     });
 
