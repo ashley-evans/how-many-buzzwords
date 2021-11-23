@@ -89,7 +89,7 @@ Resources:
       Role: !GetAtt CrawlURLsFunctionRole.Arn
       Runtime: nodejs14.x
       CodeUri: ./functions/crawl-urls
-      Description: Crawls a batch of URLs and stores child URLs in DynamoDB
+      Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
         - Ref: NodeDependencyLayerLogicalID
       Timeout: 120
