@@ -1,6 +1,6 @@
 const urlsTableKeyFields = Object.freeze({
     HASH_KEY: 'BaseUrl',
-    SORT_KEY: 'ChildUrl'
+    SORT_KEY: 'Pathname'
 });
 
 module.exports = {
