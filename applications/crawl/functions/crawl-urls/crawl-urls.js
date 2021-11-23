@@ -112,12 +112,12 @@ const crawlPage = async ({ request, $ }) => {
     await putItem(baseUrl, new URL(request.url).pathname);
 };
 
-const putItem = async (hash, sort) => {
+const putItem = async (hashKeyValue, sortKeyValue) => {
     const params = {
         TableName: process.env.TABLE_NAME,
         Item: {
-            [urlsTableKeyFields.HASH_KEY]: { S: hash },
-            [urlsTableKeyFields.SORT_KEY]: { S: sort }
+            [urlsTableKeyFields.HASH_KEY]: { S: hashKeyValue },
+            [urlsTableKeyFields.SORT_KEY]: { S: sortKeyValue }
         }
     };
 
