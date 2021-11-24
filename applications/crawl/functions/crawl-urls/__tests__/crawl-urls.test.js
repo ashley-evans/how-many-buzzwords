@@ -2,12 +2,14 @@ const { readdirSync } = require('fs-extra');
 const path = require('path');
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { mockClient } = require('aws-sdk-client-mock');
+const escapeRegExp = require('lodash.escaperegexp');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 const { urlsTableKeyFields } = require('../constants');
 
 const ENTRY_POINT_HOSTNAME = 'www.example.com';
+const ENTRY_POINT_REGEX = new RegExp(escapeRegExp(ENTRY_POINT_HOSTNAME));
 const EXTERNAL_URL_HOSTNAME = 'www.external-example.com';
 const EXTERNAL_URL = `http://${EXTERNAL_URL_HOSTNAME}/`;
 
@@ -43,13 +45,13 @@ const createEvent = (...records) => {
 beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
     mockURLFromFile(
-        ENTRY_POINT_HOSTNAME,
+        ENTRY_POINT_REGEX,
         '/',
         path.join(ASSET_FOLDER, 'entry-point.html'),
         true
     );
     mockURLFromFile(
-        ENTRY_POINT_HOSTNAME,
+        ENTRY_POINT_REGEX,
         '/sub-page-1',
         path.join(ASSET_FOLDER, 'sub-page-1.html'),
         true
@@ -160,7 +162,7 @@ test(
     'handler only inserts one entry to dynamo db when page refers to itself',
     async () => {
         mockURLFromFile(
-            ENTRY_POINT_HOSTNAME,
+            ENTRY_POINT_REGEX,
             '/circle',
             path.join(ASSET_FOLDER, 'circle.html'),
             true
@@ -197,13 +199,13 @@ test(
     'domain',
     async () => {
         mockURLFromFile(
-            ENTRY_POINT_HOSTNAME,
+            ENTRY_POINT_REGEX,
             '/external',
             path.join(ASSET_FOLDER, 'external.html'),
             false
         );
         mockURLFromFile(
-            EXTERNAL_URL,
+            new RegExp(escapeRegExp(EXTERNAL_URL)),
             '/',
             path.join(ASSET_FOLDER, 'external.html'),
             false
@@ -240,7 +242,7 @@ describe('depth', () => {
         readdirSync(DEPTH_FOLDER).forEach(file => {
             const fileName = file.split('.')[0];
             mockURLFromFile(
-                ENTRY_POINT_HOSTNAME,
+                ENTRY_POINT_REGEX,
                 `/${fileName}`,
                 path.join(DEPTH_FOLDER, file),
                 true
