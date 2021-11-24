@@ -104,7 +104,21 @@ describe('input validation', () => {
         ],
         [
             'record with valid BaseUrl in other text',
-            createEvent(createRecord(`invalid ${EXPECTED_BASE_URL}`))
+            createEvent(
+                createRecord(`invalid ${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with http protocol',
+            createEvent(
+                createRecord(`http://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with https protocol',
+            createEvent(
+                createRecord(`https://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
         ],
         [
             'record with invalid BaseUrl value',
