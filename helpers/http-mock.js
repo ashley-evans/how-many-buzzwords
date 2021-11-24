@@ -1,9 +1,19 @@
 const nock = require('nock');
 const fs = require('fs-extra');
 
-const mockURLFromFile = (domainName, uri, filePath, persist) => {
-    const mock = nock(domainName)
-        .get(uri)
+const mockURLFromFile = (urlMatcher, pathname, filePath, persist) => {
+    if (!(urlMatcher instanceof RegExp)) {
+        try {
+            // eslint-disable-next-line no-new
+            new URL(urlMatcher.toString());
+        } catch (ex) {
+            throw new Error(`Provided urlMatcher value: ${urlMatcher} is not ` +
+                'a Regular Expression or a valid URL');
+        }
+    }
+
+    const mock = nock(urlMatcher)
+        .get(pathname)
         .reply(
             200,
             readFile(filePath),

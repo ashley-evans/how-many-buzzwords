@@ -72,7 +72,7 @@ Resources:
         ApiGatewayName: !Sub buzzword-keywords-socket-gateway-${EnvironmentNameSuffix}
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
         SearchKey: BaseUrl
-        SearchKeyPattern: '(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)'
+        SearchKeyPattern: '^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$'
         TableName: !GetAtt KeywordsApplication.Outputs.TableName
         TableArn: !GetAtt KeywordsApplication.Outputs.TableArn
         TableStreamArn: !GetAtt KeywordsApplication.Outputs.TableStreamArn

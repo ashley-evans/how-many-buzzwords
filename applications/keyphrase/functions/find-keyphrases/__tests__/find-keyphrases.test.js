@@ -33,7 +33,8 @@ const createRecord = (baseUrl, pathname) => {
     };
 };
 
-const EXPECTED_BASE_URL = 'http://www.test.com/';
+const EXPECTED_BASE_URL = 'www.test.com';
+const EXPECTED_VALID_URL = `http://${EXPECTED_BASE_URL}`;
 const EXPECTED_PATHNAME = '/term-extraction';
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 
@@ -55,6 +56,18 @@ describe('input validation', () => {
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
         ],
         [
+            'record with BaseUrl with http protocol',
+            createEvent(
+                createRecord(`http://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with https protocol',
+            createEvent(
+                createRecord(`https://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
             'record with invalid BaseUrl value',
             createEvent(createRecord('not a url', EXPECTED_PATHNAME))
         ],
@@ -70,52 +83,63 @@ describe('input validation', () => {
         });
 });
 
-test.each([
-    [
-        'a single record',
+describe.each([
+    ['without a pathname', EXPECTED_BASE_URL],
+    ['with a pathname', `${EXPECTED_BASE_URL}${EXPECTED_PATHNAME}`]
+])('given valid url %s', (message, url) => {
+    test.each([
         [
-            {
-                pathname: EXPECTED_PATHNAME,
-                assetPath: 'term-extraction.html'
-            }
-        ]
-    ],
-    [
-        'multiple records',
+            'a single pathname',
+            [
+                {
+                    pathname: EXPECTED_PATHNAME,
+                    assetPath: 'term-extraction.html'
+                }
+            ]
+        ],
         [
-            {
-                pathname: EXPECTED_PATHNAME,
-                assetPath: 'term-extraction.html'
-            },
-            {
-                pathname: '/empty',
-                assetPath: 'empty.html'
-            }
+            'multiple pathnames',
+            [
+                {
+                    pathname: EXPECTED_PATHNAME,
+                    assetPath: 'term-extraction.html'
+                },
+                {
+                    pathname: '/empty',
+                    assetPath: 'empty.html'
+                }
+            ]
         ]
-    ]
-])('handler call expected url(s) given %s', async (message, routeDetails) => {
-    const mockURLs = [];
-    const records = [];
-    for (let i = 0; i < routeDetails.length; i++) {
-        const currentRouteDetails = routeDetails[i];
-        const mockURL = mockURLFromFile(
-            EXPECTED_BASE_URL,
-            currentRouteDetails.pathname,
-            path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
-            false
-        );
-        mockURLs.push(mockURL);
+    ])(
+        'handler call expected base url at all provided pathnames given %s',
+        async (message, routeDetails) => {
+            const mockURLs = [];
+            const records = [];
+            for (let i = 0; i < routeDetails.length; i++) {
+                const currentRouteDetails = routeDetails[i];
+                const mockURL = mockURLFromFile(
+                    EXPECTED_VALID_URL,
+                    currentRouteDetails.pathname,
+                    path.join(ASSET_FOLDER, currentRouteDetails.assetPath),
+                    false
+                );
+                mockURLs.push(mockURL);
 
-        records.push(
-            createRecord(EXPECTED_BASE_URL, currentRouteDetails.pathname)
-        );
-    }
+                records.push(
+                    createRecord(
+                        url,
+                        currentRouteDetails.pathname
+                    )
+                );
+            }
 
-    await handler(createEvent(...records));
+            await handler(createEvent(...records));
 
-    for (let i = 0; i < mockURLs.length; i++) {
-        expect(mockURLs[i].isDone()).toBeTruthy();
-    }
+            for (let i = 0; i < mockURLs.length; i++) {
+                expect(mockURLs[i].isDone()).toBeTruthy();
+            }
+        }
+    );
 });
 
 describe('keyphrase extraction', () => {
@@ -146,7 +170,7 @@ describe('keyphrase extraction', () => {
     ])('stores keyphrase occurences to base URL entry in DynamoDB for %s',
         async (message, pathname, assetPath, expectedOccurences) => {
             mockURLFromFile(
-                EXPECTED_BASE_URL,
+                EXPECTED_VALID_URL,
                 pathname,
                 path.join(ASSET_FOLDER, assetPath),
                 false
@@ -188,7 +212,7 @@ describe('keyphrase extraction', () => {
 describe('previous keyphrase occurences', () => {
     beforeEach(() => {
         mockURLFromFile(
-            EXPECTED_BASE_URL,
+            EXPECTED_VALID_URL,
             EXPECTED_PATHNAME,
             path.join(ASSET_FOLDER, 'term-extraction.html'),
             false

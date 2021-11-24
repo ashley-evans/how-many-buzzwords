@@ -6,7 +6,7 @@ const {
 const { mockClient } = require('aws-sdk-client-mock');
 
 const TABLE_NAME = 'test';
-const VALID_URL = 'http://example.com/';
+const VALID_HOSTNAME = 'www.example.com';
 const INVALID_METHOD = 'WIBBLE';
 
 process.env.TABLE_NAME = TABLE_NAME;
@@ -34,7 +34,11 @@ describe('input validation', () => {
     test.each([
         [
             'missing http method',
-            createEvent(undefined, VALID_URL)
+            createEvent(undefined, VALID_HOSTNAME)
+        ],
+        [
+            'valid url in other text',
+            createEvent(supportedMethods.GET, `invalid ${VALID_HOSTNAME}`)
         ],
         [
             'invalid base URL parameter',
@@ -42,7 +46,7 @@ describe('input validation', () => {
         ],
         [
             'unsupported method',
-            createEvent(INVALID_METHOD, VALID_URL)
+            createEvent(INVALID_METHOD, VALID_HOSTNAME)
         ]
     ])('returns bad request error given %s',
         async (message, input) => {
@@ -58,12 +62,16 @@ describe('input validation', () => {
 });
 
 describe('GET route', () => {
-    describe('Happy path', () => {
+    describe.each([
+        ['with http protocol', `http://${VALID_HOSTNAME}`],
+        ['with https protocol', `https://${VALID_HOSTNAME}`],
+        ['without a protocol', VALID_HOSTNAME]
+    ])('given valid base URL with %s', (message, url) => {
         const expectedPathname = '/example';
         const expectedData = [
             {
                 [urlsTableKeyFields.HASH_KEY]: {
-                    S: VALID_URL
+                    S: VALID_HOSTNAME
                 },
                 [urlsTableKeyFields.SORT_KEY]: {
                     S: expectedPathname
@@ -80,14 +88,14 @@ describe('GET route', () => {
             });
 
             response = await handler(
-                createEvent(supportedMethods.GET, VALID_URL)
+                createEvent(supportedMethods.GET, url)
             );
 
             dynamoDbCallsInputs = ddbMock.calls()
                 .map(call => call.args[0].input);
         });
 
-        test('queries dynamodb with provided base URL parameter', async () => {
+        test('queries dynamodb with hostname component of URL', async () => {
             expect(dynamoDbCallsInputs).toHaveLength(1);
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
@@ -96,7 +104,7 @@ describe('GET route', () => {
                     '#baseUrl': urlsTableKeyFields.HASH_KEY
                 },
                 ExpressionAttributeValues: {
-                    ':searchUrl': { S: VALID_URL }
+                    ':searchUrl': { S: VALID_HOSTNAME }
                 }
             });
         });
@@ -121,7 +129,7 @@ describe('GET route', () => {
             ddbMock.rejects(expectedErrorMessage);
 
             const response = await handler(
-                createEvent(supportedMethods.GET, VALID_URL)
+                createEvent(supportedMethods.GET, VALID_HOSTNAME)
             );
 
             expect(response).toBeDefined();
@@ -143,7 +151,7 @@ describe('GET route', () => {
             });
 
             const response = await handler(
-                createEvent(supportedMethods.GET, VALID_URL)
+                createEvent(supportedMethods.GET, VALID_HOSTNAME)
             );
 
             expect(response).toBeDefined();

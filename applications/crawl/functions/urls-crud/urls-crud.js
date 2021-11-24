@@ -30,11 +30,15 @@ const INPUT_SCHEMA = {
                 baseUrl: {
                     type: 'string',
                     // eslint-disable-next-line max-len
-                    pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                    pattern: '^(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
                 }
             }
         }
     }
+};
+
+const removeUrlProtocol = (url) => {
+    return url.replace('http://', '').replace('https://', '');
 };
 
 const getURLs = async (baseUrl) => {
@@ -68,8 +72,9 @@ const createResponse = (statusCode, body, contentType) => {
 };
 
 const baseHandler = async (event) => {
+    const baseUrl = removeUrlProtocol(event.pathParameters.baseUrl);
     try {
-        const response = await getURLs(event.pathParameters.baseUrl);
+        const response = await getURLs(baseUrl);
         if (response.Items.length === 0) {
             return createResponse(
                 StatusCodes.NOT_FOUND

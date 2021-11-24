@@ -25,6 +25,7 @@
     },
     "scripts": {
         "lint": "eslint '.' --max-warnings 0 --ext .js,.jsx",
+        "i": "find ! -path \"*/node_modules/*\" ! -path \"*/.aws-sam/*\" -name package.json -execdir npm i \\;",
         "ci": "find ! -path \"*/node_modules/*\" ! -path \"*/.aws-sam/*\" -name package.json -execdir npm ci \\;",
         "test": "node node_modules/.bin/jest --verbose",
         "prepare": "husky install"

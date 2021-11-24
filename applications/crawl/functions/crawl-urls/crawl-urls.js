@@ -29,7 +29,7 @@ const INPUT_SCHEMA = {
                             url: {
                                 type: 'string',
                                 // eslint-disable-next-line max-len
-                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
+                                pattern: '^(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
                             },
                             depth: { type: 'integer' }
                         }
@@ -44,7 +44,13 @@ const baseHandler = async (event) => {
     const requestList = await Apify.openRequestList(
         null,
         event.Records.map(record => {
-            const { url, depth } = record.body;
+            const { depth } = record.body;
+
+            let { url } = record.body;
+            if (!urlStartsWithProtocol(url)) {
+                url = `http://${url}`;
+            }
+
             return {
                 url: url,
                 userData: {
@@ -74,6 +80,10 @@ const baseHandler = async (event) => {
     return formatResponse(StatusCodes.OK);
 };
 
+const urlStartsWithProtocol = (url) => {
+    return url.startsWith('http://') || url.startsWith('https://');
+};
+
 const crawlPage = async ({ request, $ }) => {
     console.log(`Visiting ${request.url}`);
 
@@ -83,10 +93,21 @@ const crawlPage = async ({ request, $ }) => {
     const maxCrawlDepth = userData.maxCrawlDepth < maximumDepthEnv
         ? userData.maxCrawlDepth
         : maximumDepthEnv;
-    const baseUrl = userData.baseUrl ? userData.baseUrl : request.url;
+    const requestUrl = new URL(request.url);
+
+    let baseUrl;
+    if (userData.baseUrl) {
+        baseUrl = userData.baseUrl;
+    } else {
+        if (requestUrl.pathname === '/') {
+            baseUrl = requestUrl.hostname;
+        } else {
+            baseUrl = `${requestUrl.hostname}${requestUrl.pathname}`;
+        }
+    }
 
     if (currentDepth < maxCrawlDepth) {
-        const baseUrlHostName = (new URL(baseUrl).hostname).replace('www.', '');
+        const baseUrlRegexText = requestUrl.hostname.replace('www.', '');
 
         await Apify.utils.enqueueLinks({
             $,
@@ -101,7 +122,7 @@ const crawlPage = async ({ request, $ }) => {
             pseudoUrls: [
                 new Apify.PseudoUrl(
                     new RegExp(
-                        `(^|\\s)https?://(www.)?${baseUrlHostName}([-a-zA-Z0-9(
+                        `(^|\\s)https?://(www.)?${baseUrlRegexText}([-a-zA-Z0-9(
                         )@:%_+.~#?&//=]*)`
                     )
                 )

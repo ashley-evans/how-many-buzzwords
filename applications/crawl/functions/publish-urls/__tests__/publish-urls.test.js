@@ -5,7 +5,7 @@ const { urlsTableKeyFields } = require('../constants');
 
 const mockSNSClient = mockClient(SNSClient);
 
-const EXPECTED_BASE_URL = 'http://www.test.com/';
+const EXPECTED_BASE_URL = 'www.test.com';
 const EXPECTED_PATHNAME = '/test';
 
 process.env.TARGET_SNS_ARN = 'test:arn';
@@ -54,13 +54,22 @@ beforeEach(() => {
 
 describe('input validation', () => {
     test.each([
-        ['event with no records', {}],
-        ['record with no DynamoDB field', createEvent({})],
+        [
+            'event with no records',
+            {}
+        ],
+        [
+            'record with no DynamoDB field',
+            createEvent({})
+        ],
         [
             'record with non-object DynamoDB field',
             createEvent({ dynamodb: 'test' })
         ],
-        ['record with missing NewImage field', createEvent({ dynamodb: {} })],
+        [
+            'record with missing NewImage field',
+            createEvent({ dynamodb: {} })
+        ],
         [
             'record with non-object NewImage field',
             createEvent({ dynamodb: { Newimage: 'test' } })
@@ -92,6 +101,24 @@ describe('input validation', () => {
         [
             'record with missing Pathname value',
             createEvent(createRecord(EXPECTED_BASE_URL, undefined))
+        ],
+        [
+            'record with valid BaseUrl in other text',
+            createEvent(
+                createRecord(`invalid ${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with http protocol',
+            createEvent(
+                createRecord(`http://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
+        ],
+        [
+            'record with BaseUrl with https protocol',
+            createEvent(
+                createRecord(`https://${EXPECTED_BASE_URL}`, EXPECTED_PATHNAME)
+            )
         ],
         [
             'record with invalid BaseUrl value',
