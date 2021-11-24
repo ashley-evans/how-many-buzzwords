@@ -61,6 +61,20 @@ const INPUT_SCHEMA = {
     }
 };
 
+const createChildURL = (baseUrl, childPathname) => {
+    const validBaseUrl = new URL(`http://${baseUrl}`);
+    if (validBaseUrl.pathname === '/') {
+        const validBaseUrlString = validBaseUrl.toString();
+
+        return `${validBaseUrlString.substring(
+            0,
+            validBaseUrlString.length - 1
+        )}${childPathname}`;
+    }
+
+    return `http://${validBaseUrl.hostname}${childPathname}`;
+};
+
 const getKeyPhrases = async (text) => {
     const keyPhrases = [];
     await retext()
@@ -172,7 +186,7 @@ const baseHandler = async (event) => {
     for (const record of event.Records) {
         const baseUrl = record.body[urlsTableKeyFields.HASH_KEY];
         const pathname = record.body[urlsTableKeyFields.SORT_KEY];
-        const childUrl = `http://${baseUrl}${pathname}`;
+        const childUrl = createChildURL(baseUrl, pathname);
 
         const { body } = await gotScraping.get(childUrl);
 
