@@ -67,14 +67,14 @@ describe('GET route', () => {
         ['with https protocol', `https://${VALID_HOSTNAME}`],
         ['without a protocol', VALID_HOSTNAME]
     ])('given valid base URL with %s', (message, url) => {
-        const expectedPathname = '/example';
+        const expectedKeyphrase = 'wibble';
         const expectedData = [
             {
                 [keyPhraseTableKeyFields.HASH_KEY]: {
                     S: VALID_HOSTNAME
                 },
                 [keyPhraseTableKeyFields.SORT_KEY]: {
-                    S: expectedPathname
+                    S: expectedKeyphrase
                 }
             }
         ];
