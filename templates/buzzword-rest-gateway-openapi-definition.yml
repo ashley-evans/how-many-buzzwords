@@ -26,6 +26,20 @@ paths:
       ]
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
+  /keyphrases/{baseUrl}:
+    get:
+      parameters: [
+        {
+          name: "baseUrl",
+          in: "path",
+          required: true,
+          schema: {
+            type: "string"
+          }
+        }
+      ]
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/keyphrases-crud-read-integration"
 components:
   x-amazon-apigateway-integrations:
     crawl-urls-sqs-send-message-integration:
@@ -54,5 +68,17 @@ components:
         Fn::GetAtt:
         - "CrawlApplication"
         - "Outputs.URLCRUDFunctionAccessRole"
+      payloadFormatVersion: "1.0"
+    keyphrases-crud-read-integration:
+      type: "aws_proxy"
+      httpMethod: "POST"
+      uri:
+        Fn::GetAtt:
+        - "KeywordsApplication"
+        - "Outputs.KeyphrasesCRUDFunctionARN"
+      credentials:
+        Fn::GetAtt:
+        - "KeywordsApplication"
+        - "Outputs.KeyphrasesCRUDFunctionAccessRole"
       payloadFormatVersion: "1.0"
 x-amazon-apigateway-importexport-version: "1.0"
