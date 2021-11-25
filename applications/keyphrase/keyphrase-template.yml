@@ -81,6 +81,49 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref KeyphrasesTable
+  KeyphrasesCRUDFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: keyphrases-crud.handler
+      Runtime: nodejs14.x
+      CodeUri: ./functions/keyphrases-crud
+      Description: CRUD function for the Keyphrases Table
+      Layers:
+        - Ref: NodeDependencyLayerLogicalID
+      Policies:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - Version: '2012-10-17'
+        Statement:
+        - Sid: KeyphrasesTableCRUDPolicy
+          Effect: Allow
+          Action:
+          - dynamodb:Query
+          Resource: !GetAtt KeyphrasesTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref KeyphrasesTable
+          ERROR_LOGGING_ENABLED: true
+  KeyphrasesCRUDAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeKeyphrasesCRUDFunctionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt KeyphrasesCRUDFunction.Arn
+                Effect: Allow
 Outputs:
   QueueARN:
     Description: The ARN of the Keyphrases URLs SQS Queue
@@ -97,3 +140,9 @@ Outputs:
   TableStreamArn:
     Description: The ARN of the Keyphrases Table's Stream
     Value: !GetAtt KeyphrasesTable.StreamArn
+  KeyphrasesCRUDFunctionARN:
+    Description: The ARN for the CRUD function for the Keyphrases Table
+    Value: !GetAtt KeyphrasesCRUDFunction.Arn
+  KeyphrasesCRUDFunctionAccessRole:
+    Description: The ARN of the IAM role required to allow api gateway to access the Keyphrases CRUD function
+    Value: !GetAtt KeyphrasesCRUDAccessRole.Arn
