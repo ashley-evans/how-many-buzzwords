@@ -11,7 +11,7 @@ jobs:
           node-version: '14'
       - name: Install Dependencies
         run: |
-          find -name package.json -execdir npm ci \;
+          npm run ci
       - name: Run Unit Tests
         run: |
           npm run test
@@ -32,7 +32,7 @@ jobs:
           node-version: '14'
       - name: Install Dependencies
         run: |
-          find -name package.json -execdir npm ci \;
+          npm run ci
       - name: Run ESLint
         run: |
           npm run lint
