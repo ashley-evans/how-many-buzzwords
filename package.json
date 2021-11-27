@@ -28,6 +28,7 @@
         "lint": "eslint '.' --max-warnings 0 --ext .js,.jsx",
         "i": "npm i && lerna bootstrap",
         "ci": "npm ci && lerna bootstrap --ci",
+        "clean": "rm -rf node_modules && lerna clean -y",
         "test": "node node_modules/.bin/jest --verbose",
         "prepare": "husky install"
     },
