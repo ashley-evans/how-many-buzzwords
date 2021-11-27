@@ -7,7 +7,9 @@ const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const httpErrorHandler = require('@middy/http-error-handler');
 const validator = require('@middy/validator');
 
-const { urlsTableKeyFields } = require('./constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-layer');
 
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
