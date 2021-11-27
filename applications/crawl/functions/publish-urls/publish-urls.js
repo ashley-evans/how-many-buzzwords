@@ -2,7 +2,9 @@ const middy = require('@middy/core');
 const validator = require('@middy/validator');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
-const { urlsTableKeyFields } = require('./constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-common');
 
 const INPUT_SCHEMA = {
     type: 'object',

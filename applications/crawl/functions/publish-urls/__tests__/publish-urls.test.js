@@ -1,7 +1,9 @@
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const { mockClient } = require('aws-sdk-client-mock');
 
-const { urlsTableKeyFields } = require('../constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-common');
 
 const mockSNSClient = mockClient(SNSClient);
 

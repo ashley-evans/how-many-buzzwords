@@ -6,7 +6,9 @@ const escapeRegExp = require('lodash.escaperegexp');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
-const { urlsTableKeyFields } = require('../constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-common');
 
 const ENTRY_POINT_HOSTNAME = 'www.example.com';
 const ENTRY_POINT_REGEX = new RegExp(escapeRegExp(ENTRY_POINT_HOSTNAME));

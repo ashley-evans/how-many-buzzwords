@@ -15,7 +15,9 @@ process.env.ERROR_LOGGING_ENABLED = false;
 const ddbMock = mockClient(DynamoDBClient);
 
 const { handler, supportedMethods } = require('../urls-crud');
-const { urlsTableKeyFields } = require('../constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-common');
 
 const createEvent = (httpMethod, baseUrl) => {
     return {
