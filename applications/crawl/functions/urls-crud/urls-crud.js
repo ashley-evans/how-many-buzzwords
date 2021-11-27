@@ -7,7 +7,9 @@ const {
 } = require('@aws-sdk/client-dynamodb');
 const { StatusCodes } = require('http-status-codes');
 
-const { urlsTableKeyFields } = require('./constants');
+const {
+    constants: { urlsTableKeyFields }
+} = require('buzzword-aws-crawl-layer');
 
 const ddbClient = new DynamoDBClient({});
 

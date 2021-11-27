@@ -1,4 +1,7 @@
 {
     "name": "buzzword-aws-urls-crud-lambda",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "devDependencies": {
+        "buzzword-aws-crawl-layer": "^1.0.0"
+    }
 }
