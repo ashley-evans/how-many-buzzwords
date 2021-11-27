@@ -5,10 +5,10 @@ Parameters:
     Type: String
     Description: Logical ID of the layer containing common Node Dependencies
 Resources:
-  CrawlLayer:
+  CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      ContentUri: ./layers/crawl-layer
+      ContentUri: ./common
       CompatibleRuntimes:
         - nodejs14.x
     Metadata:
@@ -100,7 +100,7 @@ Resources:
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
         - Ref: NodeDependencyLayerLogicalID
-        - Ref: CrawlLayer
+        - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
       Events:
@@ -163,7 +163,7 @@ Resources:
       Description: Publishes crawled URLs to an SNS Topic for subscribers
       Layers:
         - Ref: NodeDependencyLayerLogicalID
-        - Ref: CrawlLayer
+        - Ref: CrawlCommonLayer
       Events:
         URLsTableStreamEvent:
           Type: DynamoDB
@@ -182,7 +182,7 @@ Resources:
       Description: CRUD function for the URLs Table
       Layers:
         - Ref: NodeDependencyLayerLogicalID
-        - Ref: CrawlLayer
+        - Ref: CrawlCommonLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
