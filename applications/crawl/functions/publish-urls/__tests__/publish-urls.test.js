@@ -3,7 +3,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 
 const {
     constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-layer');
+} = require('buzzword-aws-crawl-common');
 
 const mockSNSClient = mockClient(SNSClient);
 

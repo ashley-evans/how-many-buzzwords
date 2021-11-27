@@ -9,7 +9,7 @@ const { StatusCodes } = require('http-status-codes');
 
 const {
     constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-layer');
+} = require('buzzword-aws-crawl-common');
 
 const ddbClient = new DynamoDBClient({});
 

@@ -4,7 +4,7 @@ const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
 const {
     constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-layer');
+} = require('buzzword-aws-crawl-common');
 
 const INPUT_SCHEMA = {
     type: 'object',

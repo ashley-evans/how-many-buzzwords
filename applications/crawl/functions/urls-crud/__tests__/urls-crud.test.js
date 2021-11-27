@@ -17,7 +17,7 @@ const ddbMock = mockClient(DynamoDBClient);
 const { handler, supportedMethods } = require('../urls-crud');
 const {
     constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-layer');
+} = require('buzzword-aws-crawl-common');
 
 const createEvent = (httpMethod, baseUrl) => {
     return {

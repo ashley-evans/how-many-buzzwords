@@ -9,7 +9,7 @@ const validator = require('@middy/validator');
 
 const {
     constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-layer');
+} = require('buzzword-aws-crawl-common');
 
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
