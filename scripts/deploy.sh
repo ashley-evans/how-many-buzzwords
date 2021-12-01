@@ -1,8 +1,20 @@
 #!/bin/bash
 
-usage() { echo "Usage: -f [Force deployment without changeset check (Optional)] -e [Name of SAM config environment]" 1>&2; exit 1; }
+usage() { 
+    echo "Usage: 
+    -f [Force deployment without changeset check (Optional)] 
+    -e [Name of SAM config environment] 
+    --nocache [Force re-build of deployment files]" 1>&2; 
+    exit 1; 
+}
 
-while getopts "fe:" opt; do
+while getopts "fe:-:" opt; do
+    if [ $opt = "-" ]; then
+        opt="${OPTARG%%=*}"
+        OPTARG="${OPTARG#$opt}"
+        OPTARG="${OPTARG#=}"
+    fi
+
     case $opt in
         f)
             force=true
@@ -10,7 +22,14 @@ while getopts "fe:" opt; do
         e)
             environment=$OPTARG
             ;;
-        \?)
+        nocache)
+            nocache=true
+            ;;
+        ??*)
+            echo "${BASH_SOURCE[0]}: illegal option: -- $opt"
+            usage
+            ;;
+        ?)
             usage
             ;;
     esac
@@ -29,7 +48,11 @@ aws cloudformation deploy --template-file "$script_parent_dir"/templates/buzzwor
 
 echo "Building Buzzword Stack"
 
-sam build --parallel --cached --template-file "$script_parent_dir"/templates/buzzword-template.yml
+if [ $nocache ]; then
+    sam build --parallel --template-file "$script_parent_dir"/templates/buzzword-template.yml
+else
+    sam build --parallel --cached --template-file "$script_parent_dir"/templates/buzzword-template.yml
+fi
 
 echo "Deploying Buzzword Stack"
 
