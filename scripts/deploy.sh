@@ -29,7 +29,7 @@ aws cloudformation deploy --template-file "$script_parent_dir"/templates/buzzwor
 
 echo "Building Buzzword Stack"
 
-sam build --template-file "$script_parent_dir"/templates/buzzword-template.yml
+sam build --parallel --cached --template-file "$script_parent_dir"/templates/buzzword-template.yml
 
 echo "Deploying Buzzword Stack"
 
