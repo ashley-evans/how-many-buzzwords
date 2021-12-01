@@ -51,5 +51,4 @@ jobs:
           aws-region: eu-west-2
       - name: Deploy stack
         run: |
-          cd ./scripts
-          ./deploy.sh -f -e production
+          ./scripts/deploy.sh -f -e production
