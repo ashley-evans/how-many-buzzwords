@@ -61,6 +61,6 @@ jobs:
             ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
-          ls -a
+          ls -aR .aws-sam/cache
           ./scripts/deploy.sh -f
           ls -a
