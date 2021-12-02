@@ -14,7 +14,7 @@ The following CLI tools must be installed to validate, build, and test the buzzw
 
 Run the following command to install all of the dependencies for the buzzword project:
 ```shell
-find ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" -name package.json -execdir npm ci \;
+npm run ci
 ```
 
 ## Cloudformation Template Validation
@@ -28,9 +28,8 @@ xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-l
 
 Run the following commands to deploy a development buzzword stack:
 ```shell
-cd ./scripts
-chmod u+x ./deploy.sh
-./deploy.sh
+chmod u+x ./scripts/deploy.sh
+./scripts/deploy.sh
 ```
 
 ## Teardown
@@ -43,9 +42,8 @@ sudo apt-get install jq
 
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
-cd ./scripts
-chmod u+x ./teardown.sh
-./teardown.sh
+chmod u+x ./scripts/teardown.sh
+./scripts/teardown.sh
 ```
 
 ## Manually invoking the APIs

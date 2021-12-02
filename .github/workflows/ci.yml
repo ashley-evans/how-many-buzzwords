@@ -33,7 +33,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm run ci
-      - name: Run ESLint
+      - name: Run linters
         run: |
           npm run lint
   deploy:
@@ -49,7 +49,17 @@ jobs:
           aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
+      - name: Cache deployment packages
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-deployment-packages
+        with:
+          path: |
+            .aws-sam/cache/**
+            .aws-sam/build.toml
+          key: ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
-          cd ./scripts
-          ./deploy.sh -f -e production
+          ./scripts/deploy.sh -f -e production
