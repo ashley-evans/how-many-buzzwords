@@ -56,11 +56,12 @@ jobs:
         with:
           path: |
             .aws-sam/cache/**
+            .aws-sam/build.toml
           key: ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
-          ls -aR .aws-sam/cache
+          ls -a .aws-sam/cache
           ./scripts/deploy.sh -f
-          ls -a
+          ls -a .aws-sam/cache
