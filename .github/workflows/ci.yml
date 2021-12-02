@@ -49,6 +49,14 @@ jobs:
           aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
+      - name: Cache deployment packages
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-deployment-packages
+        with:
+          path: |
+            ./.aws-sam/cache/**
+          key: ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
       - name: Deploy stack
         run: |
           ./scripts/deploy.sh -f -e production
