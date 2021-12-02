@@ -55,8 +55,10 @@ jobs:
           cache-name: cache-deployment-packages
         with:
           path: |
-            ./.aws-sam/cache/**
+            .aws-sam/cache/**
           key: ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
           ./scripts/deploy.sh -f
