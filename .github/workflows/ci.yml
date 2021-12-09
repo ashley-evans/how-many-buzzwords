@@ -2,6 +2,16 @@ name: Validate and Deploy
 on: [push]
 
 jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Compile Project
+        run: |
+          npm run compile
   test:
     runs-on: ubuntu-latest
     steps:
