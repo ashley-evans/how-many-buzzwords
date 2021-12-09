@@ -9,4 +9,9 @@ node_modules/
 local-lambda-output.txt
 
 # Apify Output
+
 apify_storage/
+
+# TSC Output
+
+dist/
