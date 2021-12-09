@@ -18,13 +18,13 @@ Resources:
   CrawlApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../applications/crawl/crawl-template.yml
+      Location: ../dist/crawl/crawl-template.yml
       Parameters:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordsApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../applications/keyphrase/keyphrase-template.yml
+      Location: ../dist/keyphrase/keyphrase-template.yml
       Parameters:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordPublishURLSQSPolicy:
@@ -67,7 +67,7 @@ Resources:
   KeywordsSocketApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../applications/socket/socket-template.yml
+      Location: ../dist/socket/socket-template.yml
       Parameters:
         ApiGatewayName: !Sub buzzword-keywords-socket-gateway-${EnvironmentNameSuffix}
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
