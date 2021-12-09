@@ -9,6 +9,7 @@
         "@typescript-eslint/eslint-plugin": "^5.6.0",
         "@typescript-eslint/parser": "^5.6.0",
         "aws-sdk-client-mock": "^0.5.3",
+        "copyfiles": "^2.4.1",
         "eslint": "^7.32.0",
         "eslint-config-standard": "^16.0.3",
         "eslint-plugin-import": "^2.23.4",
@@ -40,6 +41,9 @@
         "ci": "npm ci && lerna bootstrap --ci",
         "clean": "rm -rf node_modules && lerna clean -y",
         "test": "node node_modules/.bin/jest --verbose",
-        "prepare": "husky install"
+        "prepare": "husky install",
+        "precompile": "npm run ci",
+        "compile": "tsc",
+        "postcompile": "./node_modules/.bin/copyfiles -E -u 1 applications/**/*-template.yml applications/**/package*.json applications/**/Makefile dist"
     }
 }

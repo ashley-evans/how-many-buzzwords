@@ -6,5 +6,9 @@
     },
     "include": [
         "applications"
+    ],
+    "exclude": [
+        "helpers",
+        "**/__tests__"
     ]
 }
