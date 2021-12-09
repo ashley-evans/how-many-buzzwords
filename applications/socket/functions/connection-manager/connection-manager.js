@@ -115,7 +115,7 @@ const baseHandler = async (event) => {
             StatusCodes.INTERNAL_SERVER_ERROR,
             'Failed to process connection.'
         );
-    };
+    }
 };
 
 const handler = middy(baseHandler)
