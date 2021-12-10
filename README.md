@@ -63,11 +63,6 @@ chmod u+x ./scripts/testing/test-crawl.sh
 
 ## Listen to results
 
-The scripts used within this section require `wscat` to operate, this can be installed by running:
-```shell
-npm install -g wscat
-```
-
 To listen to the results of a crawl in real time use the `test-connect.sh` script.
 
 Example usage:
