@@ -45,4 +45,7 @@ gateway_physical_id=$(aws cloudformation describe-stack-resource \
     --logical-resource-id SocketGateway \
     | jq -r .StackResourceDetail.PhysicalResourceId)
 
-wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=$url"
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+root_dir="$( dirname "$(dirname "$script_dir")")"
+
+"$root_dir"/node_modules/.bin/wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=$url"
