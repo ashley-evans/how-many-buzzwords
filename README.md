@@ -67,8 +67,8 @@ To listen to the results of a crawl in real time use the `test-connect.sh` scrip
 
 Example usage:
 ```shell
-chmod u+x ./scripts/testing/test-crawl.sh
-./scripts/testing/test-crawl.sh -s dev -u www.example.com
+chmod u+x ./scripts/testing/test-connect.sh
+./scripts/testing/test-connect.sh -s dev -u www.example.com
 ```
 > Note: The URL cannot contain a protocol.
 
