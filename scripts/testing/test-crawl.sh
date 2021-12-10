@@ -7,13 +7,16 @@ usage() {
     exit 1;
 }
 
-while getopts "s:u:" opt; do
+while getopts "s:u:h" opt; do
     case $opt in
         s)
             suffix=$OPTARG
             ;;
         u)
             url=$OPTARG
+            ;;
+        h)
+            usage
             ;;
         ?)
             usage
