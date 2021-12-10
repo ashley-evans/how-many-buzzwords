@@ -1,13 +1,20 @@
 #!/bin/bash
 
-usage() { echo "Usage: -s [Name of Buzzword Stack to be deleted]" 1>&2; exit 1; }
+usage() {
+    echo "Usage:
+    -s [Name of Buzzword Stack to be deleted]" 1>&2;
+    exit 1; 
+}
 
-while getopts "s:" opt; do
+while getopts "s:h" opt; do
     case $opt in
         s)
             stack=$OPTARG
             ;;
-        \?)
+        h)
+            usage
+            ;;
+        ?)
             usage
             ;;
     esac

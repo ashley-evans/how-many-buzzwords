@@ -4,11 +4,20 @@
 
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
+## General script usage
+
+Each of the scripts used within this project have usage instructions, these can be found by providing the `-h` flag to each script.
+
 ## Requirements
 
 The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
 - AWS CLI - More information can be found here: https://aws.amazon.com/cli/
 - SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+
+Many of the scripts used within the project require `jq` to function, this can be installed by executing:
+```shell
+sudo apt-get install jq
+```
 
 ## Install Dependencies
 
@@ -34,12 +43,6 @@ chmod u+x ./scripts/deploy.sh
 
 ## Teardown
 
-
-In order to execute the teardown script, jq must be installed.
-```shell
-sudo apt-get install jq
-```
-
 Run the following commands to delete the created stacks, along with their related resources:
 ```shell
 chmod u+x ./scripts/teardown.sh
@@ -48,19 +51,26 @@ chmod u+x ./scripts/teardown.sh
 
 ## Manually invoking the APIs
 
-In order to read the results of the buzzword search, wscat needs to be installed:
+## Crawl/Find Buzzwords
+
+To trigger a crawl of a particular URL to get it's buzzwords use the `test-crawl.sh` script. 
+
+Example usage:
 ```shell
-npm install -g wscat
+chmod u+x ./scripts/testing/test-crawl.sh
+./scripts/testing/test-crawl.sh -s dev -u https://www.example.com
 ```
 
-The `test-invoke.sh` script can be ran to start a buzzword search on a given URL. The URL is specified in the `test-invoke.json` file.
-- Note the resource ID for the gateway will need to match the resource ID of the HTTP API Gateway of the stack at test.
+## Listen to results
 
-To retrieve the results, run the command, replacing the URL in the query string to match the one specified in the `test-invoke.json` file:
-- Note the resource ID for the gateway will need to match the resource ID of the WebSocket API Gateway of the stack at test.
+To listen to the results of a crawl in real time use the `test-connect.sh` script.
+
+Example usage:
+```shell
+chmod u+x ./scripts/testing/test-connect.sh
+./scripts/testing/test-connect.sh -s dev -u www.example.com
 ```
-wscat -c wss://${RESOURCE_ID}.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=${URL_HERE}
-```
+> Note: The URL cannot contain a protocol.
 
 ## Local Testing of Lambda functions
 

@@ -8,7 +8,7 @@ usage() {
     exit 1; 
 }
 
-while getopts "fe:-:" opt; do
+while getopts "fe:-:h" opt; do
     if [ $opt = "-" ]; then
         opt="${OPTARG%%=*}"
         OPTARG="${OPTARG#$opt}"
@@ -24,6 +24,9 @@ while getopts "fe:-:" opt; do
             ;;
         nocache)
             nocache=true
+            ;;
+        h)
+            usage
             ;;
         ??*)
             echo "${BASH_SOURCE[0]}: illegal option: -- $opt"
