@@ -44,7 +44,7 @@
         "test": "node node_modules/.bin/jest --verbose",
         "prepare": "husky install",
         "precompile": "npm run ci",
-        "compile": "tsc",
+        "compile": "tsc --project ./tsconfig.build.json",
         "postcompile": "./node_modules/.bin/copyfiles -E -u 1 applications/**/*-template.yml applications/**/package*.json applications/**/Makefile dist"
     }
 }
