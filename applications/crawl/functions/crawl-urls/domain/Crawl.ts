@@ -9,10 +9,18 @@ class Crawl implements CrawlPort {
     ) {}
 
     crawl(baseURL: URL): boolean {
-        const childUrls = this.crawler.crawl(baseURL);
-        const pathnames = childUrls.map(url => url.pathname);
+        try {
+            const childUrls = this.crawler.crawl(baseURL);
+            const pathnames = childUrls.map(url => url.pathname);
 
-        return this.repository.storePathnames(baseURL.hostname, pathnames);
+            return this.repository.storePathnames(baseURL.hostname, pathnames);
+        } catch (ex: unknown) {
+            console.error(
+                `Error occured during crawling: ${JSON.stringify(ex)}`
+            );
+
+            return false;
+        }
     }
 }
 

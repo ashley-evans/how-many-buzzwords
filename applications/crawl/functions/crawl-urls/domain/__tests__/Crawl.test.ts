@@ -32,3 +32,40 @@ it.each([
         );
     }
 );
+
+describe('Error handling', () => {
+    const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
+
+    beforeAll(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => {
+            return undefined;
+        });
+    });
+
+    it('returns failure if error occurs during crawl', () => {
+        mockCrawlProvider.crawl.mockImplementation(() => {
+            throw new Error();
+        });
+        const crawler = new Crawl(mockCrawlProvider, mockRepository);
+    
+        const response = crawler.crawl(baseURL);
+    
+        expect(response).toBe(false);
+    });
+
+    it('returns failure if error occurs during storage', () => {
+        const childURL = new URL(
+            `${baseURL.toString()}${EXPECTED_PATHNAME}`
+        );
+
+        mockCrawlProvider.crawl.mockReturnValue([childURL]);
+        mockRepository.storePathnames.mockImplementation(() => {
+            throw new Error();
+        });
+        const crawler = new Crawl(mockCrawlProvider, mockRepository);
+    
+        const response = crawler.crawl(baseURL);
+    
+        expect(response).toBe(false);
+    });
+});
