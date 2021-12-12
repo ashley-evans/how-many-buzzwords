@@ -1,5 +1,5 @@
 interface Repository {
-    storePathnames(baseURL: string, pathname: string[]): boolean
+    storePathnames(baseURL: string, pathname: string[]): Promise<boolean>
 }
 
 export default Repository;

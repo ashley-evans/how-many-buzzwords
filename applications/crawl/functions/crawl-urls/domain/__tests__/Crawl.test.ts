@@ -20,16 +20,16 @@ describe('crawl provides results', () => {
         ['http']
     ])(
         'provides child url and base url to repository without %s protocol',
-        (protocol) => {
+        async (protocol) => {
             const baseURL = new URL(`${protocol}://${EXPECTED_BASE_URL}`);
             const childURL = new URL(
                 `${baseURL.toString()}${EXPECTED_PATHNAME}`
             );
     
-            mockCrawlProvider.crawl.mockReturnValue([childURL]);
+            mockCrawlProvider.crawl.mockResolvedValue([childURL]);
             const crawler = new Crawl(mockCrawlProvider, mockRepository);
     
-            crawler.crawl(baseURL);
+            await crawler.crawl(baseURL);
     
             expect(mockRepository.storePathnames).toHaveBeenCalledWith(
                 EXPECTED_BASE_URL,
@@ -38,17 +38,17 @@ describe('crawl provides results', () => {
         }
     );
 
-    it('returns success if storage succeeds', () => {
+    it('returns success if storage succeeds', async () => {
         const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
         const childURL = new URL(
             `${baseURL.toString()}${EXPECTED_PATHNAME}`
         );
     
-        mockCrawlProvider.crawl.mockReturnValue([childURL]);
-        mockRepository.storePathnames.mockReturnValue(true);
+        mockCrawlProvider.crawl.mockResolvedValue([childURL]);
+        mockRepository.storePathnames.mockResolvedValue(true);
         const crawler = new Crawl(mockCrawlProvider, mockRepository);
 
-        const response = crawler.crawl(baseURL);
+        const response = await crawler.crawl(baseURL);
 
         expect(response).toBe(true);
     });
@@ -57,13 +57,13 @@ describe('crawl provides results', () => {
 describe('crawl returns no results', () => {
     let response: boolean;
 
-    beforeAll(() => {
+    beforeAll(async () => {
         const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
-        mockCrawlProvider.crawl.mockReturnValue([]);
+        mockCrawlProvider.crawl.mockResolvedValue([]);
 
         const crawler = new Crawl(mockCrawlProvider, mockRepository);
     
-        response = crawler.crawl(baseURL);
+        response = await crawler.crawl(baseURL);
     });
 
     it('does not call repository', () => {
@@ -85,29 +85,29 @@ describe('Error handling', () => {
         });
     });
 
-    it('returns failure if error occurs during crawl', () => {
+    it('returns failure if error occurs during crawl', async () => {
         mockCrawlProvider.crawl.mockImplementation(() => {
             throw new Error();
         });
         const crawler = new Crawl(mockCrawlProvider, mockRepository);
     
-        const response = crawler.crawl(baseURL);
+        const response = await crawler.crawl(baseURL);
     
         expect(response).toBe(false);
     });
 
-    it('returns failure if error occurs during storage', () => {
+    it('returns failure if error occurs during storage', async () => {
         const childURL = new URL(
             `${baseURL.toString()}${EXPECTED_PATHNAME}`
         );
 
-        mockCrawlProvider.crawl.mockReturnValue([childURL]);
+        mockCrawlProvider.crawl.mockResolvedValue([childURL]);
         mockRepository.storePathnames.mockImplementation(() => {
             throw new Error();
         });
         const crawler = new Crawl(mockCrawlProvider, mockRepository);
     
-        const response = crawler.crawl(baseURL);
+        const response = await crawler.crawl(baseURL);
     
         expect(response).toBe(false);
     });

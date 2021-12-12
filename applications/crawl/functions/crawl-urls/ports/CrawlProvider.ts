@@ -1,5 +1,5 @@
 interface CrawlProvider {
-    crawl(baseURL: URL): URL[]
+    crawl(baseURL: URL): Promise<URL[]>
 }
 
 export default CrawlProvider;

@@ -1,5 +1,5 @@
 interface CrawlPort {
-    crawl(baseURL: URL): boolean
+    crawl(baseURL: URL): Promise<boolean>
 }
 
 export default CrawlPort;
