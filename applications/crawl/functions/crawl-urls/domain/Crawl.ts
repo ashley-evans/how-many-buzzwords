@@ -11,8 +11,11 @@ class Crawl implements CrawlPort {
     crawl(baseURL: URL): boolean {
         try {
             const childUrls = this.crawler.crawl(baseURL);
-            const pathnames = childUrls.map(url => url.pathname);
+            if (childUrls.length == 0) {
+                return false;
+            }
 
+            const pathnames = childUrls.map(url => url.pathname);
             return this.repository.storePathnames(baseURL.hostname, pathnames);
         } catch (ex: unknown) {
             console.error(
