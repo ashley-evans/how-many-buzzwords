@@ -12,7 +12,7 @@
             "protocol": "inspector"
         },
         {
-            "name": "Debug Jest Tests (All) - AWS",
+            "name": "Debug Jest Tests (All)",
             "type": "node",
             "request": "launch",
             "runtimeArgs": [
@@ -20,14 +20,14 @@
                 "${workspaceRoot}/node_modules/.bin/jest",
                 "--runInBand",
                 "-c",
-                "${workspaceRoot}/package.json"
+                "${workspaceRoot}/jest.config.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "port": 9229
         },
         {
-            "name": "Debug Jest Tests (Current File) - AWS",
+            "name": "Debug Jest Tests (Current File)",
             "type": "node",
             "request": "launch",
             "runtimeArgs": [
@@ -36,7 +36,7 @@
                 "${workspaceRoot}/node_modules/.bin/jest",
                 "--runInBand",
                 "-c",
-                "${workspaceRoot}/package.json"
+                "${workspaceRoot}/jest.config.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
