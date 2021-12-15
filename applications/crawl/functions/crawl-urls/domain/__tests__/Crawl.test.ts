@@ -125,9 +125,7 @@ describe('Error handling', () => {
 
         const source = of(childURL);
         mockCrawlProvider.crawl.mockReturnValue(source);
-        mockRepository.storePathname.mockImplementation(() => {
-            throw new Error();
-        });
+        mockRepository.storePathname.mockRejectedValue(new Error());
     
         const response = await crawler.crawl(baseURL);
     

@@ -19,7 +19,7 @@ class Crawl implements CrawlPort {
                     storagePromises.push(promise);
                     const stored = await promise;
                     if (!stored) {
-                        resolve(false);
+                        resolve(stored);
                     }
 
                     urlsStored += 1;
@@ -41,18 +41,18 @@ class Crawl implements CrawlPort {
 
     private storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
         return new Promise((resolve) => {
-            try {
-                resolve(this.repository.storePathname(
-                    baseURL.hostname,
-                    childURL.pathname
-                ));
-            } catch (ex: unknown) {
+            this.repository.storePathname(
+                baseURL.hostname,
+                childURL.pathname
+            ).then((value: boolean) => {
+                resolve(value);
+            }).catch((ex: unknown) => {
                 console.error(
                     `Error occured during storage: ${JSON.stringify(ex)}`
                 );
-
+                
                 resolve(false);
-            }
+            });
         });
     }
 }
