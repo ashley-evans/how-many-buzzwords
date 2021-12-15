@@ -18,7 +18,7 @@ describe('crawl provides results', () => {
         jest.resetAllMocks();
     });
 
-    it.each([
+    test.each([
         ['https'],
         ['http']
     ])(
@@ -42,7 +42,7 @@ describe('crawl provides results', () => {
         }
     );
 
-    it(
+    test(
         'provides multiple urls to repository given multiple results',
         async () => {
             const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
@@ -62,7 +62,7 @@ describe('crawl provides results', () => {
         }
     );
 
-    it('returns success if storage succeeds', async () => {
+    test('returns success if storage succeeds', async () => {
         const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
         const childURL = new URL(
             `${baseURL.toString()}${EXPECTED_PATHNAME}`
@@ -90,11 +90,11 @@ describe('crawl returns no results', () => {
         response = await crawler.crawl(baseURL);
     });
 
-    it('does not call repository', () => {
+    test('does not call repository', () => {
         expect(mockRepository.storePathname).not.toBeCalled();
     });
 
-    it('returns failure', () => {
+    test('returns failure', () => {
         expect(response).toBe(false);
     });
 });
@@ -109,7 +109,7 @@ describe('Error handling', () => {
         });
     });
 
-    it('returns failure if error occurs during crawl', async () => {
+    test('returns failure if error occurs during crawl', async () => {
         const source = throwError(() => new Error());
         mockCrawlProvider.crawl.mockReturnValue(source);
     
@@ -118,7 +118,7 @@ describe('Error handling', () => {
         expect(response).toBe(false);
     });
 
-    it('returns failure if error occurs during storage', async () => {
+    test('returns failure if error occurs during storage', async () => {
         const childURL = new URL(
             `${baseURL.toString()}${EXPECTED_PATHNAME}`
         );
@@ -150,11 +150,11 @@ describe('Error handling', () => {
             response = await crawler.crawl(baseURL);
         });
 
-        it('returns failure', () => {
+        test('returns failure', () => {
             expect(response).toBe(false);
         });
 
-        it('provides successful crawl results to repository', () => {
+        test('provides successful crawl results to repository', () => {
             expect(mockRepository.storePathname).toHaveBeenCalledWith(
                 EXPECTED_BASE_URL,
                 `/${EXPECTED_PATHNAME}`
