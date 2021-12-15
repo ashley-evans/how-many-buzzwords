@@ -14,7 +14,7 @@ const EXPECTED_BASE_URL = 'www.example.com';
 const EXPECTED_PATHNAME = 'example';
 
 describe('crawl provides results', () => {
-    afterEach(() => {
+    beforeEach(() => {
         jest.resetAllMocks();
     });
 
@@ -31,6 +31,7 @@ describe('crawl provides results', () => {
     
             const source = of(childURL);
             mockCrawlProvider.crawl.mockReturnValue(source);
+            mockRepository.storePathname.mockResolvedValue(true);
     
             await crawler.crawl(baseURL);
 
@@ -55,6 +56,7 @@ describe('crawl provides results', () => {
             
             const source = of(childURL1, childURL2);
             mockCrawlProvider.crawl.mockReturnValue(source);
+            mockRepository.storePathname.mockResolvedValue(true);
     
             await crawler.crawl(baseURL);
     
@@ -82,10 +84,13 @@ describe('crawl returns no results', () => {
     let response: boolean;
 
     beforeAll(async () => {
+        jest.resetAllMocks();
+
         const baseURL = new URL(`http://${EXPECTED_BASE_URL}`);
 
         const source = EMPTY;
         mockCrawlProvider.crawl.mockReturnValue(source);
+        mockRepository.storePathname.mockResolvedValue(true);
     
         response = await crawler.crawl(baseURL);
     });
@@ -112,6 +117,7 @@ describe('Error handling', () => {
     test('returns failure if error occurs during crawl', async () => {
         const source = throwError(() => new Error());
         mockCrawlProvider.crawl.mockReturnValue(source);
+        mockRepository.storePathname.mockResolvedValue(true);
     
         const response = await crawler.crawl(baseURL);
     
