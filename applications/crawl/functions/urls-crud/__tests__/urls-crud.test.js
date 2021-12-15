@@ -15,9 +15,7 @@ process.env.ERROR_LOGGING_ENABLED = false;
 const ddbMock = mockClient(DynamoDBClient);
 
 const { handler, supportedMethods } = require('../urls-crud');
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
 
 const createEvent = (httpMethod, baseUrl) => {
     return {
@@ -72,10 +70,10 @@ describe('GET route', () => {
         const expectedPathname = '/example';
         const expectedData = [
             {
-                [urlsTableKeyFields.HASH_KEY]: {
+                [URLsTableKeyFields.HashKey]: {
                     S: VALID_HOSTNAME
                 },
-                [urlsTableKeyFields.SORT_KEY]: {
+                [URLsTableKeyFields.SortKey]: {
                     S: expectedPathname
                 }
             }
@@ -103,7 +101,7 @@ describe('GET route', () => {
                 TableName: TABLE_NAME,
                 KeyConditionExpression: '#baseUrl = :searchUrl',
                 ExpressionAttributeNames: {
-                    '#baseUrl': urlsTableKeyFields.HASH_KEY
+                    '#baseUrl': URLsTableKeyFields.HashKey
                 },
                 ExpressionAttributeValues: {
                     ':searchUrl': { S: VALID_HOSTNAME }

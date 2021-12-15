@@ -7,9 +7,7 @@ const {
 } = require('@aws-sdk/client-dynamodb');
 const { StatusCodes } = require('http-status-codes');
 
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
 
 const ddbClient = new DynamoDBClient({});
 
@@ -48,7 +46,7 @@ const getURLs = async (baseUrl) => {
         TableName: process.env.TABLE_NAME,
         KeyConditionExpression: '#baseUrl = :searchUrl',
         ExpressionAttributeNames: {
-            '#baseUrl': urlsTableKeyFields.HASH_KEY
+            '#baseUrl': URLsTableKeyFields.HashKey
         },
         ExpressionAttributeValues: {
             ':searchUrl': { S: baseUrl }

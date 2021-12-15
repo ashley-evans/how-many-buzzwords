@@ -6,9 +6,7 @@ const escapeRegExp = require('lodash.escaperegexp');
 
 const localStorageEmulator = require('./helpers/local-storage-emulator');
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common'); 
 
 const ENTRY_POINT_HOSTNAME = 'www.example.com';
 const ENTRY_POINT_REGEX = new RegExp(escapeRegExp(ENTRY_POINT_HOSTNAME));
@@ -137,10 +135,10 @@ describe.each([
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [urlsTableKeyFields.HASH_KEY]: {
+                    [URLsTableKeyFields.HashKey]: {
                         S: ENTRY_POINT_HOSTNAME
                     },
-                    [urlsTableKeyFields.SORT_KEY]: {
+                    [URLsTableKeyFields.SortKey]: {
                         S: '/'
                     }
                 }
@@ -148,10 +146,10 @@ describe.each([
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [urlsTableKeyFields.HASH_KEY]: {
+                    [URLsTableKeyFields.HashKey]: {
                         S: ENTRY_POINT_HOSTNAME
                     },
-                    [urlsTableKeyFields.SORT_KEY]: {
+                    [URLsTableKeyFields.SortKey]: {
                         S: '/sub-page-1'
                     }
                 }
@@ -185,10 +183,10 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                [urlsTableKeyFields.HASH_KEY]: {
+                [URLsTableKeyFields.HashKey]: {
                     S: `${ENTRY_POINT_HOSTNAME}/circle`
                 },
-                [urlsTableKeyFields.SORT_KEY]: {
+                [URLsTableKeyFields.SortKey]: {
                     S: '/circle'
                 }
             }
@@ -228,10 +226,10 @@ test(
         expect(dynamoDbArgumentInputs[0]).toEqual({
             TableName: TABLE_NAME,
             Item: {
-                [urlsTableKeyFields.HASH_KEY]: {
+                [URLsTableKeyFields.HashKey]: {
                     S: `${ENTRY_POINT_HOSTNAME}/external`
                 },
-                [urlsTableKeyFields.SORT_KEY]: {
+                [URLsTableKeyFields.SortKey]: {
                     S: '/external'
                 }
             }
@@ -353,11 +351,11 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [urlsTableKeyFields.HASH_KEY]: {
+                    [URLsTableKeyFields.HashKey]: {
                         S: `${ENTRY_POINT_HOSTNAME}/depth-` +
                             firstRecordLowerBound.toString()
                     },
-                    [urlsTableKeyFields.SORT_KEY]: {
+                    [URLsTableKeyFields.SortKey]: {
                         S: `/depth-${firstRecordIndex}`
                     }
                 }
@@ -366,11 +364,11 @@ describe('max request', () => {
             expect(dynamoDbArgumentInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [urlsTableKeyFields.HASH_KEY]: {
+                    [URLsTableKeyFields.HashKey]: {
                         S: `${ENTRY_POINT_HOSTNAME}/depth-` +
                             secondRecordLowerBound.toString()
                     },
-                    [urlsTableKeyFields.SORT_KEY]: {
+                    [URLsTableKeyFields.SortKey]: {
                         S: `/depth-${secondRecordIndex}`
                     }
                 }

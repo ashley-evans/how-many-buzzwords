@@ -2,9 +2,7 @@ const middy = require('@middy/core');
 const validator = require('@middy/validator');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
 
 const INPUT_SCHEMA = {
     type: 'object',
@@ -23,11 +21,11 @@ const INPUT_SCHEMA = {
                             NewImage: {
                                 type: 'object',
                                 required: [
-                                    urlsTableKeyFields.HASH_KEY,
-                                    urlsTableKeyFields.SORT_KEY
+                                    URLsTableKeyFields.HashKey,
+                                    URLsTableKeyFields.SortKey
                                 ],
                                 properties: {
-                                    [urlsTableKeyFields.HASH_KEY]: {
+                                    [URLsTableKeyFields.HashKey]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -38,7 +36,7 @@ const INPUT_SCHEMA = {
                                             }
                                         }
                                     },
-                                    [urlsTableKeyFields.SORT_KEY]: {
+                                    [URLsTableKeyFields.SortKey]: {
                                         type: 'object',
                                         required: ['S'],
                                         properties: {
@@ -64,8 +62,8 @@ const baseHandler = async (event) => {
     const records = event.Records;
     for (let i = 0; i < records.length; i++) {
         const recordNewImage = records[i].dynamodb.NewImage;
-        const hashKeyValue = recordNewImage[urlsTableKeyFields.HASH_KEY].S;
-        const sortKeyValue = recordNewImage[urlsTableKeyFields.SORT_KEY].S;
+        const hashKeyValue = recordNewImage[URLsTableKeyFields.HashKey].S;
+        const sortKeyValue = recordNewImage[URLsTableKeyFields.SortKey].S;
         await publishMessage(hashKeyValue, sortKeyValue);
     }
 };
@@ -73,8 +71,8 @@ const baseHandler = async (event) => {
 const publishMessage = async (hashKeyValue, sortKeyValue) => {
     const publishParams = {
         Message: JSON.stringify({
-            [urlsTableKeyFields.HASH_KEY]: hashKeyValue,
-            [urlsTableKeyFields.SORT_KEY]: sortKeyValue
+            [URLsTableKeyFields.HashKey]: hashKeyValue,
+            [URLsTableKeyFields.SortKey]: sortKeyValue
         }),
         TargetArn: process.env.TARGET_SNS_ARN
     };

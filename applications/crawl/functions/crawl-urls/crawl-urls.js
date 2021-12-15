@@ -7,9 +7,7 @@ const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const httpErrorHandler = require('@middy/http-error-handler');
 const validator = require('@middy/validator');
 
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
 
 let requestQueue;
 const ddbClient = new DynamoDBClient({});
@@ -139,8 +137,8 @@ const putItem = async (hashKeyValue, sortKeyValue) => {
     const params = {
         TableName: process.env.TABLE_NAME,
         Item: {
-            [urlsTableKeyFields.HASH_KEY]: { S: hashKeyValue },
-            [urlsTableKeyFields.SORT_KEY]: { S: sortKeyValue }
+            [URLsTableKeyFields.HashKey]: { S: hashKeyValue },
+            [URLsTableKeyFields.SortKey]: { S: sortKeyValue }
         }
     };
 
