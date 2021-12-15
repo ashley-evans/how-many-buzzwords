@@ -6,8 +6,6 @@ import {
 import fs from 'fs-extra';
 import path from 'path';
 
-import { process } from '../../../polyfills';
-
 const LOCAL_STORAGE_DIRECTORIES: string[] = Object.values(
     LOCAL_STORAGE_SUBDIRS
 );
