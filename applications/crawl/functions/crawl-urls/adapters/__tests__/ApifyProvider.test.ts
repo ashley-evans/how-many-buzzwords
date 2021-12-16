@@ -32,13 +32,13 @@ describe('happy path', () => {
     const expectedBasePath = '/';
     const expectedChildPath = '/sub-page-1';
 
-    let entryUrlMock: nock.Scope;
+    let entryURLMock: nock.Scope;
     let subPageMock: nock.Scope;
 
     let response: URL[];
 
     beforeAll(async () => {
-        entryUrlMock = mockURLFromFile(
+        entryURLMock = mockURLFromFile(
             ENTRY_POINT_URL,
             expectedBasePath,
             path.join(ASSET_FOLDER, 'entry-point.html'),
@@ -57,12 +57,12 @@ describe('happy path', () => {
     });
 
 
-    test('crawler hits all pages within a domain once', () => {
-        expect(entryUrlMock.isDone()).toBe(true);
+    test('crawler hits all URLs linked from starting URL once', () => {
+        expect(entryURLMock.isDone()).toBe(true);
         expect(subPageMock.isDone()).toBe(true);
     });
     
-    test('crawler returns all pages within a domain', () => {
+    test('crawler returns all URLs linked from starting URL', () => {
         const responseBaseURL = response[0];
         const responseChildURL = response[1];
         
@@ -74,6 +74,24 @@ describe('happy path', () => {
         expect(responseChildURL.origin).toEqual(ENTRY_POINT_URL.origin);
         expect(responseChildURL.pathname).toEqual(expectedChildPath);
     });
+});
+
+test('crawler only returns one URL if page only refers to itself', async () => {
+    const expectedCirclePath = '/circle';
+    mockURLFromFile(
+        ENTRY_POINT_URL,
+        expectedCirclePath,
+        path.join(ASSET_FOLDER, 'circle.html'),
+        true
+    );
+    const provider = new ApifyProvider();
+    const circleURL = new URL(`${ENTRY_POINT_URL.origin}${expectedCirclePath}`);
+    
+    const observable = provider.crawl(circleURL);
+    const response = await receiveObservableOutput(observable);
+
+    expect(response).toHaveLength(1);
+    expect(response[0]).toEqual(circleURL);
 });
 
 beforeEach(() => {
