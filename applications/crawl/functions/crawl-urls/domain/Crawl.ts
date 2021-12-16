@@ -8,11 +8,11 @@ class Crawl implements CrawlPort {
         private repository: Repository
     ) {}
 
-    async crawl(baseURL: URL): Promise<boolean> {
+    async crawl(baseURL: URL, maxCrawlDepth?: number): Promise<boolean> {
         return new Promise((resolve) => {
             let urlsStored = 0;
             const storagePromises: Promise<boolean>[] = [];
-            this.crawler.crawl(baseURL).subscribe({
+            this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
                 next: async (childURL) => {
                     // Store promise to ensure complete occurs after all nexts.
                     const promise = this.storePathname(baseURL, childURL);
