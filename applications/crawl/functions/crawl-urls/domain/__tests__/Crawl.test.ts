@@ -14,17 +14,13 @@ const EXPECTED_BASE_URL = 'www.example.com';
 const EXPECTED_PATHNAME = 'example';
 
 describe('crawl provides results', () => {
-    beforeEach(() => {
-        jest.resetAllMocks();
-    });
+    describe.each([
+        'http',
+        'https'
+    ])('handles %s URLs', (protocol) => {
+        const baseURL = new URL(`${protocol}://${EXPECTED_BASE_URL}`);
 
-    test.each([
-        ['https'],
-        ['http']
-    ])(
-        'provides child pathname and url to repository without %s protocol',
-        async (protocol) => {
-            const baseURL = new URL(`${protocol}://${EXPECTED_BASE_URL}`);
+        beforeAll(async () => {
             const childURL = new URL(
                 `${baseURL.toString()}${EXPECTED_PATHNAME}`
             );
@@ -34,14 +30,27 @@ describe('crawl provides results', () => {
             mockRepository.storePathname.mockResolvedValue(true);
     
             await crawler.crawl(baseURL);
+        });
 
-            expect(mockRepository.storePathname).toHaveBeenCalledTimes(1);
-            expect(mockRepository.storePathname).toHaveBeenCalledWith(
-                EXPECTED_BASE_URL,
-                `/${EXPECTED_PATHNAME}`
-            );
-        }
-    );
+        test('calls crawl provider with URL', () => {
+            expect(mockCrawlProvider.crawl).toHaveBeenCalledWith(baseURL);
+        });
+
+        test(
+            'provides child pathname and url to repository without %s protocol',
+            () => {
+                expect(mockRepository.storePathname).toHaveBeenCalledTimes(1);
+                expect(mockRepository.storePathname).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL,
+                    `/${EXPECTED_PATHNAME}`
+                );
+            }
+        );
+
+        afterAll(() => {
+            jest.resetAllMocks();
+        });
+    });
 
     test(
         'provides multiple urls to repository given multiple results',
