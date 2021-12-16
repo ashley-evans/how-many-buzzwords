@@ -1,16 +1,21 @@
 import path from 'path';
 import { Observable } from 'rxjs';
+import nock from 'nock';
+import { Scope } from 'nock/types';
 
 import { init, clean, destroy } from './helpers/local-storage-emulator';
 import { mockURLFromFile } from '../../../../../../helpers/http-mock';
 
 import ApifyProvider from '../ApifyProvider';
-import nock from 'nock/types';
 
 const ENTRY_POINT_URL = new URL('http://www.example.com');
 
 const LOCAL_STORAGE_DIR = path.join(__dirname, '/apify_storage');
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
+const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth');
+const DEPTH_PATH_PREFIX = '/depth-';
+
+const MAX_CRAWL_DEPTH = 3;
 
 function receiveObservableOutput<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise((resolve, reject) => {
@@ -23,17 +28,36 @@ function receiveObservableOutput<T>(observable: Observable<T>): Promise<T[]> {
     });
 }
 
+function mockDepthURLs(depth: number): Scope[] {
+    const mocks: Scope[] = [];
+    for (let i = 0; i < depth + 1; i++) {
+        const mock = mockURLFromFile(
+            ENTRY_POINT_URL,
+            `${DEPTH_PATH_PREFIX}${i}`,
+            path.join(DEPTH_FOLDER, `depth-${i}.html`),
+            false
+        );
+        mocks.push(mock);
+    }
+
+    return mocks;
+}
+
 beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
     init(LOCAL_STORAGE_DIR);
+});
+
+beforeEach(() => {
+    clean();
 });
 
 describe('happy path', () => {
     const expectedBasePath = '/';
     const expectedChildPath = '/sub-page-1';
 
-    let entryURLMock: nock.Scope;
-    let subPageMock: nock.Scope;
+    let entryURLMock: Scope;
+    let subPageMock: Scope;
 
     let response: URL[];
 
@@ -50,7 +74,7 @@ describe('happy path', () => {
             path.join(ASSET_FOLDER, 'sub-page-1.html'),
             false
         );
-        const provider = new ApifyProvider();
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
         const observable = provider.crawl(ENTRY_POINT_URL);
 
         response = await receiveObservableOutput(observable);
@@ -84,9 +108,9 @@ test('crawler only returns one URL if page only refers to itself', async () => {
         path.join(ASSET_FOLDER, 'circle.html'),
         true
     );
-    const provider = new ApifyProvider();
+    const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
     const circleURL = new URL(`${ENTRY_POINT_URL.origin}${expectedCirclePath}`);
-    
+
     const observable = provider.crawl(circleURL);
     const response = await receiveObservableOutput(observable);
 
@@ -94,8 +118,47 @@ test('crawler only returns one URL if page only refers to itself', async () => {
     expect(response[0]).toEqual(circleURL);
 });
 
-beforeEach(() => {
-    clean();
+describe('depth testing', () => {
+    const expectedNumberOfURLSCrawled = MAX_CRAWL_DEPTH + 1;
+
+    let mockSites: Scope[];
+    let response: URL[];
+
+    beforeAll(async () => {
+        mockSites = mockDepthURLs(expectedNumberOfURLSCrawled);
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        const depthStartURL = new URL(
+            `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}0`
+        );
+
+        const observable = provider.crawl(depthStartURL);
+        response = await receiveObservableOutput(observable);
+    });
+
+    test('crawler hits urls until maximum depth is reached', () => {
+        for (let i = 0; i < expectedNumberOfURLSCrawled; i++) {
+            expect(mockSites[i].isDone()).toBe(true);
+        }
+
+        const expectedNotCrawledSite = mockSites[expectedNumberOfURLSCrawled];
+        expect(expectedNotCrawledSite.isDone()).toBe(false);
+    });
+
+    test('crawler returns URLs up to maximum crawl depth', () => {
+        expect(response).toHaveLength(expectedNumberOfURLSCrawled);
+
+        for (let i = 0; i < expectedNumberOfURLSCrawled; i++) {
+            expect(response).toContainEqual(
+                new URL(
+                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                )
+            );
+        }
+    });
+
+    afterAll(() => {
+        nock.cleanAll();
+    });
 });
 
 afterAll(() => {

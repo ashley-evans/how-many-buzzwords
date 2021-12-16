@@ -13,9 +13,12 @@ import { Observable, Subject } from "rxjs";
 import CrawlProvider from "../ports/CrawlProvider";
 
 class ApifyProvider implements CrawlProvider {
+    maxCrawlDepth: number;
+    
     private crawledURLs: Subject<URL>;
 
-    constructor() {
+    constructor(maxCrawlDepth: number) {
+        this.maxCrawlDepth = maxCrawlDepth;
         this.crawledURLs = new Subject<URL>();
     }
 
@@ -49,11 +52,13 @@ class ApifyProvider implements CrawlProvider {
         requestList: RequestList, 
         requestQueue: RequestQueue
     ): CheerioCrawler {
+        const maxCrawlDepth = this.maxCrawlDepth;
         const crawledURLs = this.crawledURLs;
         const crawlPage = this.crawlPage;
+        
         const crawlerOptions: CheerioCrawlerOptions = {
             handlePageFunction: (async (context: CheerioHandlePageInputs) => {
-                crawlPage(context, crawledURLs, requestQueue);
+                crawlPage(context, requestQueue, maxCrawlDepth, crawledURLs);
             }),
             requestList,
             requestQueue,
@@ -64,16 +69,31 @@ class ApifyProvider implements CrawlProvider {
 
     private async crawlPage(
         inputs : CheerioHandlePageInputs,
-        crawledURLs: Subject<URL>,
-        requestQueue: RequestQueue
+        requestQueue: RequestQueue,
+        maxCrawlDepth: number,
+        crawledURLs: Subject<URL>
     ) {
         const { request, $ } = inputs;
+        const requestUserData = request.userData;
 
-        await utils.enqueueLinks({
-            $,
-            requestQueue,
-            baseUrl: request.loadedUrl
-        });
+        const currentDepth = isNaN(requestUserData.currentDepth) 
+            ? 0 
+            : Number(requestUserData.currentDepth);
+
+        if (currentDepth < maxCrawlDepth) {
+            await utils.enqueueLinks({
+                $,
+                requestQueue,
+                baseUrl: request.loadedUrl,
+                transformRequestFunction: (request) => {
+                    request.userData = {
+                        currentDepth: currentDepth + 1
+                    };
+    
+                    return request;
+                },
+            });
+        }
 
         crawledURLs.next(new URL(request.url));
     }
