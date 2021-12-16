@@ -18,7 +18,7 @@ class URLsTableRepository implements Repository {
                 TableName: this.tableName,
                 Item: {
                     [URLsTableKeyFields.HashKey]: { S: baseURL },
-                    [URLsTableKeyFields.SortKey]: { S: pathname} 
+                    [URLsTableKeyFields.SortKey]: { S: pathname } 
                 }
             };
             const command = new PutItemCommand(input);
