@@ -3,14 +3,11 @@ import { mock } from 'jest-mock-extended';
 
 import { handler } from '../crawl-urls';
 
-
 const mockEvent = mock<SQSEvent>();
 
 const VALID_MAX_CRAWL_DEPTH = '1';
 const VALID_MAX_REQUESTS_PER_CRAWL = '1';
 const VALID_TABLE_NAME = 'test';
-
-jest.mock('../adapters/SQSAdapter');
 
 beforeEach(() => {
     process.env.MAX_CRAWL_DEPTH = VALID_MAX_CRAWL_DEPTH;
