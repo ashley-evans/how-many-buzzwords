@@ -60,7 +60,6 @@ beforeEach(() => {
 });
 
 describe('happy path', () => {
-    const expectedBasePath = '/';
     const expectedChildPath = '/sub-page-1';
 
     let entryURLMock: Scope;
@@ -72,7 +71,7 @@ describe('happy path', () => {
         clean();
         entryURLMock = mockURLFromFile(
             ENTRY_POINT_URL,
-            expectedBasePath,
+            ENTRY_POINT_URL.pathname,
             path.join(ASSET_FOLDER, 'entry-point.html'),
             false
         );
@@ -95,13 +94,13 @@ describe('happy path', () => {
     });
     
     test('crawler returns all URLs linked from starting URL', () => {
+        expect(response).toHaveLength(2);
+
         const responseBaseURL = response[0];
         const responseChildURL = response[1];
-        
-        expect(response).toHaveLength(2);
-        
+
         expect(responseBaseURL.origin).toEqual(ENTRY_POINT_URL.origin);
-        expect(responseBaseURL.pathname).toEqual(expectedBasePath);
+        expect(responseBaseURL.pathname).toEqual(ENTRY_POINT_URL.pathname);
 
         expect(responseChildURL.origin).toEqual(ENTRY_POINT_URL.origin);
         expect(responseChildURL.pathname).toEqual(expectedChildPath);
