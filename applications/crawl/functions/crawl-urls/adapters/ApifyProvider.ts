@@ -1,7 +1,5 @@
 import {
-    RequestList,
     RequestOptions,
-    openRequestList,
     CheerioHandlePageInputs,
     utils,
     RequestQueue,
@@ -22,36 +20,42 @@ class ApifyProvider implements CrawlProvider {
         this.crawledURLs = new Subject<URL>();
     }
 
-    crawl(baseURL: URL): Observable<URL> {
-        this.createRequestList(baseURL).then(async (requestList) => {
-            const requestQueue = await openRequestQueue();
-            const crawler = this.createCrawler(requestList, requestQueue);
+    crawl(baseURL: URL, maxDepth?: number): Observable<URL> {
+        this.createRequestQueue(baseURL, maxDepth).then(
+            async (requestQueue) => {
+                const crawler = this.createCrawler(requestQueue);
 
-            await crawler.run();
+                await crawler.run();
 
-            this.crawledURLs.complete();
-        });
+                await requestQueue.drop();
+                this.crawledURLs.complete();
+            }
+        );
 
         return this.crawledURLs.asObservable();
     }
 
-    private async createRequestList(baseUrl: URL): Promise<RequestList> {
-        const requestListData: RequestOptions[] = [
-            {
-                url: baseUrl.toString(),
-            }
-        ];
+    private async createRequestQueue(
+        baseURL: URL,
+        maxDepth?: number
+    ): Promise<RequestQueue> {
+        const request: RequestOptions = {
+            url: baseURL.toString(),
+        };
 
-        return await openRequestList(
-            null,
-            requestListData
-        );
+        if (maxDepth !== undefined) {
+            request.userData = {
+                maxCrawlDepth: maxDepth
+            };
+        }
+
+        const requestQueue = await openRequestQueue();
+        await requestQueue.addRequest(request);
+        
+        return requestQueue;
     }
-    
-    private createCrawler(
-        requestList: RequestList, 
-        requestQueue: RequestQueue
-    ): CheerioCrawler {
+
+    private createCrawler(requestQueue: RequestQueue): CheerioCrawler {
         const maxCrawlDepth = this.maxCrawlDepth;
         const crawledURLs = this.crawledURLs;
         const crawlPage = this.crawlPage;
@@ -60,7 +64,6 @@ class ApifyProvider implements CrawlProvider {
             handlePageFunction: (async (context: CheerioHandlePageInputs) => {
                 crawlPage(context, requestQueue, maxCrawlDepth, crawledURLs);
             }),
-            requestList,
             requestQueue,
         };
 
@@ -80,14 +83,24 @@ class ApifyProvider implements CrawlProvider {
             ? 0 
             : Number(requestUserData.currentDepth);
 
-        if (currentDepth < maxCrawlDepth) {
+        let maxDepthAllowed = maxCrawlDepth;
+        if (!isNaN(requestUserData.maxCrawlDepth)) {
+            const specifiedMaxDepth = Number(requestUserData.maxCrawlDepth);
+
+            if (specifiedMaxDepth < maxCrawlDepth) {
+                maxDepthAllowed = specifiedMaxDepth;
+            }
+        }
+
+        if (currentDepth < maxDepthAllowed) {
             await utils.enqueueLinks({
                 $,
                 requestQueue,
                 baseUrl: request.loadedUrl,
                 transformRequestFunction: (request) => {
                     request.userData = {
-                        currentDepth: currentDepth + 1
+                        currentDepth: currentDepth + 1,
+                        maxCrawlDepth: maxDepthAllowed
                     };
     
                     return request;

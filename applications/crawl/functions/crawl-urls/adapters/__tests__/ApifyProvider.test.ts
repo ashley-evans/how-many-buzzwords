@@ -15,7 +15,12 @@ const ASSET_FOLDER = path.join(__dirname, '/assets/');
 const DEPTH_FOLDER = path.join(ASSET_FOLDER, '/depth');
 const DEPTH_PATH_PREFIX = '/depth-';
 
+const DEPTH_ENTRY_POINT_URL = new URL(
+    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}0`
+);
+
 const MAX_CRAWL_DEPTH = 3;
+const BEYOND_MAX_DEPTH = MAX_CRAWL_DEPTH + 1;
 
 function receiveObservableOutput<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise((resolve, reject) => {
@@ -30,7 +35,7 @@ function receiveObservableOutput<T>(observable: Observable<T>): Promise<T[]> {
 
 function mockDepthURLs(depth: number): Scope[] {
     const mocks: Scope[] = [];
-    for (let i = 0; i < depth + 1; i++) {
+    for (let i = 0; i <= depth; i++) {
         const mock = mockURLFromFile(
             ENTRY_POINT_URL,
             `${DEPTH_PATH_PREFIX}${i}`,
@@ -62,6 +67,7 @@ describe('happy path', () => {
     let response: URL[];
 
     beforeAll(async () => {
+        clean();
         entryURLMock = mockURLFromFile(
             ENTRY_POINT_URL,
             expectedBasePath,
@@ -118,36 +124,80 @@ test('crawler only returns one URL if page only refers to itself', async () => {
     expect(response[0]).toEqual(circleURL);
 });
 
-describe('depth testing', () => {
-    const expectedNumberOfURLSCrawled = MAX_CRAWL_DEPTH + 1;
+describe('crawls to default depth given no depth specified', () => {
+    let mockSites: Scope[];
+    let response: URL[];
+
+    beforeAll(async () => {
+        clean();
+        mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
+        
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        response = await receiveObservableOutput(
+            provider.crawl(DEPTH_ENTRY_POINT_URL)
+        );
+    });
+
+    test('crawler hits urls until expected depth is reached', () => {
+        for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
+            expect(mockSites[i].isDone()).toBe(true);
+        }
+    });
+
+    test('crawler does not hit urls after expected depth is reached', () => {
+        expect(mockSites[BEYOND_MAX_DEPTH].isDone()).toBe(false);
+    });
+
+    test('crawler returns URLs up to maximum crawl depth', () => {
+        expect(response).toHaveLength(MAX_CRAWL_DEPTH + 1);
+
+        for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
+            expect(response).toContainEqual(
+                new URL(
+                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                )
+            );
+        }
+    });
+
+    afterAll(() => {
+        nock.cleanAll();
+    });
+});
+
+describe('crawls to specified depth given less than default', () => {
+    const specifiedDepth = 1;
+    const expectedCrawlLength = specifiedDepth + 1;
 
     let mockSites: Scope[];
     let response: URL[];
 
     beforeAll(async () => {
-        mockSites = mockDepthURLs(expectedNumberOfURLSCrawled);
+        clean();
+        mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
+        
         const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
-        const depthStartURL = new URL(
-            `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}0`
+        response = await receiveObservableOutput(
+            provider.crawl(DEPTH_ENTRY_POINT_URL, specifiedDepth)
         );
-
-        const observable = provider.crawl(depthStartURL);
-        response = await receiveObservableOutput(observable);
     });
 
-    test('crawler hits urls until maximum depth is reached', () => {
-        for (let i = 0; i < expectedNumberOfURLSCrawled; i++) {
+    test('crawler hits urls until expected depth is reached', () => {
+        for (let i = 0; i < expectedCrawlLength; i++) {
             expect(mockSites[i].isDone()).toBe(true);
         }
+    });
 
-        const expectedNotCrawledSite = mockSites[expectedNumberOfURLSCrawled];
-        expect(expectedNotCrawledSite.isDone()).toBe(false);
+    test('crawler does not hit urls after expected depth is reached', () => {
+        for (let i = expectedCrawlLength; i <= BEYOND_MAX_DEPTH; i++) {
+            expect(mockSites[i].isDone()).toBe(false);
+        }
     });
 
     test('crawler returns URLs up to maximum crawl depth', () => {
-        expect(response).toHaveLength(expectedNumberOfURLSCrawled);
+        expect(response).toHaveLength(expectedCrawlLength);
 
-        for (let i = 0; i < expectedNumberOfURLSCrawled; i++) {
+        for (let i = 0; i < expectedCrawlLength; i++) {
             expect(response).toContainEqual(
                 new URL(
                     `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
