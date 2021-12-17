@@ -211,6 +211,47 @@ describe('crawls to specified depth given less than default', () => {
     });
 });
 
+describe('crawls to default max depth given larger specified depth', () => {
+    let mockSites: Scope[];
+    let response: URL[];
+
+    beforeAll(async () => {
+        clean();
+        mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
+        
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        response = await receiveObservableOutput(
+            provider.crawl(DEPTH_ENTRY_POINT_URL, BEYOND_MAX_DEPTH)
+        );
+    });
+
+    test('crawler hits urls until expected depth is reached', () => {
+        for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
+            expect(mockSites[i].isDone()).toBe(true);
+        }
+    });
+
+    test('crawler does not hit urls after expected depth is reached', () => {
+        expect(mockSites[BEYOND_MAX_DEPTH].isDone()).toBe(false);
+    });
+
+    test('crawler returns URLs up to maximum crawl depth', () => {
+        expect(response).toHaveLength(MAX_CRAWL_DEPTH + 1);
+
+        for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
+            expect(response).toContainEqual(
+                new URL(
+                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                )
+            );
+        }
+    });
+
+    afterAll(() => {
+        nock.cleanAll();
+    });
+});
+
 afterAll(() => {
     destroy();
 });
