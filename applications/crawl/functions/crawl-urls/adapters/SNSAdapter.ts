@@ -20,9 +20,18 @@ class SNSAdapter implements PrimarySNSAdapter {
 
     async crawl(event: SQSEvent): Promise<SQSBatchResponse> {
         for (const record of event.Records) {
-            const validatedBody = this.validateRequestBody(record.body);
-            const url = new URL(validatedBody.url);
+            let validatedBody: RequestBody;
+            try {
+                validatedBody = this.validateRequestBody(record.body);
+            } catch (ex) {
+                console.error(
+                    `Error occured in body validation: ${JSON.stringify(ex)}`
+                );
 
+                continue;
+            }
+
+            const url = new URL(validatedBody.url);
             await this.crawler.crawl(url, validatedBody.depth);
         }
 

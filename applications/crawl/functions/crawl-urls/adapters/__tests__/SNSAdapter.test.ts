@@ -14,10 +14,14 @@ function createEvent(...records: SQSRecord[]): SQSEvent {
     };
 }
 
-function createRecord(url: URL, depth?: number): SQSRecord {
+function createRecord(url: URL | string, depth?: number): SQSRecord {
     const record = mock<SQSRecord>();
 
-    record.body = createEventBody(url, depth);
+    if (url instanceof URL) {
+        record.body = createEventBody(url, depth);
+    } else {
+        record.body = url;
+    }
 
     return record;
 }
@@ -28,6 +32,36 @@ function createEventBody(url: URL, depth?: number): string {
         depth,
     });
 }
+
+describe.each([
+    ['empty body', createEvent(createRecord(''))]
+])('handles invalid event body with %s', (text: string, event: SQSEvent) => {
+    const consoleErrorSpy = jest.spyOn(console, 'error');
+    
+    let response: SQSBatchResponse;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        consoleErrorSpy.mockImplementation(() => undefined);
+
+        const adapter = new SNSAdapter(mockCrawlPort);
+
+        response = await adapter.crawl(event);
+    });
+
+    test('does not call crawl port', async () => {
+        expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(0);
+    });
+
+    test('returns no failures', async () => {
+        expect(response).toBeDefined();
+        expect(response.batchItemFailures).toHaveLength(0);
+    });
+
+    afterAll(() => {
+        consoleErrorSpy.mockRestore();
+    });
+});
 
 describe.each([
     [
