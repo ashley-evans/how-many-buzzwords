@@ -12,11 +12,13 @@ import CrawlProvider from "../ports/CrawlProvider";
 
 class ApifyProvider implements CrawlProvider {
     maxCrawlDepth: number;
+    maxRequests: number;
     
     private crawledURLs: Subject<URL>;
 
-    constructor(maxCrawlDepth: number) {
+    constructor(maxCrawlDepth: number, maxRequests: number) {
         this.maxCrawlDepth = maxCrawlDepth;
+        this.maxRequests = maxRequests;
         this.crawledURLs = new Subject<URL>();
     }
 
@@ -65,6 +67,7 @@ class ApifyProvider implements CrawlProvider {
                 crawlPage(context, requestQueue, maxCrawlDepth, crawledURLs);
             }),
             requestQueue,
+            maxRequestsPerCrawl: this.maxRequests
         };
 
         return new CheerioCrawler(crawlerOptions);

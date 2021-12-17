@@ -19,6 +19,7 @@ const DEPTH_ENTRY_POINT_URL = new URL(
     `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}0`
 );
 
+const MAX_REQUESTS = 10;
 const MAX_CRAWL_DEPTH = 3;
 const BEYOND_MAX_DEPTH = MAX_CRAWL_DEPTH + 1;
 
@@ -80,7 +81,7 @@ describe('happy path', () => {
             path.join(ASSET_FOLDER, 'sub-page-1.html'),
             false
         );
-        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
         const observable = provider.crawl(ENTRY_POINT_URL);
 
         response = await receiveObservableOutput(observable);
@@ -114,7 +115,7 @@ test('crawler only returns one URL if page only refers to itself', async () => {
         path.join(ASSET_FOLDER, 'circle.html'),
         true
     );
-    const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+    const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
     const circleURL = new URL(`${ENTRY_POINT_URL.origin}${expectedCirclePath}`);
 
     const observable = provider.crawl(circleURL);
@@ -132,7 +133,7 @@ describe('crawls to default depth given no depth specified', () => {
         clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
         
-        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
         response = await receiveObservableOutput(
             provider.crawl(DEPTH_ENTRY_POINT_URL)
         );
@@ -176,7 +177,7 @@ describe('crawls to specified depth given less than default', () => {
         clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
         
-        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
         response = await receiveObservableOutput(
             provider.crawl(DEPTH_ENTRY_POINT_URL, specifiedDepth)
         );
@@ -219,7 +220,7 @@ describe('crawls to default max depth given larger specified depth', () => {
         clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
         
-        const provider = new ApifyProvider(MAX_CRAWL_DEPTH);
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
         response = await receiveObservableOutput(
             provider.crawl(DEPTH_ENTRY_POINT_URL, BEYOND_MAX_DEPTH)
         );
@@ -239,6 +240,51 @@ describe('crawls to default max depth given larger specified depth', () => {
         expect(response).toHaveLength(MAX_CRAWL_DEPTH + 1);
 
         for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
+            expect(response).toContainEqual(
+                new URL(
+                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                )
+            );
+        }
+    });
+
+    afterAll(() => {
+        nock.cleanAll();
+    });
+});
+
+describe('crawls to max number of requests specified', () => {
+    const maxRequests = MAX_CRAWL_DEPTH - 1;
+
+    let mockSites: Scope[];
+    let response: URL[];
+
+    beforeAll(async () => {
+        clean();
+        mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
+        
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, maxRequests);
+        response = await receiveObservableOutput(
+            provider.crawl(DEPTH_ENTRY_POINT_URL, BEYOND_MAX_DEPTH)
+        );
+    });
+
+    test('crawler hits urls until max requests is reached', () => {
+        for (let i = 0; i < maxRequests; i++) {
+            expect(mockSites[i].isDone()).toBe(true);
+        }
+    });
+
+    test('crawler does not hit urls after expected depth is reached', () => {
+        for (let i = maxRequests; i <= BEYOND_MAX_DEPTH; i++) {
+            expect(mockSites[i].isDone()).toBe(false);
+        }
+    });
+
+    test('crawler returns URLs up to max requests', () => {
+        expect(response).toHaveLength(maxRequests);
+
+        for (let i = 0; i < maxRequests; i++) {
             expect(response).toContainEqual(
                 new URL(
                     `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
