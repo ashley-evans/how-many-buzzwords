@@ -53,10 +53,33 @@ describe.each([
         )
     ],
     [
-        'invalid url', 
+        'invalid url (numeric)', 
         createEvent(
             createRecord(JSON.stringify({
-                url: 'wibble'
+                url: 1
+            }))
+        )
+    ],
+    [
+        'invalid url',
+        createEvent(
+            createRecord(JSON.stringify({
+                url: `test ${EXPECTED_VALID_URL}`
+            }))
+        )
+    ],
+    [
+        'invalid depth (non-integer)',
+        createEvent(
+            createRecord(EXPECTED_VALID_URL, 3.14)
+        )
+    ],
+    [
+        'invalid depth (string)',
+        createEvent(
+            createRecord(JSON.stringify({
+                url: EXPECTED_VALID_URL,
+                depth: 'test'
             }))
         )
     ]
