@@ -2,14 +2,14 @@ import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
 import { SQSBatchResponse, SQSEvent } from "aws-lambda";
 
 import CrawlPort from "../ports/CrawlPort";
-import PrimarySNSAdapter from "../ports/PrimarySNSAdapter";
+import PrimarySQSAdapter from "../ports/PrimarySQSAdapter";
 
 interface RequestBody {
     url: string,
     depth?: number
 }
 
-class SNSAdapter implements PrimarySNSAdapter {
+class SQSAdapter implements PrimarySQSAdapter {
     private ajv: Ajv;
     private validator;
 
@@ -21,8 +21,11 @@ class SNSAdapter implements PrimarySNSAdapter {
     async crawl(event: SQSEvent): Promise<SQSBatchResponse> {
         for (const record of event.Records) {
             let validatedBody: RequestBody;
+            let url: URL;
             try {
                 validatedBody = this.validateRequestBody(record.body);
+
+                url = new URL(validatedBody.url);
             } catch (ex) {
                 console.error(
                     `Error occured in body validation: ${JSON.stringify(ex)}`
@@ -31,7 +34,6 @@ class SNSAdapter implements PrimarySNSAdapter {
                 continue;
             }
 
-            const url = new URL(validatedBody.url);
             await this.crawler.crawl(url, validatedBody.depth);
         }
 
@@ -67,4 +69,4 @@ class SNSAdapter implements PrimarySNSAdapter {
     }
 }
 
-export default SNSAdapter;
+export default SQSAdapter;

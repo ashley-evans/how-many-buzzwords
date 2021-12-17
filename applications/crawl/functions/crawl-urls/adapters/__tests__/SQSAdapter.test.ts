@@ -2,7 +2,7 @@ import { SQSBatchResponse, SQSEvent, SQSRecord } from 'aws-lambda';
 import { mock } from 'jest-mock-extended';
 
 import CrawlPort from "../../ports/CrawlPort";
-import SNSAdapter from "../SNSAdapter";
+import SNSAdapter from "../SQSAdapter";
 
 const mockCrawlPort = mock<CrawlPort>();
 
@@ -33,16 +33,38 @@ function createEventBody(url: URL, depth?: number): string {
     });
 }
 
+beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+});
+
 describe.each([
-    ['empty body', createEvent(createRecord(''))]
+    [
+        'empty body', 
+        createEvent(
+            createRecord('')
+        )
+    ],
+    [
+        'missing url',
+        createEvent(
+            createRecord(JSON.stringify({
+                depth: 10
+            }))
+        )
+    ],
+    [
+        'invalid url', 
+        createEvent(
+            createRecord(JSON.stringify({
+                url: 'wibble'
+            }))
+        )
+    ]
 ])('handles invalid event body with %s', (text: string, event: SQSEvent) => {
-    const consoleErrorSpy = jest.spyOn(console, 'error');
-    
     let response: SQSBatchResponse;
 
     beforeAll(async () => {
         jest.resetAllMocks();
-        consoleErrorSpy.mockImplementation(() => undefined);
 
         const adapter = new SNSAdapter(mockCrawlPort);
 
@@ -57,21 +79,17 @@ describe.each([
         expect(response).toBeDefined();
         expect(response.batchItemFailures).toHaveLength(0);
     });
-
-    afterAll(() => {
-        consoleErrorSpy.mockRestore();
-    });
 });
 
 describe.each([
     [
-        'a single URL',
+        'a single valid URL',
         [
             EXPECTED_VALID_URL
         ]
     ],
     [
-        'multiple URLs',
+        'multiple valid URLs',
         [
             EXPECTED_VALID_URL,
             new URL(`${EXPECTED_VALID_URL.origin}/example`)

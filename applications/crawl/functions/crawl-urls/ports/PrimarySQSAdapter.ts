@@ -1,7 +1,7 @@
 import { SQSBatchResponse, SQSEvent } from "aws-lambda";
 
-interface PrimarySNSAdapter {
+interface PrimarySQSAdapter {
     crawl(event: SQSEvent): Promise<SQSBatchResponse>
 }
 
-export default PrimarySNSAdapter;
+export default PrimarySQSAdapter;
