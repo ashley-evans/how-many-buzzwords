@@ -299,6 +299,55 @@ describe('crawls to max number of requests specified', () => {
     });
 });
 
+describe('crawls to pages only inside same domain name', () => {
+    const externalURL = new URL('http://www.external-example.com/');
+    const domainPathnameURL = new URL(
+        'https://www.twitter.com/share?url=http://www.example.com/'
+    );
+
+    let externalURLMock: Scope;
+    let domainPathnameMock: Scope;
+
+    let response: URL[];
+
+    beforeAll(async () => {
+        clean();
+        mockURLFromFile(
+            ENTRY_POINT_URL,
+            ENTRY_POINT_URL.pathname,
+            path.join(ASSET_FOLDER, 'external.html'),
+            false
+        );
+        externalURLMock = mockURLFromFile(
+            new URL(externalURL.origin),
+            externalURL.pathname,
+            path.join(ASSET_FOLDER, 'sub-page-1.html'),
+            false
+        );
+        domainPathnameMock = mockURLFromFile(
+            new URL(domainPathnameURL.origin),
+            `${domainPathnameURL.pathname}${domainPathnameURL.search}`,
+            path.join(ASSET_FOLDER, 'sub-page-1.html'),
+            false
+        );
+
+        const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
+        const observable = provider.crawl(ENTRY_POINT_URL);
+
+        response = await receiveObservableOutput(observable);
+    });
+
+    test('crawler does not hit external sites', () => {
+        expect(externalURLMock.isDone()).toBe(false);
+        expect(domainPathnameMock.isDone()).toBe(false);
+    });
+    
+    test('crawler only returns URLs inside domain', () => {
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual(ENTRY_POINT_URL);
+    });
+});
+
 afterAll(() => {
     destroy();
 });

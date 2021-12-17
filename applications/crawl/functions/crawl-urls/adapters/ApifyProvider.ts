@@ -7,7 +7,8 @@ import {
     CheerioCrawler,
     CheerioCrawlerOptions,
     CrawlingContext,
-    RequestAsBrowserOptions
+    RequestAsBrowserOptions,
+    PseudoUrl
 } from "apify";
 import { Observable, Subject } from "rxjs";
 import CrawlProvider from "../ports/CrawlProvider";
@@ -27,7 +28,8 @@ class ApifyProvider implements CrawlProvider {
     crawl(baseURL: URL, maxDepth?: number): Observable<URL> {
         this.createRequestQueue(baseURL, maxDepth).then(
             async (requestQueue) => {
-                const crawler = this.createCrawler(requestQueue);
+                const domainMatcher = this.createDomainMatcher(baseURL);
+                const crawler = this.createCrawler(requestQueue, domainMatcher);
 
                 await crawler.run();
 
@@ -59,14 +61,32 @@ class ApifyProvider implements CrawlProvider {
         return requestQueue;
     }
 
-    private createCrawler(requestQueue: RequestQueue): CheerioCrawler {
+    private createDomainMatcher(url: URL): PseudoUrl {
+        const domainName = url.hostname.replace('www.', '');
+        const matcherRegExp = new RegExp(
+            `(^|\\s)https?://(www.)?${domainName}([-a-zA-Z0-9()@:%_+.~#?&//=]*)`
+        );
+
+        return new PseudoUrl(matcherRegExp);
+    }
+
+    private createCrawler(
+        requestQueue: RequestQueue,
+        crawlerPattern: PseudoUrl
+    ): CheerioCrawler {
         const maxCrawlDepth = this.maxCrawlDepth;
         const crawledURLs = this.crawledURLs;
         const crawlPage = this.crawlPage;
         
         const crawlerOptions: CheerioCrawlerOptions = {
             handlePageFunction: (async (context: CheerioHandlePageInputs) => {
-                crawlPage(context, requestQueue, maxCrawlDepth, crawledURLs);
+                crawlPage(
+                    context,
+                    requestQueue,
+                    maxCrawlDepth,
+                    crawledURLs,
+                    crawlerPattern
+                );
             }),
             requestQueue,
             maxRequestsPerCrawl: this.maxRequests,
@@ -87,7 +107,8 @@ class ApifyProvider implements CrawlProvider {
         inputs : CheerioHandlePageInputs,
         requestQueue: RequestQueue,
         maxCrawlDepth: number,
-        crawledURLs: Subject<URL>
+        crawledURLs: Subject<URL>,
+        crawlerPattern: PseudoUrl
     ) {
         const { request, $ } = inputs;
         console.log(`Crawled to ${request.url}`);
@@ -120,12 +141,14 @@ class ApifyProvider implements CrawlProvider {
     
                     return request;
                 },
+                pseudoUrls: [
+                    crawlerPattern
+                ]
             });
         }
 
         crawledURLs.next(new URL(request.url));
     }
-
 }
 
 export default ApifyProvider;
