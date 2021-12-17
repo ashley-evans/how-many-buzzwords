@@ -90,6 +90,8 @@ class ApifyProvider implements CrawlProvider {
         crawledURLs: Subject<URL>
     ) {
         const { request, $ } = inputs;
+        console.log(`Crawled to ${request.url}`);
+
         const requestUserData = request.userData;
 
         const currentDepth = isNaN(requestUserData.currentDepth) 

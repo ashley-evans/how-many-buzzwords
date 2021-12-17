@@ -51,6 +51,7 @@ function mockDepthURLs(depth: number): Scope[] {
 
 beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     init(LOCAL_STORAGE_DIR);
 });
 
