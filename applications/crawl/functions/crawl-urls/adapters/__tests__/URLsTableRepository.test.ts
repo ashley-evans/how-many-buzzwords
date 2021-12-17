@@ -17,6 +17,10 @@ const TABLE_NAME = 'test';
 
 const repository = new URLsTableRepository(TABLE_NAME);
 
+beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+});
+
 test('puts url and pathname into DynamoDB table', async () => {
     ddbMock.on(PutItemCommand).resolves({});
 

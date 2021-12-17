@@ -25,6 +25,10 @@ class URLsTableRepository implements Repository {
 
             this.ddbClient.send(command)
                 .then(() => {
+                    console.log(
+                        `Succesfully stored: ${pathname} for ${baseURL}`
+                    );
+
                     resolve(true);
                 })
                 .catch((ex: unknown) => {
