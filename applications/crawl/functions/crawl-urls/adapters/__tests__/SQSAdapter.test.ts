@@ -148,3 +148,48 @@ describe.each([
         expect(response.batchItemFailures).toHaveLength(0);
     });
 });
+
+describe.each([
+    [
+        'a single url',
+        [1]
+    ],
+    [
+        'multiple urls',
+        [1, 2]
+    ]
+])(
+    'handles specified depth for %s',
+    (text: string, depths: number[]) => {
+        let response: SQSBatchResponse;
+
+        beforeAll(async () => {
+            jest.resetAllMocks();
+    
+            const records = depths.map(
+                depth => createRecord(EXPECTED_VALID_URL, depth)
+            );
+            const event = createEvent(...records);
+    
+            const adapter = new SNSAdapter(mockCrawlPort);
+    
+            response = await adapter.crawl(event);
+        });
+    
+        test('calls crawl port with depth(s) specified', async () => {
+            expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(depths.length);
+    
+            for (const depth of depths) {
+                expect(mockCrawlPort.crawl).toHaveBeenCalledWith(
+                    expect.anything(),
+                    depth
+                );
+            }
+        });
+    
+        test('returns no failures if crawl succeeds', async () => {
+            expect(response).toBeDefined();
+            expect(response.batchItemFailures).toHaveLength(0);
+        });
+    }
+);
