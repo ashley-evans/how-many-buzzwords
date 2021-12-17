@@ -2,9 +2,8 @@
     "name": "buzzword-aws-crawl-urls-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "apify": "2.0.7"
-    },
-    "devDependencies": {
-        "lodash.escaperegexp": "^4.1.2"
+        "ajv": "8.8.2",
+        "apify": "2.0.7",
+        "rxjs": "7.4.0"
     }
 }

@@ -1,14 +1,14 @@
 {
     "extends": "@tsconfig/node14/tsconfig.json",
     "compilerOptions": {
+        "module": "commonjs",
         "outDir": "dist",
-        "allowJs": true
+        "allowJs": true,
+        "lib": [
+            "DOM"
+        ]
     },
     "include": [
         "applications"
-    ],
-    "exclude": [
-        "helpers",
-        "**/__tests__"
     ]
 }

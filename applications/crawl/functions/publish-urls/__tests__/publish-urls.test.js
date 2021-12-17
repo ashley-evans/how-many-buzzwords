@@ -1,9 +1,7 @@
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const { mockClient } = require('aws-sdk-client-mock');
 
-const {
-    constants: { urlsTableKeyFields }
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
 
 const mockSNSClient = mockClient(SNSClient);
 
@@ -18,10 +16,10 @@ const createRecord = (baseUrl, pathname) => {
     return {
         dynamodb: {
             NewImage: {
-                [urlsTableKeyFields.HASH_KEY]: {
+                [URLsTableKeyFields.HashKey]: {
                     S: baseUrl
                 },
-                [urlsTableKeyFields.SORT_KEY]: {
+                [URLsTableKeyFields.SortKey]: {
                     S: pathname
                 }
             }
@@ -39,8 +37,8 @@ const createEvent = (...records) => {
 const createExpectedMessage = (baseUrl, pathname) => {
     return {
         Message: JSON.stringify({
-            [urlsTableKeyFields.HASH_KEY]: baseUrl,
-            [urlsTableKeyFields.SORT_KEY]: pathname
+            [URLsTableKeyFields.HashKey]: baseUrl,
+            [URLsTableKeyFields.SortKey]: pathname
         }),
         TargetArn: process.env.TARGET_SNS_ARN
     };
