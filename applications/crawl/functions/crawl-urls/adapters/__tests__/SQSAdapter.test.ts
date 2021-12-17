@@ -1,4 +1,9 @@
-import { SQSBatchResponse, SQSEvent, SQSRecord } from 'aws-lambda';
+import {
+    SQSBatchItemFailure,
+    SQSBatchResponse,
+    SQSEvent,
+    SQSRecord
+} from 'aws-lambda';
 import { mock } from 'jest-mock-extended';
 
 import CrawlPort from "../../ports/CrawlPort";
@@ -14,13 +19,21 @@ function createEvent(...records: SQSRecord[]): SQSEvent {
     };
 }
 
-function createRecord(url: URL | string, depth?: number): SQSRecord {
+function createRecord(
+    url: URL | string,
+    depth?: number,
+    messageID?: string
+): SQSRecord {
     const record = mock<SQSRecord>();
 
     if (url instanceof URL) {
         record.body = createEventBody(url, depth);
     } else {
         record.body = url;
+    }
+
+    if (messageID != undefined) {
+        record.messageId = messageID;
     }
 
     return record;
@@ -191,5 +204,42 @@ describe.each([
             expect(response).toBeDefined();
             expect(response.batchItemFailures).toHaveLength(0);
         });
+    }
+);
+
+test.each([
+    [
+        'a single record',
+        [
+            createRecord(EXPECTED_VALID_URL, undefined, 'first')
+        ]
+    ],
+    [
+        'multiple records',
+        [
+            createRecord(EXPECTED_VALID_URL, undefined, 'first'),
+            createRecord(EXPECTED_VALID_URL, undefined, 'second')
+        ]
+    ]
+])(
+    'returns failed messages if crawl fails for %s',
+    async (text: string, records: SQSRecord[]) => {
+        jest.resetAllMocks();
+        const event = createEvent(...records);
+        mockCrawlPort.crawl.mockRejectedValue(new Error());
+
+        const adapter = new SNSAdapter(mockCrawlPort);
+    
+        const response = await adapter.crawl(event);
+
+        expect(response).toBeDefined();
+        expect(response.batchItemFailures).toHaveLength(records.length);
+
+        for (const record of records) {
+            expect(response.batchItemFailures)
+                .toContainEqual<SQSBatchItemFailure>({ 
+                    itemIdentifier: record.messageId 
+                });
+        }
     }
 );

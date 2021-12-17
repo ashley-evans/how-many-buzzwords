@@ -1,5 +1,5 @@
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
-import { SQSBatchResponse, SQSEvent } from "aws-lambda";
+import { SQSBatchItemFailure, SQSBatchResponse, SQSEvent } from "aws-lambda";
 
 import CrawlPort from "../ports/CrawlPort";
 import PrimarySQSAdapter from "../ports/PrimarySQSAdapter";
@@ -19,6 +19,8 @@ class SQSAdapter implements PrimarySQSAdapter {
     }
 
     async crawl(event: SQSEvent): Promise<SQSBatchResponse> {
+        const failedCrawls: SQSBatchItemFailure[] = [];
+
         for (const record of event.Records) {
             let validatedBody: RequestBody;
             let url: URL;
@@ -34,10 +36,20 @@ class SQSAdapter implements PrimarySQSAdapter {
                 continue;
             }
 
-            await this.crawler.crawl(url, validatedBody.depth);
+            try {
+                await this.crawler.crawl(url, validatedBody.depth);
+            } catch (ex) {
+                console.error(
+                    `Error occured during crawl: ${JSON.stringify(ex)}`
+                );
+
+                failedCrawls.push({ 
+                    itemIdentifier: record.messageId
+                });
+            }
         }
 
-        return { batchItemFailures: [] };
+        return { batchItemFailures: failedCrawls };
     }
 
     private createValidator(): ValidateFunction<RequestBody> {
