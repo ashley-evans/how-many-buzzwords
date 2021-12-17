@@ -5,7 +5,9 @@ import {
     RequestQueue,
     openRequestQueue,
     CheerioCrawler,
-    CheerioCrawlerOptions
+    CheerioCrawlerOptions,
+    CrawlingContext,
+    RequestAsBrowserOptions
 } from "apify";
 import { Observable, Subject } from "rxjs";
 import CrawlProvider from "../ports/CrawlProvider";
@@ -67,7 +69,15 @@ class ApifyProvider implements CrawlProvider {
                 crawlPage(context, requestQueue, maxCrawlDepth, crawledURLs);
             }),
             requestQueue,
-            maxRequestsPerCrawl: this.maxRequests
+            maxRequestsPerCrawl: this.maxRequests,
+            preNavigationHooks: [
+                async (
+                    crawlingContext: CrawlingContext,
+                    requestAsBrowerOptions: RequestAsBrowserOptions
+                ) => {
+                    requestAsBrowerOptions.useHttp2 = false;
+                },
+            ]
         };
 
         return new CheerioCrawler(crawlerOptions);
