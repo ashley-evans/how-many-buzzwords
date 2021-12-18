@@ -37,7 +37,16 @@ class SQSAdapter implements PrimarySQSAdapter {
             }
 
             try {
-                await this.crawler.crawl(url, validatedBody.depth);
+                const success = await this.crawler.crawl(
+                    url, 
+                    validatedBody.depth
+                );
+
+                if (!success) {
+                    failedCrawls.push({ 
+                        itemIdentifier: record.messageId
+                    });
+                }
             } catch (ex) {
                 console.error(
                     `Error occured during crawl: ${JSON.stringify(ex)}`

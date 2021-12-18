@@ -140,6 +140,7 @@ describe.each([
         const records = urls.map(url => createRecord(url));
         const event = createEvent(...records);
 
+        mockCrawlPort.crawl.mockResolvedValue(true);
         const adapter = new SNSAdapter(mockCrawlPort);
 
         response = await adapter.crawl(event);
@@ -183,7 +184,8 @@ describe.each([
                 depth => createRecord(EXPECTED_VALID_URL, depth)
             );
             const event = createEvent(...records);
-    
+
+            mockCrawlPort.crawl.mockResolvedValue(true);
             const adapter = new SNSAdapter(mockCrawlPort);
     
             response = await adapter.crawl(event);
@@ -207,39 +209,81 @@ describe.each([
     }
 );
 
-test.each([
-    [
-        'a single record',
-        [
-            createRecord(EXPECTED_VALID_URL, undefined, 'first')
-        ]
-    ],
-    [
-        'multiple records',
-        [
-            createRecord(EXPECTED_VALID_URL, undefined, 'first'),
-            createRecord(EXPECTED_VALID_URL, undefined, 'second')
-        ]
-    ]
-])(
-    'returns failed messages if crawl fails for %s',
-    async (text: string, records: SQSRecord[]) => {
+describe('error handling', () => {
+    beforeEach(() => {
         jest.resetAllMocks();
-        const event = createEvent(...records);
-        mockCrawlPort.crawl.mockRejectedValue(new Error());
+    });
 
-        const adapter = new SNSAdapter(mockCrawlPort);
+    test.each([
+        [
+            'a single record',
+            [
+                createRecord(EXPECTED_VALID_URL, undefined, 'first')
+            ]
+        ],
+        [
+            'multiple records',
+            [
+                createRecord(EXPECTED_VALID_URL, undefined, 'first'),
+                createRecord(EXPECTED_VALID_URL, undefined, 'second')
+            ]
+        ]
+    ])(
+        'returns failed messages if crawl throws an error for %s',
+        async (text: string, records: SQSRecord[]) => {
+            const event = createEvent(...records);
+            mockCrawlPort.crawl.mockRejectedValue(new Error());
     
-        const response = await adapter.crawl(event);
-
-        expect(response).toBeDefined();
-        expect(response.batchItemFailures).toHaveLength(records.length);
-
-        for (const record of records) {
-            expect(response.batchItemFailures)
-                .toContainEqual<SQSBatchItemFailure>({ 
-                    itemIdentifier: record.messageId 
-                });
+            const adapter = new SNSAdapter(mockCrawlPort);
+        
+            const response = await adapter.crawl(event);
+    
+            expect(response).toBeDefined();
+            expect(response.batchItemFailures).toHaveLength(records.length);
+    
+            for (const record of records) {
+                expect(response.batchItemFailures)
+                    .toContainEqual<SQSBatchItemFailure>({ 
+                        itemIdentifier: record.messageId 
+                    });
+            }
         }
-    }
-);
+    );
+
+    test.each([
+        [
+            'a single record',
+            [
+                createRecord(EXPECTED_VALID_URL, undefined, 'first')
+            ]
+        ],
+        [
+            'multiple records',
+            [
+                createRecord(EXPECTED_VALID_URL, undefined, 'first'),
+                createRecord(EXPECTED_VALID_URL, undefined, 'second')
+            ]
+        ]
+    ])(
+        'returns failed messages if crawl fails for %s',
+        async (text: string, records: SQSRecord[]) => {
+            const event = createEvent(...records);
+            mockCrawlPort.crawl.mockResolvedValue(false);
+    
+            const adapter = new SNSAdapter(mockCrawlPort);
+        
+            const response = await adapter.crawl(event);
+    
+            expect(response).toBeDefined();
+            expect(response.batchItemFailures).toHaveLength(records.length);
+    
+            for (const record of records) {
+                expect(response.batchItemFailures)
+                    .toContainEqual<SQSBatchItemFailure>({ 
+                        itemIdentifier: record.messageId 
+                    });
+            }
+        }
+    );    
+});
+
