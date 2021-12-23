@@ -24,7 +24,7 @@ describe.each([
         siteMock = mockURLFromFile(
             url,
             '/',
-            path.join(ASSET_FOLDER, 'content.html'),
+            path.join(ASSET_FOLDER, 'text.html'),
             false
         );
 
@@ -41,7 +41,7 @@ describe.each([
             '<!DOCTYPE html>\n' +
             '<html>\n' +
             '    <body>\n' +
-            '        <p>Test Content</p>\n' +
+            '        <p>Test Text</p>\n' +
             '    </body>\n' +
             '</html>\n');
     });
