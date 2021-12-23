@@ -9,6 +9,8 @@ const EXAMPLE_VALID_HOSTNAME = 'www.example.com';
 
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 
+const provider = new GotProvider();
+
 describe.each([
     'http',
     'https'
@@ -25,8 +27,6 @@ describe.each([
             path.join(ASSET_FOLDER, 'content.html'),
             false
         );
-
-        const provider = new GotProvider();
 
         response = await provider.getBody(url);
     });
