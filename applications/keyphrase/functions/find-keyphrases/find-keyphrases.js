@@ -2,7 +2,7 @@ const middy = require('@middy/core');
 const sqsJsonBodyHandler = require('@middy/sqs-json-body-parser');
 const validator = require('@middy/validator');
 
-const gotScraping = require('got-scraping');
+const { gotScraping } = require('got-scraping');
 
 const retext = require('retext');
 const retextPos = require('retext-pos');
@@ -188,7 +188,10 @@ const baseHandler = async (event) => {
         const pathname = record.body[urlsTableKeyFields.SORT_KEY];
         const childUrl = createChildURL(baseUrl, pathname);
 
-        const { body } = await gotScraping.get(childUrl);
+        const { body } = await gotScraping({
+            url: childUrl,
+            http2: false
+        });
 
         const text = getAllTextInHTML(body);
 
