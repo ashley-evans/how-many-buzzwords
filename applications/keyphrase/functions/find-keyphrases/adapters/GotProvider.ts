@@ -4,7 +4,8 @@ import HTTPRequestProvider from "../ports/HTTPRequestProvider";
 class GotProvider implements HTTPRequestProvider {
     async getBody(url: URL): Promise<string> {
         const response = await gotScraping({
-            url: url.toString()
+            url: url.toString(),
+            http2: false
         });
 
         return response.body;

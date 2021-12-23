@@ -5,18 +5,22 @@ import { mockURLFromFile } from "../../../../../../helpers/http-mock";
 
 import GotProvider from "../GotProvider";
 
-const EXAMPLE_VALID_URL = new URL('http://www.example.com');
+const EXAMPLE_VALID_HOSTNAME = 'www.example.com';
 
 const ASSET_FOLDER = path.join(__dirname, '/assets/');
 
-describe('provider returns content from requested URL', () => {
+describe.each([
+    'http',
+    'https'
+])('provider handles URLs with %s protocol', (protocol) => {
     let siteMock: Scope;
 
     let response: string;
 
     beforeAll(async () => {
+        const url = new URL(`${protocol}://${EXAMPLE_VALID_HOSTNAME}`);
         siteMock = mockURLFromFile(
-            EXAMPLE_VALID_URL,
+            url,
             '/',
             path.join(ASSET_FOLDER, 'content.html'),
             false
@@ -24,7 +28,7 @@ describe('provider returns content from requested URL', () => {
 
         const provider = new GotProvider();
 
-        response = await provider.getBody(EXAMPLE_VALID_URL);
+        response = await provider.getBody(url);
     });
 
     test('provider hits the requested URL once', () => {
