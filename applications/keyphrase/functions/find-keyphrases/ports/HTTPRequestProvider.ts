@@ -1,5 +1,5 @@
 interface HTTPRequestProvider {
-    getURLContent(url: URL): Promise<string>;
+    getBody(url: URL): Promise<string>;
 }
 
 export default HTTPRequestProvider;

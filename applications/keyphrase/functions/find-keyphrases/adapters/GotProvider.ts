@@ -1,0 +1,14 @@
+import { gotScraping } from "got-scraping";
+import HTTPRequestProvider from "../ports/HTTPRequestProvider";
+
+class GotProvider implements HTTPRequestProvider {
+    async getBody(url: URL): Promise<string> {
+        const response = await gotScraping({
+            url: url.toString()
+        });
+
+        return response.body;
+    }
+}
+
+export default GotProvider;
