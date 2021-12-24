@@ -15,8 +15,17 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
     }
 
     async storeKeyphrases(url: string, keyphrases: string[]): Promise<boolean> {
-        const keyphrase = keyphrases[0];
+        for (const keyphrase of keyphrases) {
+            await this.storeKeyphrase(url, keyphrase);
+        }
 
+        return true;
+    }
+
+    private async storeKeyphrase(
+        url: string,
+        keyphrase: string
+    ): Promise<boolean> {
         const input: PutItemCommandInput = {
             TableName: this.tableName,
             Item: {
@@ -32,7 +41,6 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
 
         return true;
     }
-
 }
 
 export default KeyphraseDynamoDBRepository;
