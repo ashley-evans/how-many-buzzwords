@@ -6,10 +6,5 @@ module.exports = {
         ".aws-sam",
         "__tests__/helpers",
         "dist"
-    ],
-    transformIgnorePatterns: [
-        "node_modules/(?!(retext))/",
-        "node_modules/(?!(retext-pos))/",
-        "node_modules/(?!(retext-keywords))/"
     ]
 };
