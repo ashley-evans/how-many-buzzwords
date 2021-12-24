@@ -1,5 +1,13 @@
-interface KeyphraseProvider {
-    findKeyphrases(text: string): string[];
+type KeyphraseResponse = {
+    keyphrases: string[],
+    keywords: string[]
 }
 
-export default KeyphraseProvider;
+interface KeyphraseProvider {
+    findKeyphrases(text: string): Promise<KeyphraseResponse>;
+}
+
+export {
+    KeyphraseProvider,
+    KeyphraseResponse
+};
