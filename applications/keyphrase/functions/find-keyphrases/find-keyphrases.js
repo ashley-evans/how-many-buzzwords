@@ -20,10 +20,10 @@ const { unmarshall } = require('@aws-sdk/util-dynamodb');
 
 const { getAllTextInHTML } = require('./parse-html');
 const {
-    keyPhraseTableKeyFields,
-    keyPhraseTableNonKeyFields,
-    urlsTableKeyFields
-} = require('./constants');
+    URLsTableKeyFields,
+    KeyphraseTableKeyFields,
+    KeyphraseTableNonKeyFields
+} = require('./enums');
 
 const ddbClient = new DynamoDBClient({});
 
@@ -40,16 +40,16 @@ const INPUT_SCHEMA = {
                     body: {
                         type: 'object',
                         required: [
-                            urlsTableKeyFields.HASH_KEY,
-                            urlsTableKeyFields.SORT_KEY
+                            URLsTableKeyFields.HashKey,
+                            URLsTableKeyFields.SortKey
                         ],
                         properties: {
-                            [urlsTableKeyFields.HASH_KEY]: {
+                            [URLsTableKeyFields.HashKey]: {
                                 type: 'string',
                                 // eslint-disable-next-line max-len
                                 pattern: '^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
                             },
-                            [urlsTableKeyFields.SORT_KEY]: {
+                            [URLsTableKeyFields.SortKey]: {
                                 type: 'string',
                                 pattern: '^/.*$'
                             }
@@ -103,13 +103,13 @@ const getPreviousKeyPhrases = async (baseUrl) => {
         TableName: process.env.TABLE_NAME,
         KeyConditionExpression: '#url = :searchUrl',
         ExpressionAttributeNames: {
-            '#url': keyPhraseTableKeyFields.HASH_KEY
+            '#url': KeyphraseTableKeyFields.HashKey
         },
         ExpressionAttributeValues: {
             ':searchUrl': { S: baseUrl }
         },
-        ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
-            `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+        ProjectionExpression: KeyphraseTableKeyFields.SortKey +
+            `,${KeyphraseTableNonKeyFields.Occurence}`
     };
 
     const result = await ddbClient.send(new QueryCommand(params));
@@ -120,13 +120,13 @@ const getPreviousKeyPhrases = async (baseUrl) => {
 
 const combineKeyPhrases = (currentPhrases, previousPhrases) => {
     const previousSet = new Set(previousPhrases.map(
-        phrase => phrase[keyPhraseTableKeyFields.SORT_KEY])
+        phrase => phrase[KeyphraseTableKeyFields.SortKey])
     );
     const merged = previousPhrases.concat(
         currentPhrases
             .filter((phrase) => !previousSet.has(phrase))
             .map((phrase) => ({
-                [keyPhraseTableKeyFields.SORT_KEY]: phrase
+                [KeyphraseTableKeyFields.SortKey]: phrase
             }))
     );
 
@@ -139,7 +139,7 @@ const countKeyPhrases = (text, keyPhraseOccurences) => {
         const occuranceExpression = new RegExp(
             '\\b' +
             escapeRegExp(
-                keyPhraseOccurence[keyPhraseTableKeyFields.SORT_KEY]
+                keyPhraseOccurence[KeyphraseTableKeyFields.SortKey]
             ) +
             '\\b',
             'gi'
@@ -148,7 +148,7 @@ const countKeyPhrases = (text, keyPhraseOccurences) => {
 
         if (occurences > 0) {
             let previousOccurences = parseInt(
-                keyPhraseOccurence[keyPhraseTableNonKeyFields.OCCURENCES_FIELD]
+                keyPhraseOccurence[KeyphraseTableNonKeyFields.Occurence]
             );
             previousOccurences = isNaN(previousOccurences)
                 ? 0
@@ -168,11 +168,11 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurences) => {
         const params = {
             TableName: process.env.TABLE_NAME,
             Item: {
-                [keyPhraseTableKeyFields.HASH_KEY]: { S: baseUrl },
-                [keyPhraseTableKeyFields.SORT_KEY]: {
+                [KeyphraseTableKeyFields.HashKey]: { S: baseUrl },
+                [KeyphraseTableKeyFields.SortKey]: {
                     S: phraseOccurence.phrase
                 },
-                [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                [KeyphraseTableNonKeyFields.Occurence]: {
                     N: phraseOccurence.occurences.toString()
                 }
             }
@@ -184,8 +184,8 @@ const storeKeyPhrases = async (baseUrl, keyPhraseOccurences) => {
 
 const baseHandler = async (event) => {
     for (const record of event.Records) {
-        const baseUrl = record.body[urlsTableKeyFields.HASH_KEY];
-        const pathname = record.body[urlsTableKeyFields.SORT_KEY];
+        const baseUrl = record.body[URLsTableKeyFields.HashKey];
+        const pathname = record.body[URLsTableKeyFields.SortKey];
         const childUrl = createChildURL(baseUrl, pathname);
 
         const { body } = await gotScraping({

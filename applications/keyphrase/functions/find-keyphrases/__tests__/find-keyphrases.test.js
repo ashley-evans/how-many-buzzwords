@@ -8,10 +8,10 @@ const { mockClient } = require('aws-sdk-client-mock');
 
 const { mockURLFromFile } = require('../../../../../helpers/http-mock');
 const {
-    keyPhraseTableKeyFields,
-    keyPhraseTableNonKeyFields,
-    urlsTableKeyFields
-} = require('../constants');
+    URLsTableKeyFields,
+    KeyphraseTableKeyFields,
+    KeyphraseTableNonKeyFields
+} = require('../enums');
 
 const TABLE_NAME = 'test';
 process.env.TABLE_NAME = TABLE_NAME;
@@ -26,8 +26,8 @@ const createEvent = (...records) => {
 const createRecord = (baseUrl, pathname) => {
     return {
         body: JSON.stringify({
-            [urlsTableKeyFields.HASH_KEY]: baseUrl,
-            [urlsTableKeyFields.SORT_KEY]: pathname
+            [URLsTableKeyFields.HashKey]: baseUrl,
+            [URLsTableKeyFields.SortKey]: pathname
         }),
         eventSource: 'aws:sqs'
     };
@@ -194,13 +194,13 @@ describe('keyphrase extraction', () => {
                 expect(dynamoDbArgumentInputs).toContainEqual({
                     TableName: TABLE_NAME,
                     Item: {
-                        [keyPhraseTableKeyFields.HASH_KEY]: {
+                        [KeyphraseTableKeyFields.HashKey]: {
                             S: EXPECTED_BASE_URL
                         },
-                        [keyPhraseTableKeyFields.SORT_KEY]: {
+                        [KeyphraseTableKeyFields.SortKey]: {
                             S: expectedOccurence.phrase
                         },
-                        [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                        [KeyphraseTableNonKeyFields.Occurence]: {
                             N: expectedOccurence.occurences.toString()
                         }
                     }
@@ -230,13 +230,13 @@ describe('previous keyphrase occurences', () => {
             TableName: TABLE_NAME,
             KeyConditionExpression: '#url = :searchUrl',
             ExpressionAttributeNames: {
-                '#url': keyPhraseTableKeyFields.HASH_KEY
+                '#url': KeyphraseTableKeyFields.HashKey
             },
             ExpressionAttributeValues: {
                 ':searchUrl': { S: EXPECTED_BASE_URL }
             },
-            ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
-                `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+            ProjectionExpression: KeyphraseTableKeyFields.SortKey +
+                `,${KeyphraseTableNonKeyFields.Occurence}`
         });
     });
 
@@ -253,21 +253,21 @@ describe('previous keyphrase occurences', () => {
                     TableName: TABLE_NAME,
                     KeyConditionExpression: '#url = :searchUrl',
                     ExpressionAttributeNames: {
-                        '#url': keyPhraseTableKeyFields.HASH_KEY
+                        '#url': KeyphraseTableKeyFields.HashKey
                     },
                     ExpressionAttributeValues: {
                         ':searchUrl': { S: EXPECTED_BASE_URL }
                     },
-                    ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
-                        `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+                    ProjectionExpression: KeyphraseTableKeyFields.SortKey +
+                        `,${KeyphraseTableNonKeyFields.Occurence}`
                 })
                 .resolves({
                     Items: [
                         {
-                            [keyPhraseTableKeyFields.SORT_KEY]: {
+                            [KeyphraseTableKeyFields.SortKey]: {
                                 S: previousKeyPhrase
                             },
-                            [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                            [KeyphraseTableNonKeyFields.Occurence]: {
                                 N: previousOccurences.toString()
                             }
                         }
@@ -283,13 +283,13 @@ describe('previous keyphrase occurences', () => {
             expect(dynamoDbCallsInputs).toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [keyPhraseTableKeyFields.HASH_KEY]: {
+                    [KeyphraseTableKeyFields.HashKey]: {
                         S: EXPECTED_BASE_URL
                     },
-                    [keyPhraseTableKeyFields.SORT_KEY]: {
+                    [KeyphraseTableKeyFields.SortKey]: {
                         S: previousKeyPhrase
                     },
-                    [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                    [KeyphraseTableNonKeyFields.Occurence]: {
                         N: (previousOccurences + expectedOccurences).toString()
                     }
                 }
@@ -308,21 +308,21 @@ describe('previous keyphrase occurences', () => {
                     TableName: TABLE_NAME,
                     KeyConditionExpression: '#url = :searchUrl',
                     ExpressionAttributeNames: {
-                        '#url': keyPhraseTableKeyFields.HASH_KEY
+                        '#url': KeyphraseTableKeyFields.HashKey
                     },
                     ExpressionAttributeValues: {
                         ':searchUrl': { S: EXPECTED_BASE_URL }
                     },
-                    ProjectionExpression: keyPhraseTableKeyFields.SORT_KEY +
-                        `,${keyPhraseTableNonKeyFields.OCCURENCES_FIELD}`
+                    ProjectionExpression: KeyphraseTableKeyFields.SortKey +
+                        `,${KeyphraseTableNonKeyFields.Occurence}`
                 })
                 .resolves({
                     Items: [
                         {
-                            [keyPhraseTableKeyFields.SORT_KEY]: {
+                            [KeyphraseTableKeyFields.SortKey]: {
                                 S: previousKeyPhrase
                             },
-                            [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                            [KeyphraseTableNonKeyFields.Occurence]: {
                                 N: previousOccurences
                             }
                         }
@@ -338,13 +338,13 @@ describe('previous keyphrase occurences', () => {
             expect(dynamoDbCallsInputs).not.toContainEqual({
                 TableName: TABLE_NAME,
                 Item: {
-                    [keyPhraseTableKeyFields.HASH_KEY]: {
+                    [KeyphraseTableKeyFields.HashKey]: {
                         S: EXPECTED_BASE_URL
                     },
-                    [keyPhraseTableKeyFields.SORT_KEY]: {
+                    [KeyphraseTableKeyFields.SortKey]: {
                         S: previousKeyPhrase
                     },
-                    [keyPhraseTableNonKeyFields.OCCURENCES_FIELD]: {
+                    [KeyphraseTableNonKeyFields.Occurence]: {
                         N: previousOccurences
                     }
                 }
