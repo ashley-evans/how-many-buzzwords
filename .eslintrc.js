@@ -28,7 +28,7 @@ module.exports = {
             'error',
             {
                 'ignoreRegExpLiterals': true,
-                'ignorePattern': 'eslint-disable-next-line max-len'
+                'ignorePattern': 'eslint-disable-next-line'
             }
         ],
         'jest/no-disabled-tests': "error",
