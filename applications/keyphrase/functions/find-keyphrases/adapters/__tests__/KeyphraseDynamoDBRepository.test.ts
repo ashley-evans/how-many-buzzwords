@@ -49,11 +49,13 @@ describe.each([
         ]
     ]
 ])('given %s', (message: string, occurrences : KeyphraseOccurrences[]) => {
+    let response: boolean;
+
     beforeAll(async () => {
         ddbMock.reset();
         ddbMock.on(PutItemCommand).resolves({});
 
-        await repository.storeOccurrences(
+        response = await repository.storeOccurrences(
             VALID_URL,
             occurrences
         );
@@ -85,5 +87,43 @@ describe.each([
 
             expect(commandInputs).toContainEqual(expectedInput);
         }
+    });
+
+    test('returns success if dynamoDB call succeeds', () => {
+        expect(response).toBe(true);
+    });
+});
+
+test('throws exception if an error occurs during DynamoDB insert', async () => {
+    const expectedError = new Error('test error');
+    ddbMock.on(PutItemCommand).rejects(expectedError);
+
+    expect.assertions(1);
+    await expect(repository.storeOccurrences(
+        VALID_URL,
+        [createKeyphraseOccurrence('phrase 1', 1)]
+    )).rejects.toEqual(expectedError);
+});
+
+describe('given an empty array of occurrences', () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        ddbMock.reset();
+        ddbMock.on(PutItemCommand).resolves({});
+
+        response = await repository.storeOccurrences(
+            VALID_URL,
+            []
+        );
+    });
+
+
+    test('does not call DynamoDB', () => {
+        expect(ddbMock.calls()).toHaveLength(0);
+    });
+
+    test('returns success', () => {
+        expect(response).toBe(true);
     });
 });
