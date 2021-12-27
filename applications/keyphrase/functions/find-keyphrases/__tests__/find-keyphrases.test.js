@@ -168,7 +168,7 @@ describe('keyphrase extraction', () => {
             []
         ]
     ])('stores keyphrase occurences to base URL entry in DynamoDB for %s',
-        async (message, pathname, assetPath, expectedOccurences) => {
+        async (message, pathname, assetPath, expectedOccurrences) => {
             mockURLFromFile(
                 EXPECTED_VALID_URL,
                 pathname,
@@ -184,13 +184,13 @@ describe('keyphrase extraction', () => {
 
             // Should call Query once and PutItem for each occurence
             expect(dynamoDbCallsArguments).toHaveLength(
-                expectedOccurences.length + 1
+                expectedOccurrences.length + 1
             );
 
             const dynamoDbArgumentInputs = dynamoDbCallsArguments
                 .map(args => args[0].input);
 
-            for (const expectedOccurence of expectedOccurences) {
+            for (const expectedOccurrence of expectedOccurrences) {
                 expect(dynamoDbArgumentInputs).toContainEqual({
                     TableName: TABLE_NAME,
                     Item: {
@@ -198,10 +198,10 @@ describe('keyphrase extraction', () => {
                             S: EXPECTED_BASE_URL
                         },
                         [KeyphraseTableKeyFields.SortKey]: {
-                            S: expectedOccurence.phrase
+                            S: expectedOccurrence.phrase
                         },
-                        [KeyphraseTableNonKeyFields.Occurence]: {
-                            N: expectedOccurence.occurences.toString()
+                        [KeyphraseTableNonKeyFields.Occurrence]: {
+                            N: expectedOccurrence.occurences.toString()
                         }
                     }
                 });
@@ -236,7 +236,7 @@ describe('previous keyphrase occurences', () => {
                 ':searchUrl': { S: EXPECTED_BASE_URL }
             },
             ProjectionExpression: KeyphraseTableKeyFields.SortKey +
-                `,${KeyphraseTableNonKeyFields.Occurence}`
+                `,${KeyphraseTableNonKeyFields.Occurrence}`
         });
     });
 
@@ -245,8 +245,8 @@ describe('previous keyphrase occurences', () => {
         ['not a keyword on current page', 'first', 2]
     ])(
         'updates dynamodb if previous keyword exists on page and %s',
-        async (message, previousKeyPhrase, expectedOccurences) => {
-            const previousOccurences = 5;
+        async (message, previousKeyPhrase, expectedOccurrences) => {
+            const previousOccurrences = 5;
 
             ddbMock
                 .on(QueryCommand, {
@@ -259,7 +259,7 @@ describe('previous keyphrase occurences', () => {
                         ':searchUrl': { S: EXPECTED_BASE_URL }
                     },
                     ProjectionExpression: KeyphraseTableKeyFields.SortKey +
-                        `,${KeyphraseTableNonKeyFields.Occurence}`
+                        `,${KeyphraseTableNonKeyFields.Occurrence}`
                 })
                 .resolves({
                     Items: [
@@ -267,8 +267,8 @@ describe('previous keyphrase occurences', () => {
                             [KeyphraseTableKeyFields.SortKey]: {
                                 S: previousKeyPhrase
                             },
-                            [KeyphraseTableNonKeyFields.Occurence]: {
-                                N: previousOccurences.toString()
+                            [KeyphraseTableNonKeyFields.Occurrence]: {
+                                N: previousOccurrences.toString()
                             }
                         }
                     ]
@@ -289,8 +289,9 @@ describe('previous keyphrase occurences', () => {
                     [KeyphraseTableKeyFields.SortKey]: {
                         S: previousKeyPhrase
                     },
-                    [KeyphraseTableNonKeyFields.Occurence]: {
-                        N: (previousOccurences + expectedOccurences).toString()
+                    [KeyphraseTableNonKeyFields.Occurrence]: {
+                        N: (previousOccurrences +
+                            expectedOccurrences).toString()
                     }
                 }
             });
@@ -301,7 +302,7 @@ describe('previous keyphrase occurences', () => {
         'doesn\'t update dynamodb if previous keyword doesn\'t exist on page',
         async () => {
             const previousKeyPhrase = 'wibble';
-            const previousOccurences = '5';
+            const previousOccurrences = '5';
 
             ddbMock
                 .on(QueryCommand, {
@@ -314,7 +315,7 @@ describe('previous keyphrase occurences', () => {
                         ':searchUrl': { S: EXPECTED_BASE_URL }
                     },
                     ProjectionExpression: KeyphraseTableKeyFields.SortKey +
-                        `,${KeyphraseTableNonKeyFields.Occurence}`
+                        `,${KeyphraseTableNonKeyFields.Occurrence}`
                 })
                 .resolves({
                     Items: [
@@ -322,8 +323,8 @@ describe('previous keyphrase occurences', () => {
                             [KeyphraseTableKeyFields.SortKey]: {
                                 S: previousKeyPhrase
                             },
-                            [KeyphraseTableNonKeyFields.Occurence]: {
-                                N: previousOccurences
+                            [KeyphraseTableNonKeyFields.Occurrence]: {
+                                N: previousOccurrences
                             }
                         }
                     ]
@@ -344,8 +345,8 @@ describe('previous keyphrase occurences', () => {
                     [KeyphraseTableKeyFields.SortKey]: {
                         S: previousKeyPhrase
                     },
-                    [KeyphraseTableNonKeyFields.Occurence]: {
-                        N: previousOccurences
+                    [KeyphraseTableNonKeyFields.Occurrence]: {
+                        N: previousOccurrences
                     }
                 }
             });

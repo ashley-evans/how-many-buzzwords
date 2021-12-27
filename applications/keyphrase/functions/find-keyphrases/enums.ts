@@ -4,7 +4,7 @@ enum KeyphraseTableKeyFields {
 }
 
 enum KeyphraseTableNonKeyFields {
-    Occurence = 'Occurences'
+    Occurrence = 'Occurrences'
 }
 
 enum URLsTableKeyFields {
