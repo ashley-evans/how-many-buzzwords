@@ -4,8 +4,11 @@ import {
     PutItemCommandInput
 } from "@aws-sdk/client-dynamodb";
 
-import { KeyphraseTableKeyFields } from "../enums";
-import KeyphraseRepository from "../ports/KeyphraseRepository";
+import { KeyphraseTableKeyFields, KeyphraseTableNonKeyFields } from "../enums";
+import {
+    KeyphraseOccurrences,
+    KeyphraseRepository
+} from "../ports/KeyphraseRepository";
 
 class KeyphraseDynamoDBRepository implements KeyphraseRepository {
     private ddbClient;
@@ -14,30 +17,42 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
         this.ddbClient = new DynamoDBClient({});
     }
 
-    async storeKeyphrases(url: string, keyphrases: string[]): Promise<boolean> {
-        for (const keyphrase of keyphrases) {
-            await this.storeKeyphrase(url, keyphrase);
+    async storeOccurrences(
+        url: string,
+        keyphraseOccurences: KeyphraseOccurrences[]
+    ): Promise<boolean> {
+        for (const keyphrase of keyphraseOccurences) {
+            await this.storeOccurrence(url, keyphrase);
         }
 
         return true;
     }
 
-    private async storeKeyphrase(
+    private async storeOccurrence(
         url: string,
-        keyphrase: string
+        occurrence: KeyphraseOccurrences
     ): Promise<boolean> {
         const input: PutItemCommandInput = {
             TableName: this.tableName,
             Item: {
-                [KeyphraseTableKeyFields.HashKey]: { S: url },
-                [KeyphraseTableKeyFields.SortKey]: { S: keyphrase } 
+                [KeyphraseTableKeyFields.HashKey]: {
+                    S: url 
+                },
+                [KeyphraseTableKeyFields.SortKey]: {
+                    S: occurrence.keyphrase 
+                },
+                [KeyphraseTableNonKeyFields.Occurrence]: {
+                    N: occurrence.occurrences.toString()
+                } 
             }
         };
         const command = new PutItemCommand(input);
 
         await this.ddbClient.send(command);
 
-        console.log(`Successfully stored: ${keyphrase} for ${url}`);
+        console.log(
+            `Successfully stored: ${JSON.stringify(occurrence)} for ${url}`
+        );
 
         return true;
     }

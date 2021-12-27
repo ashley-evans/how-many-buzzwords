@@ -1,5 +1,16 @@
+type KeyphraseOccurrences = {
+    keyphrase: string,
+    occurrences: number
+};
+
 interface KeyphraseRepository {
-    storeKeyphrases(url: string, keyphrases: string[]): Promise<boolean>;
+    storeOccurrences(
+        url: string,
+        keyphraseOccurences: KeyphraseOccurrences[]
+    ): Promise<boolean>;
 }
 
-export default KeyphraseRepository;
+export {
+    KeyphraseOccurrences,
+    KeyphraseRepository
+};
