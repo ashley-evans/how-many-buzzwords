@@ -13,7 +13,15 @@ class KeyphraseFinder implements KeyphrasesPort {
     ) {}
 
     async findKeyphrases(url: URL): Promise<boolean> {
-        await this.httpRequester.getBody(url);
+        try {
+            await this.httpRequester.getBody(url);
+        } catch (ex: unknown) {
+            console.error(
+                `Error occured during page GET: ${JSON.stringify(ex)}}`
+            );
+
+            return false;
+        }
         
         return true;
     }

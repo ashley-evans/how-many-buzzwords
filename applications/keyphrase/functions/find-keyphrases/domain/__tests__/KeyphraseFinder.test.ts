@@ -19,6 +19,10 @@ const keyphraseFinder = new KeyphraseFinder(
     mockRepository
 );
 
+beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+});
+
 test('calls request provider with URL', async () => {
     await keyphraseFinder.findKeyphrases(VALID_URL);
 
@@ -26,4 +30,12 @@ test('calls request provider with URL', async () => {
     expect(mockRequestProvider.getBody).toHaveBeenCalledWith(
         VALID_URL
     );
+});
+
+test('returns false if request provider throws an error', async () => {
+    mockRequestProvider.getBody.mockRejectedValue(new Error());
+
+    const result = await keyphraseFinder.findKeyphrases(VALID_URL);
+
+    expect(result).toBe(false);
 });
