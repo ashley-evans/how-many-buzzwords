@@ -13,7 +13,9 @@ class KeyphraseFinder implements KeyphrasesPort {
     ) {}
 
     async findKeyphrases(url: URL): Promise<boolean> {
-        throw new Error(`Method not implemented. Provided url: ${url}`);
+        await this.httpRequester.getBody(url);
+        
+        return true;
     }
 }
 
