@@ -307,4 +307,16 @@ describe('get occurrences', () => {
             );
         }
     );
+
+    test('throws error if DynamoDB query fails', async () => {
+        ddbMock.reset();
+
+        const expectedError = new Error('Test');
+        ddbMock.on(QueryCommand).rejects(expectedError);
+
+        expect.assertions(1);
+        await expect(repository.getOccurrences(VALID_URL)).rejects.toEqual(
+            expectedError
+        );
+    });
 });
