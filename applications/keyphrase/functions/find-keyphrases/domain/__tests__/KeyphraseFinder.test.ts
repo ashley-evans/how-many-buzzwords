@@ -52,22 +52,29 @@ describe('happy path', () => {
     });
 });
 
-test('returns failure if request provider throws an error', async () => {
-    mockRequestProvider.getBody.mockRejectedValue(new Error());
+describe('error handling', () => {
+    beforeEach(() => {
+        jest.resetAllMocks();
+    });
 
-    const result = await keyphraseFinder.findKeyphrases(VALID_URL);
+    test('returns failure if request provider throws an error', async () => {
 
-    expect(result).toBe(false);
-});
+        mockRequestProvider.getBody.mockRejectedValue(new Error());
+    
+        const result = await keyphraseFinder.findKeyphrases(VALID_URL);
+    
+        expect(result).toBe(false);
+    });
 
-test('throws an error if HTML parser throws an error', async () => {
-    jest.resetAllMocks();
-
-    const expectedError = new Error('test error');
-    mockHTMLParser.parseHTML.mockImplementation(() => { throw expectedError; });
-
-    expect.assertions(1);
-    await expect(keyphraseFinder.findKeyphrases(VALID_URL)).rejects.toEqual(
-        expectedError
-    );
+    test('throws an error if HTML parser throws an error', async () => {
+        const expectedError = new Error('test error');
+        mockHTMLParser.parseHTML.mockImplementation(
+            () => { throw expectedError; }
+        );
+    
+        expect.assertions(1);
+        await expect(keyphraseFinder.findKeyphrases(VALID_URL)).rejects.toEqual(
+            expectedError
+        );
+    });    
 });
