@@ -1,10 +1,15 @@
 
 import { 
+    AttributeValue,
     DynamoDBClient,
     PutItemCommand,
-    PutItemCommandInput
+    PutItemCommandInput,
+    QueryCommand,
+    QueryCommandOutput
 } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
+import { ResponseMetadata } from '@aws-sdk/types';
+import { mock } from 'jest-mock-extended';
 
 import {
     KeyphraseTableKeyFields,
@@ -28,6 +33,48 @@ function createKeyphraseOccurrence(
         keyphrase: phrase,
         occurrences
     };
+}
+
+function createQueryOutputItem(
+    keyphrase?: string,
+    occurrences?: string
+): { [key: string]: AttributeValue } {
+    const item: { [key: string]: AttributeValue } = {
+        
+    };   
+    if (keyphrase) {
+        item[KeyphraseTableKeyFields.SortKey] = {
+            S: keyphrase
+        };
+    }
+
+    if (occurrences) {
+        item[KeyphraseTableNonKeyFields.Occurrence] = {
+            N: occurrences
+        };
+    }
+
+    return item;
+}
+
+function createDynamoDBKeyphraseOutput(
+    ...occurrences: KeyphraseOccurrences[]
+): QueryCommandOutput {
+    const output: QueryCommandOutput = {
+        Items: [],
+        $metadata: mock<ResponseMetadata>()
+    };
+
+    for (const occurrence of occurrences) {
+        output.Items?.push(
+            createQueryOutputItem(
+                occurrence.keyphrase, 
+                occurrence.occurrences.toString()
+            )
+        );
+    }
+
+    return output;
 }
 
 beforeAll(() => {
@@ -132,4 +179,132 @@ describe('store occurrences', () => {
             expect(response).toBe(true);
         });
     });
+});
+
+describe('get occurrences', () => {
+    describe('given a URL with has associated occurrences', () => {
+        const occurrences: KeyphraseOccurrences[] = [
+            createKeyphraseOccurrence('phrase 1', 1),
+            createKeyphraseOccurrence('phrase 2', 2)
+        ];
+
+        let response: KeyphraseOccurrences[];
+
+        beforeAll(async () => {
+            const output = createDynamoDBKeyphraseOutput(...occurrences);
+
+            ddbMock.reset();
+            ddbMock.on(QueryCommand).resolves(output);
+
+            response = await repository.getOccurrences(VALID_URL);
+        });
+
+        test(
+            'calls DynamoDB with the provided URL and requests occurrences',
+            () => {
+                const commands = ddbMock.commandCalls(QueryCommand);
+
+                expect(commands).toHaveLength(1);
+                expect(commands[0].args).toHaveLength(1);
+
+                const input = commands[0].args[0].input;
+                expect(input).toEqual(
+                    expect.objectContaining({
+                        TableName: TABLE_NAME,
+                        ProjectionExpression: KeyphraseTableKeyFields.SortKey +
+                            `,${KeyphraseTableNonKeyFields.Occurrence}`
+                    })
+                );
+
+                for (const property in input.ExpressionAttributeValues) {
+                    expect(input.ExpressionAttributeValues[property]).toEqual({
+                        S: VALID_URL
+                    });
+                }
+            }
+        );
+
+        test('returns the associated occurrences', () => {
+            expect(response).toEqual(occurrences);
+        });
+    });
+
+    test.each([
+        ['undefined items array', undefined],
+        ['empty items array', []]  
+    ])(
+        'returns empty array if %s is returned from DynamoDB',
+        async (message: string, items?: never[]) => {
+            ddbMock.reset();
+
+            const output: QueryCommandOutput = {
+                Items: items,
+                $metadata: mock<ResponseMetadata>()
+            };
+            ddbMock.on(QueryCommand).resolves(output);
+
+            const response = await repository.getOccurrences(VALID_URL);
+
+            expect(response).toEqual([]);
+        }
+    );
+
+    test.each([
+        [
+            'does not contain a keyphrase attribute',
+            createQueryOutputItem(undefined, '1'),
+            'Query returned item with no keyphrase'
+        ],
+        [
+            'does not contain a keyphrase attribute of string type',
+            {
+                [KeyphraseTableKeyFields.SortKey]: {
+                    N: 'phrase'
+                }
+            },
+            'Query returned item with no keyphrase'
+        ],
+        [
+            'does not contain an occurrences attribute',
+            createQueryOutputItem('phrase'),
+            'Query returned item with occurrences that is not a number'
+        ],
+        [
+            'does not contain an occurrences attribute of number type',
+            {
+                [KeyphraseTableKeyFields.SortKey]: {
+                    S: 'phrase'
+                },
+                [KeyphraseTableNonKeyFields.Occurrence]: {
+                    S: '1'
+                }
+            },
+            'Query returned item with occurrences that is not a number'
+        ],
+        [
+            'contains occurrences attribute that is not a number',
+            createQueryOutputItem('phrase', 'invalid'),
+            'Query returned item with occurrences that is not a number'
+        ]
+    ])(
+        'throws error if DynamoDB entry %s',
+        async (
+            message: string, 
+            errorItem: { [key: string]: AttributeValue },
+            expectedErrorMessage: string
+        ) => {
+            ddbMock.reset();
+
+            const output: QueryCommandOutput = {
+                Items: [errorItem],
+                $metadata: mock<ResponseMetadata>()
+            };
+            ddbMock.on(QueryCommand).resolves(output);
+
+            expect.assertions(1);
+            await expect(repository.getOccurrences(VALID_URL)).rejects.toEqual(
+                new Error(expectedErrorMessage)
+            );
+        }
+    );
 });

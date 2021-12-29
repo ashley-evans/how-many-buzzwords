@@ -4,6 +4,8 @@ type KeyphraseOccurrences = {
 };
 
 interface KeyphraseRepository {
+    getOccurrences(url: string): Promise<KeyphraseOccurrences[]>;
+
     storeOccurrences(
         url: string,
         keyphraseOccurences: KeyphraseOccurrences[]
