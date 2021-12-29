@@ -25,7 +25,9 @@ class KeyphraseFinder implements KeyphrasesPort {
         }
         
         if (content) {
-            this.htmlParser.parseHTML(content);
+            const text = this.htmlParser.parseHTML(content);
+
+            await this.keyphraseProvider.findKeyphrases(text);
         }
 
         return true;

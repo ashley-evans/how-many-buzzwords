@@ -6,7 +6,8 @@ import { KeyphraseRepository } from "../../ports/KeyphraseRepository";
 import KeyphraseFinder from "../KeyphraseFinder";
 
 const VALID_URL = new URL('http://www.example.com/');
-const VALID_BODY = '<body>Wibble</body>';
+const PARSED_BODY = 'Wibble';
+const VALID_BODY = `<body>${PARSED_BODY}</body>`;
 
 const mockKeyphraseProvider = mock<KeyphraseProvider>();
 const mockRequestProvider = mock<HTTPRequestProvider>();
@@ -31,6 +32,7 @@ describe('happy path', () => {
         jest.resetAllMocks();
 
         mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
@@ -45,6 +47,13 @@ describe('happy path', () => {
     test('calls HTML parser with response from request provider', async () => {
         expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(1);
         expect(mockHTMLParser.parseHTML).toHaveBeenCalledWith(VALID_BODY);
+    });
+
+    test('calls keyphrase provider with parsed HTML text', async () => {
+        expect(mockKeyphraseProvider.findKeyphrases).toHaveBeenCalledTimes(1);
+        expect(mockKeyphraseProvider.findKeyphrases).toHaveBeenCalledWith(
+            PARSED_BODY
+        );
     });
 
     test('returns success', () => {
@@ -97,5 +106,17 @@ describe('error handling', () => {
         await expect(keyphraseFinder.findKeyphrases(VALID_URL)).rejects.toEqual(
             expectedError
         );
-    });    
+    });
+    
+    test('throws an error if Keyphrase provider throws an error', async () => {
+        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+
+        const expectedError = new Error('test error');
+        mockKeyphraseProvider.findKeyphrases.mockRejectedValue(expectedError);
+
+        expect.assertions(1);
+        await expect(keyphraseFinder.findKeyphrases(VALID_URL)).rejects.toEqual(
+            expectedError
+        );
+    });
 });
