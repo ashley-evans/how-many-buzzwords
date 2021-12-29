@@ -12,7 +12,7 @@ class Keyphrases implements KeyphrasesPort {
         private repository: KeyphraseRepository
     ) {}
 
-    findKeyphrases(url: URL): boolean {
+    async findKeyphrases(url: URL): Promise<boolean> {
         throw new Error(`Method not implemented. Provided url: ${url}`);
     }
 }

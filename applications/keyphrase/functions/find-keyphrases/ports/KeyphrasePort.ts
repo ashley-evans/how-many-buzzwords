@@ -1,5 +1,5 @@
 interface KeyphrasesPort {
-    findKeyphrases(url: URL): boolean;
+    findKeyphrases(url: URL): Promise<boolean>;
 }
 
 export default KeyphrasesPort;
