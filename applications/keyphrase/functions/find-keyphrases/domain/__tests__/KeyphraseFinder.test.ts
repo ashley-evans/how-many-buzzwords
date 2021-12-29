@@ -52,13 +52,32 @@ describe('happy path', () => {
     });
 });
 
+describe('handles no page content', () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        mockRequestProvider.getBody.mockResolvedValue('');
+
+        response = await keyphraseFinder.findKeyphrases(VALID_URL);
+    });
+
+    test('does not call HTML parser', () => {
+        expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(0);
+    });
+
+    test('returns true', () => {
+        expect(response).toBe(true);
+    });
+});
+
 describe('error handling', () => {
     beforeEach(() => {
         jest.resetAllMocks();
     });
 
     test('returns failure if request provider throws an error', async () => {
-
         mockRequestProvider.getBody.mockRejectedValue(new Error());
     
         const result = await keyphraseFinder.findKeyphrases(VALID_URL);
@@ -67,6 +86,8 @@ describe('error handling', () => {
     });
 
     test('throws an error if HTML parser throws an error', async () => {
+        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+
         const expectedError = new Error('test error');
         mockHTMLParser.parseHTML.mockImplementation(
             () => { throw expectedError; }
