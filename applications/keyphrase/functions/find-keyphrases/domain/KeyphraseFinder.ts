@@ -4,7 +4,7 @@ import KeyphrasesPort from "../ports/KeyphrasePort";
 import { KeyphraseProvider } from "../ports/KeyphraseProvider";
 import { KeyphraseRepository } from "../ports/KeyphraseRepository";
 
-class Keyphrases implements KeyphrasesPort {
+class KeyphraseFinder implements KeyphrasesPort {
     constructor(
         private httpRequester: HTTPRequestProvider,
         private htmlParser: HTMLParsingProvider,
@@ -17,4 +17,4 @@ class Keyphrases implements KeyphrasesPort {
     }
 }
 
-export default Keyphrases;
+export default KeyphraseFinder;
