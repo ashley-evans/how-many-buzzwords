@@ -12,6 +12,7 @@
         "retext-pos": "3.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/types": "^3.40.0"
+        "@aws-sdk/types": "^3.40.0",
+        "@types/lodash.escaperegexp": "^4.1.6"
     }
 }

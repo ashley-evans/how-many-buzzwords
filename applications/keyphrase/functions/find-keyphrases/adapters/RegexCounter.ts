@@ -1,9 +1,11 @@
+import escapeRegExp from 'lodash.escaperegexp';
+
 import OccurrenceCounter from "../ports/OccurrenceCounter";
 
 class RegexCounter implements OccurrenceCounter {
     countOccurrences(text: string, match: string): number {
         const occuranceExpression = new RegExp(
-            `\\b${match}\\b`,
+            `\\b${escapeRegExp(match)}\\b`,
             'gi'
         );
 

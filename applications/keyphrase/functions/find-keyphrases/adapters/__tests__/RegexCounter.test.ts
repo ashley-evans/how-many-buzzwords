@@ -43,3 +43,11 @@ test.each([
 
     expect(result).toBe(expectedMatches);
 });
+
+test('escapes regular expression characters in match text', () => {
+    const wildcardMatch = '.*';
+
+    const result = counter.countOccurrences('test', wildcardMatch);
+
+    expect(result).toBe(0);
+});
