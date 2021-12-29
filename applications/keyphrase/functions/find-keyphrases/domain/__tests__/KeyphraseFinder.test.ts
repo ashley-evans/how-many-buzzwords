@@ -3,21 +3,24 @@ import HTMLParsingProvider from "../../ports/HTMLParsingProvider";
 import HTTPRequestProvider from "../../ports/HTTPRequestProvider";
 import { KeyphraseProvider } from "../../ports/KeyphraseProvider";
 import { KeyphraseRepository } from "../../ports/KeyphraseRepository";
+import OccurrenceCounter from "../../ports/OccurrenceCounter";
 import KeyphraseFinder from "../KeyphraseFinder";
 
 const VALID_URL = new URL('http://www.example.com/');
 const PARSED_BODY = 'Wibble';
 const VALID_BODY = `<body>${PARSED_BODY}</body>`;
 
-const mockKeyphraseProvider = mock<KeyphraseProvider>();
 const mockRequestProvider = mock<HTTPRequestProvider>();
 const mockHTMLParser = mock<HTMLParsingProvider>();
+const mockKeyphraseProvider = mock<KeyphraseProvider>();
+const mockOccurrenceCounter = mock<OccurrenceCounter>();
 const mockRepository = mock<KeyphraseRepository>();
 
 const keyphraseFinder = new KeyphraseFinder(
     mockRequestProvider,
     mockHTMLParser,
     mockKeyphraseProvider,
+    mockOccurrenceCounter,
     mockRepository
 );
 

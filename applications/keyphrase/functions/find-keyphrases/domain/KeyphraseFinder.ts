@@ -3,12 +3,14 @@ import HTTPRequestProvider from "../ports/HTTPRequestProvider";
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import { KeyphraseProvider } from "../ports/KeyphraseProvider";
 import { KeyphraseRepository } from "../ports/KeyphraseRepository";
+import OccurrenceCounter from "../ports/OccurrenceCounter";
 
 class KeyphraseFinder implements KeyphrasesPort {
     constructor(
         private httpRequester: HTTPRequestProvider,
         private htmlParser: HTMLParsingProvider,
         private keyphraseProvider: KeyphraseProvider,
+        private occurrenceCounter: OccurrenceCounter,
         private repository: KeyphraseRepository
     ) {}
 
