@@ -8,6 +8,12 @@ test('returns zero if no text is provided', () => {
     expect(result).toBe(result);
 });
 
+test('returns zero if no matcher is provided', () => {
+    const result = counter.countOccurrences('text text', '');
+
+    expect(result).toBe(0);
+});
+
 test.each([
     [
         0,
