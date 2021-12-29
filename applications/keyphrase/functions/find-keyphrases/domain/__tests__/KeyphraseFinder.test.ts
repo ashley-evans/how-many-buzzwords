@@ -6,6 +6,7 @@ import { KeyphraseRepository } from "../../ports/KeyphraseRepository";
 import KeyphraseFinder from "../KeyphraseFinder";
 
 const VALID_URL = new URL('http://www.example.com/');
+const VALID_BODY = '<body>Wibble</body>';
 
 const mockKeyphraseProvider = mock<KeyphraseProvider>();
 const mockRequestProvider = mock<HTTPRequestProvider>();
@@ -23,17 +24,32 @@ beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
-beforeEach(() => {
-    jest.resetAllMocks();
-});
+describe('happy path', () => {
+    let response: boolean;
 
-test('calls request provider with URL', async () => {
-    await keyphraseFinder.findKeyphrases(VALID_URL);
+    beforeAll(async () => {
+        jest.resetAllMocks();
 
-    expect(mockRequestProvider.getBody).toHaveBeenCalledTimes(1);
-    expect(mockRequestProvider.getBody).toHaveBeenCalledWith(
-        VALID_URL
-    );
+        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+
+        response = await keyphraseFinder.findKeyphrases(VALID_URL);
+    });
+
+    test('calls request provider with URL', async () => {
+        expect(mockRequestProvider.getBody).toHaveBeenCalledTimes(1);
+        expect(mockRequestProvider.getBody).toHaveBeenCalledWith(
+            VALID_URL
+        );
+    });
+
+    test('calls HTML parser with response from request provider', async () => {
+        expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(1);
+        expect(mockHTMLParser.parseHTML).toHaveBeenCalledWith(VALID_BODY);
+    });
+
+    test('returns success', () => {
+        expect(response).toBe(true);
+    });
 });
 
 test('returns failure if request provider throws an error', async () => {
@@ -44,19 +60,9 @@ test('returns failure if request provider throws an error', async () => {
     expect(result).toBe(false);
 });
 
-test('calls HTML parser with response from request provider', async () => {
-    const expectedBody = '<body>Wibble</body>';
-    mockRequestProvider.getBody.mockResolvedValue(expectedBody);
-
-    await keyphraseFinder.findKeyphrases(VALID_URL);
-
-    expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(1);
-    expect(mockHTMLParser.parseHTML).toHaveBeenCalledWith(
-        expectedBody
-    );
-});
-
 test('throws an error if HTML parser throws an error', async () => {
+    jest.resetAllMocks();
+
     const expectedError = new Error('test error');
     mockHTMLParser.parseHTML.mockImplementation(() => { throw expectedError; });
 
