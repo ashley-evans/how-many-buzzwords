@@ -13,8 +13,9 @@ class KeyphraseFinder implements KeyphrasesPort {
     ) {}
 
     async findKeyphrases(url: URL): Promise<boolean> {
+        let content: string;
         try {
-            await this.httpRequester.getBody(url);
+            content = await this.httpRequester.getBody(url);
         } catch (ex: unknown) {
             console.error(
                 `Error occured during page GET: ${JSON.stringify(ex)}}`
@@ -23,6 +24,8 @@ class KeyphraseFinder implements KeyphrasesPort {
             return false;
         }
         
+        this.htmlParser.parseHTML(content);
+
         return true;
     }
 }
