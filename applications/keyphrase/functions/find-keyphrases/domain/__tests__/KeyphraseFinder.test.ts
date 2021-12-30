@@ -5,7 +5,10 @@ import {
     KeyphraseProvider,
     KeyphraseResponse
 } from "../../ports/KeyphraseProvider";
-import { KeyphraseRepository } from "../../ports/KeyphraseRepository";
+import {
+    KeyphraseOccurrences,
+    KeyphraseRepository
+} from "../../ports/KeyphraseRepository";
 import OccurrenceCounter from "../../ports/OccurrenceCounter";
 import KeyphraseFinder from "../KeyphraseFinder";
 
@@ -39,6 +42,16 @@ function createKeyphraseResponse(
     };
 }
 
+function createKeyphraseOccurrence(
+    keyphrase: string,
+    occurrences: number
+): KeyphraseOccurrences {
+    return {
+        keyphrase,
+        occurrences
+    };
+}
+
 beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -54,23 +67,24 @@ describe('happy path', () => {
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
+        mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
 
-    test('calls request provider with URL', async () => {
+    test('calls request provider with URL', () => {
         expect(mockRequestProvider.getBody).toHaveBeenCalledTimes(1);
         expect(mockRequestProvider.getBody).toHaveBeenCalledWith(
             VALID_URL
         );
     });
 
-    test('calls HTML parser with response from request provider', async () => {
+    test('calls HTML parser with response from request provider', () => {
         expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(1);
         expect(mockHTMLParser.parseHTML).toHaveBeenCalledWith(VALID_BODY);
     });
 
-    test('calls keyphrase provider with parsed HTML text', async () => {
+    test('calls keyphrase provider with parsed HTML text', () => {
         expect(mockKeyphraseProvider.findKeyphrases).toHaveBeenCalledTimes(1);
         expect(mockKeyphraseProvider.findKeyphrases).toHaveBeenCalledWith(
             PARSED_BODY
@@ -79,7 +93,7 @@ describe('happy path', () => {
 
     test(
         'calls occurrence counter for all words/phrases in keyphrase response',
-        async () => {
+        () => {
             expect(mockOccurrenceCounter.countOccurrences).toBeCalledTimes(
                 KEYWORDS.length + KEYPHRASES.length
             );
@@ -88,7 +102,7 @@ describe('happy path', () => {
 
     test(
         'calls occurrence counter with each word from keyphrase response',
-        async () => {
+        () => {
             for (const keyword of KEYWORDS) {
                 expect(mockOccurrenceCounter.countOccurrences).toBeCalledWith(
                     PARSED_BODY,
@@ -100,13 +114,36 @@ describe('happy path', () => {
 
     test(
         'calls occurrence counter with each phrase from keyphrase response',
-        async () => {
+        () => {
             for (const keyphrase of KEYPHRASES) {
                 expect(mockOccurrenceCounter.countOccurrences).toBeCalledWith(
                     PARSED_BODY,
                     keyphrase
                 );
             }
+        }
+    );
+
+    test(
+        'calls keyphrase repository for all keywords/keyphrase occurrences',
+        () => {
+            expect(mockRepository.storeOccurrences).toBeCalledTimes(1);
+
+            const keywordOccurrences = KEYWORDS.map(
+                (word) => createKeyphraseOccurrence(word, 1)
+            );
+            const keyphraseOccurrences = KEYPHRASES.map(
+                (keyphrase) => createKeyphraseOccurrence(keyphrase, 1)
+            );
+            const expected = [
+                ...keywordOccurrences,
+                ...keyphraseOccurrences
+            ];
+
+            expect(mockRepository.storeOccurrences).toBeCalledWith(
+                VALID_URL.hostname,
+                expected
+            );
         }
     );
 
