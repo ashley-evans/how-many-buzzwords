@@ -38,10 +38,19 @@ class KeyphraseFinder implements KeyphrasesPort {
                 ...this.countAllOccurrences(text, phrases.keyphrases)
             ];
 
-            await this.repository.storeOccurrences(
-                url.hostname,
-                keyphraseOccurrences
-            );
+            try {
+                await this.repository.storeOccurrences(
+                    url.hostname,
+                    keyphraseOccurrences
+                );
+            } catch (ex: unknown) {
+                console.error(
+                    'Error occured during occurrence storage: ' + 
+                    JSON.stringify(ex)
+                );
+
+                return false;
+            }
         }
 
         return true;

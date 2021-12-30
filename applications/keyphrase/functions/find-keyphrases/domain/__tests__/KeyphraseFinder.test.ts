@@ -234,4 +234,24 @@ describe('error handling', () => {
             expectedError
         );
     });
+
+    test(
+        'returns failure if storing of occurrences throws an error',
+        async () => {
+            mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+            mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+            mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
+                createKeyphraseResponse(KEYWORDS, KEYPHRASES)
+            );
+            mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
+            
+            const expectedError = new Error('test error');
+
+            mockRepository.storeOccurrences.mockRejectedValue(expectedError);
+
+            const result = await keyphraseFinder.findKeyphrases(VALID_URL);
+    
+            expect(result).toBe(false);
+        }
+    );
 });
