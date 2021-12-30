@@ -1,13 +1,18 @@
 import { mock } from "jest-mock-extended";
 import HTMLParsingProvider from "../../ports/HTMLParsingProvider";
 import HTTPRequestProvider from "../../ports/HTTPRequestProvider";
-import { KeyphraseProvider } from "../../ports/KeyphraseProvider";
+import {
+    KeyphraseProvider,
+    KeyphraseResponse
+} from "../../ports/KeyphraseProvider";
 import { KeyphraseRepository } from "../../ports/KeyphraseRepository";
 import OccurrenceCounter from "../../ports/OccurrenceCounter";
 import KeyphraseFinder from "../KeyphraseFinder";
 
 const VALID_URL = new URL('http://www.example.com/');
-const PARSED_BODY = 'Wibble';
+const KEYWORDS = ['Wibble', 'Wobble'];
+const KEYPHRASES = ['Wibble Wobble'];
+const PARSED_BODY = KEYWORDS.join(' ');
 const VALID_BODY = `<body>${PARSED_BODY}</body>`;
 
 const mockRequestProvider = mock<HTTPRequestProvider>();
@@ -24,6 +29,16 @@ const keyphraseFinder = new KeyphraseFinder(
     mockRepository
 );
 
+function createKeyphraseResponse(
+    keywords: string[],
+    keyphrases: string[]
+) : KeyphraseResponse {
+    return {
+        keywords,
+        keyphrases
+    };
+}
+
 beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -36,6 +51,9 @@ describe('happy path', () => {
 
         mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
         mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
+            createKeyphraseResponse(KEYWORDS, KEYPHRASES)
+        );
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
@@ -59,6 +77,39 @@ describe('happy path', () => {
         );
     });
 
+    test(
+        'calls occurrence counter for all words/phrases in keyphrase response',
+        async () => {
+            expect(mockOccurrenceCounter.countOccurrences).toBeCalledTimes(
+                KEYWORDS.length + KEYPHRASES.length
+            );
+        }
+    );
+
+    test(
+        'calls occurrence counter with each word from keyphrase response',
+        async () => {
+            for (const keyword of KEYWORDS) {
+                expect(mockOccurrenceCounter.countOccurrences).toBeCalledWith(
+                    PARSED_BODY,
+                    keyword
+                );
+            }
+        }
+    );
+
+    test(
+        'calls occurrence counter with each phrase from keyphrase response',
+        async () => {
+            for (const keyphrase of KEYPHRASES) {
+                expect(mockOccurrenceCounter.countOccurrences).toBeCalledWith(
+                    PARSED_BODY,
+                    keyphrase
+                );
+            }
+        }
+    );
+
     test('returns success', () => {
         expect(response).toBe(true);
     });
@@ -77,6 +128,30 @@ describe('handles no page content', () => {
 
     test('does not call HTML parser', () => {
         expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(0);
+    });
+
+    test('returns true', () => {
+        expect(response).toBe(true);
+    });
+});
+
+describe('handles no keywords found', () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
+        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
+            createKeyphraseResponse([], [])
+        );
+
+        response = await keyphraseFinder.findKeyphrases(VALID_URL);
+    });
+
+    test('does not call count occurrences', () => {
+        expect(mockOccurrenceCounter.countOccurrences).toBeCalledTimes(0);
     });
 
     test('returns true', () => {

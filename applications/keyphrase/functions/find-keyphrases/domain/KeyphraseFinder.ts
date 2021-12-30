@@ -28,8 +28,15 @@ class KeyphraseFinder implements KeyphrasesPort {
         
         if (content) {
             const text = this.htmlParser.parseHTML(content);
+            const phrases = await this.keyphraseProvider.findKeyphrases(text);
 
-            await this.keyphraseProvider.findKeyphrases(text);
+            for (const keyword of phrases.keywords) {
+                this.occurrenceCounter.countOccurrences(text, keyword); 
+            }
+
+            for (const keyphrase of phrases.keyphrases) {
+                this.occurrenceCounter.countOccurrences(text, keyphrase);
+            }
         }
 
         return true;
