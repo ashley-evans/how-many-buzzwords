@@ -20,7 +20,7 @@ class KeyphraseSQSAdapter implements KeyphrasePrimaryAdapter {
     }
 
     async findKeyphrases(event: SQSEvent): Promise<SQSBatchResponse> {
-        const failedCrawls: SQSBatchItemFailure[] = [];
+        const failedKeyphraseFinds: SQSBatchItemFailure[] = [];
         for (const record of event.Records) {
             let url: URL;
             try {
@@ -37,10 +37,15 @@ class KeyphraseSQSAdapter implements KeyphrasePrimaryAdapter {
                 continue;
             }
             
-            this.keyphraseFinder.findKeyphrases(url);
+            const success = await this.keyphraseFinder.findKeyphrases(url);
+            if (!success) {
+                failedKeyphraseFinds.push({
+                    itemIdentifier: record.messageId
+                });
+            }
         }
         
-        return { batchItemFailures: failedCrawls };
+        return { batchItemFailures: failedKeyphraseFinds };
     }
 
     private createValidator(): ValidateFunction<RequestBody> {
