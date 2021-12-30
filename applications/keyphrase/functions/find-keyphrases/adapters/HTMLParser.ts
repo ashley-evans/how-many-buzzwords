@@ -26,15 +26,15 @@ class HTMLParser implements HTMLParsingProvider {
 
         parser.write(html);
         parser.end();
-        return this.removeNewLineCharacters(completeText).trim();
+        return this.removeSpecialCharacters(completeText).trim();
     }
 
     private removeExtraWhitespace(text: string): string {
         return text.replace(/\s+/g, ' ');
     }
 
-    private removeNewLineCharacters(text: string): string {
-        return text.replace(/\n|\r/g, '');
+    private removeSpecialCharacters(text: string): string {
+        return text.replace(/\n|\r|\t/g, '');
     }
 }
 

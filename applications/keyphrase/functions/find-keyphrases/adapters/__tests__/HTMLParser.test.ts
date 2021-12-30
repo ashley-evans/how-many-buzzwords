@@ -42,6 +42,16 @@ test('returns all text found within body with no new lines', () => {
     );
 });
 
+test('returns all text found within body without any tabs', () => {
+    const html = readFile(path.join(ASSET_FOLDER, 'tabs.html'));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual(
+        'Test Text'
+    );
+});
+
 test('returns nothing if html contains no text', () => {
     const html = readFile(path.join(ASSET_FOLDER, 'empty.html'));
 
