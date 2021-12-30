@@ -20,7 +20,11 @@ test.each([
     ['not a number', 'wibble']
 ])('throws error if max crawl depth is %s', 
     async (text: string, maxCrawlDepth?: string) => {
-        process.env.MAX_CRAWL_DEPTH = maxCrawlDepth;
+        if (maxCrawlDepth) {
+            process.env.MAX_CRAWL_DEPTH = maxCrawlDepth;
+        } else {
+            delete process.env.MAX_CRAWL_DEPTH;
+        }
 
         await expect(handler(mockEvent)).rejects.toThrow(
             new Error('Max Crawl Depth is not a number.')
@@ -33,7 +37,11 @@ test.each([
     ['not a number', 'wibble']
 ])('throws error if max requests per crawl is %s', 
     async (text: string, maxRequests?: string) => {
-        process.env.MAX_REQUESTS_PER_CRAWL = maxRequests;
+        if (maxRequests) {
+            process.env.MAX_REQUESTS_PER_CRAWL = maxRequests;
+        } else {
+            delete process.env.MAX_REQUESTS_PER_CRAWL;
+        }
 
         await expect(handler(mockEvent)).rejects.toThrow(
             new Error('Max requests per crawl is not a number.')
@@ -42,9 +50,9 @@ test.each([
 );
 
 test('throws error if table name is undefined', async () => {
-    process.env.MAX_REQUESTS_PER_CRAWL = undefined;
+    delete process.env.TABLE_NAME;
 
     await expect(handler(mockEvent)).rejects.toThrow(
-        new Error('Max requests per crawl is not a number.')
+        new Error('URLs Table Name has not been set.')
     );
 });
