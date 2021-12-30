@@ -23,7 +23,7 @@ class KeyphraseFinder implements KeyphrasesPort {
             content = await this.httpRequester.getBody(url);
         } catch (ex: unknown) {
             console.error(
-                `Error occured during page GET: ${JSON.stringify(ex)}}`
+                `Error occurred during page GET: ${JSON.stringify(ex)}}`
             );
 
             return false;
@@ -45,7 +45,7 @@ class KeyphraseFinder implements KeyphrasesPort {
                 );
             } catch (ex: unknown) {
                 console.error(
-                    'Error occured during occurrence storage: ' + 
+                    'Error occurred during occurrence storage: ' + 
                     JSON.stringify(ex)
                 );
 
