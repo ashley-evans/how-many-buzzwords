@@ -33,7 +33,6 @@ class KeyphraseFinder implements KeyphrasesPort {
         }
         
         if (content) {
-            const text = this.htmlParser.parseHTML(content);
             let previousPhrases: KeyphraseOccurrences[];
             try {
                 previousPhrases = await this.repository.getOccurrences(
@@ -47,14 +46,11 @@ class KeyphraseFinder implements KeyphrasesPort {
     
                 return false;
             }
-            
-            const phrases = await this.keyphraseProvider.findKeyphrases(text);
 
-            const combinedPhrases = this.combinePhrases(
-                phrases, 
-                previousPhrases.map((occurence) => occurence.keyphrase)
+            const occurrences = await this.findKeyphrasesOccurrences(
+                content,
+                previousPhrases
             );
-            const occurrences = this.countAllOccurrences(text, combinedPhrases);
 
             try {
                 await this.repository.storeOccurrences(
@@ -72,6 +68,21 @@ class KeyphraseFinder implements KeyphrasesPort {
         }
 
         return true;
+    }
+
+    private async findKeyphrasesOccurrences(
+        HTMLContent: string,
+        previousPhrases: KeyphraseOccurrences[]
+    ): Promise<KeyphraseOccurrences[]> {
+        const text = this.htmlParser.parseHTML(HTMLContent);
+        const phrases = await this.keyphraseProvider.findKeyphrases(text);
+
+        const combinedPhrases = this.combinePhrases(
+            phrases, 
+            previousPhrases.map((occurence) => occurence.keyphrase)
+        );
+
+        return this.countAllOccurrences(text, combinedPhrases);
     }
 
     private combinePhrases(
