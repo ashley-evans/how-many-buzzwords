@@ -98,4 +98,16 @@ aws cloudformation deploy \
     --parameter-overrides GithubOrganisation=$INSERT_VALUE RepositoryName=$INSERT_VALUE
 ```
 
+Once the above command has executed, run the following commands to get the role ARNs:
+```shell
+chmod u+x ./scripts/fetch-stack-outputs.sh
+./scripts/fetch-stack-outputs.sh -s buzzword-ci-users
+```
+
+The following GitHub secrets should be created with the appropriate key/value output from the previous command:
+
+| Secret Name     | Output Key Value |
+| --------------- | ---------------- |
+| AWS_DEPLOY_ROLE | DeployRoleARN    |
+
 The template validation performed by the CI pipeline searches for `.yml` files that are suffixed with `-template`, therefore, if you wish for a template file to be validated then simply suffix the file with `-template`.
