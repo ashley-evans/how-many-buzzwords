@@ -49,7 +49,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [compile, test, validate, lint]
-    if: ${{ github.ref == 'refs/heads/master' }}
     permissions:
       id-token: write
     steps:
@@ -73,4 +72,4 @@ jobs:
             ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
-          ./scripts/deploy.sh -f -e production
+          ./scripts/deploy.sh -f
