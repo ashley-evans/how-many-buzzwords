@@ -87,22 +87,27 @@ sam local start-lambda --debug-port 9229 --template ./templates/buzzword-templat
 
 Once the lambda has been invoked, then you can attach the debugger to the process using the VS Code debug configuration called "Attach to Local SAM resources"
 
-## CI Setup
+## CI/CD Setup
 
-The CI pipeline requires access to two users to perform both template validation and stack deployment. These user's can be created using the following command:
+The CI/CD pipeline requires specific permissions in order to perform validation and deployment. Run the following command to set up OIDC access for the CI pipeline (Replace the organisation and repository name values appropriately):
 ```shell
-aws cloudformation deploy --template-file ./templates/buzzword-ci-users-template.yml --stack-name buzzword-ci-users --capabilities CAPABILITY_IAM
+aws cloudformation deploy \
+    --template-file ./templates/buzzword-ci-users-template.yml \
+    --stack-name buzzword-ci-users \
+    --capabilities CAPABILITY_IAM \
+    --parameter-overrides GithubOrganisation=$INSERT_VALUE RepositoryName=$INSERT_VALUE
 ```
 
-The following GitHub secrets should be created with the following values (Referring to the resources in the `buzzword-ci-users.yml` file):
+Once the above command has executed, run the following commands to get the role ARNs:
+```shell
+chmod u+x ./scripts/fetch-stack-outputs.sh
+./scripts/fetch-stack-outputs.sh -s buzzword-ci-users
+```
 
-| Name                           | Value                               |
-| ------------------------------ | ----------------------------------- |
-| VALIDATE_AWS_ACCESS_KEY_ID     | BuzzwordValidateUser's `ACCESS_KEY` |
-| VALIDATE_AWS_SECRET_ACCESS_KEY | BuzzwordValidateUser's `SECRET_KEY` |
-| DEPLOY_AWS_ACCESS_KEY_ID       | BuzzwordDeployUser's `ACCESS_KEY`   |
-| DEPLOY_AWS_SECRET_ACCESS_KEY   | BuzzwordDeployUser's `SECRET_KEY`   |
+The following GitHub secrets should be created with the appropriate key/value output from the previous command:
 
-The above values can be found in the AWS Secret Manager secret named the same as the user's `AccessKeyId`
+| Secret Name     | Output Key Value |
+| --------------- | ---------------- |
+| AWS_DEPLOY_ROLE | DeployRoleARN    |
 
 The template validation performed by the CI pipeline searches for `.yml` files that are suffixed with `-template`, therefore, if you wish for a template file to be validated then simply suffix the file with `-template`.

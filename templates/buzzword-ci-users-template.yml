@@ -1,27 +1,32 @@
 Description: IAM Users and Policies for CI and CD pipeline tasks
+Parameters:
+  GithubOrganisation:
+    Type: String
+  RepositoryName:
+    Type: String
 Resources:
-  BuzzwordValidateTemplateGroup:
-    Type: AWS::IAM::Group
+  GithubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
     Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/IAMFullAccess
-  BuzzwordValidateUser:
-    Type: AWS::IAM::User
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: 
+        - sts.amazonaws.com
+      ThumbprintList:
+        - a031c46782e6e6c662c2c87c76da9aa62ccabd8e
+  DeployRole:
+    Type: AWS::IAM::Role
     Properties:
-      Groups:
-        - !Ref BuzzwordValidateTemplateGroup
-  BuzzwordValidateUserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: !Ref BuzzwordValidateUser
-  BuzzwordValidateUserCredentials:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Ref BuzzwordValidateUserAccessKey
-      SecretString: !Sub '{ "ACCESS_KEY": "${BuzzwordValidateUserAccessKey}", "SECRET_KEY": "${BuzzwordValidateUserAccessKey.SecretAccessKey}"}'
-  BuzzwordDeployTemplateGroup:
-    Type: AWS::IAM::Group
-    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: 
+          - sts:AssumeRoleWithWebIdentity
+          Principal: 
+            Federated: !Ref GithubOIDCProvider
+          Condition:
+            StringLike:
+              token.actions.githubusercontent.com:sub: !Sub repo:${GithubOrganisation}/${RepositoryName}:*
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
@@ -31,18 +36,8 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-  BuzzwordDeployUser:
-    Type: AWS::IAM::User
-    Properties:
-      Groups:
-        - !Ref BuzzwordValidateTemplateGroup
-        - !Ref BuzzwordDeployTemplateGroup
-  BuzzwordDeployUserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: !Ref BuzzwordDeployUser
-  BuzzwordDeployUserCredentials:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Ref BuzzwordDeployUserAccessKey
-      SecretString: !Sub '{ "ACCESS_KEY": "${BuzzwordDeployUserAccessKey}", "SECRET_KEY": "${BuzzwordDeployUserAccessKey.SecretAccessKey}"}'
+        - arn:aws:iam::aws:policy/IAMFullAccess
+Outputs:
+  DeployRoleARN: 
+    Description: The ARN of the deployment role required to deploy stacks
+    Value: !GetAtt DeployRole.Arn
