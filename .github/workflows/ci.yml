@@ -49,7 +49,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [compile, test, validate, lint]
-    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -71,4 +70,4 @@ jobs:
             ${{ runner.os }}-deploy-v1-${{ env.cache-name }}-
       - name: Deploy stack
         run: |
-          ./scripts/deploy.sh -f -e production
+          ./scripts/deploy.sh -f
