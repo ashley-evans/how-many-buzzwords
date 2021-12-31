@@ -38,6 +38,7 @@
         "http-status-codes": "2.1.4"
     },
     "scripts": {
+        "audit": "npm audit --audit-level=moderate",
         "lint-js": "node node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
         "lint-packages": "node node_modules/.bin/npmPkgJsonLint '.'",
         "lint": "npm run lint-js && npm run lint-packages",
