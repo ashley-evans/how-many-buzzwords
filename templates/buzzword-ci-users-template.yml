@@ -36,6 +36,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
 Outputs:
   DeployRoleARN: 
     Description: The ARN of the deployment role required to deploy stacks
