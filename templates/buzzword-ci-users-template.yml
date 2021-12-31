@@ -13,22 +13,6 @@ Resources:
         - sts.amazonaws.com
       ThumbprintList:
         - a031c46782e6e6c662c2c87c76da9aa62ccabd8e
-  ValidateRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action: 
-          - sts:AssumeRoleWithWebIdentity
-          Principal: 
-            Federated: !Ref GithubOIDCProvider
-          Condition:
-            StringLike:
-              token.actions.githubusercontent.com:sub: !Sub repo:${GithubOrganisation}/${RepositoryName}:*
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/IAMFullAccess
   DeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -53,9 +37,6 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonSNSFullAccess
 Outputs:
-  ValidateRoleARN:
-    Description: The ARN of the validate role required to perform template validation
-    Value: !GetAtt ValidateRole.Arn
   DeployRoleARN: 
     Description: The ARN of the deployment role required to deploy stacks
     Value: !GetAtt DeployRole.Arn
