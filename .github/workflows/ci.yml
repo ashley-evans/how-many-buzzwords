@@ -58,7 +58,7 @@ jobs:
           npm run audit
   deploy:
     runs-on: ubuntu-latest
-    needs: [compile, test, validate, lint]
+    needs: [compile, test, validate, lint, audit]
     if: ${{ github.ref == 'refs/heads/master' }}
     permissions:
       id-token: write
