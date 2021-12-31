@@ -51,6 +51,7 @@ jobs:
     needs: [compile, test, validate, lint]
     permissions:
       id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
