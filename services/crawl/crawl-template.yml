@@ -1,10 +1,15 @@
 Transform: AWS::Serverless-2016-10-31
 Description: Template for Crawl application's resources
-Parameters:
-  NodeDependencyLayerLogicalID:
-    Type: String
-    Description: Logical ID of the layer containing common Node Dependencies
 Resources:
+  CrawlNodeDependencyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Common crawl service node module layer
+      CompatibleRuntimes:
+        - nodejs14.x
+      ContentUri: ./functions/
+    Metadat:
+      BuildMethod: makefile
   CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -99,7 +104,7 @@ Resources:
       CodeUri: ./functions/crawl-urls
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
@@ -162,7 +167,7 @@ Resources:
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Events:
         URLsTableStreamEvent:
@@ -181,7 +186,7 @@ Resources:
       CodeUri: ./functions/urls-crud
       Description: CRUD function for the URLs Table
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
