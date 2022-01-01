@@ -10,6 +10,11 @@ const argv = yargs(hideBin(process.argv))
         describe: 'Path to configuration file',
         demandOption: true
     })
+    .option('v', {
+        type: 'string',
+        describe: 'Name of config value to obtain',
+        demandOption: true
+    })
     .option('e', {
         type: 'string',
         describe: 'Name of SAM config environment',
@@ -29,7 +34,7 @@ createReadStream(argv.c, 'utf8').pipe(concat(function(data) {
     }
 
     const environmentConfig = parsed[argv.e]?.deploy?.parameters;
-    if (!environmentConfig) {
+    if (!environmentConfig || !environmentConfig[argv.v]) {
         console.error(
             new Error(`Configuration does not exist for environment ${argv.e}`)
         );
@@ -38,5 +43,5 @@ createReadStream(argv.c, 'utf8').pipe(concat(function(data) {
         process.exit();
     }
 
-    console.log(environmentConfig['stack_name']);
+    console.log(environmentConfig[argv.v]);
 }));
