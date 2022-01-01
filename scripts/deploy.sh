@@ -51,7 +51,7 @@ aws cloudformation deploy --template-file "$script_parent_dir"/templates/buzzwor
 
 echo "Building Buzzword Stack"
 
-npm --prefix $script_parent_dir run compile
+npm --prefix $script_parent_dir run compile:clean
 
 if [ $nocache ]; then
     sam build --parallel --template-file "$script_parent_dir"/templates/buzzword-template.yml
