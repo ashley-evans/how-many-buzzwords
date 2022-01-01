@@ -9,6 +9,7 @@
         ]
     },
     "include": [
-        "applications"
+        "applications",
+        "services"
     ]
 }
