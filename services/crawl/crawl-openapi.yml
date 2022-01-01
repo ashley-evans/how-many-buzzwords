@@ -1,6 +1,7 @@
 openapi: "3.0.1"
 info:
-  title: !Sub "buzzword-crawl-service-${EnvironmentNameSuffix}"
+  title: 
+    Fn::Sub: "buzzword-crawl-service-${EnvironmentNameSuffix}"
   description: "Crawl Service API Gateway"
   version: "1.0"
 paths:
@@ -29,16 +30,26 @@ components:
   x-amazon-apigateway-integrations:
     crawl-urls-sqs-send-message-integration:
       integrationSubtype: "SQS-SendMessage"
-      credentials: !GetAtt CrawlURLSQSAccessRole.Arn
+      credentials: 
+        Fn::GetAtt:
+        - "CrawlURLSQSAccessRole"
+        - "Arn"
       requestParameters:
         MessageBody: "$request.body.MessageBody"
-        QueueUrl: !Ref CrawlURLsSQSQueue
+        QueueUrl: 
+          Ref: "CrawlURLsSQSQueue"
       payloadFormatVersion: "1.0"
       type: "aws_proxy"
       connectionType: "INTERNET"
     urls-crud-read-integration:
       type: "aws_proxy"
       httpMethod: "POST"
-      uri: !GetAtt URLsCRUDFunction.Arn
-      credentials: !GetAtt URLsCRUDAccessRole.Arn
+      uri: 
+        Fn::GetAtt:
+        - "URLsCRUDFunction"
+        - "Arn"
+      credentials:
+        Fn::GetAtt:
+        - "URLsCRUDAccessRole"
+        - "Arn"
       payloadFormatVersion: "1.0"

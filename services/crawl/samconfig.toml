@@ -1,0 +1,18 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "buzzword-crawl-service-dev"
+s3_bucket = "buzzword-bucket"
+s3_prefix = "buzzword-crawl-service-dev"
+region = "eu-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "EnvironmentNameSuffix=dev"
+
+[production.deploy.parameters]
+stack_name = "buzzword-crawl-service-prod"
+s3_bucket = "buzzword-bucket"
+s3_prefix = "buzzword-crawl-service-prod"
+region = "eu-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "EnvironmentNameSuffix=prod"
