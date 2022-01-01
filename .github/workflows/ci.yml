@@ -11,7 +11,7 @@ jobs:
           node-version: '14'
       - name: Compile Project
         run: |
-          npm run compile
+          npm run compile:clean
   test:
     runs-on: ubuntu-latest
     steps:
