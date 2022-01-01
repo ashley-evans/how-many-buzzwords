@@ -19,8 +19,6 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ../dist/crawl/crawl-template.yml
-      Parameters:
-        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordsApplication:
     Type: AWS::Serverless::Application
     Properties:
