@@ -34,6 +34,19 @@ if [ -z $environment ]; then
     environment="default"
 fi
 
+read -p "Are you sure you want to teardown this environment? [y/N] " choice
+choice=$( echo $choice | awk '{ print tolower($1) }' )
+case $choice in
+    y|yes)
+        ;;
+    n|no)
+        exit 1
+        ;;
+    *)
+        exit 1
+        ;;
+esac
+
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
