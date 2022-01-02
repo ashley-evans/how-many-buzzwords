@@ -28,8 +28,9 @@ if [ -z $template ]; then
     usage 
 fi
 
+optional_params=()
 if [ $cache ]; then
-    sam build --parallel --cached --template-file $template
-else
-    sam build --parallel --template-file $template
+    optional_params+=(--cached)
 fi
+
+sam build --parallel --template-file $template "${optional_params[@]}"

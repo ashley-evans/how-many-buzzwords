@@ -36,16 +36,13 @@ if [ -z $config ]; then
     usage 
 fi
 
+optional_params=()
 if [ $force ]; then
-    if [[ -z $overrides ]]; then
-        sam deploy --config-file $config --no-confirm-changeset --config-env $environment
-    else
-        sam deploy --config-file $config --no-confirm-changeset --config-env $environment --parameter-overrides $overrides
-    fi
-else
-    if [[ -z $overrides ]]; then
-        sam deploy --config-file $config --config-env $environment
-    else
-        sam deploy --config-file $config --config-env $environment --parameter-overrides $overrides
-    fi
+    optional_params+=(--no-confirm-changeset)
 fi
+
+if [ -n "${overrides-}" ]; then
+    optional_params+=(--parameter-overrides $overrides)
+fi
+
+sam deploy --config-file $config --config-env $environment "${optional_params[@]}"
