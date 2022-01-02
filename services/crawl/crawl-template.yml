@@ -12,8 +12,8 @@ Resources:
       Description: Common crawl service node module layer
       CompatibleRuntimes:
         - nodejs14.x
-      ContentUri: ./functions/
-    Metadat:
+      ContentUri: ./functions
+    Metadata:
       BuildMethod: makefile
   CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
