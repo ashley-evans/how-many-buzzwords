@@ -29,10 +29,22 @@ if ! aws cloudformation describe-stacks --stack-name $stack &>/dev/null ; then
     exit 1
 fi
 
-echo "Deleting stack \"$stack\""
+stack_lambda_layers=$(aws cloudformation list-stack-resources --stack-name $stack \
+    | jq -r '.StackResourceSummaries[] | select( .ResourceType == "AWS::Lambda::LayerVersion") | .PhysicalResourceId')
+
+echo "Deleting stack: \"$stack\""
 
 aws cloudformation delete-stack --stack-name $stack
 aws cloudformation wait stack-delete-complete --stack-name $stack
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+echo "Deleting layers associated with stack: \"$stack\""
+
+for layer_arn in $stack_lambda_layers; do
+    layer_name=$( echo $layer_arn | awk -F: '{print $(--NF)}')
+    $script_dir/delete-all-lambda-layer-versions.sh -l $layer_name
+done
 
 echo "Emptying dependency bucket of templates related to stack: \"$stack\""
 
