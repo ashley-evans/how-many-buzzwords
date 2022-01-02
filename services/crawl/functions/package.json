@@ -5,7 +5,7 @@
         "buzzword-aws-crawl-common": "^1.0.0"
     },
     "dependencies": {
-        "@aws-sdk/client-dynamodb": "3.45.0",
+        "@aws-sdk/client-dynamodb": "3.34.0",
         "@middy/core": "2.5.4",
         "@middy/validator": "2.5.4"
     }
