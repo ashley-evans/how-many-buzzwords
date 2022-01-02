@@ -12,6 +12,7 @@ Resources:
   NodeModuleDependencyLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub NodeModuleDependencyLayer-${EnvironmentNameSuffix}
       CompatibleRuntimes: 
         - nodejs14.x
       ContentUri: ../
