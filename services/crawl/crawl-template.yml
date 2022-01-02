@@ -234,7 +234,7 @@ Resources:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: ./crawl-openapi-template.yml
+            Location: ./crawl-openapi.yml
 Outputs:
   TopicARN:
     Description: The ARN for the Publish URLS SNS Topic
