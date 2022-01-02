@@ -1,0 +1,75 @@
+#!/bin/bash
+
+usage() {
+    echo "Usage:
+    -e [Environment to deploy]" 1>&2;
+    exit 1;
+}
+
+while getopts "e:h" opt; do
+    case $opt in
+        e)
+            environment=$OPTARG
+            ;;
+        h)
+            usage
+            ;;
+        ?)
+            usage
+            ;;
+    esac
+done
+
+if [ -z $environment ]; then
+    environment="default"
+fi
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+root_dir="$( dirname "$script_dir")"
+
+template_path="$root_dir/templates/buzzword-template.yml"
+if [ ! -f $template_path ]; then
+    echo "Error: Cannot find buzzword stack template."
+    exit 1
+fi
+
+config_path="$root_dir/templates/samconfig.toml"
+if [ ! -f $config_path ]; then
+    echo "Error: Cannot find buzzword stack config file."
+    exit 1
+fi
+
+crawl_config_path="$root_dir/services/crawl/samconfig.toml"
+if [ ! -f $crawl_config_path ]; then
+    echo "Error: Cannot find crawl config file."
+    exit 1
+fi
+
+crawl_stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $crawl_config_path -e $environment -v stack_name)
+
+if [ $? -ne 0 ]; then
+    echo "Error: An error occured while obtaining the crawl stack name."
+    exit 1
+fi
+
+crawl_topic_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r .OutputValue)
+
+if [ -z $crawl_topic_arn ]; then
+    echo "Error: No Crawl SNS Topic found."
+    exit 1
+fi
+
+config_parameters=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v parameter_overrides)
+
+if [ $? -ne 0 ]; then
+    echo "Error: An error occured while obtaining the buzzword stack config parameter overrides."
+    exit 1
+fi
+
+$script_dir/helpers/deploy-service.sh \
+    -t $template_path \
+    -c $config_path \
+    -e $environment \
+    -f \
+    -o "CrawlTopicARN=$crawl_topic_arn $config_parameters" \
+    --cache

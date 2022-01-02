@@ -65,7 +65,7 @@ if [ $force ]; then
 fi
 
 if [ -n "${overrides-}" ]; then
-    deploy_optional_params+=(-o $overrides)
+    deploy_optional_params+=(-o "$overrides")
 fi
 
 $script_dir/deploy-stack.sh -c $config -e $environment "${deploy_optional_params[@]}"
