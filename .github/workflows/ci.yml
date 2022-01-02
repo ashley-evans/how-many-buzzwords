@@ -120,7 +120,7 @@ jobs:
           path: |
             .aws-sam/cache/**
             .aws-sam/build.toml
-          key: ${{ runner.os }}-deploy-buzzword-stack-v1-${{ env.cache-name }}-${{ hashFiles('./services/crawl/**/package-lock.json') }}
+          key: ${{ runner.os }}-deploy-buzzword-stack-v1-${{ env.cache-name }}-${{ hashFiles('./applications/**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-deploy-buzzword-stack-v1-${{ env.cache-name }}-
       - name: Deploy stack
