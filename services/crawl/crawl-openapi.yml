@@ -1,0 +1,55 @@
+openapi: "3.0.1"
+info:
+  title: 
+    Fn::Sub: "buzzword-crawl-service-${EnvironmentNameSuffix}"
+  description: "Crawl Service API Gateway"
+  version: "1.0"
+paths:
+  /crawl:
+    post:
+      responses:
+        default:
+          description: "Default response for ANY /crawl request"
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
+  /urls/{baseUrl}:
+    get:
+      parameters: [
+        {
+          name: "baseUrl",
+          in: "path",
+          required: true,
+          schema: {
+            type: "string"
+          }
+        }
+      ]
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
+components:
+  x-amazon-apigateway-integrations:
+    crawl-urls-sqs-send-message-integration:
+      integrationSubtype: "SQS-SendMessage"
+      credentials: 
+        Fn::GetAtt:
+        - "CrawlURLSQSAccessRole"
+        - "Arn"
+      requestParameters:
+        MessageBody: "$request.body.MessageBody"
+        QueueUrl: 
+          Ref: "CrawlURLsSQSQueue"
+      payloadFormatVersion: "1.0"
+      type: "aws_proxy"
+      connectionType: "INTERNET"
+    urls-crud-read-integration:
+      type: "aws_proxy"
+      httpMethod: "POST"
+      uri: 
+        Fn::GetAtt:
+        - "URLsCRUDFunction"
+        - "Arn"
+      credentials:
+        Fn::GetAtt:
+        - "URLsCRUDAccessRole"
+        - "Arn"
+      payloadFormatVersion: "1.0"

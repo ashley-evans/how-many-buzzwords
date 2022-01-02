@@ -2,14 +2,24 @@
 
 usage() {
     echo "Usage:
-    -s [Name of Buzzword Stack to be deleted]" 1>&2;
+    -e [The environment to be deleted]" 1>&2;
     exit 1; 
 }
 
-while getopts "s:h" opt; do
+deletestack() {
+    local stack_name=$( node $script_dir/helpers/get-sam-config-value.js -c $1 -e $environment -v stack_name)
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    $script_dir/helpers/teardown-stack.sh -s $stack_name
+}
+
+while getopts "e:h" opt; do
     case $opt in
-        s)
-            stack=$OPTARG
+        e)
+            environment=$OPTARG
             ;;
         h)
             usage
@@ -20,27 +30,38 @@ while getopts "s:h" opt; do
     esac
 done
 
-if [ -z $stack ]; then
-    stack="buzzword-stack-dev"
+if [ -z $environment ]; then
+    environment="default"
 fi
 
-if ! aws cloudformation describe-stacks --stack-name $stack &>/dev/null ; then
-    echo "Stack: \"$stack\" does not exist" >&2
+read -p "Are you sure you want to teardown this environment? [y/N] " choice
+choice=$( echo $choice | awk '{ print tolower($1) }' )
+case $choice in
+    y|yes)
+        ;;
+    n|no)
+        exit 1
+        ;;
+    *)
+        exit 1
+        ;;
+esac
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+root_dir="$( dirname "$script_dir")"
+
+buzzword_config_path="$root_dir/templates/samconfig.toml"
+if [ ! -f $config_path ]; then
+    echo "Error: Cannot find buzzword stack config file."
     exit 1
 fi
 
-echo "Deleting stack ($stack)"
+crawl_config_path="$root_dir/services/crawl/samconfig.toml"
+if [ ! -f $crawl_config_path ]; then
+    echo "Error: Cannot find crawl config file."
+    exit 1
+fi
 
-aws cloudformation delete-stack --stack-name $stack
-aws cloudformation wait stack-delete-complete --stack-name $stack
+deletestack $buzzword_config_path
 
-echo "Emptying Buzzword Bucket of templates related to stack ($stack)"
-
-aws s3 rm "s3://buzzword-bucket/$stack" --recursive
-
-echo "Deleting existing logs related to stack ($stack)"
-
-aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/$stack-WibbleLambda" | jq -r ".logGroups[].logGroupName" | while read logGroupName; do
-    echo "Deleting log group: ${logGroupName}"
-    aws logs delete-log-group --log-group-name $logGroupName
-done
+deletestack $crawl_config_path

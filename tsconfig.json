@@ -9,6 +9,10 @@
         ]
     },
     "include": [
-        "applications"
+        "applications",
+        "services"
+    ],
+    "exclude": [
+        "scripts"
     ]
 }

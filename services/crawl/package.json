@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-crawl-node-common",
+    "name": "buzzword-aws-crawl",
     "version": "1.0.0",
     "devDependencies": {
         "buzzword-aws-crawl-common": "^1.0.0"

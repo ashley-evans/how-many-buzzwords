@@ -35,8 +35,8 @@ if [[ ! $url =~ $regex ]]; then
 fi
 
 physical_id=$(aws cloudformation describe-stack-resource \
-    --stack-name "buzzword-stack-$suffix" \
-    --logical-resource-id BuzzwordHTTPGateway \
+    --stack-name "buzzword-crawl-service-$suffix" \
+    --logical-resource-id CrawlHTTPGateway \
     | jq -r .StackResourceDetail.PhysicalResourceId)
 
 body="{\"MessageBody\":{\"url\":\"$url\"}}"
@@ -45,4 +45,4 @@ curl \
     -d $body \
     -H "Content-Type: application/json" \
     -X POST \
-    "https://$physical_id.execute-api.eu-west-2.amazonaws.com/prod/crawl"
+    "https://$physical_id.execute-api.eu-west-2.amazonaws.com/crawl"

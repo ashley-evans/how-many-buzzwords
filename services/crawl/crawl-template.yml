@@ -1,16 +1,30 @@
 Transform: AWS::Serverless-2016-10-31
-Description: Template for Crawl application's resources
+Description: Crawl Service
 Parameters:
-  NodeDependencyLayerLogicalID:
+  EnvironmentNameSuffix:
     Type: String
-    Description: Logical ID of the layer containing common Node Dependencies
+    Description: Environment name suffixed to service resources
+    Default: dev
 Resources:
+  CrawlNodeDependencyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub CrawlNodeDependencyLayer-${EnvironmentNameSuffix}
+      Description: Common crawl service node module layer
+      CompatibleRuntimes:
+        - nodejs14.x
+      ContentUri: ./functions
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
   CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub CrawlCommonLayer-${EnvironmentNameSuffix}
       ContentUri: ./common
       CompatibleRuntimes:
         - nodejs14.x
+      RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
   CrawlURLsSQSQueue:
@@ -32,7 +46,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: CrawlURLsSendMessagePolicy
+        - PolicyName: !Sub CrawlURLsSendMessagePolicy-${EnvironmentNameSuffix}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -70,7 +84,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: URLsTableWritePolicy
+        - PolicyName: !Sub URLsTableWritePolicy-${EnvironmentNameSuffix}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -78,7 +92,7 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
-        - PolicyName: CrawlURLsSQSAccessPolicy
+        - PolicyName: !Sub CrawlURLsSQSAccessPolicy-${EnvironmentNameSuffix}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -99,7 +113,7 @@ Resources:
       CodeUri: ./functions/crawl-urls
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
@@ -132,7 +146,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: URLsTableReadStreamPolicy
+        - PolicyName: !Sub URLsTableReadStreamPolicy-${EnvironmentNameSuffix}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -143,7 +157,7 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt URLsTable.StreamArn
                 Effect: Allow
-        - PolicyName: PublishURLsTopicPublishPolicy
+        - PolicyName: !Sub PublishURLsTopicPublishPolicy-${EnvironmentNameSuffix}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -162,7 +176,7 @@ Resources:
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Events:
         URLsTableStreamEvent:
@@ -181,7 +195,7 @@ Resources:
       CodeUri: ./functions/urls-crud
       Description: CRUD function for the URLs Table
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -217,19 +231,15 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt URLsCRUDFunction.Arn
                 Effect: Allow
+  CrawlHTTPGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./crawl-openapi.yml
 Outputs:
-  QueueURL:
-    Description: The URL of the Crawl URLs SQS Queue
-    Value: !Ref CrawlURLsSQSQueue
-  AccessRole:
-    Description: IAM Role required to access the Crawl URLs SQS Queue
-    Value: !GetAtt CrawlURLSQSAccessRole.Arn
   TopicARN:
     Description: The ARN for the Publish URLS SNS Topic
     Value: !Ref PublishURLsTopic
-  URLCRUDFunctionARN:
-    Description: The ARN for the CRUD function for the URLs Table
-    Value: !GetAtt URLsCRUDFunction.Arn
-  URLCRUDFunctionAccessRole:
-    Description: The ARN of the IAM role required to allow api gateway to access the URLs CRUD function
-    Value: !GetAtt URLsCRUDAccessRole.Arn

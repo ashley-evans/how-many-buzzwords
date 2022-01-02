@@ -1,6 +1,7 @@
 {
   "packages": [
-    "applications/**"
+    "applications/**",
+    "services/**"
   ],
   "nohoist": [
     "**/common/**"

@@ -27,24 +27,21 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
-$script_dir/deploy-dependency-bucket.sh
-
-if [ $? -ne 0 ]; then
+template_path="$root_dir/dist/services/crawl/crawl-template.yml"
+if [ ! -f $template_path ]; then
+    echo "Error: Cannot find template in built files."
     exit 1
 fi
 
-echo "Building source code"
-
-npm --prefix $root_dir run compile:clean
-
-echo "Deploying Crawl Service"
-
-$script_dir/deploy-crawl-service.sh -e $environment
-
-if [ $? -ne 0 ]; then
+config_path="$root_dir/services/crawl/samconfig.toml"
+if [ ! -f $config_path ]; then
+    echo "Error: Cannot find crawl config file."
     exit 1
 fi
 
-echo "Deploying Buzzword stack"
-
-$script_dir/deploy-buzzword-stack.sh -e $environment
+$script_dir/helpers/deploy-service.sh \
+    -t $template_path \
+    -c $config_path \
+    -e $environment \
+    -f \
+    --cache

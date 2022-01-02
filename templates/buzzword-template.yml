@@ -5,32 +5,29 @@ Parameters:
     Type: String
     Default: dev
     Description: Environment name to be suffixed to buzzword resources
+  CrawlTopicARN:
+    Type: String
+    Description: The ARN of the Crawl service's SNS Topic
 Resources:
   NodeModuleDependencyLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub NodeModuleDependencyLayer-${EnvironmentNameSuffix}
       CompatibleRuntimes: 
         - nodejs14.x
       ContentUri: ../
       Description: Production node module dependency layer
+      RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-  CrawlApplication:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: ../dist/crawl/crawl-template.yml
-      Parameters:
-        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordsApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../dist/keyphrase/keyphrase-template.yml
+      Location: ../dist/applications/keyphrase/keyphrase-template.yml
       Parameters:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
   KeywordPublishURLSQSPolicy:
     Type: AWS::SQS::QueuePolicy
-    DependsOn:
-      - CrawlApplication
     Properties:
       Queues:
         - !GetAtt KeywordsApplication.Outputs.QueueURL
@@ -49,7 +46,7 @@ Resources:
     DependsOn:
       - KeywordPublishURLSQSPolicy
     Properties:
-      TopicArn: !GetAtt CrawlApplication.Outputs.TopicARN
+      TopicArn: !Ref CrawlTopicARN
       Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
       Protocol: sqs
       RawMessageDelivery: true
@@ -67,7 +64,7 @@ Resources:
   KeywordsSocketApplication:
     Type: AWS::Serverless::Application
     Properties:
-      Location: ../dist/socket/socket-template.yml
+      Location: ../dist/applications/socket/socket-template.yml
       Parameters:
         ApiGatewayName: !Sub buzzword-keywords-socket-gateway-${EnvironmentNameSuffix}
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
