@@ -17,6 +17,7 @@ Resources:
         - nodejs14.x
       ContentUri: ../
       Description: Production node module dependency layer
+      RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
   KeywordsApplication:
