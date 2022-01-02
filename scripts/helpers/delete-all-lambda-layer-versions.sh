@@ -24,7 +24,7 @@ if [ -z $layer ]; then
     usage 
 fi
 
-versions=$(aws lambda list-layer-versions --layer-name $layer | jq -r '.LayerVersions[] | { Version} | join(" ")')
+versions=$(aws lambda list-layer-versions --layer-name $layer | jq -r '.LayerVersions[] | { Version } | join(" ")')
 
 for version in $versions; do
     echo "Deleting layer: $layer, Version: $version"
