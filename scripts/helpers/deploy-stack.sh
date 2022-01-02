@@ -45,4 +45,8 @@ if [ -n "${overrides-}" ]; then
     optional_params+=(--parameter-overrides $overrides)
 fi
 
-sam deploy --config-file $config --config-env $environment "${optional_params[@]}"
+sam deploy \
+    --config-file $config \
+    --config-env $environment \
+    --no-fail-on-empty-changeset \
+    "${optional_params[@]}"
