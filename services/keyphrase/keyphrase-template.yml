@@ -136,6 +136,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt KeyphrasesCRUDFunction.Arn
                 Effect: Allow
+  KeyphraseHTTPGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./keyphrase-openapi.yml
 Outputs:
   QueueARN:
     Description: The ARN of the Keyphrases URLs SQS Queue

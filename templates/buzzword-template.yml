@@ -50,17 +50,6 @@ Resources:
       Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
       Protocol: sqs
       RawMessageDelivery: true
-  BuzzwordHTTPGateway:
-    Type: AWS::Serverless::HttpApi
-    DependsOn:
-      - CrawledURLsSubscription
-    Properties:
-      StageName: prod
-      DefinitionBody:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./buzzword-rest-gateway-openapi-definition.yml
   KeywordsSocketApplication:
     Type: AWS::Serverless::Application
     Properties:
