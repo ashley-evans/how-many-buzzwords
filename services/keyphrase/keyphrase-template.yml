@@ -5,6 +5,9 @@ Parameters:
     Type: String
     Description: Environment name suffixed to service resources
     Default: dev
+  CrawlTopicARN:
+    Type: String
+    Description: The ARN of the Crawl service's SNS Topic
 Resources:
   KeyphraseNodeDependencyLayer:
     Type: AWS::Serverless::LayerVersion
@@ -22,6 +25,33 @@ Resources:
     Properties:
       VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
       ReceiveMessageWaitTimeSeconds: 20
+  CrawlTopicQueuePublishPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref KeyphrasesURLsSQSQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:sourceArn: !Ref CrawlTopicARN
+  CrawlTopicSubscription:
+    Type: AWS::SNS::Subscription
+    DependsOn:
+      - CrawlTopicQueuePublishPolicy
+    Properties:
+      TopicArn: !Ref CrawlTopicARN
+      Endpoint: !GetAtt KeyphrasesURLsSQSQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: true
   KeyphrasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
