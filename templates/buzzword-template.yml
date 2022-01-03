@@ -11,7 +11,7 @@ Parameters:
   SocketTableARN:
     Type: String
     Description: The ARN of the table for the web socket application to listen to
-  SocketTableSreamARN:
+  SocketTableStreamARN:
     Type: String
     Description: The Stream ARN of the table for the web socket application to listen to
 Resources:
@@ -37,4 +37,4 @@ Resources:
         SearchKeyPattern: '^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$'
         TableName: !Ref SocketTableName
         TableArn: !Ref SocketTableARN
-        TableStreamArn: !Ref SocketTableSreamARN
+        TableStreamArn: !Ref SocketTableStreamARN
