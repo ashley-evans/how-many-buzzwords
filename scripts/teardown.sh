@@ -51,17 +51,28 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
 buzzword_config_path="$root_dir/templates/samconfig.toml"
-if [ ! -f $config_path ]; then
-    echo "Error: Cannot find buzzword stack config file."
+if [ ! -f $buzzword_config_path ]; then
+    echo "Error: Cannot find buzzword stack config file." >&2
     exit 1
+else
+    echo "Deleting buzzword stack..."
+    deletestack $buzzword_config_path
+fi
+
+keyphrase_config_path="$root_dir/services/keyphrase/samconfig.toml"
+if [ ! -f $keyphrase_config_path ]; then
+    echo "Error: Cannot find keyphrase service config file." >&2
+    exit 1
+else
+    echo "Deleting keyphrase service..."
+    deletestack $keyphrase_config_path
 fi
 
 crawl_config_path="$root_dir/services/crawl/samconfig.toml"
 if [ ! -f $crawl_config_path ]; then
-    echo "Error: Cannot find crawl config file."
+    echo "Error: Cannot find crawl service config file." >&2
     exit 1
+else
+    echo "Deleting crawl service..."
+    deletestack $crawl_config_path
 fi
-
-deletestack $buzzword_config_path
-
-deletestack $crawl_config_path
