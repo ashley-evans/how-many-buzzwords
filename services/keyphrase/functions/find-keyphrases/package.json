@@ -2,7 +2,6 @@
     "name": "buzzword-aws-find-keyphrases-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@aws-sdk/util-dynamodb": "3.37.0",
         "ajv": "8.8.2",
         "got-scraping": "3.2.6",
         "htmlparser2": "7.1.2",
