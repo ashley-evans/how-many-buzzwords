@@ -46,7 +46,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub CrawlURLsSendMessagePolicy
+        - PolicyName: CrawlURLsSendMessagePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -84,7 +84,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub URLsTableWritePolicy
+        - PolicyName: URLsTableWritePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -92,7 +92,7 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
-        - PolicyName: !Sub CrawlURLsSQSAccessPolicy
+        - PolicyName: CrawlURLsSQSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -146,7 +146,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub URLsTableReadStreamPolicy
+        - PolicyName: URLsTableReadStreamPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -157,7 +157,7 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt URLsTable.StreamArn
                 Effect: Allow
-        - PolicyName: !Sub PublishURLsTopicPublishPolicy
+        - PolicyName: PublishURLsTopicPublishPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:

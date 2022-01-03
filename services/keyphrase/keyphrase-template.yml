@@ -92,7 +92,7 @@ Resources:
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
                 Effect: Allow
-        - PolicyName: !Sub KeyphrasesTableWritePolicy
+        - PolicyName: KeyphrasesTableWritePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -158,7 +158,7 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub InvokeKeyphrasesCRUDFunctionPolicy
+        - PolicyName: InvokeKeyphrasesCRUDFunctionPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
