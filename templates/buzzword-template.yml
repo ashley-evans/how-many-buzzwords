@@ -5,9 +5,15 @@ Parameters:
     Type: String
     Default: dev
     Description: Environment name to be suffixed to buzzword resources
-  CrawlTopicARN:
+  SocketTableName:
     Type: String
-    Description: The ARN of the Crawl service's SNS Topic
+    Description: The name of the table for the web socket application to listen to
+  SocketTableARN:
+    Type: String
+    Description: The ARN of the table for the web socket application to listen to
+  SocketTableStreamARN:
+    Type: String
+    Description: The Stream ARN of the table for the web socket application to listen to
 Resources:
   NodeModuleDependencyLayer:
     Type: AWS::Serverless::LayerVersion
@@ -20,47 +26,6 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-  KeywordsApplication:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: ../dist/applications/keyphrase/keyphrase-template.yml
-      Parameters:
-        NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
-  KeywordPublishURLSQSPolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !GetAtt KeywordsApplication.Outputs.QueueURL
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - sns.amazonaws.com
-            Action:
-              - sqs:SendMessage
-            Resource: !GetAtt KeywordsApplication.Outputs.QueueARN
-  CrawledURLsSubscription:
-    Type: AWS::SNS::Subscription
-    DependsOn:
-      - KeywordPublishURLSQSPolicy
-    Properties:
-      TopicArn: !Ref CrawlTopicARN
-      Endpoint: !GetAtt KeywordsApplication.Outputs.QueueARN
-      Protocol: sqs
-      RawMessageDelivery: true
-  BuzzwordHTTPGateway:
-    Type: AWS::Serverless::HttpApi
-    DependsOn:
-      - CrawledURLsSubscription
-    Properties:
-      StageName: prod
-      DefinitionBody:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./buzzword-rest-gateway-openapi-definition.yml
   KeywordsSocketApplication:
     Type: AWS::Serverless::Application
     Properties:
@@ -70,6 +35,6 @@ Resources:
         NodeDependencyLayerLogicalID: !Ref NodeModuleDependencyLayer
         SearchKey: BaseUrl
         SearchKeyPattern: '^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$'
-        TableName: !GetAtt KeywordsApplication.Outputs.TableName
-        TableArn: !GetAtt KeywordsApplication.Outputs.TableArn
-        TableStreamArn: !GetAtt KeywordsApplication.Outputs.TableStreamArn
+        TableName: !Ref SocketTableName
+        TableArn: !Ref SocketTableARN
+        TableStreamArn: !Ref SocketTableStreamARN

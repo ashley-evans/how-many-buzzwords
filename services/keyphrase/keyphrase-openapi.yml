@@ -1,8 +1,8 @@
 openapi: "3.0.1"
 info:
   title: 
-    Fn::Sub: "buzzword-http-gateway-${EnvironmentNameSuffix}"
-  description: "Gateway to Buzzword Stack Resources"
+    Fn::Sub: "buzzword-keyphrase-service-${EnvironmentNameSuffix}"
+  description: "Keyphrase Service API Gateway"
   version: "1.0"
 paths:
   /keyphrases/{baseUrl}:
@@ -26,11 +26,10 @@ components:
       httpMethod: "POST"
       uri:
         Fn::GetAtt:
-        - "KeywordsApplication"
-        - "Outputs.KeyphrasesCRUDFunctionARN"
+        - "KeyphrasesCRUDFunction"
+        - "Arn"
       credentials:
         Fn::GetAtt:
-        - "KeywordsApplication"
-        - "Outputs.KeyphrasesCRUDFunctionAccessRole"
+        - "KeyphrasesCRUDAccessRole"
+        - "Arn"
       payloadFormatVersion: "1.0"
-x-amazon-apigateway-importexport-version: "1.0"

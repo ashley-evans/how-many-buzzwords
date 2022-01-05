@@ -1,15 +1,57 @@
 Transform: AWS::Serverless-2016-10-31
-Description: Template for Keyphrases application's resources
+Description: Keyphrase Service
 Parameters:
-  NodeDependencyLayerLogicalID:
+  EnvironmentNameSuffix:
     Type: String
-    Description: 'Logical ID of the layer containing common Node Dependencies'
+    Description: Environment name suffixed to service resources
+    Default: dev
+  CrawlTopicARN:
+    Type: String
+    Description: The ARN of the Crawl service's SNS Topic
 Resources:
+  KeyphraseNodeDependencyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub KeyphraseNodeDependencyLayer-${EnvironmentNameSuffix}
+      Description: Common keyphrase service node module layer
+      CompatibleRuntimes:
+        - nodejs14.x
+      ContentUri: ./functions
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
   KeyphrasesURLsSQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
       ReceiveMessageWaitTimeSeconds: 20
+  CrawlTopicQueuePublishPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref KeyphrasesURLsSQSQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:sourceArn: !Ref CrawlTopicARN
+  CrawlTopicSubscription:
+    Type: AWS::SNS::Subscription
+    DependsOn:
+      - CrawlTopicQueuePublishPolicy
+    Properties:
+      TopicArn: !Ref CrawlTopicARN
+      Endpoint: !GetAtt KeyphrasesURLsSQSQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: true
   KeyphrasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -40,7 +82,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: KeyphraseURLsSQSAccessPolicy
+        - PolicyName: !Sub KeyphraseURLsSQSAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -70,7 +112,7 @@ Resources:
       CodeUri: ./functions/find-keyphrases
       Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: KeyphraseNodeDependencyLayer
       Timeout: 30
       MemorySize: 256
       Events:
@@ -89,7 +131,7 @@ Resources:
       CodeUri: ./functions/keyphrases-crud
       Description: CRUD function for the Keyphrases Table
       Layers:
-        - Ref: NodeDependencyLayerLogicalID
+        - Ref: KeyphraseNodeDependencyLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
@@ -124,13 +166,15 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt KeyphrasesCRUDFunction.Arn
                 Effect: Allow
+  KeyphraseHTTPGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./keyphrase-openapi.yml
 Outputs:
-  QueueARN:
-    Description: The ARN of the Keyphrases URLs SQS Queue
-    Value: !GetAtt KeyphrasesURLsSQSQueue.Arn
-  QueueURL:
-    Description: The URL of the Keyphrases URLs SQS Queue
-    Value: !Ref KeyphrasesURLsSQSQueue
   TableName:
     Description: The name of the Keyphrases Table
     Value: !Ref KeyphrasesTable
@@ -140,9 +184,3 @@ Outputs:
   TableStreamArn:
     Description: The ARN of the Keyphrases Table's Stream
     Value: !GetAtt KeyphrasesTable.StreamArn
-  KeyphrasesCRUDFunctionARN:
-    Description: The ARN for the CRUD function for the Keyphrases Table
-    Value: !GetAtt KeyphrasesCRUDFunction.Arn
-  KeyphrasesCRUDFunctionAccessRole:
-    Description: The ARN of the IAM role required to allow api gateway to access the Keyphrases CRUD function
-    Value: !GetAtt KeyphrasesCRUDAccessRole.Arn
