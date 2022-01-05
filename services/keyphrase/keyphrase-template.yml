@@ -175,12 +175,6 @@ Resources:
           Parameters:
             Location: ./keyphrase-openapi.yml
 Outputs:
-  QueueARN:
-    Description: The ARN of the Keyphrases URLs SQS Queue
-    Value: !GetAtt KeyphrasesURLsSQSQueue.Arn
-  QueueURL:
-    Description: The URL of the Keyphrases URLs SQS Queue
-    Value: !Ref KeyphrasesURLsSQSQueue
   TableName:
     Description: The name of the Keyphrases Table
     Value: !Ref KeyphrasesTable
@@ -190,9 +184,3 @@ Outputs:
   TableStreamArn:
     Description: The ARN of the Keyphrases Table's Stream
     Value: !GetAtt KeyphrasesTable.StreamArn
-  KeyphrasesCRUDFunctionARN:
-    Description: The ARN for the CRUD function for the Keyphrases Table
-    Value: !GetAtt KeyphrasesCRUDFunction.Arn
-  KeyphrasesCRUDFunctionAccessRole:
-    Description: The ARN of the IAM role required to allow api gateway to access the Keyphrases CRUD function
-    Value: !GetAtt KeyphrasesCRUDAccessRole.Arn
