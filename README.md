@@ -8,6 +8,11 @@ Some buzzwords are incredibly overused, a simple tool tool to find the biggest c
 
 Each of the scripts used within this project have usage instructions, these can be found by providing the `-h` flag to each script.
 
+You may need to give the scripts permissions to run on your system, this can be done by running the following command:
+```shell
+chmod u+x $(find ./scripts/ -type f)
+```
+
 ## Requirements
 
 The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
@@ -33,19 +38,17 @@ Run the following command to validate the stack template definition:
 xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
-## Setup
+## Deploy
 
-Run the following commands to deploy a development buzzword stack:
+Run the following commands to deploy all buzzword services:
 ```shell
-chmod u+x ./scripts/deploy.sh
 ./scripts/deploy.sh
 ```
 
 ## Teardown
 
-Run the following commands to delete the created stacks, along with their related resources:
+Run the following commands to delete the created services, along with their related resources:
 ```shell
-chmod u+x ./scripts/teardown.sh
 ./scripts/teardown.sh
 ```
 
@@ -57,7 +60,6 @@ To trigger a crawl of a particular URL to get it's buzzwords use the `test-crawl
 
 Example usage:
 ```shell
-chmod u+x ./scripts/testing/test-crawl.sh
 ./scripts/testing/test-crawl.sh -s dev -u https://www.example.com
 ```
 
@@ -67,7 +69,6 @@ To listen to the results of a crawl in real time use the `test-connect.sh` scrip
 
 Example usage:
 ```shell
-chmod u+x ./scripts/testing/test-connect.sh
 ./scripts/testing/test-connect.sh -s dev -u www.example.com
 ```
 > Note: The URL cannot contain a protocol.
@@ -100,7 +101,6 @@ aws cloudformation deploy \
 
 Once the above command has executed, run the following commands to get the role ARNs:
 ```shell
-chmod u+x ./scripts/fetch-stack-outputs.sh
 ./scripts/fetch-stack-outputs.sh -s buzzword-ci-users
 ```
 

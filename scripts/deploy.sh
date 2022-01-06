@@ -48,11 +48,3 @@ fi
 echo "Deploying Keyphrase Service"
 
 $script_dir/deploy-keyphrase-service.sh -e $environment
-
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
-echo "Deploying Buzzword stack"
-
-$script_dir/deploy-buzzword-stack.sh -e $environment
