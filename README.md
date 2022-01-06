@@ -38,16 +38,16 @@ Run the following command to validate the stack template definition:
 xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
-## Deploy local stack
+## Deploy
 
-Run the following commands to deploy a development buzzword stack:
+Run the following commands to deploy all buzzword services:
 ```shell
 ./scripts/deploy.sh
 ```
 
 ## Teardown
 
-Run the following commands to delete the created stacks, along with their related resources:
+Run the following commands to delete the created services, along with their related resources:
 ```shell
 ./scripts/teardown.sh
 ```
