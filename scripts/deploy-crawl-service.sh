@@ -27,7 +27,7 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
-template_path="$root_dir/dist/services/crawl/crawl-template.yml"
+template_path="$root_dir/dist/crawl/crawl-template.yml"
 if [ ! -f $template_path ]; then
     echo "Error: Cannot find template in built files."
     exit 1
