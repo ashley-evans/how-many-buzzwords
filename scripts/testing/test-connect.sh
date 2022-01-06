@@ -34,18 +34,12 @@ if [[ ! $url =~ $regex ]]; then
     exit 1;
 fi
 
-stack_physical_id=$(aws cloudformation describe-stack-resource \
-    --stack-name "buzzword-stack-$suffix" \
-    --logical-resource-id KeywordsSocketApplication \
-    | jq -r .StackResourceDetail.PhysicalResourceId)
-readarray -d / -t stack_id_array <<< $stack_physical_id
-
 gateway_physical_id=$(aws cloudformation describe-stack-resource \
-    --stack-name ${stack_id_array[1]} \
-    --logical-resource-id SocketGateway \
+    --stack-name buzzword-keyphrase-service-$suffix \
+    --logical-resource-id KeyphraseWebSocketGateway \
     | jq -r .StackResourceDetail.PhysicalResourceId)
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$(dirname "$script_dir")")"
 
-"$root_dir"/node_modules/.bin/wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/prod?BaseUrl=$url"
+"$root_dir"/node_modules/.bin/wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/\$default?BaseUrl=$url"
