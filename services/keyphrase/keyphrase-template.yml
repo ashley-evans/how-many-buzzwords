@@ -68,7 +68,7 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
-  FindKeyphrasesFunctionRole:
+  FindKeyphrasesRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -103,11 +103,11 @@ Resources:
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  FindPhrasesLambda:
+  FindKeyphrases:
     Type: AWS::Serverless::Function
     Properties:
       Handler: find-keyphrases.handler
-      Role: !GetAtt FindKeyphrasesFunctionRole.Arn
+      Role: !GetAtt FindKeyphrasesRole.Arn
       Runtime: nodejs14.x
       CodeUri: ./functions/find-keyphrases
       Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
@@ -123,7 +123,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref KeyphrasesTable
-  KeyphrasesCRUDFunction:
+  KeyphrasesCRUD:
     Type: AWS::Serverless::Function
     Properties:
       Handler: keyphrases-crud.handler
@@ -158,13 +158,13 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: InvokeKeyphrasesCRUDFunctionPolicy
+        - PolicyName: InvokeKeyphrasesCRUD
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
                   - lambda:InvokeFunction
-                Resource: !GetAtt KeyphrasesCRUDFunction.Arn
+                Resource: !GetAtt KeyphrasesCRUD.Arn
                 Effect: Allow
   KeyphraseHTTPGateway:
     Type: AWS::Serverless::HttpApi
