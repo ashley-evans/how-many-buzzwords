@@ -290,13 +290,13 @@ Resources:
       - DisconnectRoute
     Properties:
       ApiId: !Ref KeyphraseWebSocketGateway
-  SocketStage:
+  KeyphraseWebSocketStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
       StageName: $default
       DeploymentId: !Ref ConnectionDeployment
       ApiId: !Ref KeyphraseWebSocketGateway
-  WebSocketWritePolicy:
+  KeyphraseWebSocketWritePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Description: Provides ability to manage web socket api connections
@@ -342,7 +342,7 @@ Resources:
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
-        - !Ref WebSocketWritePolicy
+        - !Ref KeyphraseWebSocketWritePolicy
   NewConnection:
     Type: AWS::Serverless::Function
     Properties:
@@ -403,7 +403,7 @@ Resources:
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole   
-        - !Ref WebSocketWritePolicy
+        - !Ref KeyphraseWebSocketWritePolicy
   UpdateConnections:
     Type: AWS::Serverless::Function
     Properties:
