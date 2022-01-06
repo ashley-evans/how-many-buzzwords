@@ -34,7 +34,7 @@ echo "Running TSC..."
 $root_dir/node_modules/.bin/tsc --project $root_dir/tsconfig.build.json
 
 echo "Copying required deployment files to built directory..."
-$root_dir/node_modules/.bin/copyfiles -E \
+$root_dir/node_modules/.bin/copyfiles -E -u 1 \
     -e "**/node_modules/**" \
     "applications/**/*-template.yml" \
     "applications/**/*-openapi.yml" \
