@@ -27,7 +27,6 @@ components:
   x-amazon-apigateway-integrations:
     invoke-crawl-state-machine:
       type: "aws_proxy"
-      httpMethod: "POST"
       integrationSubtype: "StepFunctions-StartExecution"
       credentials:
         Fn::GetAtt:
@@ -35,7 +34,7 @@ components:
         - "Arn"
       requestParameters:
         StateMachineArn:
-          Ref: CrawlStateMachine
+          Ref: "CrawlStateMachine"
         Input: "$request.body.MessageBody"
       payloadFormatVersion: "1.0"
     urls-crud-read-integration:
