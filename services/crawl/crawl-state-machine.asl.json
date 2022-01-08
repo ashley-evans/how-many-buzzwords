@@ -1,0 +1,10 @@
+{
+    "StartAt": "Crawl",
+    "States": {
+        "Crawl": {
+            "Type": "Task",
+            "Resource": "${CrawlURLsARN}",
+            "End": true
+        }
+    }
+}

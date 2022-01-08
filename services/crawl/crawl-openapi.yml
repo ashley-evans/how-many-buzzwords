@@ -7,11 +7,8 @@ info:
 paths:
   /crawl:
     post:
-      responses:
-        default:
-          description: "Default response for ANY /crawl request"
       x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/crawl-urls-sqs-send-message-integration"
+        $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
   /urls/{baseUrl}:
     get:
       parameters: [
@@ -28,19 +25,19 @@ paths:
         $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
 components:
   x-amazon-apigateway-integrations:
-    crawl-urls-sqs-send-message-integration:
-      integrationSubtype: "SQS-SendMessage"
-      credentials: 
+    invoke-crawl-state-machine:
+      type: "aws_proxy"
+      httpMethod: "POST"
+      integrationSubtype: "StepFunctions-StartExecution"
+      credentials:
         Fn::GetAtt:
-        - "CrawlURLSQSAccessRole"
+        - "InvokeCrawlStateMachineRole"
         - "Arn"
       requestParameters:
-        MessageBody: "$request.body.MessageBody"
-        QueueUrl: 
-          Ref: "CrawlURLsSQSQueue"
+        StateMachineArn:
+          Ref: CrawlStateMachine
+        Input: "$request.body.MessageBody"
       payloadFormatVersion: "1.0"
-      type: "aws_proxy"
-      connectionType: "INTERNET"
     urls-crud-read-integration:
       type: "aws_proxy"
       httpMethod: "POST"

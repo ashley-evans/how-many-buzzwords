@@ -43,7 +43,7 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
-  CrawlURLsFunctionRole:
+  CrawlURLsRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -67,11 +67,11 @@ Resources:
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  CrawlURLsLambda:
+  CrawlURLs:
     Type: AWS::Serverless::Function
     Properties:
       Handler: crawl-urls.handler
-      Role: !GetAtt CrawlURLsFunctionRole.Arn
+      Role: !GetAtt CrawlURLsRole.Arn
       Runtime: nodejs14.x
       CodeUri: ./functions/crawl-urls
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
@@ -187,6 +187,58 @@ Resources:
               - Action:
                   - lambda:InvokeFunction
                 Resource: !GetAtt URLsCRUDFunction.Arn
+                Effect: Allow
+  CrawlStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - states.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeCrawlURLs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt CrawlURLs.Arn
+                Effect: Allow
+  CrawlStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: STANDARD
+      Tracing:
+        Enabled: true
+      DefinitionUri: ./crawl-state-machine.asl.json
+      DefinitionSubstitutions:
+        CrawlURLsARN: !GetAtt CrawlURLs.Arn
+      Role: !GetAtt CrawlStateMachineRole.Arn
+  InvokeCrawlStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeCrawlStateMachine
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - states:StartExecution
+                Resource: !GetAtt CrawlStateMachine.Arn
                 Effect: Allow
   CrawlHTTPGateway:
     Type: AWS::Serverless::HttpApi
