@@ -40,4 +40,5 @@ $root_dir/node_modules/.bin/copyfiles -E -u 1 \
     "services/**/*-openapi.yml" \
     "services/**/package*.json" \
     "services/**/Makefile" \
+    "services/**/*.asl.json" \
     dist
