@@ -27,33 +27,6 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-  CrawlURLsSQSQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 720 # Six times Lambda Function Timeout as per AWS recommendations
-      ReceiveMessageWaitTimeSeconds: 20
-  CrawlURLSQSAccessRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: CrawlURLsSendMessagePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:SendMessage
-                Resource: !GetAtt CrawlURLsSQSQueue.Arn
-                Effect: Allow
   URLsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -92,16 +65,6 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
-        - PolicyName: CrawlURLsSQSAccessPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource: !GetAtt CrawlURLsSQSQueue.Arn
-                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   CrawlURLsLambda:
@@ -117,12 +80,6 @@ Resources:
         - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
-      Events:
-        CrawlURLsQueueEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt CrawlURLsSQSQueue.Arn
-            BatchSize: 2
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
