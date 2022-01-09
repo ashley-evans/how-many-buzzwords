@@ -42,7 +42,12 @@
             "Parameters": {
                 "TopicArn": "${CrawlServiceTopicARN}",
                 "Message.$": "$",
-                "Subject": "CrawlComplete"
+                "MessageAttributes": {
+                    "event_type": {
+                        "DataType": "String",
+                        "StringValue": "CrawlComplete"
+                    }
+                }
             },
             "End": true
         },
