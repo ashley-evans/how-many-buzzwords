@@ -1,9 +1,9 @@
-import { SQSEvent } from 'aws-lambda';
 import { mock } from 'jest-mock-extended';
 
 import { handler } from '../crawl-urls';
+import { CrawlEvent } from '../ports/PrimaryAdapter';
 
-const mockEvent = mock<SQSEvent>();
+const mockEvent = mock<CrawlEvent>();
 
 const VALID_MAX_CRAWL_DEPTH = '1';
 const VALID_MAX_REQUESTS_PER_CRAWL = '1';

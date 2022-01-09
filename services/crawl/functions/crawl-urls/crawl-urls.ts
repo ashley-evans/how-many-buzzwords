@@ -1,10 +1,9 @@
-import { SQSBatchResponse, SQSEvent } from "aws-lambda";
-
 import ApifyProvider from "./adapters/ApifyProvider";
-import SQSAdapter from "./adapters/SQSAdapter";
+import SQSAdapter from "./adapters/EventAdapter";
 import URLsTableRepository from "./adapters/URLsTableRepository";
 import Crawl from "./domain/Crawl";
 import CrawlProvider from "./ports/CrawlProvider";
+import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
 import Repository from "./ports/Repository";
 
 function createCrawlProvider(): CrawlProvider {
@@ -32,7 +31,7 @@ function createRepostiory(): Repository {
     return new URLsTableRepository(process.env.TABLE_NAME);
 }
 
-const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
+const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
     const crawlProvider = createCrawlProvider();
     const repository = createRepostiory();
 
