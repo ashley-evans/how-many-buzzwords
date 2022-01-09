@@ -4,6 +4,14 @@
         "Crawl": {
             "Type": "Task",
             "Resource": "${CrawlURLsARN}",
+            "Retry": [
+                {
+                    "ErrorEquals": [ "CrawlError" ],
+                    "IntervalSeconds": 3,
+                    "BackoffRate": 2.0,
+                    "MaxAttempts": 3
+                }
+            ],
             "End": true
         }
     }
