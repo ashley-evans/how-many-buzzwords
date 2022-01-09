@@ -1,0 +1,25 @@
+{
+    "StartAt": "Crawl",
+    "States": {
+        "Crawl": {
+            "Type": "Task",
+            "Resource": "${CrawlURLsARN}",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "CrawlError",
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Labmda.TooManyRequestsException",
+                        "Lambda.Unknown"
+                    ],
+                    "IntervalSeconds": 3,
+                    "BackoffRate": 2.0,
+                    "MaxAttempts": 3
+                }
+            ],
+            "End": true
+        }
+    }
+}

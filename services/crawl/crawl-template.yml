@@ -27,33 +27,6 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-  CrawlURLsSQSQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 720 # Six times Lambda Function Timeout as per AWS recommendations
-      ReceiveMessageWaitTimeSeconds: 20
-  CrawlURLSQSAccessRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: CrawlURLsSendMessagePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:SendMessage
-                Resource: !GetAtt CrawlURLsSQSQueue.Arn
-                Effect: Allow
   URLsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -70,7 +43,7 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
-  CrawlURLsFunctionRole:
+  CrawlURLsRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -92,23 +65,13 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
-        - PolicyName: CrawlURLsSQSAccessPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource: !GetAtt CrawlURLsSQSQueue.Arn
-                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  CrawlURLsLambda:
+  CrawlURLs:
     Type: AWS::Serverless::Function
     Properties:
       Handler: crawl-urls.handler
-      Role: !GetAtt CrawlURLsFunctionRole.Arn
+      Role: !GetAtt CrawlURLsRole.Arn
       Runtime: nodejs14.x
       CodeUri: ./functions/crawl-urls
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
@@ -117,12 +80,6 @@ Resources:
         - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
-      Events:
-        CrawlURLsQueueEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt CrawlURLsSQSQueue.Arn
-            BatchSize: 2
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
@@ -231,6 +188,58 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt URLsCRUDFunction.Arn
                 Effect: Allow
+  CrawlStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - states.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeCrawlURLs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt CrawlURLs.Arn
+                Effect: Allow
+  CrawlStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: STANDARD
+      Tracing:
+        Enabled: true
+      DefinitionUri: ./crawl-state-machine.asl.json
+      DefinitionSubstitutions:
+        CrawlURLsARN: !GetAtt CrawlURLs.Arn
+      Role: !GetAtt CrawlStateMachineRole.Arn
+  InvokeCrawlStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeCrawlStateMachine
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - states:StartExecution
+                Resource: !GetAtt CrawlStateMachine.Arn
+                Effect: Allow
   CrawlHTTPGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -239,6 +248,7 @@ Resources:
           Name: AWS::Include
           Parameters:
             Location: ./crawl-openapi.yml
+      FailOnWarnings: true
 Outputs:
   TopicARN:
     Description: The ARN for the Publish URLS SNS Topic
