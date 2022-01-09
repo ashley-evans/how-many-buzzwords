@@ -19,7 +19,28 @@
                     "MaxAttempts": 3
                 }
             ],
-            "End": true
+            "Next": "Did Crawl Succeed?"
+        },
+        "Did Crawl Succeed?": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.success",
+                    "BooleanEquals": true,
+                    "Next": "Send Crawl Success Message"
+                },
+                {
+                    "Variable": "$.success",
+                    "BooleanEquals": false,
+                    "Next": "Crawl Failed"
+                }
+            ]
+        },
+        "Send Crawl Success Message": {
+            "Type": "Succeed"
+        },
+        "Crawl Failed": {
+            "Type": "Fail"
         }
     }
 }
