@@ -87,7 +87,7 @@ Resources:
           MAX_CRAWL_DEPTH: 20
           ERROR_LOGGING_ENABLED: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
-  PublishURLsTopic:
+  CrawlServiceTopic:
       Type: AWS::SNS::Topic
   PublishURLFunctionRole:
     Type: AWS::IAM::Role
@@ -114,13 +114,13 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt URLsTable.StreamArn
                 Effect: Allow
-        - PolicyName: PublishURLsTopicPublishPolicy
+        - PolicyName: CrawlServiceTopicPublishPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
                 - sns:Publish
-                Resource: !Ref PublishURLsTopic
+                Resource: !Ref CrawlServiceTopic
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -143,7 +143,7 @@ Resources:
             StartingPosition: LATEST
       Environment:
         Variables:
-          TARGET_SNS_ARN: !Ref PublishURLsTopic
+          TARGET_SNS_ARN: !Ref CrawlServiceTopic
   URLsCRUDFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -251,5 +251,5 @@ Resources:
       FailOnWarnings: true
 Outputs:
   TopicARN:
-    Description: The ARN for the Publish URLS SNS Topic
-    Value: !Ref PublishURLsTopic
+    Description: The ARN for the Crawl Service's SNS Topic
+    Value: !Ref CrawlServiceTopic
