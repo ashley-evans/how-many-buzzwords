@@ -4,6 +4,7 @@ type CrawlEvent = {
 };
 
 type CrawlResponse = {
+    baseURL?: URL | string,
     success: boolean
 };
 
