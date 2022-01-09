@@ -4,6 +4,7 @@ const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
 const {
     URLsTableKeyFields,
+    CrawlTopicMessageAttributes,
     CrawlEventTypes 
 } = require('buzzword-aws-crawl-common');
 
@@ -78,7 +79,7 @@ const publishMessage = async (hashKeyValue, sortKeyValue) => {
             [URLsTableKeyFields.SortKey]: sortKeyValue
         }),
         MessageAttributes: {
-            EventType: {
+            [CrawlTopicMessageAttributes.EventType]: {
                 DataType: "String",
                 StringValue: CrawlEventTypes.NewURLCrawled
             }

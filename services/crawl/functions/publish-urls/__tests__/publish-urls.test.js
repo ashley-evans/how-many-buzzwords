@@ -3,6 +3,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 
 const {
     URLsTableKeyFields,
+    CrawlTopicMessageAttributes,
     CrawlEventTypes
 } = require('buzzword-aws-crawl-common');
 
@@ -44,7 +45,7 @@ const createExpectedMessage = (baseUrl, pathname) => {
             [URLsTableKeyFields.SortKey]: pathname
         }),
         MessageAttributes: {
-            EventType: {
+            [CrawlTopicMessageAttributes.EventType]: {
                 DataType: "String",
                 StringValue: CrawlEventTypes.NewURLCrawled
             }
