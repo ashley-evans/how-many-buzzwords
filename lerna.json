@@ -1,6 +1,5 @@
 {
   "packages": [
-    "applications/**",
     "services/**"
   ],
   "nohoist": [

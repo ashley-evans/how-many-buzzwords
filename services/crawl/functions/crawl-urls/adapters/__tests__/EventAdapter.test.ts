@@ -61,7 +61,12 @@ describe.each([
         expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(0);
     });
 
-    test('returns failure', async () => {
+    test('returns provided URL in response', () => {
+        expect(response).toBeDefined();
+        expect(response.baseURL).toEqual(event.url);
+    });
+
+    test('returns failure', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(false);
     });
@@ -81,7 +86,7 @@ describe('handles a single valid URL', () => {
         response = await adapter.crawl(event);
     });
 
-    test('calls crawl port with URL from event', async () => {
+    test('calls crawl port with URL from event', () => {
         expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(1);
         expect(mockCrawlPort.crawl).toHaveBeenCalledWith(
             EXPECTED_VALID_URL,
@@ -89,7 +94,12 @@ describe('handles a single valid URL', () => {
         );
     });
 
-    test('returns success given crawl succeeds', async () => {
+    test('returns base URL in response given crawl succeeds', () => {
+        expect(response).toBeDefined();
+        expect(response.baseURL).toEqual(EXPECTED_VALID_URL);
+    });
+
+    test('returns success given crawl succeeds', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(true);
     });
@@ -111,15 +121,20 @@ describe('handles a single valid URL up to specified depth', () => {
         response = await adapter.crawl(event);
     });
     
-    test('calls crawl port with depth specified', async () => {
+    test('calls crawl port with depth specified', () => {
         expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(1);
         expect(mockCrawlPort.crawl).toHaveBeenCalledWith(
             expect.anything(),
             expectedDepth
         );
     });
-    
-    test('returns success if crawl succeeds', async () => {
+
+    test('returns base URL in response given crawl succeeds', () => {
+        expect(response).toBeDefined();
+        expect(response.baseURL).toEqual(EXPECTED_VALID_URL);
+    });
+
+    test('returns success given crawl succeeds', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(true);
     });

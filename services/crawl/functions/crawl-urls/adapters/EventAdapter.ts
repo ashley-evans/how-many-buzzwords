@@ -34,7 +34,7 @@ class EventAdapter implements PrimaryAdapter {
                 `Error occurred in body validation: ${JSON.stringify(ex)}`
             );
 
-            return { success: false };
+            return { baseURL: event.url, success: false };
         }
 
         try {
@@ -52,7 +52,7 @@ class EventAdapter implements PrimaryAdapter {
             );
         }
 
-        return { success: true };
+        return { baseURL: url, success: true };
     }
 
     private createValidator(): ValidateFunction<RequestBody> {

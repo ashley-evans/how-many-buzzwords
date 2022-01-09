@@ -19,7 +19,40 @@
                     "MaxAttempts": 3
                 }
             ],
+            "Next": "Did Crawl Succeed?"
+        },
+        "Did Crawl Succeed?": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.success",
+                    "BooleanEquals": true,
+                    "Next": "Send Crawl Success Message to SNS"
+                },
+                {
+                    "Variable": "$.success",
+                    "BooleanEquals": false,
+                    "Next": "Crawl Failed"
+                }
+            ]
+        },
+        "Send Crawl Success Message to SNS": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "${CrawlServiceTopicARN}",
+                "Message.$": "$",
+                "MessageAttributes": {
+                    "EventType": {
+                        "DataType": "String",
+                        "StringValue": "CrawlComplete"
+                    }
+                }
+            },
             "End": true
+        },
+        "Crawl Failed": {
+            "Type": "Fail"
         }
     }
 }

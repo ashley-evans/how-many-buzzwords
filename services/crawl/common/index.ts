@@ -1,5 +1,11 @@
-import { URLsTableKeyFields } from './enums';
+import {
+    URLsTableKeyFields,
+    CrawlTopicMessageAttributes,
+    CrawlEventTypes 
+} from './enums';
 
 export { 
-    URLsTableKeyFields
+    URLsTableKeyFields,
+    CrawlTopicMessageAttributes,
+    CrawlEventTypes
 };

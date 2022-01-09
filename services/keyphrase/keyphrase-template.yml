@@ -52,6 +52,9 @@ Resources:
       Endpoint: !GetAtt KeyphrasesURLsSQSQueue.Arn
       Protocol: sqs
       RawMessageDelivery: true
+      FilterPolicy:
+        EventType:
+          - NewURLCrawled
   KeyphrasesTable:
     Type: AWS::DynamoDB::Table
     Properties:

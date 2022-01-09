@@ -1,7 +1,11 @@
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const { mockClient } = require('aws-sdk-client-mock');
 
-const { URLsTableKeyFields } = require('buzzword-aws-crawl-common');
+const {
+    URLsTableKeyFields,
+    CrawlTopicMessageAttributes,
+    CrawlEventTypes
+} = require('buzzword-aws-crawl-common');
 
 const mockSNSClient = mockClient(SNSClient);
 
@@ -40,6 +44,12 @@ const createExpectedMessage = (baseUrl, pathname) => {
             [URLsTableKeyFields.HashKey]: baseUrl,
             [URLsTableKeyFields.SortKey]: pathname
         }),
+        MessageAttributes: {
+            [CrawlTopicMessageAttributes.EventType]: {
+                DataType: "String",
+                StringValue: CrawlEventTypes.NewURLCrawled
+            }
+        },
         TargetArn: process.env.TARGET_SNS_ARN
     };
 };
