@@ -74,6 +74,12 @@ const publishMessage = async (hashKeyValue, sortKeyValue) => {
             [URLsTableKeyFields.HashKey]: hashKeyValue,
             [URLsTableKeyFields.SortKey]: sortKeyValue
         }),
+        MessageAttributes: {
+            event_type: {
+                DataType: "String",
+                StringValue: "NewURLCrawled"
+            }
+        },
         TargetArn: process.env.TARGET_SNS_ARN
     };
 
