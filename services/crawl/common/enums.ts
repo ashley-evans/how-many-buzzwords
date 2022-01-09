@@ -3,6 +3,12 @@ enum URLsTableKeyFields {
     SortKey = 'Pathname'
 }
 
+enum CrawlEventTypes {
+    NewURLCrawled = 'NewURLCrawled',
+    CrawlComplete = 'CrawlComplete'
+}
+
 export {
-    URLsTableKeyFields
+    URLsTableKeyFields,
+    CrawlEventTypes
 };
