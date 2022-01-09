@@ -209,6 +209,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt CrawlURLs.Arn
                 Effect: Allow
+        - PolicyName: PublishCrawlMessage
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sns:Publish
+                Resource: !Ref CrawlServiceTopic
+                Effect: Allow
   CrawlStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -218,6 +226,7 @@ Resources:
       DefinitionUri: ./crawl-state-machine.asl.json
       DefinitionSubstitutions:
         CrawlURLsARN: !GetAtt CrawlURLs.Arn
+        CrawlServiceTopicARN: !Ref CrawlServiceTopic
       Role: !GetAtt CrawlStateMachineRole.Arn
   InvokeCrawlStateMachineRole:
     Type: AWS::IAM::Role

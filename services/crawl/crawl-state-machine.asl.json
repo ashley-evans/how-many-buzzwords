@@ -27,7 +27,7 @@
                 {
                     "Variable": "$.success",
                     "BooleanEquals": true,
-                    "Next": "Send Crawl Success Message"
+                    "Next": "Send Crawl Success Message to SNS"
                 },
                 {
                     "Variable": "$.success",
@@ -36,8 +36,15 @@
                 }
             ]
         },
-        "Send Crawl Success Message": {
-            "Type": "Succeed"
+        "Send Crawl Success Message to SNS": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "${CrawlServiceTopicARN}",
+                "Message.$": "$",
+                "Subject": "CrawlComplete"
+            },
+            "End": true
         },
         "Crawl Failed": {
             "Type": "Fail"
