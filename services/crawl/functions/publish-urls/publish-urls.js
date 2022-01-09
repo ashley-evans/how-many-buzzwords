@@ -75,7 +75,7 @@ const publishMessage = async (hashKeyValue, sortKeyValue) => {
             [URLsTableKeyFields.SortKey]: sortKeyValue
         }),
         MessageAttributes: {
-            event_type: {
+            EventType: {
                 DataType: "String",
                 StringValue: "NewURLCrawled"
             }

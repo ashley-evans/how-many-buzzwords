@@ -43,7 +43,7 @@
                 "TopicArn": "${CrawlServiceTopicARN}",
                 "Message.$": "$",
                 "MessageAttributes": {
-                    "event_type": {
+                    "EventType": {
                         "DataType": "String",
                         "StringValue": "CrawlComplete"
                     }
