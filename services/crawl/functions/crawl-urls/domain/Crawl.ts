@@ -1,4 +1,4 @@
-import CrawlPort from "../ports/CrawlPort";
+import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
 import CrawlProvider from "../ports/CrawlProvider";
 import Repository from "../ports/Repository";
 
@@ -8,9 +8,12 @@ class Crawl implements CrawlPort {
         private repository: Repository
     ) {}
 
-    async crawl(baseURL: URL, maxCrawlDepth?: number): Promise<boolean> {
+    async crawl(
+        baseURL: URL, 
+        maxCrawlDepth?: number
+    ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
-            let urlsStored = 0;
+            const pathnames: string[] = [];
             const storagePromises: Promise<boolean>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
                 next: async (childURL) => {
@@ -19,21 +22,30 @@ class Crawl implements CrawlPort {
                     storagePromises.push(promise);
                     const stored = await promise;
                     if (!stored) {
-                        resolve(stored);
+                        resolve({
+                            success: false,
+                            pathnames
+                        });
+                    } else {
+                        pathnames.push(childURL.pathname);
                     }
-
-                    urlsStored += 1;
                 },
                 complete: async () => {
                     await Promise.allSettled(storagePromises);
-                    resolve(urlsStored != 0);
+                    resolve({ 
+                        success: pathnames.length != 0,
+                        pathnames
+                    });
                 },
                 error: (ex: unknown) => {
                     console.error(
                         `Error occured during crawling: ${JSON.stringify(ex)}`
                     );
 
-                    resolve(false);
+                    resolve({
+                        success: false,
+                        pathnames
+                    });
                 }
             });
         });
