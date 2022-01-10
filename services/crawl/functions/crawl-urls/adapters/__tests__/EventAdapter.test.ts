@@ -1,12 +1,13 @@
 import { mock } from 'jest-mock-extended';
 
-import CrawlPort from "../../ports/CrawlPort";
+import { CrawlPort } from "../../ports/CrawlPort";
 import { CrawlEvent, CrawlResponse } from '../../ports/PrimaryAdapter';
 import SNSAdapter from "../EventAdapter";
 
 const mockCrawlPort = mock<CrawlPort>();
 
 const EXPECTED_VALID_URL = new URL('http://www.example.com');
+const EXPECTED_PATHNAMES = ['/', '/test'];
 
 function createEvent(url?: URL | string, depth?: number | string): CrawlEvent {
     const event: CrawlEvent = {};
@@ -70,6 +71,11 @@ describe.each([
         expect(response).toBeDefined();
         expect(response.success).toEqual(false);
     });
+
+    test('returns no pathnames array', () => {
+        expect(response).toBeDefined();
+        expect(response.pathnames).toBeUndefined();
+    });
 });
 
 describe('handles a single valid URL', () => {
@@ -80,7 +86,10 @@ describe('handles a single valid URL', () => {
 
         const event = createEvent(EXPECTED_VALID_URL);
 
-        mockCrawlPort.crawl.mockResolvedValue(true);
+        mockCrawlPort.crawl.mockResolvedValue({
+            success: true,
+            pathnames: EXPECTED_PATHNAMES
+        });
         const adapter = new SNSAdapter(mockCrawlPort);
 
         response = await adapter.crawl(event);
@@ -103,6 +112,11 @@ describe('handles a single valid URL', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(true);
     });
+
+    test('returns pathnames returned from crawler', () => {
+        expect(response).toBeDefined();
+        expect(response.pathnames).toEqual(EXPECTED_PATHNAMES);
+    });
 });
 
 describe('handles a single valid URL up to specified depth', () => {
@@ -115,7 +129,10 @@ describe('handles a single valid URL up to specified depth', () => {
     
         const event = createEvent(EXPECTED_VALID_URL, expectedDepth);
 
-        mockCrawlPort.crawl.mockResolvedValue(true);
+        mockCrawlPort.crawl.mockResolvedValue({
+            success: true,
+            pathnames: EXPECTED_PATHNAMES
+        });
         const adapter = new SNSAdapter(mockCrawlPort);
     
         response = await adapter.crawl(event);
@@ -138,6 +155,11 @@ describe('handles a single valid URL up to specified depth', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(true);
     });
+
+    test('returns pathnames returned from crawler', () => {
+        expect(response).toBeDefined();
+        expect(response.pathnames).toEqual(EXPECTED_PATHNAMES);
+    });
 });
 
 describe('error handling', () => {
@@ -159,19 +181,47 @@ describe('error handling', () => {
         );
     });
 
+    test(
+        'returns crawl error if crawl returns failure with pathnames',
+        async () => {
+            const event = createEvent(EXPECTED_VALID_URL);
+            mockCrawlPort.crawl.mockResolvedValue({
+                success: false,
+                pathnames: EXPECTED_PATHNAMES 
+            });
+        
+            const adapter = new SNSAdapter(mockCrawlPort);
+        
+            expect.assertions(1);
+            await expect(adapter.crawl(event)).rejects.toEqual(
+                expect.objectContaining({
+                    name: 'CrawlError',
+                    message: expect.stringContaining(
+                        EXPECTED_PATHNAMES.toString()
+                    )
+                })
+            );
+        }
+    );
 
-
-    test('returns crawl error if crawl returns failure', async () => {
-        const event = createEvent(EXPECTED_VALID_URL);
-        mockCrawlPort.crawl.mockResolvedValue(false);
-    
-        const adapter = new SNSAdapter(mockCrawlPort);
-    
-        expect.assertions(1);
-        await expect(adapter.crawl(event)).rejects.toEqual(
-            expect.objectContaining({
-                name: 'CrawlError'
-            })
-        );
-    });    
+    test(
+        'returns crawl error if crawl returns failure with no pathnames',
+        async () => {
+            const event = createEvent(EXPECTED_VALID_URL);
+            mockCrawlPort.crawl.mockResolvedValue({
+                success: false,
+                pathnames: undefined 
+            });
+        
+            const adapter = new SNSAdapter(mockCrawlPort);
+        
+            expect.assertions(1);
+            await expect(adapter.crawl(event)).rejects.toEqual(
+                expect.objectContaining({
+                    name: 'CrawlError',
+                    message: expect.stringContaining('No pages')
+                })
+            );
+        }
+    );    
 });

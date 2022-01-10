@@ -1,5 +1,13 @@
-interface CrawlPort {
-    crawl(baseURL: URL, maxCrawlDepth?: number): Promise<boolean>
+type CrawlerResponse = {
+    success: boolean,
+    pathnames?: string[]
 }
 
-export default CrawlPort;
+interface CrawlPort {
+    crawl(baseURL: URL, maxCrawlDepth?: number): Promise<CrawlerResponse>
+}
+
+export {
+    CrawlerResponse,
+    CrawlPort
+};

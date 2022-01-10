@@ -1,6 +1,6 @@
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
 
-import CrawlPort from "../ports/CrawlPort";
+import { CrawlPort } from "../ports/CrawlPort";
 import {
     CrawlEvent,
     CrawlResponse,
@@ -38,21 +38,34 @@ class EventAdapter implements PrimaryAdapter {
         }
 
         try {
-            const success = await this.crawler.crawl(
+            const response = await this.crawler.crawl(
                 url, 
                 validatedBody.depth
             );
 
-            if (!success) {
-                throw new CrawlError('Crawl failed to execute.');
+            if (!response.success) {
+                const crawledErrorText = response.pathnames
+                    ? response.pathnames.toString()
+                    : 'No pages';
+                throw new CrawlError(
+                    `Crawl failed to execute. Crawled: ${crawledErrorText}`
+                );
             }
+
+            return {
+                success: true,
+                baseURL: url,
+                pathnames: response.pathnames
+            };
         } catch (ex) {
+            if (ex instanceof CrawlError) {
+                throw ex;
+            }
+
             throw new CrawlError(
                 `Error occured during crawl: ${JSON.stringify(ex)}`
             );
         }
-
-        return { baseURL: url, success: true };
     }
 
     private createValidator(): ValidateFunction<RequestBody> {
