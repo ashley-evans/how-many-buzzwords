@@ -4,8 +4,9 @@ type CrawlEvent = {
 };
 
 type CrawlResponse = {
+    success: boolean,
     baseURL?: URL | string,
-    success: boolean
+    pathnames?: string[]
 };
 
 interface PrimaryAdapter {
