@@ -261,6 +261,6 @@ Resources:
             Location: ./crawl-openapi.yml
       FailOnWarnings: true
 Outputs:
-  EventBridgeARN:
+  EventBusARN:
     Description: The ARN for the Crawl Service's Event Bus
     Value: !GetAtt CrawlServiceEventBus.Arn
