@@ -98,7 +98,6 @@ const publishEvent = async (entries) => {
     const input = {
         Entries: entries
     };
-    console.warn(input);
     const command = new PutEventsCommand(input);
 
     client.send(command);

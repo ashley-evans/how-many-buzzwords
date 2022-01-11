@@ -216,7 +216,7 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Action:
-                  - sns:Publish
+                  - events:PutEvents
                 Resource: !GetAtt CrawlServiceEventBus.Arn
                 Effect: Allow
   CrawlStateMachine:
