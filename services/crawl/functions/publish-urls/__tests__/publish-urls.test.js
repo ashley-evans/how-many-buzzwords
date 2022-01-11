@@ -182,7 +182,7 @@ describe.each([
 
     test('sends each entry with the correct event source', () => {
         for (const entry of entries) {
-            expect(entry.Source).toEqual('lambda.publishurls.aws.buzzword');
+            expect(entry.Source).toEqual('crawl.aws.buzzword');
         }
     });
 

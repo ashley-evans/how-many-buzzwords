@@ -81,7 +81,7 @@ const baseHandler = async (event) => {
 const createEntry = (baseURL, pathname) => {
     return {
         EventBusName: process.env.EVENT_BUS_ARN,
-        Source: 'lambda.publishurls.aws.buzzword',
+        Source: 'crawl.aws.buzzword',
         DetailType: 'New URL Crawled via Crawl Service',
         Detail: JSON.stringify({
             baseURL,
