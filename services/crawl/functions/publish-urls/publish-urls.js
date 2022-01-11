@@ -1,11 +1,12 @@
 const middy = require('@middy/core');
 const validator = require('@middy/validator');
-const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const {
+    EventBridgeClient,
+    PutEventsCommand
+} = require('@aws-sdk/client-eventbridge');
 
 const {
-    URLsTableKeyFields,
-    CrawlTopicMessageAttributes,
-    CrawlEventTypes 
+    URLsTableKeyFields
 } = require('buzzword-aws-crawl-common');
 
 const INPUT_SCHEMA = {
@@ -60,40 +61,49 @@ const INPUT_SCHEMA = {
     }
 };
 
-const client = new SNSClient({});
+const client = new EventBridgeClient({});
 
 const baseHandler = async (event) => {
     const records = event.Records;
-    for (let i = 0; i < records.length; i++) {
-        const recordNewImage = records[i].dynamodb.NewImage;
-        const hashKeyValue = recordNewImage[URLsTableKeyFields.HashKey].S;
-        const sortKeyValue = recordNewImage[URLsTableKeyFields.SortKey].S;
-        await publishMessage(hashKeyValue, sortKeyValue);
-    }
+    const entries = records.map(record => {
+        const newImage = record?.dynamodb?.NewImage;
+        if (newImage) {
+            return createEntry(
+                newImage[URLsTableKeyFields.HashKey].S,
+                newImage[URLsTableKeyFields.SortKey].S
+            );
+        }
+    });
+
+    publishEvent(entries);
 };
 
-const publishMessage = async (hashKeyValue, sortKeyValue) => {
-    const publishParams = {
-        Message: JSON.stringify({
-            [URLsTableKeyFields.HashKey]: hashKeyValue,
-            [URLsTableKeyFields.SortKey]: sortKeyValue
-        }),
-        MessageAttributes: {
-            [CrawlTopicMessageAttributes.EventType]: {
-                DataType: "String",
-                StringValue: CrawlEventTypes.NewURLCrawled
-            }
-        },
-        TargetArn: process.env.TARGET_SNS_ARN
+const createEntry = (baseURL, pathname) => {
+    return {
+        EventBusName: process.env.EVENT_BUS_ARN,
+        Source: 'lambda.publishurls.aws.buzzword',
+        DetailType: 'New URL Crawled via Crawl Service',
+        Detail: JSON.stringify({
+            baseURL,
+            pathname
+        })
     };
-
-    const command = new PublishCommand(publishParams);
-    try {
-        await client.send(command);
-    } catch (ex) {
-        console.error(JSON.stringify(ex));
-    }
 };
+
+const publishEvent = async (entries) => {
+    if (entries?.length == 0) {
+        return;
+    }
+
+    const input = {
+        Entries: entries
+    };
+    console.warn(input);
+    const command = new PutEventsCommand(input);
+
+    client.send(command);
+};
+
 
 const handler = middy(baseHandler)
     .use(validator({ inputSchema: INPUT_SCHEMA }));
