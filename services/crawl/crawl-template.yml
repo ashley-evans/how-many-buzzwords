@@ -87,8 +87,10 @@ Resources:
           MAX_CRAWL_DEPTH: 20
           ERROR_LOGGING_ENABLED: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
-  CrawlServiceTopic:
-      Type: AWS::SNS::Topic
+  CrawlServiceEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub "CrawlServiceEventBus-${EnvironmentNameSuffix}"
   PublishURLFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -114,13 +116,13 @@ Resources:
                   - dynamodb:ListStreams
                 Resource: !GetAtt URLsTable.StreamArn
                 Effect: Allow
-        - PolicyName: CrawlServiceTopicPublishPolicy
+        - PolicyName: PutEventsPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
-                - sns:Publish
-                Resource: !Ref CrawlServiceTopic
+                - events:PutEvents
+                Resource: !GetAtt CrawlServiceEventBus.Arn
                 Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -143,7 +145,7 @@ Resources:
             StartingPosition: LATEST
       Environment:
         Variables:
-          TARGET_SNS_ARN: !Ref CrawlServiceTopic
+          EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
   URLsCRUDFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -209,13 +211,13 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt CrawlURLs.Arn
                 Effect: Allow
-        - PolicyName: PublishCrawlMessage
+        - PolicyName: PutEventsPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
                   - sns:Publish
-                Resource: !Ref CrawlServiceTopic
+                Resource: !GetAtt CrawlServiceEventBus.Arn
                 Effect: Allow
   CrawlStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -226,7 +228,7 @@ Resources:
       DefinitionUri: ./crawl-state-machine.asl.json
       DefinitionSubstitutions:
         CrawlURLsARN: !GetAtt CrawlURLs.Arn
-        CrawlServiceTopicARN: !Ref CrawlServiceTopic
+        CrawlServiceEventBusARN: !GetAtt CrawlServiceEventBus.Arn
       Role: !GetAtt CrawlStateMachineRole.Arn
   InvokeCrawlStateMachineRole:
     Type: AWS::IAM::Role
@@ -259,6 +261,6 @@ Resources:
             Location: ./crawl-openapi.yml
       FailOnWarnings: true
 Outputs:
-  TopicARN:
-    Description: The ARN for the Crawl Service's SNS Topic
-    Value: !Ref CrawlServiceTopic
+  EventBridgeARN:
+    Description: The ARN for the Crawl Service's Event Bus
+    Value: !GetAtt CrawlServiceEventBus.Arn
