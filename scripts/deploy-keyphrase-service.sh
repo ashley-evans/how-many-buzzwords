@@ -52,10 +52,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-crawl_topic_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r .OutputValue)
+crawl_event_bus_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r .OutputValue)
 
-if [ -z $crawl_topic_arn ]; then
-    echo "Error: No Crawl SNS Topic found."
+if [ -z $crawl_event_bus_arn ]; then
+    echo "Error: No Crawl Event Bus ARN found."
     exit 1
 fi
 
@@ -71,5 +71,5 @@ $script_dir/helpers/deploy-service.sh \
     -c $config_path \
     -e $environment \
     -f \
-    -o "CrawlTopicARN=$crawl_topic_arn $config_parameters" \
+    -o "CrawlEventBusARN=$crawl_event_bus_arn $config_parameters" \
     --cache
