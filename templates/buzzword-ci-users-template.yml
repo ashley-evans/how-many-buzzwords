@@ -27,6 +27,23 @@ Resources:
           Condition:
             StringLike:
               token.actions.githubusercontent.com:sub: !Sub repo:${GithubOrganisation}/${RepositoryName}:*
+      Policies:
+        - PolicyName: StepFunctionDeployPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - states:*
+                Effect: Allow
+                Resource: arn:aws:states:*
+        - PolicyName: EventBridgeDeployPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - events:*
+                Effect: Allow
+                Resource: arn:aws:events:*
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
@@ -37,7 +54,6 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonSNSFullAccess
         - arn:aws:iam::aws:policy/IAMFullAccess
-        - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
 Outputs:
   DeployRoleARN: 
     Description: The ARN of the deployment role required to deploy stacks
