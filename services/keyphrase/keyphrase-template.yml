@@ -5,9 +5,9 @@ Parameters:
     Type: String
     Description: Environment name suffixed to service resources
     Default: dev
-  CrawlTopicARN:
+  CrawlEventBusARN:
     Type: String
-    Description: The ARN of the Crawl service's SNS Topic
+    Description: The ARN of the Crawl service's Event Bus
 Resources:
   KeyphraseNodeDependencyLayer:
     Type: AWS::Serverless::LayerVersion
@@ -25,7 +25,21 @@ Resources:
     Properties:
       VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
       ReceiveMessageWaitTimeSeconds: 20
-  CrawlTopicQueuePublishPolicy:
+  CrawlEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Routes new URL crawled events to SQS queue for key-phrase processing
+      State: ENABLED
+      EventBusName: !Ref CrawlEventBusARN
+      EventPattern: 
+        source:
+          - crawl.aws.buzzword
+        detail-type:
+          - New URL Crawled via Crawl Service
+      Targets:
+        - Arn: !GetAtt KeyphrasesURLsSQSQueue.Arn
+          Id: KeyphraseQueue
+  CrawlEventPublishPolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
@@ -36,25 +50,13 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-              - sns.amazonaws.com
+              - events.amazonaws.com
             Action:
               - sqs:SendMessage
             Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
             Condition:
               ArnEquals:
-                aws:sourceArn: !Ref CrawlTopicARN
-  CrawlTopicSubscription:
-    Type: AWS::SNS::Subscription
-    DependsOn:
-      - CrawlTopicQueuePublishPolicy
-    Properties:
-      TopicArn: !Ref CrawlTopicARN
-      Endpoint: !GetAtt KeyphrasesURLsSQSQueue.Arn
-      Protocol: sqs
-      RawMessageDelivery: true
-      FilterPolicy:
-        EventType:
-          - NewURLCrawled
+                aws:sourceArn: !GetAtt CrawlEventsRule.Arn
   KeyphrasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
