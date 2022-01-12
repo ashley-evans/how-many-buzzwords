@@ -21,6 +21,7 @@ class KeyphraseFinder implements KeyphrasesPort {
     ) {}
 
     async findKeyphrases(url: URL): Promise<boolean> {
+        console.log(`Attempting to find keyphrases at ${url.toString()}`);
         let content: string;
         try {
             content = await this.httpRequester.getBody(url);

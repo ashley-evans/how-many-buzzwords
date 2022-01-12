@@ -58,6 +58,7 @@ function createKeyphraseOccurrence(
 }
 
 beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
