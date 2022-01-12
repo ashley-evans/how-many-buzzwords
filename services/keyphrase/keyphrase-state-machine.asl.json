@@ -1,8 +1,26 @@
 {
-    "StartAt": "Find Keyphrases",
+    "StartAt": "Find Keyphrases for each URL",
     "States": {
-        "Find Keyphrases": {
-            "Type": "Succeed"
+        "Find Keyphrases for each URL": {
+            "Type": "Map",
+            "ItemsPath": "$.pathnames",
+            "MaxConcurrency": 0,
+            "ResultPath": "$.output",
+            "Parameters": {
+                "baseURL.$": "$.baseURL",
+                "pathname.$": "$$.Map.Item.Value"
+            },
+            "Iterator": {
+                "StartAt": "Find Keyphrases",
+                "States": {
+                    "Find Keyphrases": {
+                        "Type": "Task",
+                        "Resource": "${FindKeyphrasesARN}",
+                        "End": true
+                    }
+                }
+            },
+            "End": true
         }
     }
 }
