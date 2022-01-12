@@ -1,0 +1,8 @@
+{
+    "StartAt": "Find Keyphrases",
+    "States": {
+        "Find Keyphrases": {
+            "Type": "Succeed"
+        }
+    }
+}

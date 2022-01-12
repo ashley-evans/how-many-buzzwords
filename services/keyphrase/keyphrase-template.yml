@@ -20,52 +20,6 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
-  KeyphrasesURLsSQSQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 180 # Six times Lambda Function Timeout as per AWS recommendations
-      ReceiveMessageWaitTimeSeconds: 20
-  CrawlEventsRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: Routes new URL crawled events to SQS queue for key-phrase processing
-      State: ENABLED
-      EventBusName: !Ref CrawlEventBusARN
-      EventPattern: 
-        source:
-          - crawl.aws.buzzword
-        detail-type:
-          - New URL Crawled via Crawl Service
-      Targets:
-        - Arn: !GetAtt KeyphrasesURLsSQSQueue.Arn
-          Id: KeyphraseQueue
-          InputTransformer:
-            InputPathsMap:
-              "baseURL" : "$.detail.baseURL"
-              "pathname" : "$.detail.pathname"
-            InputTemplate: |
-              {
-                "baseURL" : <baseURL>,
-                "pathname" : <pathname>
-              }
-  CrawlEventPublishPolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref KeyphrasesURLsSQSQueue
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - events.amazonaws.com
-            Action:
-              - sqs:SendMessage
-            Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:sourceArn: !GetAtt CrawlEventsRule.Arn
   KeyphrasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -96,16 +50,6 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: !Sub KeyphraseURLsSQSAccessPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource: !GetAtt KeyphrasesURLsSQSQueue.Arn
-                Effect: Allow
         - PolicyName: KeyphrasesTableWritePolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -129,11 +73,6 @@ Resources:
         - Ref: KeyphraseNodeDependencyLayer
       Timeout: 30
       MemorySize: 256
-      Events:
-        KeyphrasesURLsQueueEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt KeyphrasesURLsSQSQueue.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref KeyphrasesTable
@@ -180,6 +119,82 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt KeyphrasesCRUD.Arn
                 Effect: Allow
+  KeyphraseStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - states.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeFindKeyphrases
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt FindKeyphrases.Arn
+                Effect: Allow
+  KeyphraseStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: STANDARD
+      Tracing:
+        Enabled: true
+      DefinitionUri: ./keyphrase-state-machine.asl.json
+      DefinitionSubstitutions:
+        FindKeyphrasesARN: !GetAtt FindKeyphrases.Arn
+      Role: !GetAtt KeyphraseStateMachineRole.Arn
+  InvokeKeyphraseStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - events.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeKeyphraseStateMachine
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - states:StartExecution
+                Resource: !GetAtt KeyphraseStateMachine.Arn
+                Effect: Allow
+  CrawlEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Starts keyphrase finding state machine per crawl complete Event
+      State: ENABLED
+      EventBusName: !Ref CrawlEventBusARN
+      EventPattern: 
+        source:
+          - crawl.aws.buzzword
+        detail-type:
+          - Crawl Complete via Crawl Service
+      Targets:
+        - Arn: !Ref KeyphraseStateMachine
+          Id: KeyphraseQueue
+          RoleArn: !GetAtt InvokeKeyphraseStateMachineRole.Arn
+          InputTransformer:
+            InputPathsMap:
+              "baseURL" : "$.detail.baseURL"
+              "pathnames" : "$.detail.pathnames"
+            InputTemplate: |
+              {
+                "baseURL" : <baseURL>,
+                "pathnames" : <pathnames>
+              }
   KeyphraseHTTPGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
