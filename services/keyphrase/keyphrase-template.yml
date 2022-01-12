@@ -39,6 +39,15 @@ Resources:
       Targets:
         - Arn: !GetAtt KeyphrasesURLsSQSQueue.Arn
           Id: KeyphraseQueue
+          InputTransformer:
+            InputPathsMap:
+              "baseURL" : "$.detail.baseURL"
+              "pathname" : "$.detail.pathname"
+            InputTemplate: |
+              {
+                "baseURL" : <baseURL>,
+                "pathname" : <pathname>
+              }
   CrawlEventPublishPolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
