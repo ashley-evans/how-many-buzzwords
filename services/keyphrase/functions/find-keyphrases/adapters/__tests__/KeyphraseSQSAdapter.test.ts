@@ -8,7 +8,7 @@ import { mock } from "jest-mock-extended";
 
 import KeyphrasesPort from "../../ports/KeyphrasePort";
 import KeyphraseSQSAdapter from "../KeyphraseSQSAdapter";
-import { URLsTableKeyFields } from "../../enums";
+import { EventFields } from "../../enums";
 
 const mockKeyphrasesPort = mock<KeyphrasesPort>();
 
@@ -43,8 +43,8 @@ function createRecord(
 
 function createEventBody(baseURL?: string, pathname?: string): string {
     return JSON.stringify({
-        [URLsTableKeyFields.HashKey]: baseURL,
-        [URLsTableKeyFields.SortKey]: pathname
+        [EventFields.BaseURL]: baseURL,
+        [EventFields.Pathname]: pathname
     });
 }
 

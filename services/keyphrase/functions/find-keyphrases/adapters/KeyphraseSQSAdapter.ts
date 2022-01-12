@@ -3,11 +3,11 @@ import { SQSEvent, SQSBatchResponse, SQSBatchItemFailure } from "aws-lambda";
 
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import KeyphrasePrimaryAdapter from "../ports/KeyphrasePrimaryAdapter";
-import { URLsTableKeyFields } from "../enums";
+import { EventFields } from "../enums";
 
 interface RequestBody {
-    [URLsTableKeyFields.HashKey]: string,
-    [URLsTableKeyFields.SortKey]: string
+    [EventFields.BaseURL]: string,
+    [EventFields.Pathname]: string
 }
 
 class KeyphraseSQSAdapter implements KeyphrasePrimaryAdapter {
@@ -26,8 +26,8 @@ class KeyphraseSQSAdapter implements KeyphrasePrimaryAdapter {
             try {
                 const validatedBody = this.validateRequestBody(record.body);
                 url = new URL(
-                    `http://${validatedBody[URLsTableKeyFields.HashKey]}` +
-                    validatedBody[URLsTableKeyFields.SortKey]
+                    `http://${validatedBody[EventFields.BaseURL]}` +
+                    validatedBody[EventFields.Pathname]
                 );
             } catch (ex) {
                 console.error(
@@ -52,16 +52,16 @@ class KeyphraseSQSAdapter implements KeyphrasePrimaryAdapter {
         const schema: JSONSchemaType<RequestBody> = {
             type: "object",
             properties: {
-                [URLsTableKeyFields.HashKey]: {
+                [EventFields.BaseURL]: {
                     type: "string",
                     pattern: '^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.' + 
                     '[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
                 },
-                [URLsTableKeyFields.SortKey]: {
+                [EventFields.Pathname]: {
                     type: "string"
                 }
             },
-            required: [URLsTableKeyFields.HashKey, URLsTableKeyFields.SortKey]
+            required: [EventFields.BaseURL, EventFields.Pathname]
         };
 
         return this.ajv.compile(schema);
