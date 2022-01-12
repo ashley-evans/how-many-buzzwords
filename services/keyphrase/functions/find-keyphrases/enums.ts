@@ -7,13 +7,13 @@ enum KeyphraseTableNonKeyFields {
     Occurrence = 'Occurrences'
 }
 
-enum URLsTableKeyFields {
-    HashKey = 'BaseUrl',
-    SortKey = 'Pathname'
+enum EventFields {
+    BaseURL = 'baseURL',
+    Pathname = 'pathname'
 }
 
 export {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
-    URLsTableKeyFields
+    EventFields
 };

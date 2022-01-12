@@ -27,7 +27,7 @@
                 {
                     "Variable": "$.success",
                     "BooleanEquals": true,
-                    "Next": "Send Crawl Success Message to SNS"
+                    "Next": "Send Crawl Success Message to Event Bus"
                 },
                 {
                     "Variable": "$.success",
@@ -36,18 +36,21 @@
                 }
             ]
         },
-        "Send Crawl Success Message to SNS": {
+        "Send Crawl Success Message to Event Bus": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::sns:publish",
+            "Resource": "arn:aws:states:::events:putEvents",
             "Parameters": {
-                "TopicArn": "${CrawlServiceTopicARN}",
-                "Message.$": "$",
-                "MessageAttributes": {
-                    "EventType": {
-                        "DataType": "String",
-                        "StringValue": "CrawlComplete"
+                "Entries": [
+                    {
+                        "EventBusName": "${CrawlServiceEventBusARN}",
+                        "DetailType": "Crawl Complete via Crawl Service",
+                        "Detail": {
+                            "baseURL.$": "$.baseURL",
+                            "pathnames.$": "$.pathnames"
+                        },
+                        "Source": "crawl.aws.buzzword"
                     }
-                }
+                ]
             },
             "End": true
         },

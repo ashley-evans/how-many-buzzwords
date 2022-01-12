@@ -1,18 +1,19 @@
-const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const {
+    EventBridgeClient,
+    PutEventsCommand
+} = require('@aws-sdk/client-eventbridge');
 const { mockClient } = require('aws-sdk-client-mock');
 
 const {
-    URLsTableKeyFields,
-    CrawlTopicMessageAttributes,
-    CrawlEventTypes
+    URLsTableKeyFields
 } = require('buzzword-aws-crawl-common');
 
-const mockSNSClient = mockClient(SNSClient);
+const mockEventBridgeClient = mockClient(EventBridgeClient);
 
 const EXPECTED_BASE_URL = 'www.test.com';
 const EXPECTED_PATHNAME = '/test';
 
-process.env.TARGET_SNS_ARN = 'test:arn';
+process.env.EVENT_BUS_ARN = 'test:arn';
 
 const { handler } = require('../publish-urls');
 
@@ -38,28 +39,8 @@ const createEvent = (...records) => {
     };
 };
 
-const createExpectedMessage = (baseUrl, pathname) => {
-    return {
-        Message: JSON.stringify({
-            [URLsTableKeyFields.HashKey]: baseUrl,
-            [URLsTableKeyFields.SortKey]: pathname
-        }),
-        MessageAttributes: {
-            [CrawlTopicMessageAttributes.EventType]: {
-                DataType: "String",
-                StringValue: CrawlEventTypes.NewURLCrawled
-            }
-        },
-        TargetArn: process.env.TARGET_SNS_ARN
-    };
-};
-
 beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-});
-
-beforeEach(() => {
-    mockSNSClient.reset();
 });
 
 describe('input validation', () => {
@@ -147,40 +128,82 @@ describe('input validation', () => {
     );
 });
 
-test.each([
+describe.each([
     [
-        'a single record',
-        createEvent(createRecord(EXPECTED_BASE_URL, '/')),
+        'a single stream item',
         [
-            createExpectedMessage(EXPECTED_BASE_URL, '/')
+            {
+                baseURL: EXPECTED_BASE_URL,
+                pathname: '/'
+            }
         ]
     ],
     [
-        'multiple records',
-        createEvent(
-            createRecord(EXPECTED_BASE_URL, '/'),
-            createRecord(EXPECTED_BASE_URL, EXPECTED_PATHNAME)
-        ),
+        'multiple stream items',
         [
-            createExpectedMessage(EXPECTED_BASE_URL, '/'),
-            createExpectedMessage(EXPECTED_BASE_URL, EXPECTED_PATHNAME)
+            {
+                baseURL: EXPECTED_BASE_URL,
+                pathname: '/'
+            },
+            {
+                baseURL: EXPECTED_BASE_URL,
+                pathname: '/test'
+            }
         ]
     ]
-])('publishes to SNS topic given %s',
-    async (message, event, expectedMessages) => {
-        mockSNSClient.on(PublishCommand).resolves();
+])('publishes to Event bus given %s', (message, items) => {
+    let commands;
+    let entries;
 
-        await handler(event);
-        const snsArguments = mockSNSClient.calls().map(call => call.args);
+    beforeAll(async () => {
+        mockEventBridgeClient.reset();
+        mockEventBridgeClient.on(PutEventsCommand).resolves();
 
-        expect(snsArguments).toHaveLength(expectedMessages.length);
-        for (let i = 0; i < snsArguments.length; i++) {
-            expect(snsArguments[i]).toHaveLength(1);
+        const records = items.map(
+            item => createRecord(item.baseURL, item.pathname)
+        );
+
+        await handler(createEvent(...records));
+
+        commands = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        entries = commands.map(command => command.args[0].input.Entries).flat();
+    });
+
+    test('sends an put event command entry per item', () => {
+        expect(commands).toHaveLength(1);
+        expect(entries).toHaveLength(items.length);
+    });
+    
+    test('sends each entry to the provided event bus', () => {
+        for (const entry of entries) {
+            expect(entry.EventBusName).toEqual(process.env.EVENT_BUS_ARN);
         }
+    });
 
-        const snsArgumentInputs = snsArguments.map(args => args[0].input);
-        for (let i = 0; i < snsArguments.length; i++) {
-            expect(snsArgumentInputs).toContainEqual(expectedMessages[i]);
+    test('sends each entry with the correct event source', () => {
+        for (const entry of entries) {
+            expect(entry.Source).toEqual('crawl.aws.buzzword');
         }
-    }
-);
+    });
+
+    test('sends each entry with the new crawl event detail type', () => {
+        for (const entry of entries) {
+            expect(entry.DetailType).toEqual(
+                'New URL Crawled via Crawl Service'
+            );
+        }
+    });
+
+    test(
+        'sends all crawled pathnames and associated base URL in entry detail',
+        () => {
+            const parsedDetails = entries.map(
+                entry => JSON.parse(entry.Detail)
+            );
+
+            for (const item of items) {
+                expect(parsedDetails).toContainEqual(item);
+            }
+        }
+    );
+});
