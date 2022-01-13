@@ -74,13 +74,23 @@ describe.each([
             response = await adapter.findKeyphrases(event);
         });
 
-        test('does not call keyphrases port', async () => {
+        test('does not call keyphrases port', () => {
             expect(mockKeyphrasesPort.findKeyphrases).toHaveBeenCalledTimes(0);
         });
 
-        test('returns failure', async () => {
+        test('returns failure', () => {
             expect(response).toBeDefined();
             expect(response.success).toEqual(false);
+        });
+
+        test('returns provided base URL', () => {
+            expect(response).toBeDefined();
+            expect(response.baseURL).toEqual(event.baseURL);
+        });
+
+        test('returns provided pathname', () => {
+            expect(response).toBeDefined();
+            expect(response.pathname).toEqual(event.pathname);
         });
     }
 );
@@ -107,6 +117,16 @@ describe('handles a single valid base URL and pathname', () => {
     test('returns success if crawl succeeds', () => {
         expect(response).toBeDefined();
         expect(response.success).toEqual(true);
+    });
+
+    test('returns validated base URL', () => {
+        expect(response).toBeDefined();
+        expect(response.baseURL).toEqual(VALID_URL.hostname);
+    });
+
+    test('returns validated pathname', () => {
+        expect(response).toBeDefined();
+        expect(response.pathname).toEqual(VALID_URL.pathname);
     });
 });
 

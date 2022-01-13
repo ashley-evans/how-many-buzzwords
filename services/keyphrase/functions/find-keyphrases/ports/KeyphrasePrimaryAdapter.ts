@@ -4,7 +4,9 @@ type KeyphrasesEvent = {
 };
 
 type KeyphrasesResponse = {
-    success: boolean
+    success: boolean,
+    baseURL?: string,
+    pathname?: string
 };
 
 interface KeyphrasePrimaryAdapter {

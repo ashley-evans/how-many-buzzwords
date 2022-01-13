@@ -34,7 +34,11 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
                 `Error occured in body validation: ${JSON.stringify(ex)}`
             );
 
-            return { success: false };
+            return {
+                success: false,
+                baseURL: event.baseURL,
+                pathname: event.pathname
+            };
         }
 
         try {
@@ -45,7 +49,11 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
                 );
             }
 
-            return { success };
+            return { 
+                success,
+                baseURL: url.hostname,
+                pathname: url.pathname
+            };
         } catch (ex: unknown) {
             if (ex instanceof KeyphrasesError) {
                 throw ex;
