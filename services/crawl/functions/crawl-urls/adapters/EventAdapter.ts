@@ -54,7 +54,7 @@ class EventAdapter implements PrimaryAdapter {
 
             return {
                 success: true,
-                baseURL: url,
+                baseURL: url.hostname,
                 pathnames: response.pathnames
             };
         } catch (ex) {
