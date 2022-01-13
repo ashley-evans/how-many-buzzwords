@@ -4,7 +4,7 @@
         "Find Keyphrases for each URL": {
             "Type": "Map",
             "ItemsPath": "$.pathnames",
-            "MaxConcurrency": 0,
+            "MaxConcurrency": 20,
             "ResultPath": "$.output",
             "Parameters": {
                 "baseURL.$": "$.baseURL",
