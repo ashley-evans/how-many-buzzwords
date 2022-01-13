@@ -1,7 +1,18 @@
-import { SQSBatchResponse, SQSEvent } from "aws-lambda";
+type KeyphrasesEvent = {
+    baseURL?: string,
+    pathname?: string
+};
+
+type KeyphrasesResponse = {
+    success: boolean
+};
 
 interface KeyphrasePrimaryAdapter {
-    findKeyphrases(event: SQSEvent): Promise<SQSBatchResponse>
+    findKeyphrases(event: KeyphrasesEvent): Promise<KeyphrasesResponse>
 }
 
-export default KeyphrasePrimaryAdapter;
+export {
+    KeyphrasesEvent,
+    KeyphrasesResponse,
+    KeyphrasePrimaryAdapter
+};
