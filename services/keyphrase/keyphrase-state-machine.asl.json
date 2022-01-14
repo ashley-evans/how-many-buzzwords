@@ -23,7 +23,7 @@
                                     "Lambda.ServiceException",
                                     "Lambda.AWSLambdaException",
                                     "Lambda.SdkClientException",
-                                    "Labmda.TooManyRequestsException",
+                                    "Lambda.TooManyRequestsException",
                                     "Lambda.Unknown"
                                 ],
                                 "IntervalSeconds": 3,
