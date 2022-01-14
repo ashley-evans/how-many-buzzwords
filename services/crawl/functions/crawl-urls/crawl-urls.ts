@@ -1,5 +1,5 @@
 import ApifyProvider from "./adapters/ApifyProvider";
-import SQSAdapter from "./adapters/EventAdapter";
+import EventAdapter from "./adapters/EventAdapter";
 import URLsTableRepository from "./adapters/URLsTableRepository";
 import Crawl from "./domain/Crawl";
 import CrawlProvider from "./ports/CrawlProvider";
@@ -40,7 +40,7 @@ const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
         repository
     );
 
-    const primaryAdapter = new SQSAdapter(crawlDomain);
+    const primaryAdapter = new EventAdapter(crawlDomain);
 
     return await primaryAdapter.crawl(event);
 };

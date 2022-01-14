@@ -1,13 +1,15 @@
-import { SQSBatchResponse, SQSEvent } from "aws-lambda";
-
 import GotProvider from "./adapters/GotProvider";
 import HTMLParser from "./adapters/HTMLParser";
 import KeyphraseDynamoDBRepository from 
     "./adapters/KeyphraseDynamoDBRepository";
-import KeyphraseSQSAdapter from "./adapters/KeyphraseSQSAdapter";
+import EventAdapter from "./adapters/KeyphraseEventAdapter";
 import RegexCounter from "./adapters/RegexCounter";
 import RetextProvider from "./adapters/RetextProvider";
 import KeyphraseFinder from "./domain/KeyphraseFinder";
+import {
+    KeyphrasesEvent,
+    KeyphrasesResponse
+} from "./ports/KeyphrasePrimaryAdapter";
 import { KeyphraseRepository } from "./ports/KeyphraseRepository";
 
 function createRepository(): KeyphraseRepository {
@@ -18,7 +20,7 @@ function createRepository(): KeyphraseRepository {
     return new KeyphraseDynamoDBRepository(process.env.TABLE_NAME);
 }
 
-const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
+const handler = async (event: KeyphrasesEvent): Promise<KeyphrasesResponse> => {
     const repository = createRepository();
 
     const requester = new GotProvider();
@@ -34,7 +36,7 @@ const handler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
         repository
     );
 
-    const primaryAdapter = new KeyphraseSQSAdapter(keyphraseFinder);
+    const primaryAdapter = new EventAdapter(keyphraseFinder);
 
     return await primaryAdapter.findKeyphrases(event);
 };

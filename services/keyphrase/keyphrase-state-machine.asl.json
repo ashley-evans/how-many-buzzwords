@@ -1,0 +1,41 @@
+{
+    "StartAt": "Find Keyphrases for each URL",
+    "States": {
+        "Find Keyphrases for each URL": {
+            "Type": "Map",
+            "ItemsPath": "$.pathnames",
+            "MaxConcurrency": 20,
+            "ResultPath": "$",
+            "Parameters": {
+                "baseURL.$": "$.baseURL",
+                "pathname.$": "$$.Map.Item.Value"
+            },
+            "Iterator": {
+                "StartAt": "Find Keyphrases",
+                "States": {
+                    "Find Keyphrases": {
+                        "Type": "Task",
+                        "Resource": "${FindKeyphrasesARN}",
+                        "Retry": [
+                            {
+                                "ErrorEquals": [
+                                    "KeyphrasesError",
+                                    "Lambda.ServiceException",
+                                    "Lambda.AWSLambdaException",
+                                    "Lambda.SdkClientException",
+                                    "Lambda.TooManyRequestsException",
+                                    "Lambda.Unknown"
+                                ],
+                                "IntervalSeconds": 3,
+                                "BackoffRate": 2.0,
+                                "MaxAttempts": 3
+                            }
+                        ],
+                        "End": true
+                    }
+                }
+            },
+            "End": true
+        }
+    }
+}

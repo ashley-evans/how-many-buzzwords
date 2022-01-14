@@ -105,7 +105,7 @@ describe('handles a single valid URL', () => {
 
     test('returns base URL in response given crawl succeeds', () => {
         expect(response).toBeDefined();
-        expect(response.baseURL).toEqual(EXPECTED_VALID_URL);
+        expect(response.baseURL).toEqual(EXPECTED_VALID_URL.hostname);
     });
 
     test('returns success given crawl succeeds', () => {
@@ -148,7 +148,7 @@ describe('handles a single valid URL up to specified depth', () => {
 
     test('returns base URL in response given crawl succeeds', () => {
         expect(response).toBeDefined();
-        expect(response.baseURL).toEqual(EXPECTED_VALID_URL);
+        expect(response.baseURL).toEqual(EXPECTED_VALID_URL.hostname);
     });
 
     test('returns success given crawl succeeds', () => {
