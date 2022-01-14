@@ -16,6 +16,21 @@
                     "Find Keyphrases": {
                         "Type": "Task",
                         "Resource": "${FindKeyphrasesARN}",
+                        "Retry": [
+                            {
+                                "ErrorEquals": [
+                                    "KeyphrasesError",
+                                    "Lambda.ServiceException",
+                                    "Lambda.AWSLambdaException",
+                                    "Lambda.SdkClientException",
+                                    "Labmda.TooManyRequestsException",
+                                    "Lambda.Unknown"
+                                ],
+                                "IntervalSeconds": 3,
+                                "BackoffRate": 2.0,
+                                "MaxAttempts": 3
+                            }
+                        ],
                         "End": true
                     }
                 }
