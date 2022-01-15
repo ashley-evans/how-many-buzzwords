@@ -1,0 +1,7 @@
+{
+    "name": "buzzword-aws-keyphrase",
+    "version": "1.0.0",
+    "devDependencies": {
+        "buzzword-aws-keyphrases-fetch-text": "^1.0.0"
+    }
+}

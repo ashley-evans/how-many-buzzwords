@@ -1,5 +1,5 @@
 import { gotScraping } from "got-scraping";
-import HTTPRequestProvider from "../ports/HTTPRequestProvider";
+import HTTPRequestProvider from "./interfaces/HTTPRequestProvider";
 
 class GotProvider implements HTTPRequestProvider {
     async getBody(url: URL): Promise<string> {

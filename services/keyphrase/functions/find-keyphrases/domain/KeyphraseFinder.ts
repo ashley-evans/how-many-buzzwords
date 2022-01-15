@@ -1,5 +1,8 @@
-import HTMLParsingProvider from "../ports/HTMLParsingProvider";
-import HTTPRequestProvider from "../ports/HTTPRequestProvider";
+import {
+    HTMLParsingProvider,
+    HTTPRequestProvider
+} from "buzzword-aws-keyphrases-fetch-text";
+
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import {
     KeyphraseProvider,

@@ -1,7 +1,7 @@
 import { Scope } from "nock/types";
 import path from "path";
 
-import { mockURLFromFile } from "../../../../../../helpers/http-mock";
+import { mockURLFromFile } from "../../../../../helpers/http-mock";
 
 import GotProvider from "../GotProvider";
 

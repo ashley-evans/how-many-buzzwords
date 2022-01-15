@@ -1,6 +1,6 @@
 import { Parser } from 'htmlparser2';
 
-import HTMLParsingProvider from "../ports/HTMLParsingProvider";
+import HTMLParsingProvider from "./interfaces/HTMLParsingProvider";
 
 enum UnparsableElements {
     Script = 'script',

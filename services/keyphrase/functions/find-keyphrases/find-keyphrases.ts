@@ -1,5 +1,8 @@
-import GotProvider from "./adapters/GotProvider";
-import HTMLParser from "./adapters/HTMLParser";
+import {
+    GotProvider,
+    HTMLParser
+} from "buzzword-aws-keyphrases-fetch-text";
+
 import KeyphraseDynamoDBRepository from 
     "./adapters/KeyphraseDynamoDBRepository";
 import EventAdapter from "./adapters/KeyphraseEventAdapter";

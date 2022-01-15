@@ -1,0 +1,9 @@
+{
+    "name": "buzzword-aws-keyphrases-fetch-text",
+    "version": "1.0.0",
+    "main": "./index.js",
+    "dependencies": {
+        "got-scraping": "3.2.6",
+        "htmlparser2": "7.2.0"
+    }
+}
