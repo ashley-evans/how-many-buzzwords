@@ -9,6 +9,17 @@ Parameters:
     Type: String
     Description: The ARN of the Crawl service's Event Bus
 Resources:
+  KeyphraseFetchTextLibraryLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub KeyphraseFetchTextLibraryLayer-${EnvironmentNameSuffix}
+      Description: Layer containing the Keyphrase Fetch Text library and dependencies
+      CompatibleRuntimes:
+        - nodejs14.x
+      ContentUri: ./common/fetch-text
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
   KeyphraseNodeDependencyLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -71,6 +82,7 @@ Resources:
       Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
       Layers:
         - Ref: KeyphraseNodeDependencyLayer
+        - Ref: KeyphraseFetchTextLibraryLayer
       Timeout: 30
       MemorySize: 256
       Environment:
