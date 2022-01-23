@@ -1,9 +1,0 @@
-{
-  "packages": [
-    "services/**"
-  ],
-  "nohoist": [
-    "**/common/**"
-  ],
-  "version": "1.0.0"
-}
