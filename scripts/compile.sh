@@ -24,14 +24,22 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 if [ $clean ]; then
     echo "Clean installing..."
-    npm --prefix $root_dir run ci
     rm -rf $root_dir/dist
+    npm --prefix $root_dir run ci
 else 
     npm --prefix $root_dir run i
 fi
 
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 echo "Running TSC..."
 $root_dir/node_modules/.bin/tsc --project $root_dir/tsconfig.build.json
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 echo "Copying required deployment files to built directory..."
 $root_dir/node_modules/.bin/copyfiles -E -u 1 \
