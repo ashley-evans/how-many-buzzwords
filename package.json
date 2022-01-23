@@ -32,12 +32,12 @@
         "yargs": "^17.3.1"
     },
     "scripts": {
-        "audit": "npm audit --audit-level=moderate",
+        "audit": "./scripts/npm-all.sh -c \"audit --audit-level=moderate\"",
         "lint-js": "node node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
         "lint-packages": "node node_modules/.bin/npmPkgJsonLint '.'",
         "lint": "npm run lint-js && npm run lint-packages",
-        "i": "./scripts/install.sh",
-        "ci": "./scripts/install.sh -c",
+        "i": "./scripts/npm-all.sh -c i",
+        "ci": "./scripts/npm-all.sh -c ci",
         "clean": "rm -rf `find . -type d -name node_modules`",
         "test": "node node_modules/.bin/jest --verbose",
         "prepare": "husky install",
