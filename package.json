@@ -13,6 +13,7 @@
         "aws-sdk-client-mock": "^0.5.6",
         "concat-stream": "^2.0.0",
         "copyfiles": "^2.4.1",
+        "dynamodb-admin": "^4.1.0",
         "eslint": "^7.32.0",
         "eslint-config-standard": "^16.0.3",
         "eslint-plugin-import": "^2.23.4",
