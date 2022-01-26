@@ -14,7 +14,11 @@ const VALID_PATHNAME = '/example';
 const TABLE_NAME = 'test';
 
 dynamoose.aws.sdk.config.update({
-    region: 'eu-west-2'
+    region: 'eu-west-2',
+    credentials: {
+        accessKeyId: 'x',
+        secretAccessKey: 'x'
+    }
 });
 dynamoose.aws.ddb.local();
 
