@@ -10,7 +10,10 @@ class URLsTableRepository implements Repository {
     constructor(private tableName: string) {
         this.model = dynamoose.model<URLsTableDocument>(
             tableName,
-            URLsTableSchema
+            URLsTableSchema,
+            {
+                create: false,
+            }
         );
     }
 

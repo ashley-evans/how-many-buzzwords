@@ -11,7 +11,7 @@ import URLsTableDocument from '../../schemas/URLsTableDocument';
 
 const VALID_HOSTNAME = 'www.example.com';
 const VALID_PATHNAME = '/example';
-const TABLE_NAME = 'test';
+const TABLE_NAME = 'urls-table';
 
 dynamoose.aws.sdk.config.update({
     region: 'eu-west-2',
@@ -22,11 +22,11 @@ dynamoose.aws.sdk.config.update({
 });
 dynamoose.aws.ddb.local();
 
-const repository = new URLsTableRepository(TABLE_NAME);
 const tableModel = dynamoose.model<URLsTableDocument>(
     TABLE_NAME,
     URLsTableSchema
 );
+const repository = new URLsTableRepository(TABLE_NAME);
 
 async function resetDatabase() {
     const response = await tableModel
