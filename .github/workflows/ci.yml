@@ -32,14 +32,14 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
-      - name: Install Dependencies
-        run: |
-          npm run ci
       - name: Setup DynamoDB local
         uses: rrainn/dynamodb-action@v2.0.1
         with:
           port: 8000
           cors: '*'
+      - name: Install Dependencies
+        run: |
+          npm run ci
       - name: Run Integration Tests
         run: |
           npm run test:integration
