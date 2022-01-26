@@ -12,7 +12,7 @@ jobs:
       - name: Compile Project
         run: |
           npm run compile:clean
-  test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
           npm run ci
       - name: Run Unit Tests
         run: |
-          npm run test
+          npm run test:unit
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -58,7 +58,7 @@ jobs:
           npm run audit
   deploy-crawl-service:
     runs-on: ubuntu-latest
-    needs: [compile, test, validate, lint, audit]
+    needs: [compile, unit-test, validate, lint, audit]
     if: ${{ github.ref == 'refs/heads/master' }}
     permissions:
       id-token: write
