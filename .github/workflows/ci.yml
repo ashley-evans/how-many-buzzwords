@@ -26,6 +26,7 @@ jobs:
         run: |
           npm run test:unit
   integration-test:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
