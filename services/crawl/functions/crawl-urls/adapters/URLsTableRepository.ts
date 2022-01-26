@@ -1,41 +1,32 @@
+import dynamoose from 'dynamoose';
+
 import Repository from "../ports/Repository";
-import {
-    PutItemCommand,
-    DynamoDBClient,
-    PutItemCommandInput
-} from "@aws-sdk/client-dynamodb";
-import { URLsTableKeyFields } from "buzzword-aws-crawl-common";
+import URLsTableSchema from '../schemas/URLsTableSchema';
+import URLsTableDocument from '../schemas/URLsTableDocument';
 
 class URLsTableRepository implements Repository {
-    private ddbClient;
+    private model;
+
     constructor(private tableName: string) {
-        this.ddbClient = new DynamoDBClient({});
+        this.model = dynamoose.model<URLsTableDocument>(
+            tableName,
+            URLsTableSchema
+        );
     }
 
-    storePathname(baseURL: string, pathname: string): Promise<boolean> {
-        return new Promise((resolve, reject) => { 
-            const input: PutItemCommandInput = {
-                TableName: this.tableName,
-                Item: {
-                    [URLsTableKeyFields.HashKey]: { S: baseURL },
-                    [URLsTableKeyFields.SortKey]: { S: pathname } 
-                }
-            };
-            const command = new PutItemCommand(input);
+    async storePathname(baseURL: string, pathname: string): Promise<boolean> {
+        await this.model.create(
+            { 
+                BaseUrl: baseURL,
+                Pathname: pathname
+            },
+            {
+                overwrite: true
+            }
+        );
 
-            this.ddbClient.send(command)
-                .then(() => {
-                    console.log(
-                        `Succesfully stored: ${pathname} for ${baseURL}`
-                    );
-
-                    resolve(true);
-                })
-                .catch((ex: unknown) => {
-                    reject(ex);
-                });
-        });
-
+        console.log(`Successfully stored: ${pathname} for ${baseURL}`);
+        return true;
     }
 }
 
