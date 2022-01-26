@@ -162,6 +162,8 @@ describe('Error handling', () => {
         let response: CrawlerResponse;
 
         beforeAll(async () => {
+            jest.resetAllMocks();
+
             const source = throwError(() => new Error());
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockRepository.storePathname.mockResolvedValue(true);
@@ -182,9 +184,13 @@ describe('Error handling', () => {
         let response: CrawlerResponse;
 
         beforeAll(async () => {
+            jest.resetAllMocks();
+
             const source = of(DEFAULT_CHILD_URL);
             mockCrawlProvider.crawl.mockReturnValue(source);
-            mockRepository.storePathname.mockRejectedValue(new Error());
+            mockRepository.storePathname.mockImplementation(() => {
+                throw new Error();
+            });
         
             response = await crawler.crawl(DEFAULT_BASE_URL);
         });
