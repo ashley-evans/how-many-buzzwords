@@ -121,26 +121,38 @@ describe('stores new pathname', () => {
     });
 });
 
-describe('updates existing pathname', () => {
+describe('overwrites existing pathname', () => {
     let response: boolean;
+    let original: Pathname[];
+    let updated: Pathname[];
 
     beforeAll(async () => {
         await repository.storePathname(
             VALID_HOSTNAME,
             VALID_PATHNAME
         );
+        original = await repository.getPathnames(VALID_HOSTNAME);
+
         response = await repository.storePathname(
             VALID_HOSTNAME,
             VALID_PATHNAME
         );
+        updated = await repository.getPathnames(VALID_HOSTNAME);
     });
 
-    test('returns a single pathname', async () => {
-        const result = await repository.getPathnames(VALID_HOSTNAME);
+    test('does not add duplicate pathnames', () => {
+        expect(updated).toHaveLength(1);
+        expect(updated[0].pathname).toEqual(VALID_PATHNAME);
+    });
 
-        expect(result).toBeDefined();
-        expect(result).toHaveLength(1);
-        expect(result[0].pathname).toEqual(VALID_PATHNAME);
+    test('returns a different created date to previous', () => {
+        expect(updated[0].createdAt).toEqual(expect.any(Date));
+        expect(updated[0].createdAt).not.toEqual(original[0].createdAt);
+    });
+
+    test('returns the different updated date to previous', () => {
+        expect(updated[0].updatedAt).toEqual(expect.any(Date));
+        expect(updated[0].updatedAt).not.toEqual(original[0].updatedAt);
     });
 
     test('returns success', () => {
