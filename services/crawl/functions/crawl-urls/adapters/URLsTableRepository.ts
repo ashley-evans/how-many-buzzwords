@@ -1,7 +1,7 @@
 import dynamoose from 'dynamoose';
 import { URLsTableKeyFields } from 'buzzword-aws-crawl-common';
 
-import Repository from "../ports/Repository";
+import { Pathname, Repository } from "../ports/Repository";
 import URLsTableSchema from '../schemas/URLsTableSchema';
 import URLsTableDocument from '../schemas/URLsTableDocument';
 
@@ -22,7 +22,7 @@ class URLsTableRepository implements Repository {
         const pathnames = await this.getPathnames(baseURL);
         const items = pathnames.map((pathname) => ({
             [URLsTableKeyFields.HashKey]: baseURL,
-            [URLsTableKeyFields.SortKey]: pathname
+            [URLsTableKeyFields.SortKey]: pathname.pathname
         }));
 
         try {
@@ -34,13 +34,17 @@ class URLsTableRepository implements Repository {
         }
     }
 
-    async getPathnames(baseURL: string): Promise<string[]> {
+    async getPathnames(baseURL: string): Promise<Pathname[]> {
         const documents = await this.model
             .query(URLsTableKeyFields.HashKey)
             .eq(baseURL)
             .exec();
 
-        return documents.map((document) => document.Pathname);
+        return documents.map((document) => ({
+            pathname: document.Pathname,
+            createdAt: document.createdAt,
+            updatedAt: document.updatedAt
+        }));
     }
 
     async storePathname(baseURL: string, pathname: string): Promise<boolean> {
