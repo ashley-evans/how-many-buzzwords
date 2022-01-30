@@ -5,8 +5,5 @@
         "ajv": "8.8.2",
         "apify": "2.0.7",
         "rxjs": "7.4.0"
-    },
-    "devDependencies": {
-        "buzzword-aws-crawl-urls-repository-library": "file:../../libs/urls-repository-library"
     }
 }
