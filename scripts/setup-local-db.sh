@@ -67,4 +67,7 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 echo "Setting up GUI for DynamoDB container"
 
-DYNAMO_ENDPOINT=http://localhost:$dynamodb_port $root_dir/node_modules/.bin/dynamodb-admin -p $gui_port
+AWS_ACCESS_KEY_ID=x \
+AWS_SECRET_ACCESS_KEY=x \
+DYNAMO_ENDPOINT=http://localhost:$dynamodb_port \
+$root_dir/node_modules/.bin/dynamodb-admin -p $gui_port
