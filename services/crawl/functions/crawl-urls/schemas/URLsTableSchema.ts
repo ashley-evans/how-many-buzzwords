@@ -10,6 +10,8 @@ const schema = new Schema({
         type: String,
         rangeKey: true
     }
+}, {
+    timestamps: true
 });
 
 export default schema;
