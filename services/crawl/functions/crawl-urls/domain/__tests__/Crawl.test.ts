@@ -3,7 +3,7 @@ import { EMPTY, of, throwError, concat } from 'rxjs';
 
 import { CrawlerResponse } from '../../ports/CrawlPort';
 import CrawlProvider from '../../ports/CrawlProvider';
-import Repository from '../../ports/Repository';
+import { Repository } from '../../ports/Repository';
 import Crawl from '../Crawl';
 
 const mockCrawlProvider = mock<CrawlProvider>();
