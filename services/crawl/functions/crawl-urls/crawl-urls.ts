@@ -1,10 +1,13 @@
+import {
+    Repository,
+    URLsTableRepository
+} from "buzzword-aws-crawl-urls-repository-library";
+
 import ApifyProvider from "./adapters/ApifyProvider";
 import EventAdapter from "./adapters/EventAdapter";
-import URLsTableRepository from "./adapters/URLsTableRepository";
 import Crawl from "./domain/Crawl";
 import CrawlProvider from "./ports/CrawlProvider";
 import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
-import { Repository } from "./ports/Repository";
 
 function createCrawlProvider(): CrawlProvider {
     const maxCrawlDepth = Number(process.env.MAX_CRAWL_DEPTH);

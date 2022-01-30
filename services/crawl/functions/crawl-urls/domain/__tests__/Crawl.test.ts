@@ -1,9 +1,9 @@
 import { mock } from 'jest-mock-extended';
 import { EMPTY, of, throwError, concat } from 'rxjs';
+import { Repository } from 'buzzword-aws-crawl-urls-repository-library';
 
 import { CrawlerResponse } from '../../ports/CrawlPort';
 import CrawlProvider from '../../ports/CrawlProvider';
-import { Repository } from '../../ports/Repository';
 import Crawl from '../Crawl';
 
 const mockCrawlProvider = mock<CrawlProvider>();

@@ -1,7 +1,7 @@
 import dynamoose from 'dynamoose';
-import { URLsTableKeyFields } from 'buzzword-aws-crawl-common';
 
-import { Pathname, Repository } from "../ports/Repository";
+import URLsTableKeyFields from '../enums/URLsTableKeyFields';
+import { Pathname, Repository } from '../ports/Repository';
 import URLsTableSchema from '../schemas/URLsTableSchema';
 import URLsTableDocument from '../schemas/URLsTableDocument';
 
