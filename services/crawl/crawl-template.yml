@@ -27,6 +27,16 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
+  URLsRepositoryLibraryLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub URLsRepositoryLibraryLayer-${EnvironmentNameSuffix}
+      ContentUri: ./libs/urls-repository-library
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
   URLsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -79,8 +89,7 @@ Resources:
       CodeUri: ./functions/crawl-urls
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
-        - Ref: CrawlNodeDependencyLayer
-        - Ref: CrawlCommonLayer
+        - Ref: URLsRepositoryLibraryLayer
       Timeout: 120
       MemorySize: 256
       Environment:
