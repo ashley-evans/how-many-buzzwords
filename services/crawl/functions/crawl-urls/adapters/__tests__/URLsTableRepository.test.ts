@@ -82,3 +82,80 @@ describe('overwrites existing items', () => {
         await repository.deletePathnames(VALID_HOSTNAME);
     });
 });
+
+describe.each([
+    [
+        'a single pathname stored',
+        [
+            VALID_PATHNAME
+        ]
+    ],
+    [
+        'multiple pathnames stored',
+        [
+            VALID_PATHNAME,
+            `${VALID_PATHNAME}1`
+        ]
+    ]
+])('deletes given %s', (message: string, pathnames: string[]) => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        for (const pathname of pathnames) {
+            await repository.storePathname(
+                VALID_HOSTNAME,
+                pathname
+            );
+        }
+
+        response = await repository.deletePathnames(VALID_HOSTNAME);
+    });
+
+    test('returns no pathnames', async () => {
+        const result = await repository.getPathnames(VALID_HOSTNAME);
+
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(0);
+    });
+
+    test('returns success', () => {
+        expect(response).toEqual(true);
+    });
+});
+
+describe('only deletes pathnames attributed to given base URL', () => {
+    const OTHER_HOSTNAME = 'www.test.com';
+    const OTHER_PATHNAME = '/test';
+
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storePathname(VALID_HOSTNAME, VALID_PATHNAME);
+        await repository.storePathname(OTHER_HOSTNAME, OTHER_PATHNAME);
+
+        response = await repository.deletePathnames(VALID_HOSTNAME);
+    });
+
+    test('returns no pathnames for deleted base URL', async () => {
+        const result = await repository.getPathnames(VALID_HOSTNAME);
+
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(0);
+    });
+
+    test('returns existing pathnames for other base URL', async () => {
+        const result = await repository.getPathnames(OTHER_HOSTNAME);
+
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual(OTHER_PATHNAME);
+    });
+
+    test('returns success', () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deletePathnames(OTHER_HOSTNAME);
+    });
+});
