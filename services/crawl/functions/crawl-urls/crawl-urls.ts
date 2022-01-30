@@ -4,7 +4,7 @@ import URLsTableRepository from "./adapters/URLsTableRepository";
 import Crawl from "./domain/Crawl";
 import CrawlProvider from "./ports/CrawlProvider";
 import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
-import Repository from "./ports/Repository";
+import { Repository } from "./ports/Repository";
 
 function createCrawlProvider(): CrawlProvider {
     const maxCrawlDepth = Number(process.env.MAX_CRAWL_DEPTH);

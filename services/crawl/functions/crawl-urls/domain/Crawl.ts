@@ -1,6 +1,6 @@
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
 import CrawlProvider from "../ports/CrawlProvider";
-import Repository from "../ports/Repository";
+import { Repository } from "../ports/Repository";
 
 class Crawl implements CrawlPort {
     constructor(
