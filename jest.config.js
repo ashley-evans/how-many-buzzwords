@@ -6,5 +6,6 @@ module.exports = {
         ".aws-sam",
         "__tests__/helpers",
         "dist"
-    ]
+    ],
+    runner: "groups"
 };

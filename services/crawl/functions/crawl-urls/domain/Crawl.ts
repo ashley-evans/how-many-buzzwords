@@ -16,19 +16,22 @@ class Crawl implements CrawlPort {
             const pathnames: string[] = [];
             const storagePromises: Promise<boolean>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
-                next: async (childURL) => {
-                    // Store promise to ensure complete occurs after all nexts.
+                next: (childURL) => {
                     const promise = this.storePathname(baseURL, childURL);
                     storagePromises.push(promise);
-                    const stored = await promise;
-                    if (!stored) {
-                        resolve({
-                            success: false,
-                            pathnames
+                    promise
+                        .then(() => {
+                            pathnames.push(childURL.pathname);
+                        })
+                        .catch((ex) => {
+                            console.error(
+                                `An error occured during storage: ${ex}`
+                            );
+                            resolve({ 
+                                success: false,
+                                pathnames
+                            });
                         });
-                    } else {
-                        pathnames.push(childURL.pathname);
-                    }
                 },
                 complete: async () => {
                     await Promise.allSettled(storagePromises);

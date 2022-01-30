@@ -38,6 +38,25 @@ Run the following command to validate the stack template definition:
 xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
+## Running tests
+
+Unit tests can be ran simply by running the following command:
+```shell
+npm run test:unit
+```
+
+Integration tests require a local instance of DynamoDB local running. This can be started by running:
+```shell
+./scripts/setup-local-db.sh -i
+```
+
+This will start a local instance and setup a GUI on http://localhost:8001 to view the DB's contents.
+
+Once started, the integration tests can be ran using the following command:
+```shell
+npm run test:integration
+```
+
 ## Deploy
 
 Run the following commands to deploy all buzzword services:
