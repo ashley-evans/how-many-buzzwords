@@ -25,7 +25,7 @@ beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
 });
 
-describe('happy path', () => {
+describe('stores new pathname', () => {
     let response: boolean;
 
     beforeAll(async () => {
@@ -52,7 +52,7 @@ describe('happy path', () => {
     });
 });
 
-describe('overwrites existing items', () => {
+describe('overwrites existing pathname', () => {
     let response: boolean;
 
     beforeAll(async () => {
