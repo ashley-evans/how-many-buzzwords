@@ -3,7 +3,6 @@
  */
 
 import dynamoose from 'dynamoose';
-import { URLsTableKeyFields } from 'buzzword-aws-crawl-common';
 
 dynamoose.aws.sdk.config.update({
     region: 'eu-west-2',
@@ -15,36 +14,15 @@ dynamoose.aws.sdk.config.update({
 dynamoose.aws.ddb.local();
 
 import URLsTableRepository from '../URLsTableRepository';
-import URLsTableSchema from '../../schemas/URLsTableSchema';
-import URLsTableDocument from '../../schemas/URLsTableDocument';
 
 const VALID_HOSTNAME = 'www.example.com';
 const VALID_PATHNAME = '/example';
 const TABLE_NAME = 'urls-table';
 
-const tableModel = dynamoose.model<URLsTableDocument>(
-    TABLE_NAME,
-    URLsTableSchema
-);
-const repository = new URLsTableRepository(TABLE_NAME);
-
-async function resetDatabase() {
-    const response = await tableModel
-        .scan()
-        .exec();
-
-    const items = response.map((item) => ({
-        [URLsTableKeyFields.HashKey]: item.BaseUrl,
-        [URLsTableKeyFields.SortKey]: item.Pathname
-    }));
-    if (items.length > 0) {
-        await tableModel.batchDelete(items);
-    }
-}
+const repository = new URLsTableRepository(TABLE_NAME, true);
 
 beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
-    await resetDatabase();
 });
 
 describe('happy path', () => {
@@ -57,16 +35,12 @@ describe('happy path', () => {
         );
     });
 
-    test('stores an item with data provided into table', async () => {
-        const result = await tableModel
-            .query(URLsTableKeyFields.HashKey)
-            .eq(VALID_HOSTNAME)
-            .exec();
+    test('stores the provided pathname into table', async () => {
+        const result = await repository.getPathnames(VALID_HOSTNAME);
 
         expect(result).toBeDefined();
         expect(result).toHaveLength(1);
-        expect(result[0].BaseUrl).toEqual(VALID_HOSTNAME);
-        expect(result[0].Pathname).toEqual(VALID_PATHNAME);
+        expect(result[0]).toEqual(VALID_PATHNAME);
     });
 
     test('returns success', () => {
@@ -74,7 +48,7 @@ describe('happy path', () => {
     });
 
     afterAll(async () => {
-        await resetDatabase();
+        await repository.deletePathnames(VALID_HOSTNAME);
     });
 });
 
@@ -93,15 +67,11 @@ describe('overwrites existing items', () => {
     });
 
     test('overwrites existing item if item already exists', async () => {
-        const result = await tableModel
-            .query(URLsTableKeyFields.HashKey)
-            .eq(VALID_HOSTNAME)
-            .exec();
+        const result = await repository.getPathnames(VALID_HOSTNAME);
 
         expect(result).toBeDefined();
         expect(result).toHaveLength(1);
-        expect(result[0].BaseUrl).toEqual(VALID_HOSTNAME);
-        expect(result[0].Pathname).toEqual(VALID_PATHNAME);
+        expect(result[0]).toEqual(VALID_PATHNAME);
     });
 
     test('returns success', () => {
@@ -109,6 +79,6 @@ describe('overwrites existing items', () => {
     });
 
     afterAll(async () => {
-        await resetDatabase();
+        await repository.deletePathnames(VALID_HOSTNAME);
     });
 });
