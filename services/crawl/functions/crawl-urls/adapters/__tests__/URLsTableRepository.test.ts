@@ -5,14 +5,6 @@
 import dynamoose from 'dynamoose';
 import { URLsTableKeyFields } from 'buzzword-aws-crawl-common';
 
-import URLsTableRepository from '../URLsTableRepository';
-import URLsTableSchema from '../../schemas/URLsTableSchema';
-import URLsTableDocument from '../../schemas/URLsTableDocument';
-
-const VALID_HOSTNAME = 'www.example.com';
-const VALID_PATHNAME = '/example';
-const TABLE_NAME = 'urls-table';
-
 dynamoose.aws.sdk.config.update({
     region: 'eu-west-2',
     credentials: {
@@ -21,6 +13,14 @@ dynamoose.aws.sdk.config.update({
     }
 });
 dynamoose.aws.ddb.local();
+
+import URLsTableRepository from '../URLsTableRepository';
+import URLsTableSchema from '../../schemas/URLsTableSchema';
+import URLsTableDocument from '../../schemas/URLsTableDocument';
+
+const VALID_HOSTNAME = 'www.example.com';
+const VALID_PATHNAME = '/example';
+const TABLE_NAME = 'urls-table';
 
 const tableModel = dynamoose.model<URLsTableDocument>(
     TABLE_NAME,

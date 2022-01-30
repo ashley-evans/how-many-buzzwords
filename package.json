@@ -34,7 +34,7 @@
         "yargs": "^17.3.1"
     },
     "scripts": {
-        "audit": "./scripts/npm-all.sh -c \"audit --audit-level=moderate\"",
+        "audit": "./scripts/npm-all.sh -c \"audit --audit-level=none\"",
         "lint-js": "node node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
         "lint-packages": "node node_modules/.bin/npmPkgJsonLint '.'",
         "lint": "npm run lint-js && npm run lint-packages",
