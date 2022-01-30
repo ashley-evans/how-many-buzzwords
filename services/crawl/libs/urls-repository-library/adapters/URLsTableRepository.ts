@@ -47,6 +47,26 @@ class URLsTableRepository implements Repository {
         }));
     }
 
+    async getPathname(
+        baseURL: string,
+        pathname: string
+    ): Promise<Pathname | undefined> {
+        const documents = await this.model
+            .query(URLsTableKeyFields.HashKey).eq(baseURL)
+            .where(URLsTableKeyFields.SortKey).eq(pathname)
+            .exec();
+
+        if (documents.count == 0) {
+            return undefined;
+        }
+
+        return {
+            pathname: documents[0].Pathname,
+            createdAt: documents[0].createdAt,
+            updatedAt: documents[0].updatedAt
+        };
+    }
+
     async storePathname(baseURL: string, pathname: string): Promise<boolean> {
         await this.model.create(
             { 

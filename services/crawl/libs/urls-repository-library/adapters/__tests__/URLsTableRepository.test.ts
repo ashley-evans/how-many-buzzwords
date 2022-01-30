@@ -80,6 +80,41 @@ test('only returns pathnames attributed to given base URL', async () => {
     expect(response[0].pathname).toEqual(VALID_PATHNAME);
 });
 
+describe('given pathname stored when requested specifically', () => {
+    let response: Pathname | undefined;
+
+    beforeAll(async () => {
+        await repository.storePathname(VALID_HOSTNAME, VALID_PATHNAME);
+
+        response = await repository.getPathname(VALID_HOSTNAME, VALID_PATHNAME);
+    });
+
+    test('returns specified pathname', () => {
+        expect(response?.pathname).toEqual(VALID_PATHNAME);
+    });
+
+    test('returns created time for pathname', () => {
+        expect(response?.createdAt).toEqual(expect.any(Date));
+    });
+
+    test('returns updated time for pathname', () => {
+        expect(response?.updatedAt).toEqual(expect.any(Date));
+    });
+
+    afterAll(async () => {
+        await repository.deletePathnames(VALID_HOSTNAME);
+    });
+});
+
+test('returns undefined given unknown pathname', async () => {
+    const response = await repository.getPathname(
+        VALID_HOSTNAME,
+        VALID_PATHNAME
+    );
+
+    expect(response).toBeUndefined();
+});
+
 describe('stores new pathname', () => {
     let response: boolean;
     let stored: Pathname[];
