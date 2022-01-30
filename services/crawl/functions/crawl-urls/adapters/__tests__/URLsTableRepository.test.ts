@@ -159,3 +159,18 @@ describe('only deletes pathnames attributed to given base URL', () => {
         await repository.deletePathnames(OTHER_HOSTNAME);
     });
 });
+
+test('returns failure if no pathnames exist upon deletion', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await repository.deletePathnames('invalid');
+
+    expect(response).toEqual(false);
+});
+
+test('given no pathnames then empty array returned upon GET', async () => {
+    const response = await repository.getPathnames('invalid');
+
+    expect(response).toBeDefined();
+    expect(response).toHaveLength(0);
+});
