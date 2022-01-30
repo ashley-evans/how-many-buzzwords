@@ -16,13 +16,65 @@ dynamoose.aws.ddb.local();
 import URLsTableRepository from '../URLsTableRepository';
 
 const VALID_HOSTNAME = 'www.example.com';
+const OTHER_HOSTNAME = 'www.test.com';
 const VALID_PATHNAME = '/example';
+const OTHER_PATHNAME = '/test';
 const TABLE_NAME = 'urls-table';
 
 const repository = new URLsTableRepository(TABLE_NAME, true);
 
 beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
+});
+
+test.each([
+    [
+        'one stored',
+        [
+            VALID_PATHNAME
+        ]
+    ],
+    [
+        'multiple stored',
+        [
+            VALID_PATHNAME,
+            `${VALID_PATHNAME}1`
+        ]
+    ]
+])(
+    'returns pathnames given %s',
+    async (message: string, pathnames: string[]) => {
+        for (const pathname of pathnames) {
+            await repository.storePathname(
+                VALID_HOSTNAME,
+                pathname
+            );
+        }
+
+        const response = await repository.getPathnames(VALID_HOSTNAME);
+
+        expect(response).toBeDefined();
+        expect(response).toHaveLength(pathnames.length);
+        for (const pathname of pathnames) {
+            expect(response).toContainEqual(pathname);
+        }
+
+        await repository.deletePathnames(VALID_HOSTNAME);
+    }
+);
+
+test('only returns pathnames attributed to given base URL', async () => {
+    await repository.storePathname(VALID_HOSTNAME, VALID_PATHNAME);
+    await repository.storePathname(OTHER_HOSTNAME, OTHER_PATHNAME);
+
+    const response = await repository.getPathnames(VALID_HOSTNAME);
+
+    expect(response).toBeDefined();
+    expect(response).toHaveLength(1);
+    expect(response[0]).toEqual(VALID_PATHNAME);
+
+    await repository.deletePathnames(VALID_HOSTNAME);
+    await repository.deletePathnames(OTHER_HOSTNAME);
 });
 
 describe('stores new pathname', () => {
@@ -124,9 +176,6 @@ describe.each([
 });
 
 describe('only deletes pathnames attributed to given base URL', () => {
-    const OTHER_HOSTNAME = 'www.test.com';
-    const OTHER_PATHNAME = '/test';
-
     let response: boolean;
 
     beforeAll(async () => {
