@@ -57,11 +57,14 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: URLsTableWritePolicy
+        - PolicyName: URLsTableCrawlPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query
+                  - dynamodb:BatchWriteItem
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
