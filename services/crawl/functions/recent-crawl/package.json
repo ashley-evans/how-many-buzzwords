@@ -1,4 +1,7 @@
 {
     "name": "buzzword-aws-recent-crawl-lambda",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "dependencies": {
+        "dayjs": "1.10.7"
+    }
 }

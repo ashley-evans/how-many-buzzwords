@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { Repository } from 'buzzword-aws-crawl-urls-repository-library';
 
 import { RecentCrawlPort, RecentCrawlResponse } from '../ports/RecentCrawlPort';
@@ -18,10 +19,19 @@ class RecentCrawlDomain implements RecentCrawlPort {
 
         if (pathnameItem) {
             return {
-                recentlyCrawled: false,
-                crawlTime: pathnameItem?.createdAt
+                recentlyCrawled: this.isDateAfterMax(pathnameItem.createdAt),
+                crawlTime: pathnameItem.createdAt
             };
         }
+    }
+
+    private isDateAfterMax(date: Date): boolean {
+        const max = dayjs().subtract(
+            this.maxCrawlAgeHours,
+            'hour'
+        );
+        
+        return dayjs(date).isAfter(max);
     }
 }
 
