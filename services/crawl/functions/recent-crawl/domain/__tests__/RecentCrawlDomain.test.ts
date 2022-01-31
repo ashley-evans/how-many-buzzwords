@@ -29,7 +29,7 @@ function createPathnameEntry(pathname: string, date: Date): Pathname {
 
 describe.each([
     [
-        'older than max age',
+        'before max age',
         createPathnameEntry(
             VALID_URL.pathname,
             createDate(MAX_AGE_HOURS * -1 - 1)
@@ -37,7 +37,7 @@ describe.each([
         false
     ],
     [
-        'newer than max age',
+        'after max age',
         createPathnameEntry(
             VALID_URL.pathname,
             createDate(MAX_AGE_HOURS - 1)
@@ -79,3 +79,21 @@ describe.each([
         });
     }
 );
+
+describe('given no pathname entry exists', () => {
+    let response: RecentCrawlResponse | undefined;
+
+    beforeAll(async () => {
+        mockRepository.getPathname.mockResolvedValue(undefined);
+
+        response = await domain.hasCrawledRecently(VALID_URL);
+    });
+
+    test('returns undefined', () => {
+        expect(response).toBeUndefined();
+    });
+
+    afterAll(() => {
+        jest.resetAllMocks();
+    });
+});

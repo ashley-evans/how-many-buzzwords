@@ -23,6 +23,8 @@ class RecentCrawlDomain implements RecentCrawlPort {
                 crawlTime: pathnameItem.createdAt
             };
         }
+
+        return undefined;
     }
 
     private isDateAfterMax(date: Date): boolean {
