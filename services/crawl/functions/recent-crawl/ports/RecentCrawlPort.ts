@@ -4,7 +4,7 @@ type RecentCrawlResponse = {
 };
 
 interface RecentCrawlPort {
-    hasCrawledRecently(baseURL: URL): Promise<RecentCrawlResponse>
+    hasCrawledRecently(baseURL: URL): Promise<RecentCrawlResponse | undefined>
 }
 
 export {
