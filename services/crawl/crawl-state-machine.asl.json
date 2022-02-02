@@ -1,9 +1,49 @@
 {
-    "StartAt": "Crawl",
+    "StartAt": "Check last crawl",
     "States": {
+        "Check last crawl": {
+            "Type": "Task",
+            "Resource": "${RecentCrawlARN}",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException",
+                        "Lambda.Unknown"
+                    ],
+                    "IntervalSeconds": 3,
+                    "BackoffRate": 2.0,
+                    "MaxAttempts": 3
+                }
+            ],
+            "Next": "Was URL recently crawled?"
+        },
+        "Was URL recently crawled?": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.recentlyCrawled",
+                    "BooleanEquals": true,
+                    "Next": "Recently crawled"
+                },
+                {
+                    "Variable": "$.recentlyCrawled",
+                    "BooleanEquals": false,
+                    "Next": "Crawl"
+                }
+            ]
+        },
+        "Recently crawled": {
+            "Type": "Succeed"
+        },
         "Crawl": {
             "Type": "Task",
             "Resource": "${CrawlURLsARN}",
+            "Parameters": {
+                "url.$": "$.baseURL"
+            },
             "Retry": [
                 {
                     "ErrorEquals": [

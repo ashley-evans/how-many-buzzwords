@@ -262,6 +262,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt CrawlURLs.Arn
                 Effect: Allow
+        - PolicyName: InvokeRecentCrawl
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt RecentCrawl.Arn
+                Effect: Allow
         - PolicyName: PutEventsPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -278,6 +286,7 @@ Resources:
         Enabled: true
       DefinitionUri: ./crawl-state-machine.asl.json
       DefinitionSubstitutions:
+        RecentCrawlARN: !GetAtt RecentCrawl.Arn
         CrawlURLsARN: !GetAtt CrawlURLs.Arn
         CrawlServiceEventBusARN: !GetAtt CrawlServiceEventBus.Arn
       Role: !GetAtt CrawlStateMachineRole.Arn
