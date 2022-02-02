@@ -5,7 +5,7 @@ type RecentCrawlEvent = {
 type RecentCrawlAdapterResponse = {
     baseURL: string,
     recentlyCrawled: boolean,
-    crawlTime: Date
+    crawlTime?: Date
 }
 
 interface RecentCrawlAdapter {

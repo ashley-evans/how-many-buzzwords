@@ -2,7 +2,11 @@ import { mock } from 'jest-mock-extended';
 
 import RecentCrawlEventAdapter from '../RecentCrawlEventAdapter';
 import RecentCrawlDomain from '../../domain/RecentCrawlDomain';
-import { RecentCrawlEvent } from "../../ports/RecentCrawlAdapter";
+import {
+    RecentCrawlAdapterResponse,
+    RecentCrawlEvent
+} from "../../ports/RecentCrawlAdapter";
+import { RecentCrawlResponse } from '../../ports/RecentCrawlPort';
 
 const VALID_URL = new URL('https://www.example.com/');
 
@@ -47,11 +51,19 @@ test.each([
     }
 );
 
-describe('given an event with a valid URL', () => {
+describe('given an event with a valid URL and recently crawled', () => {
+    const successResponse: RecentCrawlResponse = {
+        recentlyCrawled: true,
+        crawlTime: new Date()
+    };
+
+    let response: RecentCrawlAdapterResponse;
+
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockDomain.hasCrawledRecently.mockResolvedValue(successResponse);
 
-        await adapter.hasCrawledRecently(
+        response = await adapter.hasCrawledRecently(
             createEvent(VALID_URL)
         );
     });
@@ -61,5 +73,49 @@ describe('given an event with a valid URL', () => {
         expect(mockDomain.hasCrawledRecently).toHaveBeenCalledWith(
             VALID_URL
         );
+    });
+
+    test('returns valid URL in response', () => {
+        expect(response.baseURL).toEqual(VALID_URL.toString());
+    });
+
+    test('returns recently crawled in response', () => {
+        expect(response.recentlyCrawled).toEqual(true);
+    });
+    
+    test('returns crawl date time in response', () => {
+        expect(response.crawlTime).toEqual(successResponse.crawlTime);
+    });
+});
+
+describe('given an event with a valid URL that has never been crawled', () => {
+    let response: RecentCrawlAdapterResponse;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockDomain.hasCrawledRecently.mockResolvedValue(undefined);
+
+        response = await adapter.hasCrawledRecently(
+            createEvent(VALID_URL)
+        );
+    });
+
+    test('calls domain with valid URL', () => {
+        expect(mockDomain.hasCrawledRecently).toHaveBeenCalledTimes(1);
+        expect(mockDomain.hasCrawledRecently).toHaveBeenCalledWith(
+            VALID_URL
+        );
+    });
+
+    test('returns valid URL in response', () => {
+        expect(response.baseURL).toEqual(VALID_URL.toString());
+    });
+
+    test('returns not recently crawled in response', () => {
+        expect(response.recentlyCrawled).toEqual(false);
+    });
+    
+    test('returns no crawl datetime in response', () => {
+        expect(response.crawlTime).toBeUndefined();
     });
 });

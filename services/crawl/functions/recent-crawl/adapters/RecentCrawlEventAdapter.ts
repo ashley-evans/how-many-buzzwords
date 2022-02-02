@@ -35,12 +35,18 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
             );
         }
         
-        await this.domain.hasCrawledRecently(url);
+        const response = await this.domain.hasCrawledRecently(url);
+        if (response) {
+            return {
+                baseURL: url.toString(),
+                recentlyCrawled: true,
+                crawlTime: response.crawlTime
+            };
+        }
 
         return {
-            baseURL: url.hostname,
-            recentlyCrawled: true,
-            crawlTime: new Date()
+            baseURL: url.toString(),
+            recentlyCrawled: false
         };
     }
 
