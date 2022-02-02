@@ -1,5 +1,7 @@
 import { mock } from 'jest-mock-extended';
 
+jest.mock('buzzword-aws-crawl-urls-repository-library');
+
 import { handler } from '../recent-crawl';
 import { RecentCrawlEvent } from '../ports/RecentCrawlAdapter';
 
