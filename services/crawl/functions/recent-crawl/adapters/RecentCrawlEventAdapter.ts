@@ -39,7 +39,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         if (response) {
             return {
                 baseURL: url.toString(),
-                recentlyCrawled: true,
+                recentlyCrawled: response.recentlyCrawled,
                 crawlTime: response.crawlTime
             };
         }
