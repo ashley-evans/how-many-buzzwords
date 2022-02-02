@@ -8,7 +8,7 @@ import URLsTableDocument from '../schemas/URLsTableDocument';
 class URLsTableRepository implements Repository {
     private model;
 
-    constructor(private tableName: string, createTable?: boolean) {
+    constructor(tableName: string, createTable?: boolean) {
         this.model = dynamoose.model<URLsTableDocument>(
             tableName,
             URLsTableSchema,
