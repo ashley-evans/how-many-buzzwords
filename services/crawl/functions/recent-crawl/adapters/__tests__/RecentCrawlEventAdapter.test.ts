@@ -1,17 +1,19 @@
 import { mock } from 'jest-mock-extended';
 
 import RecentCrawlEventAdapter from '../RecentCrawlEventAdapter';
-import RecentCrawlDomain from '../../domain/RecentCrawlDomain';
 import {
     RecentCrawlAdapterResponse,
     RecentCrawlEvent
 } from "../../ports/RecentCrawlAdapter";
-import { RecentCrawlResponse } from '../../ports/RecentCrawlPort';
+import {
+    RecentCrawlPort,
+    RecentCrawlResponse
+} from '../../ports/RecentCrawlPort';
 
 const VALID_URL = new URL('https://www.example.com/');
 
-const mockDomain = mock<RecentCrawlDomain>();
-const adapter = new RecentCrawlEventAdapter(mockDomain);
+const mockPort = mock<RecentCrawlPort>();
+const adapter = new RecentCrawlEventAdapter(mockPort);
 
 function createEvent(url?: URL | string): RecentCrawlEvent {
     const event: RecentCrawlEvent = {};
@@ -72,7 +74,7 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
-            mockDomain.hasCrawledRecently.mockResolvedValue(successResponse);
+            mockPort.hasCrawledRecently.mockResolvedValue(successResponse);
 
             response = await adapter.hasCrawledRecently(
                 createEvent(VALID_URL)
@@ -80,8 +82,8 @@ describe.each([
         });
 
         test('calls domain with valid URL', () => {
-            expect(mockDomain.hasCrawledRecently).toHaveBeenCalledTimes(1);
-            expect(mockDomain.hasCrawledRecently).toHaveBeenCalledWith(
+            expect(mockPort.hasCrawledRecently).toHaveBeenCalledTimes(1);
+            expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(
                 VALID_URL
             );
         });
@@ -105,7 +107,7 @@ describe('given an event with a valid URL that has never been crawled', () => {
 
     beforeAll(async () => {
         jest.resetAllMocks();
-        mockDomain.hasCrawledRecently.mockResolvedValue(undefined);
+        mockPort.hasCrawledRecently.mockResolvedValue(undefined);
 
         response = await adapter.hasCrawledRecently(
             createEvent(VALID_URL)
@@ -113,8 +115,8 @@ describe('given an event with a valid URL that has never been crawled', () => {
     });
 
     test('calls domain with valid URL', () => {
-        expect(mockDomain.hasCrawledRecently).toHaveBeenCalledTimes(1);
-        expect(mockDomain.hasCrawledRecently).toHaveBeenCalledWith(
+        expect(mockPort.hasCrawledRecently).toHaveBeenCalledTimes(1);
+        expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(
             VALID_URL
         );
     });

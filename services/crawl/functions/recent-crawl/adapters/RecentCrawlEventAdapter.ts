@@ -1,11 +1,11 @@
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
 
-import RecentCrawlDomain from "../domain/RecentCrawlDomain";
 import {
     RecentCrawlAdapter,
     RecentCrawlAdapterResponse,
     RecentCrawlEvent
 } from "../ports/RecentCrawlAdapter";
+import { RecentCrawlPort } from '../ports/RecentCrawlPort';
 
 type ValidEventBody = {
     url: string
@@ -15,7 +15,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
     private ajv: Ajv;
     private validator;
 
-    constructor(private domain: RecentCrawlDomain) {
+    constructor(private port: RecentCrawlPort) {
         this.ajv = new Ajv();
         this.validator = this.createValidator();
     }
@@ -35,7 +35,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
             );
         }
         
-        const response = await this.domain.hasCrawledRecently(url);
+        const response = await this.port.hasCrawledRecently(url);
         if (response) {
             return {
                 baseURL: url.toString(),
