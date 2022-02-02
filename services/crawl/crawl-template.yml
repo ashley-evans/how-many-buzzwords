@@ -202,6 +202,45 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: !GetAtt URLsCRUDFunction.Arn
                 Effect: Allow
+  RecentCrawlRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: URLsTableCrawlPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query
+                Resource: !GetAtt URLsTable.Arn
+                Effect: Allow
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  RecentCrawl:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recent-crawl.handler
+      Role: !GetAtt RecentCrawlRole.Arn
+      Runtime: nodejs14.x
+      CodeUri: ./functions/recent-crawl
+      Description: Returns whether the URL has been crawled within configured time
+      Layers:
+        - Ref: URLsRepositoryLibraryLayer
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref URLsTable
+          MAX_CRAWL_AGE_HOURS: 48
   CrawlStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
