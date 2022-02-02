@@ -1,5 +1,6 @@
 import { Schema } from 'dynamoose';
-import { URLsTableKeyFields } from 'buzzword-aws-crawl-common';
+
+import URLsTableKeyFields from '../enums/URLsTableKeyFields';
 
 const schema = new Schema({
     [URLsTableKeyFields.HashKey]: {
@@ -10,6 +11,8 @@ const schema = new Schema({
         type: String,
         rangeKey: true
     }
+}, {
+    timestamps: true
 });
 
 export default schema;

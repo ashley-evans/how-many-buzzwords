@@ -1,6 +1,7 @@
+import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
 import CrawlProvider from "../ports/CrawlProvider";
-import Repository from "../ports/Repository";
 
 class Crawl implements CrawlPort {
     constructor(

@@ -13,6 +13,7 @@ dynamoose.aws.sdk.config.update({
 });
 dynamoose.aws.ddb.local();
 
+import { Pathname } from '../../ports/Repository';
 import URLsTableRepository from '../URLsTableRepository';
 
 const VALID_HOSTNAME = 'www.example.com';
@@ -52,14 +53,17 @@ test.each([
         }
 
         const response = await repository.getPathnames(VALID_HOSTNAME);
+        await repository.deletePathnames(VALID_HOSTNAME);
 
         expect(response).toBeDefined();
         expect(response).toHaveLength(pathnames.length);
         for (const pathname of pathnames) {
-            expect(response).toContainEqual(pathname);
+            expect(response).toContainEqual(
+                expect.objectContaining({
+                    pathname
+                })
+            );
         }
-
-        await repository.deletePathnames(VALID_HOSTNAME);
     }
 );
 
@@ -68,31 +72,79 @@ test('only returns pathnames attributed to given base URL', async () => {
     await repository.storePathname(OTHER_HOSTNAME, OTHER_PATHNAME);
 
     const response = await repository.getPathnames(VALID_HOSTNAME);
+    await repository.deletePathnames(VALID_HOSTNAME);
+    await repository.deletePathnames(OTHER_HOSTNAME);
 
     expect(response).toBeDefined();
     expect(response).toHaveLength(1);
-    expect(response[0]).toEqual(VALID_PATHNAME);
+    expect(response[0].pathname).toEqual(VALID_PATHNAME);
+});
 
-    await repository.deletePathnames(VALID_HOSTNAME);
-    await repository.deletePathnames(OTHER_HOSTNAME);
+describe('given pathname stored when requested specifically', () => {
+    let response: Pathname | undefined;
+
+    beforeAll(async () => {
+        await repository.storePathname(VALID_HOSTNAME, VALID_PATHNAME);
+
+        response = await repository.getPathname(VALID_HOSTNAME, VALID_PATHNAME);
+    });
+
+    test('returns specified pathname', () => {
+        expect(response?.pathname).toEqual(VALID_PATHNAME);
+    });
+
+    test('returns created time for pathname', () => {
+        expect(response?.createdAt).toEqual(expect.any(Date));
+    });
+
+    test('returns updated time for pathname', () => {
+        expect(response?.updatedAt).toEqual(expect.any(Date));
+    });
+
+    afterAll(async () => {
+        await repository.deletePathnames(VALID_HOSTNAME);
+    });
+});
+
+test('returns undefined given unknown pathname', async () => {
+    const response = await repository.getPathname(
+        VALID_HOSTNAME,
+        VALID_PATHNAME
+    );
+
+    expect(response).toBeUndefined();
 });
 
 describe('stores new pathname', () => {
     let response: boolean;
+    let stored: Pathname[];
 
     beforeAll(async () => {
         response = await repository.storePathname(
             VALID_HOSTNAME,
             VALID_PATHNAME
         );
+
+        stored = await repository.getPathnames(VALID_HOSTNAME);
     });
 
-    test('stores the provided pathname into table', async () => {
-        const result = await repository.getPathnames(VALID_HOSTNAME);
+    test('stores the provided pathname into table', () => {
+        expect(stored).toBeDefined();
+        expect(stored).toHaveLength(1);
+        expect(stored[0].pathname).toEqual(VALID_PATHNAME);
+    });
 
-        expect(result).toBeDefined();
-        expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(VALID_PATHNAME);
+    test('stores the time created', () => {
+        expect(stored).toBeDefined();
+        expect(stored).toHaveLength(1);
+        expect(stored[0].createdAt).toEqual(expect.any(Date));
+    });
+
+    test('stores the time updated (equal to created)', () => {
+        expect(stored).toBeDefined();
+        expect(stored).toHaveLength(1);
+        expect(stored[0].updatedAt).toEqual(expect.any(Date));
+        expect(stored[0].createdAt).toEqual(stored[0].updatedAt);
     });
 
     test('returns success', () => {
@@ -106,24 +158,36 @@ describe('stores new pathname', () => {
 
 describe('overwrites existing pathname', () => {
     let response: boolean;
+    let original: Pathname[];
+    let updated: Pathname[];
 
     beforeAll(async () => {
         await repository.storePathname(
             VALID_HOSTNAME,
             VALID_PATHNAME
         );
+        original = await repository.getPathnames(VALID_HOSTNAME);
+
         response = await repository.storePathname(
             VALID_HOSTNAME,
             VALID_PATHNAME
         );
+        updated = await repository.getPathnames(VALID_HOSTNAME);
     });
 
-    test('overwrites existing item if item already exists', async () => {
-        const result = await repository.getPathnames(VALID_HOSTNAME);
+    test('does not add duplicate pathnames', () => {
+        expect(updated).toHaveLength(1);
+        expect(updated[0].pathname).toEqual(VALID_PATHNAME);
+    });
 
-        expect(result).toBeDefined();
-        expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(VALID_PATHNAME);
+    test('returns a different created date to previous', () => {
+        expect(updated[0].createdAt).toEqual(expect.any(Date));
+        expect(updated[0].createdAt).not.toEqual(original[0].createdAt);
+    });
+
+    test('returns the different updated date to previous', () => {
+        expect(updated[0].updatedAt).toEqual(expect.any(Date));
+        expect(updated[0].updatedAt).not.toEqual(original[0].updatedAt);
     });
 
     test('returns success', () => {
@@ -197,7 +261,7 @@ describe('only deletes pathnames attributed to given base URL', () => {
 
         expect(result).toBeDefined();
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(OTHER_PATHNAME);
+        expect(result[0].pathname).toEqual(OTHER_PATHNAME);
     });
 
     test('returns success', () => {
