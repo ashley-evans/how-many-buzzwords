@@ -1,5 +1,6 @@
 import { mock } from "jest-mock-extended";
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { StatusCodes } from 'http-status-codes';
 
 import GetURLsAdapter from '../GetURLsAdapter';
 
@@ -46,3 +47,19 @@ test.each([
         );
     }
 );
+
+describe('given an valid event', () => {
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        response = await adapter.handleRequest(
+            createEvent(VALID_URL)
+        );
+    });
+
+    test('returns 200 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.OK);
+    });
+});
