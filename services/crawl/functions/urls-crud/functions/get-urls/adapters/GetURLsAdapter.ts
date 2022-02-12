@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
+import GetURLsPort from "../ports/GetURLsPort";
 
 type ValidParameters = {
     baseURL: string
@@ -10,7 +11,7 @@ type ValidParameters = {
 class GetURLsAdapter implements APIGatewayAdapter {
     private validator;
 
-    constructor() {
+    constructor(private port: GetURLsPort) {
         this.validator = this.createValidator();
     }
 
@@ -26,6 +27,8 @@ class GetURLsAdapter implements APIGatewayAdapter {
                 `Exception occured during event validation: ${ex}`
             );
         }
+
+        await this.port.getPathnames(validatedURL);
 
         return {
             statusCode: 200,

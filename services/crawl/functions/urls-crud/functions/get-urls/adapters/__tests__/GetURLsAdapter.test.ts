@@ -3,10 +3,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { StatusCodes } from 'http-status-codes';
 
 import GetURLsAdapter from '../GetURLsAdapter';
+import GetURLsPort from "../../ports/GetURLsPort";
 
 const VALID_URL = new URL('http://www.example.com');
 
-const adapter = new GetURLsAdapter();
+const mockPort = mock<GetURLsPort>();
+const adapter = new GetURLsAdapter(mockPort);
 
 function createEvent(baseURL?: URL | string): APIGatewayProxyEvent {
     const event = mock<APIGatewayProxyEvent>();
@@ -57,6 +59,11 @@ describe('given an valid event', () => {
         response = await adapter.handleRequest(
             createEvent(VALID_URL)
         );
+    });
+
+    test('calls port with URL from event', () => {
+        expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
+        expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
     });
 
     test('returns 200 response', () => {
