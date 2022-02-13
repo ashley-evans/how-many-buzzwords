@@ -147,3 +147,30 @@ describe('given a valid event that hasn\'t been crawled recently', () => {
         );
     });
 });
+
+describe('given port rejects promise', () => {
+    const expectedError = new Error('Test Error');
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.getPathnames.mockRejectedValue(expectedError);
+
+        response = await adapter.handleRequest(
+            createEvent(VALID_URL)
+        );
+    });
+
+    test('calls port with URL from event', () => {
+        expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
+        expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+    });
+
+    test('returns 500 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test('returns error in response body', () => {
+        expect(response.body).toContain(expectedError.message);
+    });
+});
