@@ -63,3 +63,25 @@ describe('given a URL that has been crawled before', () => {
         }
     });
 });
+
+describe('given a URL that has not been crawled before', () => {
+    let response: PathnameResponse[];
+    
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockRepository.getPathnames.mockResolvedValue([]);
+
+        response = await domain.getPathnames(VALID_URL);
+    });
+
+    test('calls repository with hostname from provided URL', () => {
+        expect(mockRepository.getPathnames).toHaveBeenCalledTimes(1);
+        expect(mockRepository.getPathnames).toHaveBeenCalledWith(
+            VALID_URL.hostname
+        );
+    });
+
+    test('returns an empty array', () => {
+        expect(response).toHaveLength(0);
+    });
+});
