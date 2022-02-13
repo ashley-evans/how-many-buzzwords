@@ -57,7 +57,7 @@ test.each([
     }
 );
 
-describe('given an valid event that has been crawled recently', () => {
+describe('given a valid event that has been crawled recently', () => {
     const expectedPathnames = [
         createPathname('/wibble'),
         createPathname('/wobble')
@@ -118,6 +118,32 @@ describe('given an valid event that has been crawled recently', () => {
             );
         }
     });
+});
 
+describe('given a valid event that hasn\'t been crawled recently', () => {
+    let response: APIGatewayProxyResult;
 
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.getPathnames.mockResolvedValue([]);
+
+        response = await adapter.handleRequest(
+            createEvent(VALID_URL)
+        );
+    });
+
+    test('calls port with URL from event', () => {
+        expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
+        expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+    });
+
+    test('returns 404 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+    });
+
+    test('returns not crawled message in body', () => {
+        expect(response.body).toEqual(
+            'URL provided has not been crawled recently.'
+        );
+    });
 });

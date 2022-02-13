@@ -29,13 +29,19 @@ class GetURLsAdapter implements APIGatewayAdapter {
         }
 
         const response = await this.port.getPathnames(validatedURL);
+        if (response.length > 0) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    baseURL: validatedURL.hostname,
+                    pathnames: response
+                })
+            };
+        }
 
         return {
-            statusCode: 200,
-            body: JSON.stringify({
-                baseURL: validatedURL.hostname,
-                pathnames: response
-            })
+            statusCode: 404,
+            body: 'URL provided has not been crawled recently.'
         };
     }
 
