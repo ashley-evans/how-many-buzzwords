@@ -1,13 +1,13 @@
-type Pathname = {
+type PathnameResponse = {
     pathname: string;
     crawledAt: Date;
 }
 
 interface GetURLsPort {
-    getPathnames(baseURL: URL): Promise<Pathname[]>;
+    getPathnames(baseURL: URL): Promise<PathnameResponse[]>;
 }
 
 export {
-    Pathname,
+    PathnameResponse,
     GetURLsPort
 };

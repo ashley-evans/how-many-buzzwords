@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { StatusCodes } from 'http-status-codes';
 
 import GetURLsAdapter from '../GetURLsAdapter';
-import { Pathname, GetURLsPort } from "../../ports/GetURLsPort";
+import { PathnameResponse, GetURLsPort } from "../../ports/GetURLsPort";
 
 const VALID_URL = new URL('http://www.example.com');
 
@@ -21,7 +21,7 @@ function createEvent(baseURL?: URL | string): APIGatewayProxyEvent {
     return event;
 }
 
-function createPathname(pathname: string): Pathname {
+function createPathname(pathname: string): PathnameResponse {
     return {
         pathname,
         crawledAt: new Date()
