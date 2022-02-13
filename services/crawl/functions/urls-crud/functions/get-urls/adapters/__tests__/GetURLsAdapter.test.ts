@@ -86,14 +86,19 @@ describe('given an valid event that has been crawled recently', () => {
         expect(() => JSON.parse(response.body)).not.toThrow();
     });
 
-    test('returns an array in response body', () => {
-        expect(Array.isArray(JSON.parse(response.body))).toBe(true);
+    test('returns provided URL\'s hostname in response body', () => {
+        const body = JSON.parse(response.body);
+        expect(body.baseURL).toEqual(VALID_URL.hostname);
+    });
+
+    test('returns an array of each crawled pathname in response body', () => {
+        expect(Array.isArray(JSON.parse(response.body).pathnames)).toBe(true);
     });
 
     test('returns each expected pathname in response body', () => {
         const body = JSON.parse(response.body);
         for (const pathnames of expectedPathnames) {
-            expect(body).toContainEqual(
+            expect(body.pathnames).toContainEqual(
                 expect.objectContaining({
                     pathname: pathnames.pathname
                 })
@@ -103,8 +108,8 @@ describe('given an valid event that has been crawled recently', () => {
 
     test('returns crawl date for each pathname in response body', () => {
         const body = JSON.parse(response.body);
-        for (const item of body) {
-            const convertedDate = new Date(item.crawledAt);
+        for (const pathname of body.pathnames) {
+            const convertedDate = new Date(pathname.crawledAt);
             expect(convertedDate).not.toEqual(NaN);
             expect(expectedPathnames).toContainEqual(
                 expect.objectContaining({
@@ -113,4 +118,6 @@ describe('given an valid event that has been crawled recently', () => {
             );
         }
     });
+
+
 });

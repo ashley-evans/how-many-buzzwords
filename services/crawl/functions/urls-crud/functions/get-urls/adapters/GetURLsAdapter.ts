@@ -32,7 +32,10 @@ class GetURLsAdapter implements APIGatewayAdapter {
 
         return {
             statusCode: 200,
-            body: JSON.stringify(response)
+            body: JSON.stringify({
+                baseURL: validatedURL.hostname,
+                pathnames: response
+            })
         };
     }
 
