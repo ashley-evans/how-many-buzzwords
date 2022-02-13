@@ -22,10 +22,17 @@ class GetURLsAdapter implements APIGatewayAdapter {
         let validatedURL: URL;
         try {
             const validatedParameters = this.validateRequestParameters(event);
-            validatedURL = new URL(validatedParameters.baseURL);
+            validatedURL = this.parseURL(validatedParameters.baseURL);
         } catch (ex) {
-            throw new Error(
-                `Exception occured during event validation: ${ex}`
+            const message = 'Invalid event';
+            console.error(
+                message + 
+                `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+            );
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                'text/plain',
+                message
             );
         }
 
@@ -48,10 +55,15 @@ class GetURLsAdapter implements APIGatewayAdapter {
                 'URL provided has not been crawled recently.'
             );
         } catch (ex) {
+            const message = 'Error occurred during GET';
+            console.error(
+                message + 
+                `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+            );
             return this.createResponse(
                 StatusCodes.INTERNAL_SERVER_ERROR,
                 'text/plain',
-                `Error occured during pathname retrieval: ${ex}`
+                message
             );
         }
     }
@@ -79,6 +91,18 @@ class GetURLsAdapter implements APIGatewayAdapter {
         } else {
             throw this.validator.errors;
         }
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw 'Number provided when expecting URL';
+        }
+
+        if (!url.startsWith('https://') && !url.startsWith('http://')) {
+            url = `http://${url}`;
+        }
+
+        return new URL(url);
     }
 
     private createResponse(

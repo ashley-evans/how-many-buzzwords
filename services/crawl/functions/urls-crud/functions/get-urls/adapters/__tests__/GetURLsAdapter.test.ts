@@ -28,7 +28,11 @@ function createPathname(pathname: string): PathnameResponse {
     };
 }
 
-test.each([
+beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+});
+
+describe.each([
     [
         'missing url in query string',
         createEvent()
@@ -41,108 +45,17 @@ test.each([
         'invalid url',
         createEvent(`test ${VALID_URL.toString()}`)
     ]
-])(
-    'throws exception given %s',
-    async (message: string, event: APIGatewayProxyEvent) => {
-        expect.assertions(1);
-        await expect(
-            adapter.handleRequest(event)
-        ).rejects.toEqual(
-            expect.objectContaining({
-                message: expect.stringContaining(
-                    'Exception occured during event validation:'
-                )
-            })
-        );
-    }
-);
-
-describe('given a valid event that has been crawled recently', () => {
-    const expectedPathnames = [
-        createPathname('/wibble'),
-        createPathname('/wobble')
-    ];
+])('given an event with %s', (message: string, event: APIGatewayProxyEvent) => {
     let response: APIGatewayProxyResult;
 
     beforeAll(async () => {
         jest.resetAllMocks();
-        mockPort.getPathnames.mockResolvedValue(expectedPathnames);
 
-        response = await adapter.handleRequest(
-            createEvent(VALID_URL)
-        );
+        response = await adapter.handleRequest(event);
     });
 
-    test('calls port with URL from event', () => {
-        expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
-        expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
-    });
-
-    test('returns 200 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.OK);
-    });
-
-    test('returns JSON mime type in content type header', () => {
-        expect(response.headers).toEqual(
-            expect.objectContaining({
-                'Content-Type': 'application/json'
-            })
-        );
-    });
-
-    test('returns valid JSON in response body', () => {
-        expect(() => JSON.parse(response.body)).not.toThrow();
-    });
-
-    test('returns provided URL\'s hostname in response body', () => {
-        const body = JSON.parse(response.body);
-        expect(body.baseURL).toEqual(VALID_URL.hostname);
-    });
-
-    test('returns an array of each crawled pathname in response body', () => {
-        expect(Array.isArray(JSON.parse(response.body).pathnames)).toBe(true);
-    });
-
-    test('returns each expected pathname in response body', () => {
-        const body = JSON.parse(response.body);
-        for (const pathnames of expectedPathnames) {
-            expect(body.pathnames).toContainEqual(
-                expect.objectContaining({
-                    pathname: pathnames.pathname
-                })
-            );
-        }
-    });
-
-    test('returns crawl date for each pathname in response body', () => {
-        const body = JSON.parse(response.body);
-        for (const pathname of body.pathnames) {
-            const convertedDate = new Date(pathname.crawledAt);
-            expect(convertedDate).not.toEqual(NaN);
-            expect(expectedPathnames).toContainEqual(
-                expect.objectContaining({
-                    crawledAt: convertedDate
-                })
-            );
-        }
-    });
-});
-
-describe('given a valid event that hasn\'t been crawled recently', () => {
-    let response: APIGatewayProxyResult;
-
-    beforeAll(async () => {
-        jest.resetAllMocks();
-        mockPort.getPathnames.mockResolvedValue([]);
-
-        response = await adapter.handleRequest(
-            createEvent(VALID_URL)
-        );
-    });
-
-    test('calls port with URL from event', () => {
-        expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
-        expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+    test('does not call port with invalid event', () => {
+        expect(mockPort.getPathnames).toHaveBeenCalledTimes(0);
     });
 
     test('returns plain text mime type in content type header', () => {
@@ -153,16 +66,146 @@ describe('given a valid event that hasn\'t been crawled recently', () => {
         );
     });
 
-    test('returns 404 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+    test('returns 500 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
-    test('returns not crawled message in body', () => {
-        expect(response.body).toEqual(
-            'URL provided has not been crawled recently.'
-        );
+    test('returns error in response body', () => {
+        expect(response.body).toEqual('Invalid event');
     });
 });
+
+describe.each([
+    [
+        'url with protocol',
+        createEvent(VALID_URL)
+    ],
+    [
+        'url without protocol',
+        createEvent(VALID_URL.hostname)
+    ]
+])(
+    'given a valid event with a %s that has been crawled recently',
+    (message: string, event: APIGatewayProxyEvent) => {
+        const expectedPathnames = [
+            createPathname('/wibble'),
+            createPathname('/wobble')
+        ];
+        let response: APIGatewayProxyResult;
+
+        beforeAll(async () => {
+            jest.resetAllMocks();
+            mockPort.getPathnames.mockResolvedValue(expectedPathnames);
+
+            response = await adapter.handleRequest(event);
+        });
+
+        test('calls port with URL from event', () => {
+            expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
+            expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+        });
+
+        test('returns 200 response', () => {
+            expect(response.statusCode).toEqual(StatusCodes.OK);
+        });
+
+        test('returns JSON mime type in content type header', () => {
+            expect(response.headers).toEqual(
+                expect.objectContaining({
+                    'Content-Type': 'application/json'
+                })
+            );
+        });
+
+        test('returns valid JSON in response body', () => {
+            expect(() => JSON.parse(response.body)).not.toThrow();
+        });
+
+        test('returns provided URL\'s hostname in response body', () => {
+            const body = JSON.parse(response.body);
+            expect(body.baseURL).toEqual(VALID_URL.hostname);
+        });
+
+        test(
+            'returns an array of each crawled pathname in response body',
+            () => {
+                expect(
+                    Array.isArray(JSON.parse(response.body).pathnames)
+                ).toBe(true);
+            }
+        );
+
+        test('returns each expected pathname in response body', () => {
+            const body = JSON.parse(response.body);
+            for (const pathnames of expectedPathnames) {
+                expect(body.pathnames).toContainEqual(
+                    expect.objectContaining({
+                        pathname: pathnames.pathname
+                    })
+                );
+            }
+        });
+
+        test('returns crawl date for each pathname in response body', () => {
+            const body = JSON.parse(response.body);
+            for (const pathname of body.pathnames) {
+                const convertedDate = new Date(pathname.crawledAt);
+                expect(convertedDate).not.toEqual(NaN);
+                expect(expectedPathnames).toContainEqual(
+                    expect.objectContaining({
+                        crawledAt: convertedDate
+                    })
+                );
+            }
+        });
+    }
+);
+
+describe.each([
+    [
+        'url with protocol',
+        createEvent(VALID_URL)
+    ],
+    [
+        'url without protocol',
+        createEvent(VALID_URL.hostname)
+    ]
+])(
+    'given a valid event with a %s that hasn\'t been crawled recently',
+    (message: string, event: APIGatewayProxyEvent) => {
+        let response: APIGatewayProxyResult;
+
+        beforeAll(async () => {
+            jest.resetAllMocks();
+            mockPort.getPathnames.mockResolvedValue([]);
+
+            response = await adapter.handleRequest(event);
+        });
+
+        test('calls port with URL from event', () => {
+            expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
+            expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+        });
+
+        test('returns plain text mime type in content type header', () => {
+            expect(response.headers).toEqual(
+                expect.objectContaining({
+                    'Content-Type': 'text/plain'
+                })
+            );
+        });
+
+        test('returns 404 response', () => {
+            expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+        });
+
+        test('returns not crawled message in body', () => {
+            expect(response.body).toEqual(
+                'URL provided has not been crawled recently.'
+            );
+        });
+    }
+);
 
 describe('given port rejects promise', () => {
     const expectedError = new Error('Test Error');
@@ -195,6 +238,6 @@ describe('given port rejects promise', () => {
     });
 
     test('returns error in response body', () => {
-        expect(response.body).toContain(expectedError.message);
+        expect(response.body).toContain('Error occurred during GET');
     });
 });
