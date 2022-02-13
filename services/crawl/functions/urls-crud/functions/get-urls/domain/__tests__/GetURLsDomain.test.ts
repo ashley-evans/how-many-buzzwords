@@ -85,3 +85,13 @@ describe('given a URL that has not been crawled before', () => {
         expect(response).toHaveLength(0);
     });
 });
+
+test('returns repository error if thrown', async () => {
+    jest.resetAllMocks();
+    
+    const expectedError = new Error('teste error');
+    mockRepository.getPathnames.mockRejectedValue(expectedError);
+
+    expect.assertions(1);
+    await expect(domain.getPathnames(VALID_URL)).rejects.toEqual(expectedError);
+});
