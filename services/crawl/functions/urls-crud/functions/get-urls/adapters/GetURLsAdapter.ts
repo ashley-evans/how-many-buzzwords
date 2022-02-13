@@ -32,33 +32,27 @@ class GetURLsAdapter implements APIGatewayAdapter {
         try {
             const response = await this.port.getPathnames(validatedURL);
             if (response.length > 0) {
-                return {
-                    statusCode: StatusCodes.OK,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
+                return this.createResponse(
+                    StatusCodes.OK,
+                    'application/json',
+                    JSON.stringify({
                         baseURL: validatedURL.hostname,
                         pathnames: response
                     })
-                };
+                );
             }
 
-            return {
-                statusCode: StatusCodes.NOT_FOUND,
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: 'URL provided has not been crawled recently.'
-            };
+            return this.createResponse(
+                StatusCodes.NOT_FOUND,
+                'text/plain',
+                'URL provided has not been crawled recently.'
+            );
         } catch (ex) {
-            return {
-                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: `Error occured during pathname retrieval: ${ex}`
-            };
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                'text/plain',
+                `Error occured during pathname retrieval: ${ex}`
+            );
         }
     }
 
@@ -85,6 +79,20 @@ class GetURLsAdapter implements APIGatewayAdapter {
         } else {
             throw this.validator.errors;
         }
+    }
+
+    private createResponse(
+        code: StatusCodes,
+        contentType: string,
+        body: string
+    ): APIGatewayProxyResult {
+        return {
+            statusCode: code,
+            headers: {
+                'Content-Type': contentType
+            },
+            body
+        };
     }
 }
 
