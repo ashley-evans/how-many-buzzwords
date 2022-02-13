@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
+import { StatusCodes } from 'http-status-codes';
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
 import { GetURLsPort } from "../ports/GetURLsPort";
@@ -32,7 +33,7 @@ class GetURLsAdapter implements APIGatewayAdapter {
             const response = await this.port.getPathnames(validatedURL);
             if (response.length > 0) {
                 return {
-                    statusCode: 200,
+                    statusCode: StatusCodes.OK,
                     body: JSON.stringify({
                         baseURL: validatedURL.hostname,
                         pathnames: response
@@ -41,12 +42,12 @@ class GetURLsAdapter implements APIGatewayAdapter {
             }
 
             return {
-                statusCode: 404,
+                statusCode: StatusCodes.NOT_FOUND,
                 body: 'URL provided has not been crawled recently.'
             };
         } catch (ex) {
             return {
-                statusCode: 500,
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
                 body: `Error occured during pathname retrieval: ${ex}`
             };
         }
