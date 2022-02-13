@@ -82,6 +82,14 @@ describe('given a valid event that has been crawled recently', () => {
         expect(response.statusCode).toEqual(StatusCodes.OK);
     });
 
+    test('returns JSON mime type in content type header', () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                'Content-Type': 'application/json'
+            })
+        );
+    });
+
     test('returns valid JSON in response body', () => {
         expect(() => JSON.parse(response.body)).not.toThrow();
     });
@@ -137,6 +145,14 @@ describe('given a valid event that hasn\'t been crawled recently', () => {
         expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
     });
 
+    test('returns plain text mime type in content type header', () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                'Content-Type': 'text/plain'
+            })
+        );
+    });
+
     test('returns 404 response', () => {
         expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
     });
@@ -164,6 +180,14 @@ describe('given port rejects promise', () => {
     test('calls port with URL from event', () => {
         expect(mockPort.getPathnames).toHaveBeenCalledTimes(1);
         expect(mockPort.getPathnames).toHaveBeenCalledWith(VALID_URL);
+    });
+
+    test('returns plain text mime type in content type header', () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                'Content-Type': 'text/plain'
+            })
+        );
     });
 
     test('returns 500 response', () => {

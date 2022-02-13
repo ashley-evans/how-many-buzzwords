@@ -34,6 +34,9 @@ class GetURLsAdapter implements APIGatewayAdapter {
             if (response.length > 0) {
                 return {
                     statusCode: StatusCodes.OK,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         baseURL: validatedURL.hostname,
                         pathnames: response
@@ -43,11 +46,17 @@ class GetURLsAdapter implements APIGatewayAdapter {
 
             return {
                 statusCode: StatusCodes.NOT_FOUND,
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
                 body: 'URL provided has not been crawled recently.'
             };
         } catch (ex) {
             return {
                 statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
                 body: `Error occured during pathname retrieval: ${ex}`
             };
         }
