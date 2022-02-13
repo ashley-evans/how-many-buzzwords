@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { StatusCodes } from 'http-status-codes';
 
 import GetURLsAdapter from '../GetURLsAdapter';
-import GetURLsPort from "../../ports/GetURLsPort";
+import { Pathname, GetURLsPort } from "../../ports/GetURLsPort";
 
 const VALID_URL = new URL('http://www.example.com');
 
@@ -19,6 +19,13 @@ function createEvent(baseURL?: URL | string): APIGatewayProxyEvent {
     }
 
     return event;
+}
+
+function createPathname(pathname: string): Pathname {
+    return {
+        pathname,
+        crawledAt: new Date()
+    };
 }
 
 test.each([
@@ -50,11 +57,16 @@ test.each([
     }
 );
 
-describe('given an valid event', () => {
+describe('given an valid event that has been crawled recently', () => {
+    const expectedPathnames = [
+        createPathname('/wibble'),
+        createPathname('/wobble')
+    ];
     let response: APIGatewayProxyResult;
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockPort.getPathnames.mockResolvedValue(expectedPathnames);
 
         response = await adapter.handleRequest(
             createEvent(VALID_URL)
@@ -68,5 +80,37 @@ describe('given an valid event', () => {
 
     test('returns 200 response', () => {
         expect(response.statusCode).toEqual(StatusCodes.OK);
+    });
+
+    test('returns valid JSON in response body', () => {
+        expect(() => JSON.parse(response.body)).not.toThrow();
+    });
+
+    test('returns an array in response body', () => {
+        expect(Array.isArray(JSON.parse(response.body))).toBe(true);
+    });
+
+    test('returns each expected pathname in response body', () => {
+        const body = JSON.parse(response.body);
+        for (const pathnames of expectedPathnames) {
+            expect(body).toContainEqual(
+                expect.objectContaining({
+                    pathname: pathnames.pathname
+                })
+            );
+        }
+    });
+
+    test('returns crawl date for each pathname in response body', () => {
+        const body = JSON.parse(response.body);
+        for (const item of body) {
+            const convertedDate = new Date(item.crawledAt);
+            expect(convertedDate).not.toEqual(NaN);
+            expect(expectedPathnames).toContainEqual(
+                expect.objectContaining({
+                    crawledAt: convertedDate
+                })
+            );
+        }
     });
 });

@@ -4,7 +4,10 @@ type Pathname = {
 }
 
 interface GetURLsPort {
-    getPathnames(baseURL: URL): Promise<Pathname>;
+    getPathnames(baseURL: URL): Promise<Pathname[]>;
 }
 
-export default GetURLsPort;
+export {
+    Pathname,
+    GetURLsPort
+};

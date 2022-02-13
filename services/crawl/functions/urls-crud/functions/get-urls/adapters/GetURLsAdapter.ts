@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
-import GetURLsPort from "../ports/GetURLsPort";
+import { GetURLsPort } from "../ports/GetURLsPort";
 
 type ValidParameters = {
     baseURL: string
@@ -28,11 +28,11 @@ class GetURLsAdapter implements APIGatewayAdapter {
             );
         }
 
-        await this.port.getPathnames(validatedURL);
+        const response = await this.port.getPathnames(validatedURL);
 
         return {
             statusCode: 200,
-            body: validatedURL.toString()
+            body: JSON.stringify(response)
         };
     }
 
