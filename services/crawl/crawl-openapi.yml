@@ -9,11 +9,11 @@ paths:
     post:
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-  /urls/{baseUrl}:
+  /urls/{baseURL}:
     get:
       parameters: [
         {
-          name: "baseUrl",
+          name: "baseURL",
           in: "path",
           required: true,
           schema: {
@@ -22,7 +22,7 @@ paths:
         }
       ]
       x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/urls-crud-read-integration"
+        $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
 components:
   x-amazon-apigateway-integrations:
     invoke-crawl-state-machine:
@@ -37,15 +37,15 @@ components:
           Ref: "CrawlStateMachine"
         Input: "$request.body.MessageBody"
       payloadFormatVersion: "1.0"
-    urls-crud-read-integration:
+    get-urls-integration:
       type: "aws_proxy"
       httpMethod: "POST"
       uri: 
         Fn::GetAtt:
-        - "URLsCRUDFunction"
+        - "GetURLs"
         - "Arn"
       credentials:
         Fn::GetAtt:
-        - "URLsCRUDAccessRole"
+        - "GetURLsAccessRole"
         - "Arn"
       payloadFormatVersion: "1.0"

@@ -158,16 +158,15 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
-  URLsCRUDFunction:
+  GetURLs:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: urls-crud.handler
+      Handler: get-urls.handler
       Runtime: nodejs14.x
-      CodeUri: ./functions/urls-crud
-      Description: CRUD function for the URLs Table
+      CodeUri: ./functions/urls-crud/functions/get-urls
+      Description: GETs the pathnames crawled from a given URL
       Layers:
-        - Ref: CrawlNodeDependencyLayer
-        - Ref: CrawlCommonLayer
+        - Ref: URLsRepositoryLibraryLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
@@ -175,13 +174,13 @@ Resources:
         - Sid: URLsTableCRUDPolicy
           Effect: Allow
           Action:
-          - dynamodb:Query
+            - dynamodb:DescribeTable
+            - dynamodb:Query
           Resource: !GetAtt URLsTable.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
-          ERROR_LOGGING_ENABLED: true
-  URLsCRUDAccessRole:
+  GetURLsAccessRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -194,13 +193,13 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: InvokeURLsCRUDFunctionPolicy
+        - PolicyName: InvokeGetURLsPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
                   - lambda:InvokeFunction
-                Resource: !GetAtt URLsCRUDFunction.Arn
+                Resource: !GetAtt GetURLs.Arn
                 Effect: Allow
   RecentCrawlRole:
     Type: AWS::IAM::Role
