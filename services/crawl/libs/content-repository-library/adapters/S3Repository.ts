@@ -77,7 +77,7 @@ class S3Repository implements ContentRepository {
             stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
             stream.on('error', reject);
             stream.on('end', () => {
-                resolve(Buffer.concat(chunks).toString());
+                resolve(Buffer.concat(chunks).toString("utf-8"));
             });
         });
     }
