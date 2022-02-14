@@ -18,24 +18,61 @@ const VALID_CONTENT = 'test content';
 
 const repository = new S3Repository(BUCKET_NAME);
 
-describe('gets page content for a given url', () => {
-    let clientCalls: SinonSpyCall<
-        [GetObjectCommand], 
-        Promise<GetObjectCommandOutput>
-        >[];
+describe.each([
+    [
+        'no pathname',
+        VALID_URL,
+        'www.example.com'
+    ],
+    [
+        'a pathname',
+        new URL('http://www.example.com/test'),
+        'www.example.com/test'
+    ],
+    [
+        'a pathname with query string parameters',
+        new URL('http://www.example.com/test?param=true'),
+        'www.example.com/test'
+    ]
+])(
+    'gets page content for a given url with %s',
+    (message: string, url: URL, expectedKey: string) => {
+        let clientCalls: SinonSpyCall<
+            [GetObjectCommand], 
+            Promise<GetObjectCommandOutput>
+            >[];
 
-    beforeAll(async () => {
-        mockS3Client.reset();
+        beforeAll(async () => {
+            mockS3Client.reset();
 
-        await repository.getPageContent(VALID_URL);
-        clientCalls = mockS3Client.commandCalls(GetObjectCommand);
-    });
+            await repository.getPageContent(url);
+            clientCalls = mockS3Client.commandCalls(GetObjectCommand);
+        });
 
-    test('calls the S3 client to get the content', () => {
-        expect(clientCalls).toHaveLength(1);
-        expect(clientCalls[0].args).toHaveLength(1);
-    });
-});
+        test('calls the S3 client to get the content', () => {
+            expect(clientCalls).toHaveLength(1);
+            expect(clientCalls[0].args).toHaveLength(1);
+        });
+
+        test('gets the content from the provided bucket', () => {
+            const input = clientCalls[0].args[0].input;
+            expect(input).toEqual(
+                expect.objectContaining({
+                    Bucket: BUCKET_NAME
+                })
+            );
+        });
+
+        test('gets the content from the appropriate key', () => {
+            const input = clientCalls[0].args[0].input;
+            expect(input).toEqual(
+                expect.objectContaining({
+                    Key: expectedKey
+                })
+            );
+        });
+    }
+);
 
 describe.each([
     [
@@ -86,7 +123,7 @@ describe.each([
             );
         });
 
-        test('stores the content in the urls directory', () => {
+        test('stores the content in the appropriate key', () => {
             const input = clientCalls[0].args[0].input;
             expect(input).toEqual(
                 expect.objectContaining({

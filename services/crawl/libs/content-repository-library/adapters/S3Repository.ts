@@ -18,7 +18,7 @@ class S3Repository implements ContentRepository {
     async getPageContent(url: URL): Promise<string> {
         const params: GetObjectCommandInput = {
             Bucket: this.bucketName,
-            Key: url.toString()
+            Key: this.getContentKey(url)
         };
 
         await this.client.send(new GetObjectCommand(params));
@@ -26,13 +26,9 @@ class S3Repository implements ContentRepository {
     }
 
     async storePageContent(url: URL, content: string): Promise<boolean> {
-        const key = url.pathname === '/'
-            ? url.hostname
-            : `${url.hostname}${url.pathname}`;
-
         const params: PutObjectCommandInput = {
             Bucket: this.bucketName,
-            Key: key,
+            Key: this.getContentKey(url),
             Body: content
         };
 
@@ -49,7 +45,12 @@ class S3Repository implements ContentRepository {
             );
             return false;
         }
+    }
 
+    private getContentKey(url: URL): string {
+        return url.pathname === '/'
+            ? url.hostname
+            : `${url.hostname}${url.pathname}`;
     }
 }
 
