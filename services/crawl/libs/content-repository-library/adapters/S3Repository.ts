@@ -1,5 +1,7 @@
 import {
     S3Client,
+    GetObjectCommandInput,
+    GetObjectCommand,
     PutObjectCommandInput,
     PutObjectCommand
 } from '@aws-sdk/client-s3';
@@ -11,6 +13,16 @@ class S3Repository implements ContentRepository {
 
     constructor(private bucketName: string) {
         this.client = new S3Client({});
+    }
+
+    async getPageContent(url: URL): Promise<string> {
+        const params: GetObjectCommandInput = {
+            Bucket: this.bucketName,
+            Key: url.toString()
+        };
+
+        await this.client.send(new GetObjectCommand(params));
+        return '';
     }
 
     async storePageContent(url: URL, content: string): Promise<boolean> {

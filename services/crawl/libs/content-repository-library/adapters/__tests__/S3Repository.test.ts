@@ -1,5 +1,7 @@
 import { mockClient } from 'aws-sdk-client-mock';
 import {
+    GetObjectCommand,
+    GetObjectCommandOutput,
     PutObjectCommand,
     PutObjectCommandOutput,
     S3Client
@@ -15,6 +17,25 @@ const VALID_URL = new URL('http://www.example.com');
 const VALID_CONTENT = 'test content';
 
 const repository = new S3Repository(BUCKET_NAME);
+
+describe('gets page content for a given url', () => {
+    let clientCalls: SinonSpyCall<
+        [GetObjectCommand], 
+        Promise<GetObjectCommandOutput>
+        >[];
+
+    beforeAll(async () => {
+        mockS3Client.reset();
+
+        await repository.getPageContent(VALID_URL);
+        clientCalls = mockS3Client.commandCalls(GetObjectCommand);
+    });
+
+    test('calls the S3 client to get the content', () => {
+        expect(clientCalls).toHaveLength(1);
+        expect(clientCalls[0].args).toHaveLength(1);
+    });
+});
 
 describe.each([
     [
