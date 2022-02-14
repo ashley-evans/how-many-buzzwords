@@ -1,3 +1,4 @@
+import { mock } from 'jest-mock-extended';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
     GetObjectCommand,
@@ -7,6 +8,7 @@ import {
     S3Client
 } from '@aws-sdk/client-s3';
 import { SinonSpyCall } from 'sinon';
+import { Readable } from 'stream';
 
 import S3Repository from '../S3Repository';
 
@@ -37,6 +39,7 @@ describe.each([
 ])(
     'gets page content for a given url with %s',
     (message: string, url: URL, expectedKey: string) => {
+        let response: string;
         let clientCalls: SinonSpyCall<
             [GetObjectCommand], 
             Promise<GetObjectCommandOutput>
@@ -44,8 +47,11 @@ describe.each([
 
         beforeAll(async () => {
             mockS3Client.reset();
+            const mockResponse = mock<GetObjectCommandOutput>();
+            mockResponse.Body = Readable.from([VALID_CONTENT]);
+            mockS3Client.on(GetObjectCommand).resolves(mockResponse);
 
-            await repository.getPageContent(url);
+            response = await repository.getPageContent(url);
             clientCalls = mockS3Client.commandCalls(GetObjectCommand);
         });
 
@@ -70,6 +76,10 @@ describe.each([
                     Key: expectedKey
                 })
             );
+        });
+
+        test('returns the page content', () => {
+            expect(response).toEqual(VALID_CONTENT);
         });
     }
 );
