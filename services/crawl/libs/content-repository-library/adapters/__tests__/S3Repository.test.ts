@@ -88,3 +88,17 @@ describe.each([
         });
     }
 );
+
+test('returns false if S3 client throws error on storage', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    mockS3Client.reset();
+    mockS3Client.on(PutObjectCommand).rejects();
+
+    const response = await repository.storePageContent(
+        VALID_URL,
+        VALID_CONTENT
+    );
+
+    expect(response).toBe(false);
+});

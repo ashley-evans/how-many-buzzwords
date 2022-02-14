@@ -24,8 +24,20 @@ class S3Repository implements ContentRepository {
             Body: content
         };
 
-        await this.client.send(new PutObjectCommand(params));
-        return true;
+        try {
+            await this.client.send(new PutObjectCommand(params));
+            return true;
+        } catch (ex) {
+            const errorContent = ex instanceof Error 
+                ? ex.message 
+                : JSON.stringify(ex);
+
+            console.error(
+                `Error occurred during page content storage: ${errorContent}`
+            );
+            return false;
+        }
+
     }
 }
 
