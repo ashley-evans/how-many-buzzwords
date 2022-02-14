@@ -26,6 +26,11 @@ describe.each([
         'a pathname',
         new URL('http://www.example.com/test'),
         'www.example.com/test'
+    ],
+    [
+        'a pathname with query string parameters',
+        new URL('http://www.example.com/test?param=true'),
+        'www.example.com/test'
     ]
 ])(
     'stores page content for a given url with %s',
