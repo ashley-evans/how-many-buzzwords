@@ -16,7 +16,7 @@ class S3Repository implements ContentRepository {
     async storePageContent(url: URL, content: string): Promise<boolean> {
         const params: PutObjectCommandInput = {
             Bucket: this.bucketName,
-            Key: url.toString(),
+            Key: `${url.hostname}${url.pathname}`,
             Body: content
         };
 
