@@ -84,6 +84,18 @@ describe.each([
     }
 );
 
+test('throws error if content retrieval throws an error', async () => {
+    mockS3Client.reset();
+
+    const expectedError = new Error('test');
+    mockS3Client.on(GetObjectCommand).rejects(expectedError);
+
+    expect.assertions(1);
+    await expect(
+        repository.getPageContent(VALID_URL)
+    ).rejects.toThrow(expectedError);
+});
+
 describe.each([
     [
         'no pathname',
