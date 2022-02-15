@@ -37,6 +37,16 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: makefile
+  ContentRepositoryLibraryLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ContentRepositoryLibraryLayer-${EnvironmentNameSuffix}
+      ContentUri: ./libs/content-repository-library
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
   URLsTable:
     Type: AWS::DynamoDB::Table
     Properties:
