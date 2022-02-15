@@ -23,7 +23,7 @@ class S3Repository implements ContentRepository {
         };
 
         const response = await this.client.send(new GetObjectCommand(params));
-        return this.convertStreamToString(response.Body);
+        return this.convertStreamToString(response.Body as Readable);
     }
 
     async storePageContent(url: URL, content: string): Promise<boolean> {
@@ -55,22 +55,12 @@ class S3Repository implements ContentRepository {
     }
 
     private async convertStreamToString(
-        stream?: Readable | ReadableStream<unknown> | Blob
+        stream?: Readable
     ): Promise<string> {
         if (!stream) {
             throw 'No content returned from S3';
         }
 
-        if (stream instanceof Readable) {
-            return this.convertReadableToString(stream);
-        } else if (stream instanceof Blob) {
-            return stream.text();
-        }
-
-        return this.convertReadableStreamToString(stream);
-    }
-
-    private convertReadableToString(stream: Readable): Promise<string> {
         return new Promise((resolve, reject) => {
             const chunks: Buffer[] = [];
 
@@ -79,26 +69,6 @@ class S3Repository implements ContentRepository {
             stream.on('end', () => {
                 resolve(Buffer.concat(chunks).toString("utf-8"));
             });
-        });
-    }
-
-    private convertReadableStreamToString(
-        stream: ReadableStream
-    ): Promise<string> {
-        return new Promise((resolve) => {
-            const reader = stream.getReader();
-            let result = "";
-
-            reader.read().then(
-                function processText({ done, value }): Promise<never> {
-                    if (done) {
-                        resolve(result);
-                    }
-
-                    result += value;
-                    return reader.read().then(processText);
-                }
-            );
         });
     }
 }
