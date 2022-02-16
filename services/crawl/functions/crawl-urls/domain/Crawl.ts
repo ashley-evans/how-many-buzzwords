@@ -24,19 +24,16 @@ class Crawl implements CrawlPort {
                 next: (childURL) => {
                     const promise = this.storePathname(baseURL, childURL.url);
                     storagePromises.push(promise);
-                    promise
-                        .then(() => {
-                            pathnames.push(childURL.url.pathname);
-                        })
-                        .catch((ex) => {
-                            console.error(
-                                `An error occured during storage: ${ex}`
-                            );
+                    promise.then((isStored) => {
+                        if (!isStored) {
                             resolve({ 
                                 success: false,
                                 pathnames
                             });
-                        });
+                        } else {
+                            pathnames.push(childURL.url.pathname);
+                        }
+                    });
                 },
                 complete: async () => {
                     await Promise.allSettled(storagePromises);
@@ -59,21 +56,19 @@ class Crawl implements CrawlPort {
         });
     }
 
-    private storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
-        return new Promise((resolve) => {
-            this.urlRepository.storePathname(
-                baseURL.hostname,
+    private async storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
+        try {
+            return await this.urlRepository.storePathname(
+                baseURL.hostname, 
                 childURL.pathname
-            ).then((value: boolean) => {
-                resolve(value);
-            }).catch((ex: unknown) => {
-                console.error(
-                    `Error occured during storage: ${JSON.stringify(ex)}`
-                );
-                
-                resolve(false);
-            });
-        });
+            );
+        } catch (ex) {
+            console.error(
+                `Error occured during storage: ${JSON.stringify(ex)}`
+            );
+
+            return false;
+        }
     }
 }
 
