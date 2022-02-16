@@ -1,7 +1,7 @@
 import { Repository } from "buzzword-aws-crawl-urls-repository-library";
 
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
-import CrawlProvider from "../ports/CrawlProvider";
+import { CrawlProvider } from "../ports/CrawlProvider";
 
 class Crawl implements CrawlPort {
     constructor(
@@ -18,11 +18,11 @@ class Crawl implements CrawlPort {
             const storagePromises: Promise<boolean>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
                 next: (childURL) => {
-                    const promise = this.storePathname(baseURL, childURL);
+                    const promise = this.storePathname(baseURL, childURL.url);
                     storagePromises.push(promise);
                     promise
                         .then(() => {
-                            pathnames.push(childURL.pathname);
+                            pathnames.push(childURL.url.pathname);
                         })
                         .catch((ex) => {
                             console.error(

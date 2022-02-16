@@ -3,7 +3,7 @@ import { EMPTY, of, throwError, concat } from 'rxjs';
 import { Repository } from 'buzzword-aws-crawl-urls-repository-library';
 
 import { CrawlerResponse } from '../../ports/CrawlPort';
-import CrawlProvider from '../../ports/CrawlProvider';
+import { CrawlProvider, CrawlResult } from '../../ports/CrawlProvider';
 import Crawl from '../Crawl';
 
 const mockCrawlProvider = mock<CrawlProvider>();
@@ -17,6 +17,13 @@ const DEFAULT_CHILD_URL = new URL(
     `${DEFAULT_BASE_URL.toString()}${EXPECTED_PATHNAME}`
 );
 
+function createCrawlerResult(url: URL, content?: string): CrawlResult {
+    return {
+        url,
+        content: content ? content : ''
+    };
+}
+
 describe('crawl provides results', () => {
     describe.each([
         'http',
@@ -29,7 +36,7 @@ describe('crawl provides results', () => {
                 `${baseURL.toString()}${EXPECTED_PATHNAME}`
             );
     
-            const source = of(childURL);
+            const source = of(createCrawlerResult(childURL));
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockRepository.storePathname.mockResolvedValue(true);
     
@@ -66,7 +73,10 @@ describe('crawl provides results', () => {
                 `${DEFAULT_BASE_URL.toString()}example2`
             );
             
-            const source = of(DEFAULT_CHILD_URL, childURL2);
+            const source = of(
+                createCrawlerResult(DEFAULT_CHILD_URL),
+                createCrawlerResult(childURL2)
+            );
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockRepository.storePathname.mockResolvedValue(true);
     
@@ -80,7 +90,9 @@ describe('crawl provides results', () => {
         let response: CrawlerResponse;
 
         beforeAll(async () => {
-            const source = of(DEFAULT_CHILD_URL);
+            const source = of(
+                createCrawlerResult(DEFAULT_CHILD_URL)
+            );
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockRepository.storePathname.mockResolvedValue(true);
     
@@ -186,7 +198,9 @@ describe('Error handling', () => {
         beforeAll(async () => {
             jest.resetAllMocks();
 
-            const source = of(DEFAULT_CHILD_URL);
+            const source = of(
+                createCrawlerResult(DEFAULT_CHILD_URL)
+            );
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockRepository.storePathname.mockImplementation(() => {
                 throw new Error();
@@ -211,7 +225,9 @@ describe('Error handling', () => {
             jest.resetAllMocks();
 
             const source = concat(
-                of(DEFAULT_CHILD_URL),
+                of(
+                    createCrawlerResult(DEFAULT_CHILD_URL)
+                ),
                 throwError(() => new Error())
             );
             mockCrawlProvider.crawl.mockReturnValue(source);

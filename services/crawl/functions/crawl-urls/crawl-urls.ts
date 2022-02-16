@@ -6,7 +6,7 @@ import {
 import ApifyProvider from "./adapters/ApifyProvider";
 import EventAdapter from "./adapters/EventAdapter";
 import Crawl from "./domain/Crawl";
-import CrawlProvider from "./ports/CrawlProvider";
+import { CrawlProvider } from "./ports/CrawlProvider";
 import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
 
 function createCrawlProvider(): CrawlProvider {

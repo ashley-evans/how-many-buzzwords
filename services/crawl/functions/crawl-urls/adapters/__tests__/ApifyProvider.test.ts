@@ -7,6 +7,7 @@ import { init, clean, destroy } from './helpers/local-storage-emulator';
 import { mockURLFromFile } from '../../../../../../helpers/http-mock';
 
 import ApifyProvider from '../ApifyProvider';
+import { CrawlResult } from '../../ports/CrawlProvider';
 
 const ENTRY_POINT_URL = new URL('http://www.example.com');
 
@@ -65,7 +66,7 @@ describe('happy path', () => {
     let entryURLMock: Scope;
     let subPageMock: Scope;
 
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -96,8 +97,8 @@ describe('happy path', () => {
     test('crawler returns all URLs linked from starting URL', () => {
         expect(response).toHaveLength(2);
 
-        const responseBaseURL = response[0];
-        const responseChildURL = response[1];
+        const responseBaseURL = response[0].url;
+        const responseChildURL = response[1].url;
 
         expect(responseBaseURL.origin).toEqual(ENTRY_POINT_URL.origin);
         expect(responseBaseURL.pathname).toEqual(ENTRY_POINT_URL.pathname);
@@ -122,12 +123,12 @@ test('crawler only returns one URL if page only refers to itself', async () => {
     const response = await receiveObservableOutput(observable);
 
     expect(response).toHaveLength(1);
-    expect(response[0]).toEqual(circleURL);
+    expect(response[0].url).toEqual(circleURL);
 });
 
 describe('crawls to default depth given no depth specified', () => {
     let mockSites: Scope[];
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -154,9 +155,11 @@ describe('crawls to default depth given no depth specified', () => {
 
         for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
             expect(response).toContainEqual(
-                new URL(
-                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
-                )
+                expect.objectContaining({
+                    url: new URL(
+                        `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                    )
+                })
             );
         }
     });
@@ -171,7 +174,7 @@ describe('crawls to specified depth given less than default', () => {
     const expectedCrawlLength = specifiedDepth + 1;
 
     let mockSites: Scope[];
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -200,9 +203,11 @@ describe('crawls to specified depth given less than default', () => {
 
         for (let i = 0; i < expectedCrawlLength; i++) {
             expect(response).toContainEqual(
-                new URL(
-                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
-                )
+                expect.objectContaining({
+                    url: new URL(
+                        `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                    )
+                })
             );
         }
     });
@@ -214,7 +219,7 @@ describe('crawls to specified depth given less than default', () => {
 
 describe('crawls to default max depth given larger specified depth', () => {
     let mockSites: Scope[];
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -241,9 +246,11 @@ describe('crawls to default max depth given larger specified depth', () => {
 
         for (let i = 0; i <= MAX_CRAWL_DEPTH; i++) {
             expect(response).toContainEqual(
-                new URL(
-                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
-                )
+                expect.objectContaining({
+                    url: new URL(
+                        `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                    )
+                })
             );
         }
     });
@@ -257,7 +264,7 @@ describe('crawls to max number of requests specified', () => {
     const maxRequests = MAX_CRAWL_DEPTH - 1;
 
     let mockSites: Scope[];
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -286,9 +293,11 @@ describe('crawls to max number of requests specified', () => {
 
         for (let i = 0; i < maxRequests; i++) {
             expect(response).toContainEqual(
-                new URL(
-                    `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
-                )
+                expect.objectContaining({
+                    url: new URL(
+                        `${ENTRY_POINT_URL.origin}${DEPTH_PATH_PREFIX}${i}`
+                    )
+                })
             );
         }
     });
@@ -307,7 +316,7 @@ describe('crawls to pages only inside same domain name', () => {
     let externalURLMock: Scope;
     let domainPathnameMock: Scope;
 
-    let response: URL[];
+    let response: CrawlResult[];
 
     beforeAll(async () => {
         clean();
@@ -343,7 +352,7 @@ describe('crawls to pages only inside same domain name', () => {
     
     test('crawler only returns URLs inside domain', () => {
         expect(response).toHaveLength(1);
-        expect(response[0]).toEqual(ENTRY_POINT_URL);
+        expect(response[0].url).toEqual(ENTRY_POINT_URL);
     });
 });
 
