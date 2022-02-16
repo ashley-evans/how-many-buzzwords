@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "devDependencies": {
         "buzzword-aws-crawl-common": "file:common",
+        "buzzword-aws-crawl-content-repository-library": "file:libs/content-repository-library",
         "buzzword-aws-crawl-urls-repository-library": "file:libs/urls-repository-library"
     }
 }
