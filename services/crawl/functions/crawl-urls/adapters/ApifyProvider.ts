@@ -149,7 +149,7 @@ class ApifyProvider implements CrawlProvider {
 
         crawledURLs.next({
             url: new URL(request.url),
-            content: ''
+            content: inputs.body.toString()
         });
     }
 }

@@ -2,6 +2,7 @@ import path from 'path';
 import { Observable } from 'rxjs';
 import nock from 'nock';
 import { Scope } from 'nock/types';
+import { PathOrFileDescriptor, readFileSync } from "fs";
 
 import { init, clean, destroy } from './helpers/local-storage-emulator';
 import { mockURLFromFile } from '../../../../../../helpers/http-mock';
@@ -50,6 +51,10 @@ function mockDepthURLs(depth: number): Scope[] {
     return mocks;
 }
 
+function getPageContent(path: PathOrFileDescriptor): string {
+    return readFileSync(path).toString("utf-8");
+}
+
 beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -60,7 +65,10 @@ beforeEach(() => {
     clean();
 });
 
-describe('happy path', () => {
+describe('crawler crawls to sub pages linked from start page', () => {
+    const entryPointContentPath = path.join(ASSET_FOLDER, 'entry-point.html');
+    const subPageContentPath = path.join(ASSET_FOLDER, 'sub-page-1.html');
+
     const expectedChildPath = '/sub-page-1';
 
     let entryURLMock: Scope;
@@ -73,13 +81,13 @@ describe('happy path', () => {
         entryURLMock = mockURLFromFile(
             ENTRY_POINT_URL,
             ENTRY_POINT_URL.pathname,
-            path.join(ASSET_FOLDER, 'entry-point.html'),
+            entryPointContentPath,
             false
         );
         subPageMock = mockURLFromFile(
             ENTRY_POINT_URL,
             expectedChildPath,
-            path.join(ASSET_FOLDER, 'sub-page-1.html'),
+            subPageContentPath,
             false
         );
         const provider = new ApifyProvider(MAX_CRAWL_DEPTH, MAX_REQUESTS);
@@ -105,6 +113,14 @@ describe('happy path', () => {
 
         expect(responseChildURL.origin).toEqual(ENTRY_POINT_URL.origin);
         expect(responseChildURL.pathname).toEqual(expectedChildPath);
+    });
+
+    test('crawler returns the content of each page crawled', () => {
+        const expectedEntryContent = getPageContent(entryPointContentPath);
+        const subPageContent = getPageContent(subPageContentPath);
+
+        expect(response[0].content).toEqual(expectedEntryContent);
+        expect(response[1].content).toEqual(subPageContent);
     });
 });
 
