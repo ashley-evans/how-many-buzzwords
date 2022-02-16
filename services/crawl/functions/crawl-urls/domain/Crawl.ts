@@ -1,4 +1,7 @@
 import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    ContentRepository
+} from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
 import { CrawlProvider } from "../ports/CrawlProvider";
@@ -6,7 +9,8 @@ import { CrawlProvider } from "../ports/CrawlProvider";
 class Crawl implements CrawlPort {
     constructor(
         private crawler: CrawlProvider, 
-        private repository: Repository
+        private urlRepository: Repository,
+        private contentRepository: ContentRepository 
     ) {}
 
     async crawl(
@@ -57,7 +61,7 @@ class Crawl implements CrawlPort {
 
     private storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
         return new Promise((resolve) => {
-            this.repository.storePathname(
+            this.urlRepository.storePathname(
                 baseURL.hostname,
                 childURL.pathname
             ).then((value: boolean) => {

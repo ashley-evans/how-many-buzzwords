@@ -1,4 +1,8 @@
 import {
+    ContentRepository,
+    S3Repository
+} from "buzzword-aws-crawl-content-repository-library";
+import {
     Repository,
     URLsTableRepository
 } from "buzzword-aws-crawl-urls-repository-library";
@@ -34,13 +38,23 @@ function createRepostiory(): Repository {
     return new URLsTableRepository(process.env.TABLE_NAME);
 }
 
+function createContentRepository(): ContentRepository {
+    if (!process.env.CONTENT_BUCKET_NAME) {
+        throw new Error('Content Bucket Name has not been set.');
+    }
+
+    return new S3Repository(process.env.CONTENT_BUCKET_NAME);
+}
+
 const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
     const crawlProvider = createCrawlProvider();
-    const repository = createRepostiory();
+    const urlRepository = createRepostiory();
+    const contentRepository = createContentRepository();
 
     const crawlDomain = new Crawl(
         crawlProvider,
-        repository
+        urlRepository,
+        contentRepository
     );
 
     const primaryAdapter = new EventAdapter(crawlDomain);
