@@ -63,6 +63,15 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+  CrawlContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
   CrawlURLsRole:
     Type: AWS::IAM::Role
     Properties:
@@ -88,6 +97,14 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
+        - PolicyName: ContentBucketCrawlPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:PutObject
+                Resource: !Sub "${CrawlContentBucket.Arn}/*"
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   CrawlURLs:
@@ -100,14 +117,15 @@ Resources:
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
         - Ref: URLsRepositoryLibraryLayer
+        - Ref: ContentRepositoryLibraryLayer
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
+          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
           MAX_REQUESTS_PER_CRAWL: 50
           MAX_CRAWL_DEPTH: 20
-          ERROR_LOGGING_ENABLED: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
   CrawlServiceEventBus:
     Type: AWS::Events::EventBus
