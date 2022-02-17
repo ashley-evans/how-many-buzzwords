@@ -24,6 +24,7 @@ const EXPECTED_PATHNAME = 'example';
 const DEFAULT_CHILD_URL = new URL(
     `${DEFAULT_BASE_URL.toString()}${EXPECTED_PATHNAME}`
 );
+const EXPECTED_CONTENT = 'test';
 
 function createCrawlerResult(url: URL, content?: string): CrawlResult {
     return {
@@ -44,7 +45,9 @@ describe('crawl provides results', () => {
                 `${baseURL.toString()}${EXPECTED_PATHNAME}`
             );
     
-            const source = of(createCrawlerResult(childURL));
+            const source = of(
+                createCrawlerResult(childURL, EXPECTED_CONTENT)
+            );
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockURLRepository.storePathname.mockResolvedValue(true);
     

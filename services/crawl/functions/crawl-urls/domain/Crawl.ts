@@ -4,7 +4,12 @@ import {
 } from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
-import { CrawlProvider } from "../ports/CrawlProvider";
+import { CrawlProvider, CrawlResult } from "../ports/CrawlProvider";
+
+type PathnameStored = {
+    pathname: string,
+    stored: boolean
+};
 
 class Crawl implements CrawlPort {
     constructor(
@@ -19,28 +24,40 @@ class Crawl implements CrawlPort {
     ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
             const pathnames: string[] = [];
-            const storagePromises: Promise<boolean>[] = [];
+            const storagePromises: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
-                next: (childURL) => {
-                    const promise = this.storePathname(baseURL, childURL.url);
+                next: async (result) => {
+                    pathnames.push(result.url.pathname);
+                    const promise = this.storeChildPage(
+                        baseURL,
+                        result
+                    );
                     storagePromises.push(promise);
-                    promise.then((isStored) => {
-                        if (!isStored) {
-                            resolve({ 
-                                success: false,
-                                pathnames
-                            });
-                        } else {
-                            pathnames.push(childURL.url.pathname);
-                        }
-                    });
                 },
                 complete: async () => {
-                    await Promise.allSettled(storagePromises);
-                    resolve({ 
-                        success: pathnames.length != 0,
-                        pathnames
-                    });
+                    try {
+                        const results = await Promise.all(
+                            storagePromises
+                        );
+                        const success = this.wasCrawlSuccess(results);
+                        resolve({
+                            success,
+                            pathnames: success 
+                                ? results.map((x) => x.pathname) 
+                                : []
+                        });
+                    } catch (ex) {
+                        console.error(
+                            'Unhandled exception occured during crawl:' + 
+                            JSON.stringify(ex)
+                        );
+
+                        resolve({
+                            success: false,
+                            pathnames: []
+                        });
+                    }
+
                 },
                 error: (ex: unknown) => {
                     console.error(
@@ -56,19 +73,24 @@ class Crawl implements CrawlPort {
         });
     }
 
-    private async storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
-        try {
-            return await this.urlRepository.storePathname(
-                baseURL.hostname, 
-                childURL.pathname
-            );
-        } catch (ex) {
-            console.error(
-                `Error occured during storage: ${JSON.stringify(ex)}`
-            );
+    private async storeChildPage(
+        baseURL: URL,
+        crawlResult: CrawlResult
+    ): Promise<PathnameStored> {
+        const stored = await this.urlRepository.storePathname(
+            baseURL.hostname, 
+            crawlResult.url.pathname
+        );
 
-            return false;
-        }
+        return {
+            pathname: crawlResult.url.pathname,
+            stored
+        };
+    }
+
+    private wasCrawlSuccess(results: PathnameStored[]): boolean {
+        return results.every((result) => result.stored)
+            && results.length > 0;
     }
 }
 
