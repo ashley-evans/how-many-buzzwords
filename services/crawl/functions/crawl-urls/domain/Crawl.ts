@@ -23,47 +23,36 @@ class Crawl implements CrawlPort {
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
-            const pathnames: string[] = [];
-            const storagePromises: Promise<PathnameStored>[] = [];
+            const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
-                next: async (result) => {
-                    pathnames.push(result.url.pathname);
+                next: (result) => {
                     const promise = this.storeChildPage(
                         baseURL,
                         result
                     );
-                    storagePromises.push(promise);
+                    pathnameStorages.push(promise);
                 },
                 complete: async () => {
-                    try {
-                        const results = await Promise.all(
-                            storagePromises
-                        );
-                        const success = this.wasCrawlSuccess(results);
-                        resolve({
-                            success,
-                            pathnames: success 
-                                ? results.map((x) => x.pathname) 
-                                : []
-                        });
-                    } catch (ex) {
-                        console.error(
-                            'Unhandled exception occured during crawl:' + 
-                            JSON.stringify(ex)
-                        );
-
-                        resolve({
-                            success: false,
-                            pathnames: []
-                        });
-                    }
-
+                    const pathnames = await this.getSuccessfulCrawls(
+                        pathnameStorages
+                    );
+                    const success = this.wasCrawlSuccessful(
+                        pathnames,
+                        pathnameStorages.length
+                    );
+                    resolve({
+                        success,
+                        pathnames
+                    });
                 },
-                error: (ex: unknown) => {
+                error: async (ex: unknown) => {
                     console.error(
                         `Error occured during crawling: ${JSON.stringify(ex)}`
                     );
 
+                    const pathnames = await this.getSuccessfulCrawls(
+                        pathnameStorages
+                    );
                     resolve({
                         success: false,
                         pathnames
@@ -96,9 +85,21 @@ class Crawl implements CrawlPort {
         };
     }
 
-    private wasCrawlSuccess(results: PathnameStored[]): boolean {
-        return results.every((result) => result.stored)
-            && results.length > 0;
+    private async getSuccessfulCrawls(
+        promises: Promise<PathnameStored>[]
+    ): Promise<string[]> {
+        const results = await Promise.allSettled(promises);
+        return results.reduce((accumulator: string[], current) => {
+            if (current.status === 'fulfilled' && current.value.stored) {
+                accumulator.push(current.value.pathname);
+            }
+            return accumulator;
+        }, []);
+    }
+
+    private wasCrawlSuccessful(successPathnames: string[], expected: number) {
+        return successPathnames.length == expected 
+            && successPathnames.length > 0;
     }
 }
 
