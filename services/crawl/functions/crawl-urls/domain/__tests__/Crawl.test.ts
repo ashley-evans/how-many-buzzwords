@@ -39,19 +39,21 @@ describe('crawl provides results', () => {
         'https'
     ])('handles %s URLs', (protocol) => {
         const baseURL = new URL(`${protocol}://${EXPECTED_BASE_URL_HOSTNAME}`);
+        const childURL = new URL(
+            `${baseURL.toString()}${EXPECTED_PATHNAME}`
+        );
+
+        let response: CrawlerResponse;
 
         beforeAll(async () => {
-            const childURL = new URL(
-                `${baseURL.toString()}${EXPECTED_PATHNAME}`
-            );
-    
             const source = of(
                 createCrawlerResult(childURL, EXPECTED_CONTENT)
             );
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockURLRepository.storePathname.mockResolvedValue(true);
+            mockContentRepository.storePageContent.mockResolvedValue(true);
     
-            await crawler.crawl(baseURL);
+            response = await crawler.crawl(baseURL);
         });
 
         test('calls crawl provider with URL', () => {
@@ -62,7 +64,7 @@ describe('crawl provides results', () => {
         });
 
         test(
-            'provides child pathname and url to repository without %s protocol',
+            'provides child pathname and url to repository without protocol',
             () => {
                 expect(
                     mockURLRepository.storePathname
@@ -73,6 +75,26 @@ describe('crawl provides results', () => {
                 );
             }
         );
+
+        test('provides content repository with crawled url and content', () => {
+            expect(
+                mockContentRepository.storePageContent
+            ).toHaveBeenCalledTimes(1);
+            expect(
+                mockContentRepository.storePageContent
+            ).toHaveBeenCalledWith(childURL, EXPECTED_CONTENT);
+        });
+
+        test('returns success if storage succeeds', () => {
+            expect(response.success).toBe(true);
+        });
+    
+        test('returns child url pathname if storage succeeds', () => {
+            expect(response.pathnames).toHaveLength(1);
+            expect(response.pathnames).toContainEqual(
+                DEFAULT_CHILD_URL.pathname
+            );
+        });
 
         afterAll(() => {
             jest.resetAllMocks();
@@ -98,32 +120,6 @@ describe('crawl provides results', () => {
             expect(mockURLRepository.storePathname).toHaveBeenCalledTimes(2);
         }
     );
-
-    describe('returns valid crawler response', () => {
-        let response: CrawlerResponse;
-
-        beforeAll(async () => {
-            const source = of(
-                createCrawlerResult(DEFAULT_CHILD_URL)
-            );
-            mockCrawlProvider.crawl.mockReturnValue(source);
-            mockURLRepository.storePathname.mockResolvedValue(true);
-    
-            response = await crawler.crawl(DEFAULT_BASE_URL);
-        });
-
-        test('returns success if storage succeeds', () => {
-            expect(response.success).toBe(true);
-        });
-    
-        test('returns child url pathname if storage succeeds', () => {
-            expect(response.pathnames).toHaveLength(1);
-            expect(response.pathnames).toContainEqual(
-                DEFAULT_CHILD_URL.pathname
-            );
-        });
-    });
-
 });
 
 describe('crawl returns no results', () => {

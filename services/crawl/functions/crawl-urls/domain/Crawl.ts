@@ -77,14 +77,22 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         crawlResult: CrawlResult
     ): Promise<PathnameStored> {
-        const stored = await this.urlRepository.storePathname(
+        const isURLStored = await this.urlRepository.storePathname(
             baseURL.hostname, 
             crawlResult.url.pathname
         );
 
+        let isAllDataStored = false;
+        if (isURLStored) {
+            isAllDataStored = await this.contentRepository.storePageContent(
+                crawlResult.url,
+                crawlResult.content
+            );
+        }
+
         return {
             pathname: crawlResult.url.pathname,
-            stored
+            stored: isAllDataStored
         };
     }
 
