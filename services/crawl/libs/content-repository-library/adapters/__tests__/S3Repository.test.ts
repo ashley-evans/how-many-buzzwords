@@ -35,6 +35,11 @@ describe.each([
         'a pathname with query string parameters',
         new URL('http://www.example.com/test?param=true'),
         'www.example.com/test'
+    ],
+    [
+        'a pathname with a forward slash on the end',
+        new URL('http://www.example.com/test/'),
+        'www.example.com/test'
     ]
 ])(
     'gets page content for a given url with %s',
@@ -110,6 +115,11 @@ describe.each([
     [
         'a pathname with query string parameters',
         new URL('http://www.example.com/test?param=true'),
+        'www.example.com/test'
+    ],
+    [
+        'a pathname with a forward slash on the end',
+        new URL('http://www.example.com/test/'),
         'www.example.com/test'
     ]
 ])(
