@@ -68,18 +68,27 @@ class URLsTableRepository implements Repository {
     }
 
     async storePathname(baseURL: string, pathname: string): Promise<boolean> {
-        await this.model.create(
-            { 
-                BaseUrl: baseURL,
-                Pathname: pathname
-            },
-            {
-                overwrite: true
-            }
-        );
+        try {
+            await this.model.create(
+                { 
+                    BaseUrl: baseURL,
+                    Pathname: pathname
+                },
+                {
+                    overwrite: true
+                }
+            );
 
-        console.log(`Successfully stored: ${pathname} for ${baseURL}`);
-        return true;
+            console.log(`Successfully stored: ${pathname} for ${baseURL}`);
+            return true;
+        } catch (ex) {
+            console.error(
+                `An occurred during storage of ${pathname} for ${baseURL}:` +
+                JSON.stringify(ex)
+            );
+
+            return false;
+        }
     }
 }
 
