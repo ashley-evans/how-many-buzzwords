@@ -24,22 +24,22 @@ describe.each([
     [
         'no pathname',
         VALID_URL,
-        'www.example.com'
+        'www.example.com.html'
     ],
     [
         'a pathname',
         new URL('http://www.example.com/test'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ],
     [
         'a pathname with query string parameters',
         new URL('http://www.example.com/test?param=true'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ],
     [
         'a pathname with a forward slash on the end',
         new URL('http://www.example.com/test/'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ]
 ])(
     'gets page content for a given url with %s',
@@ -105,22 +105,22 @@ describe.each([
     [
         'no pathname',
         VALID_URL,
-        'www.example.com'
+        'www.example.com.html'
     ],
     [
         'a pathname',
         new URL('http://www.example.com/test'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ],
     [
         'a pathname with query string parameters',
         new URL('http://www.example.com/test?param=true'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ],
     [
         'a pathname with a forward slash on the end',
         new URL('http://www.example.com/test/'),
-        'www.example.com/test'
+        'www.example.com/test.html'
     ]
 ])(
     'stores page content for a given url with %s',

@@ -49,13 +49,16 @@ class S3Repository implements ContentRepository {
     }
 
     private getContentKey(url: URL): string {
+        let storagePath: string;
         if (url.pathname === '/') {
-            return url.hostname;
+            storagePath = url.hostname;
         } else if (url.pathname.endsWith('/')) {
-            return `${url.hostname}${url.pathname.slice(0, -1)}`;
+            storagePath = `${url.hostname}${url.pathname.slice(0, -1)}`;
+        } else {
+            storagePath = `${url.hostname}${url.pathname}`;
         }
 
-        return `${url.hostname}${url.pathname}`;
+        return `${storagePath}.html`;
     }
 
     private async convertStreamToString(
