@@ -4,8 +4,13 @@ import {
     CrawlEventTypes 
 } from './enums';
 
-export { 
-    URLsTableKeyFields,
+import AjvValidator from './helpers/AjvValidator';
+import ObjectValidator from './interfaces/ObjectValidator';
+
+export {
+    AjvValidator,
     CrawlTopicMessageAttributes,
-    CrawlEventTypes
+    CrawlEventTypes,
+    ObjectValidator,
+    URLsTableKeyFields,
 };
