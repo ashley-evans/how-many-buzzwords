@@ -1,5 +1,11 @@
 {
     "name": "buzzword-aws-crawl-common",
     "version": "1.0.0",
-    "main": "./index.js"
+    "main": "./index.js",
+    "devDependencies": {
+        "ajv": "8.x"
+    },
+    "peerDependencies": {
+        "ajv": "8.x"
+    }
 }
