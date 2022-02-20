@@ -1,4 +1,4 @@
-import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
+import { ObjectValidator } from 'buzzword-aws-crawl-common';
 
 import { CrawlPort } from "../ports/CrawlPort";
 import {
@@ -8,30 +8,30 @@ import {
 } from "../ports/PrimaryAdapter";
 import CrawlError from "../errors/CrawlError";
 
-interface RequestBody {
+interface ValidCrawlEvent {
     url: string,
     depth?: number
 }
 
-class EventAdapter implements PrimaryAdapter {
-    private ajv: Ajv;
-    private validator;
-
-    constructor(private crawler: CrawlPort) {
-        this.ajv = new Ajv({ coerceTypes: true });
-        this.validator = this.createValidator();
-    }
+class CrawlEventAdapter implements PrimaryAdapter {
+    constructor(
+        private crawler: CrawlPort,
+        private validator: ObjectValidator<ValidCrawlEvent>
+    ) {}
 
     async crawl(event: CrawlEvent): Promise<CrawlResponse> {
-        let validatedBody: RequestBody;
+        let validatedEvent: ValidCrawlEvent;
         let url: URL;
         try {
-            validatedBody = this.validateRequestBody(event);
+            validatedEvent = this.validator.validate(event);
 
-            url = new URL(validatedBody.url);
+            url = new URL(validatedEvent.url);
         } catch (ex) {
+            const errorContent = ex instanceof Error 
+                ? ex.message 
+                : JSON.stringify(ex);
             console.error(
-                `Error occurred in body validation: ${JSON.stringify(ex)}`
+                `Error occurred in event validation: ${errorContent}`
             );
 
             return { baseURL: event.url, success: false };
@@ -40,7 +40,7 @@ class EventAdapter implements PrimaryAdapter {
         try {
             const response = await this.crawler.crawl(
                 url, 
-                validatedBody.depth
+                validatedEvent.depth
             );
 
             if (!response.success) {
@@ -67,32 +67,9 @@ class EventAdapter implements PrimaryAdapter {
             );
         }
     }
-
-    private createValidator(): ValidateFunction<RequestBody> {
-        const schema: JSONSchemaType<RequestBody> = {
-            type: "object",
-            properties: {
-                url: {
-                    type: "string"
-                },
-                depth: {
-                    type: "integer", 
-                    nullable: true
-                }
-            },
-            required: ["url"]
-        };
-
-        return this.ajv.compile(schema);
-    }
-
-    private validateRequestBody(event: CrawlEvent): RequestBody {
-        if (this.validator(event)) {
-            return event;
-        } else {
-            throw this.validator.errors;
-        }
-    }
 }
 
-export default EventAdapter;
+export {
+    CrawlEventAdapter,
+    ValidCrawlEvent
+};

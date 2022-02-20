@@ -1,3 +1,4 @@
+import { JSONSchemaType } from "ajv";
 import {
     ContentRepository,
     S3Repository
@@ -6,9 +7,13 @@ import {
     Repository,
     URLsTableRepository
 } from "buzzword-aws-crawl-urls-repository-library";
+import { ObjectValidator, AjvValidator } from "buzzword-aws-crawl-common";
 
 import ApifyProvider from "./adapters/ApifyProvider";
-import EventAdapter from "./adapters/EventAdapter";
+import {
+    CrawlEventAdapter,
+    ValidCrawlEvent
+} from "./adapters/CrawlEventAdapter";
 import Crawl from "./domain/Crawl";
 import { CrawlProvider } from "./ports/CrawlProvider";
 import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
@@ -46,6 +51,24 @@ function createContentRepository(): ContentRepository {
     return new S3Repository(process.env.CONTENT_BUCKET_NAME);
 }
 
+function createValidator(): ObjectValidator<ValidCrawlEvent> {
+    const schema: JSONSchemaType<ValidCrawlEvent> = {
+        type: "object",
+        properties: {
+            url: {
+                type: "string"
+            },
+            depth: {
+                type: "integer", 
+                nullable: true
+            }
+        },
+        required: ["url"]
+    };
+
+    return new AjvValidator<ValidCrawlEvent>(schema, { coerceTypes: true });
+}
+
 const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
     const crawlProvider = createCrawlProvider();
     const urlRepository = createRepostiory();
@@ -57,7 +80,9 @@ const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
         contentRepository
     );
 
-    const primaryAdapter = new EventAdapter(crawlDomain);
+    const validator = createValidator();
+
+    const primaryAdapter = new CrawlEventAdapter(crawlDomain, validator);
 
     return await primaryAdapter.crawl(event);
 };
