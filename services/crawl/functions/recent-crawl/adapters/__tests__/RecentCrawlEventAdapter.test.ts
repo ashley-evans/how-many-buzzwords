@@ -93,6 +93,7 @@ describe.each([
 ])(
     'given an event with a valid URL %s',
     (message: string, recentlyCrawled: boolean) => {
+        const event = createEvent(VALID_URL);
         const successResponse: RecentCrawlResponse = {
             recentlyCrawled,
             crawlTime: new Date()
@@ -105,16 +106,17 @@ describe.each([
             mockPort.hasCrawledRecently.mockResolvedValue(successResponse);
             mockValidator.validate.mockReturnValue(VALID_EVENT);
 
-            response = await adapter.hasCrawledRecently(
-                createEvent(VALID_URL)
-            );
+            response = await adapter.hasCrawledRecently(event);
+        });
+
+        test('calls object validator with provided event', () => {
+            expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+            expect(mockValidator.validate).toHaveBeenCalledWith(event);
         });
 
         test('calls domain with valid URL', () => {
             expect(mockPort.hasCrawledRecently).toHaveBeenCalledTimes(1);
-            expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(
-                VALID_URL
-            );
+            expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(VALID_URL);
         });
 
         test('returns valid URL in response', () => {
@@ -132,6 +134,8 @@ describe.each([
 );
 
 describe('given an event with a valid URL that has never been crawled', () => {
+    const event = createEvent(VALID_URL);
+
     let response: RecentCrawlAdapterResponse;
 
     beforeAll(async () => {
@@ -139,9 +143,12 @@ describe('given an event with a valid URL that has never been crawled', () => {
         mockPort.hasCrawledRecently.mockResolvedValue(undefined);
         mockValidator.validate.mockReturnValue(VALID_EVENT);
 
-        response = await adapter.hasCrawledRecently(
-            createEvent(VALID_URL)
-        );
+        response = await adapter.hasCrawledRecently(event);
+    });
+
+    test('calls object validator with provided event', () => {
+        expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+        expect(mockValidator.validate).toHaveBeenCalledWith(event);
     });
 
     test('calls domain with valid URL', () => {
