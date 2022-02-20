@@ -278,7 +278,6 @@ describe.each([
 describe('given port rejects promise', () => {
     const event = createEvent(VALID_URL);
 
-    const expectedError = new Error('Test Error');
     let response: APIGatewayProxyResult;
 
     beforeAll(async () => {
@@ -286,7 +285,7 @@ describe('given port rejects promise', () => {
         mockValidator.validate.mockReturnValue({
             baseURL: VALID_URL.toString()
         });
-        mockPort.getPathnames.mockRejectedValue(expectedError);
+        mockPort.getPathnames.mockRejectedValue(new Error());
 
         response = await adapter.handleRequest(event);
     });
