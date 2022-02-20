@@ -62,6 +62,25 @@ test.each([
     }
 );
 
+test('throws exception if validator throws an exception', async () => {
+    jest.resetAllMocks();
+
+    mockValidator.validate.mockImplementation(() => { throw new Error(); });
+
+    const event = createEvent(VALID_URL);
+
+    expect.assertions(1);
+    await expect(
+        adapter.hasCrawledRecently(event)
+    ).rejects.toEqual(
+        expect.objectContaining({
+            message: expect.stringContaining(
+                'Exception occurred during event validation:'
+            )
+        })
+    );
+});
+
 describe.each([
     [
         'that has been crawled recently',
