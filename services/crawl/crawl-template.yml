@@ -196,6 +196,7 @@ Resources:
       Description: GETs the pathnames crawled from a given URL
       Layers:
         - Ref: URLsRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'

@@ -1,14 +1,16 @@
 import { mock } from "jest-mock-extended";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { StatusCodes } from 'http-status-codes';
+import { ObjectValidator } from "buzzword-aws-crawl-common";
 
-import GetURLsAdapter from '../GetURLsAdapter';
+import { GetURLsAdapter, ValidParameters } from '../GetURLsAdapter';
 import { PathnameResponse, GetURLsPort } from "../../ports/GetURLsPort";
 
 const VALID_URL = new URL('http://www.example.com');
 
 const mockPort = mock<GetURLsPort>();
-const adapter = new GetURLsAdapter(mockPort);
+const mockValidator = mock<ObjectValidator<ValidParameters>>();
+const adapter = new GetURLsAdapter(mockPort, mockValidator);
 
 function createEvent(baseURL?: URL | string): APIGatewayProxyEvent {
     const event = mock<APIGatewayProxyEvent>();
@@ -34,24 +36,70 @@ beforeAll(() => {
 
 describe.each([
     [
-        'missing url in query string',
-        createEvent()
-    ],
-    [
         'invalid url (numeric)',
-        createEvent('1')
+        '1'
     ],
     [
         'invalid url',
-        createEvent(`test ${VALID_URL.toString()}`)
+        `test ${VALID_URL.toString()}`
     ]
-])('given an event with %s', (message: string, event: APIGatewayProxyEvent) => {
+])('given an event with %s', (message: string, eventURL: string) => {
+    const event = createEvent(eventURL);
+
     let response: APIGatewayProxyResult;
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockValidator.validate.mockReturnValue({ baseURL: eventURL });
 
         response = await adapter.handleRequest(event);
+    });
+
+    test('calls object validator with provided event parameters', () => {
+        expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+        expect(mockValidator.validate).toHaveBeenCalledWith(
+            event.pathParameters
+        );
+    });
+
+    test('does not call port with invalid event', () => {
+        expect(mockPort.getPathnames).toHaveBeenCalledTimes(0);
+    });
+
+    test('returns plain text mime type in content type header', () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                'Content-Type': 'text/plain'
+            })
+        );
+    });
+
+    test('returns 500 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test('returns error in response body', () => {
+        expect(response.body).toEqual('Invalid event');
+    });
+});
+
+describe('given an event that fails validation', () => {
+    const event = createEvent(VALID_URL);
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockValidator.validate.mockImplementation(() => { throw new Error(); });
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test('calls object validator with provided event parameters', () => {
+        expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+        expect(mockValidator.validate).toHaveBeenCalledWith(
+            event.pathParameters
+        );
     });
 
     test('does not call port with invalid event', () => {
@@ -78,26 +126,36 @@ describe.each([
 describe.each([
     [
         'url with protocol',
-        createEvent(VALID_URL)
+        VALID_URL.toString()
     ],
     [
         'url without protocol',
-        createEvent(VALID_URL.hostname)
+        VALID_URL.hostname
     ]
 ])(
     'given a valid event with a %s that has been crawled recently',
-    (message: string, event: APIGatewayProxyEvent) => {
+    (message: string, eventURL: string) => {
+        const event = createEvent(eventURL);
         const expectedPathnames = [
             createPathname('/wibble'),
             createPathname('/wobble')
         ];
+
         let response: APIGatewayProxyResult;
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            mockValidator.validate.mockReturnValue({ baseURL: eventURL });
             mockPort.getPathnames.mockResolvedValue(expectedPathnames);
 
             response = await adapter.handleRequest(event);
+        });
+
+        test('calls object validator with provided event parameters', () => {
+            expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+            expect(mockValidator.validate).toHaveBeenCalledWith(
+                event.pathParameters
+            );
         });
 
         test('calls port with URL from event', () => {
@@ -164,22 +222,32 @@ describe.each([
 describe.each([
     [
         'url with protocol',
-        createEvent(VALID_URL)
+        VALID_URL.toString()
     ],
     [
         'url without protocol',
-        createEvent(VALID_URL.hostname)
+        VALID_URL.hostname
     ]
 ])(
     'given a valid event with a %s that hasn\'t been crawled recently',
-    (message: string, event: APIGatewayProxyEvent) => {
+    (message: string, eventURL: string) => {
+        const event = createEvent(eventURL);
+
         let response: APIGatewayProxyResult;
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            mockValidator.validate.mockReturnValue({ baseURL: eventURL });
             mockPort.getPathnames.mockResolvedValue([]);
 
             response = await adapter.handleRequest(event);
+        });
+
+        test('calls object validator with provided event paramaters', () => {
+            expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+            expect(mockValidator.validate).toHaveBeenCalledWith(
+                event.pathParameters
+            );
         });
 
         test('calls port with URL from event', () => {
@@ -208,15 +276,25 @@ describe.each([
 );
 
 describe('given port rejects promise', () => {
+    const event = createEvent(VALID_URL);
+
     const expectedError = new Error('Test Error');
     let response: APIGatewayProxyResult;
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockValidator.validate.mockReturnValue({
+            baseURL: VALID_URL.toString()
+        });
         mockPort.getPathnames.mockRejectedValue(expectedError);
 
-        response = await adapter.handleRequest(
-            createEvent(VALID_URL)
+        response = await adapter.handleRequest(event);
+    });
+
+    test('calls object validator with provided event parameters', () => {
+        expect(mockValidator.validate).toHaveBeenCalledTimes(1);
+        expect(mockValidator.validate).toHaveBeenCalledWith(
+            event.pathParameters
         );
     });
 

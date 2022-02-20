@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
+import { ObjectValidator } from "buzzword-aws-crawl-common";
 import { StatusCodes } from 'http-status-codes';
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
@@ -10,18 +10,19 @@ type ValidParameters = {
 };
 
 class GetURLsAdapter implements APIGatewayAdapter {
-    private validator;
-
-    constructor(private port: GetURLsPort) {
-        this.validator = this.createValidator();
-    }
+    constructor(
+        private port: GetURLsPort,
+        private validator: ObjectValidator<ValidParameters>
+    ) {}
 
     async handleRequest(
         event: APIGatewayProxyEvent
     ): Promise<APIGatewayProxyResult> {
         let validatedURL: URL;
         try {
-            const validatedParameters = this.validateRequestParameters(event);
+            const validatedParameters = this.validator.validate(
+                event.pathParameters
+            );
             validatedURL = this.parseURL(validatedParameters.baseURL);
         } catch (ex) {
             const message = 'Invalid event';
@@ -68,31 +69,6 @@ class GetURLsAdapter implements APIGatewayAdapter {
         }
     }
 
-    private createValidator(): ValidateFunction<ValidParameters> {
-        const ajv = new Ajv();
-        const schema: JSONSchemaType<ValidParameters> = {
-            type: "object",
-            properties: {
-                baseURL: {
-                    type: "string"
-                }
-            },
-            required: ["baseURL"]
-        };
-
-        return ajv.compile(schema);
-    }
-
-    private validateRequestParameters(
-        event: APIGatewayProxyEvent
-    ): ValidParameters {
-        if (this.validator(event.pathParameters)) {
-            return event.pathParameters;
-        } else {
-            throw this.validator.errors;
-        }
-    }
-
     private parseURL(url: string): URL {
         if (!isNaN(parseInt(url))) {
             throw 'Number provided when expecting URL';
@@ -120,4 +96,7 @@ class GetURLsAdapter implements APIGatewayAdapter {
     }
 }
 
-export default GetURLsAdapter;
+export {
+    GetURLsAdapter,
+    ValidParameters
+};

@@ -1,11 +1,13 @@
+import { JSONSchemaType } from "ajv";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
     Repository,
     URLsTableRepository
 } from "buzzword-aws-crawl-urls-repository-library";
+import { AjvValidator, ObjectValidator } from "buzzword-aws-crawl-common";
 
 import GetURLsDomain from './domain/GetURLsDomain';
-import GetURLsAdapter from "./adapters/GetURLsAdapter";
+import { GetURLsAdapter, ValidParameters } from "./adapters/GetURLsAdapter";
 
 function createRepository() : Repository {
     if (!process.env.TABLE_NAME) {
@@ -15,12 +17,29 @@ function createRepository() : Repository {
     return new URLsTableRepository(process.env.TABLE_NAME);
 }
 
+function createValidator(): ObjectValidator<ValidParameters> {
+    const schema: JSONSchemaType<ValidParameters> = {
+        type: "object",
+        properties: {
+            baseURL: {
+                type: "string"
+            }
+        },
+        required: ["baseURL"]
+    };
+
+    return new AjvValidator<ValidParameters>(schema);
+}
+
+
 async function handler(
     event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
     const repository = createRepository();
     const port = new GetURLsDomain(repository);
-    const adapter = new GetURLsAdapter(port);
+    const validator = createValidator();
+
+    const adapter = new GetURLsAdapter(port, validator);
 
     return adapter.handleRequest(event);
 }
