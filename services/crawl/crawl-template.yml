@@ -197,6 +197,7 @@ Resources:
       Layers:
         - Ref: URLsRepositoryLibraryLayer
         - Ref: CrawlCommonLayer
+      Timeout: 10
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
