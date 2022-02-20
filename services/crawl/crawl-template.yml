@@ -264,6 +264,7 @@ Resources:
       Description: Returns whether the URL has been crawled within configured time
       Layers:
         - Ref: URLsRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable

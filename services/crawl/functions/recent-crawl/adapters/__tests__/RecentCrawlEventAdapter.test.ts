@@ -1,6 +1,10 @@
 import { mock } from 'jest-mock-extended';
+import { ObjectValidator } from 'buzzword-aws-crawl-common';
 
-import RecentCrawlEventAdapter from '../RecentCrawlEventAdapter';
+import {
+    RecentCrawlEventAdapter,
+    ValidRecentCrawlEvent
+} from '../RecentCrawlEventAdapter';
 import {
     RecentCrawlAdapterResponse,
     RecentCrawlEvent
@@ -11,11 +15,15 @@ import {
 } from '../../ports/RecentCrawlPort';
 
 const VALID_URL = new URL('https://www.example.com/');
+const VALID_EVENT: ValidRecentCrawlEvent = {
+    url: VALID_URL.toString()
+};
 
 const mockPort = mock<RecentCrawlPort>();
-const adapter = new RecentCrawlEventAdapter(mockPort);
+const mockValidator = mock<ObjectValidator<ValidRecentCrawlEvent>>();
+const adapter = new RecentCrawlEventAdapter(mockPort, mockValidator);
 
-function createEvent(url?: URL | string): RecentCrawlEvent {
+function createEvent(url: URL | string): RecentCrawlEvent {
     const event: RecentCrawlEvent = {};
     if (url) {
         event.url = url.toString();
@@ -26,27 +34,28 @@ function createEvent(url?: URL | string): RecentCrawlEvent {
 
 test.each([
     [
-        'missing url',
-        createEvent()
-    ],
-    [
         'invalid url (numeric)',
-        createEvent('1')
+        '1'
     ],
     [
         'invalid url',
-        createEvent(`test ${VALID_URL.toString()}`)
+        `test ${VALID_URL.toString()}`
     ]
 ])(
     'throws exception given %s',
-    async (message: string, event: RecentCrawlEvent) => {
+    async (message: string, eventURL: string) => {
+        jest.resetAllMocks();
+
+        mockValidator.validate.mockReturnValue({ url: eventURL });
+        const event = createEvent(eventURL);
+
         expect.assertions(1);
         await expect(
             adapter.hasCrawledRecently(event)
         ).rejects.toEqual(
             expect.objectContaining({
                 message: expect.stringContaining(
-                    'Exception occured during event validation:'
+                    'Exception occurred during event validation:'
                 )
             })
         );
@@ -75,6 +84,7 @@ describe.each([
         beforeAll(async () => {
             jest.resetAllMocks();
             mockPort.hasCrawledRecently.mockResolvedValue(successResponse);
+            mockValidator.validate.mockReturnValue(VALID_EVENT);
 
             response = await adapter.hasCrawledRecently(
                 createEvent(VALID_URL)
@@ -108,6 +118,7 @@ describe('given an event with a valid URL that has never been crawled', () => {
     beforeAll(async () => {
         jest.resetAllMocks();
         mockPort.hasCrawledRecently.mockResolvedValue(undefined);
+        mockValidator.validate.mockReturnValue(VALID_EVENT);
 
         response = await adapter.hasCrawledRecently(
             createEvent(VALID_URL)

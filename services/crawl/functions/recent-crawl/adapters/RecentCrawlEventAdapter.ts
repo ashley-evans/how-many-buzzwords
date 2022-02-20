@@ -1,4 +1,4 @@
-import Ajv, { JSONSchemaType, ValidateFunction } from 'ajv';
+import { ObjectValidator } from "buzzword-aws-crawl-common";
 
 import {
     RecentCrawlAdapter,
@@ -7,34 +7,21 @@ import {
 } from "../ports/RecentCrawlAdapter";
 import { RecentCrawlPort } from '../ports/RecentCrawlPort';
 
-type ValidEventBody = {
+type ValidRecentCrawlEvent = {
     url: string
 };
 
 class RecentCrawlEventAdapter implements RecentCrawlAdapter {
-    private ajv: Ajv;
-    private validator;
-
-    constructor(private port: RecentCrawlPort) {
-        this.ajv = new Ajv();
-        this.validator = this.createValidator();
-    }
+    constructor(
+        private port: RecentCrawlPort,
+        private validator: ObjectValidator<ValidRecentCrawlEvent>
+    ) {}
 
     async hasCrawledRecently(
         event: RecentCrawlEvent
     ): Promise<RecentCrawlAdapterResponse> {
-        let validatedBody: ValidEventBody;
-        let url: URL;
-        try {
-            validatedBody = this.validateRequestBody(event);
+        const url = this.validateEvent(event);
 
-            url = new URL(validatedBody.url);
-        } catch (ex) {
-            throw new Error(
-                `Exception occured during event validation: ${ex}`
-            );
-        }
-        
         const response = await this.port.hasCrawledRecently(url);
         if (response) {
             return {
@@ -50,27 +37,24 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         };
     }
 
-    private createValidator(): ValidateFunction<ValidEventBody> {
-        const schema: JSONSchemaType<ValidEventBody> = {
-            type: "object",
-            properties: {
-                url: {
-                    type: "string"
-                }
-            },
-            required: ["url"]
-        };
+    private validateEvent(event: RecentCrawlEvent): URL {
+        try {
+            const validated = this.validator.validate(event);
 
-        return this.ajv.compile(schema);
-    }
+            return new URL(validated.url);
+        } catch (ex) {
+            const errorContent = ex instanceof Error 
+                ? ex.message 
+                : JSON.stringify(ex);
 
-    private validateRequestBody(event: RecentCrawlEvent): ValidEventBody {
-        if (this.validator(event)) {
-            return event;
-        } else {
-            throw this.validator.errors;
+            throw new Error(
+                `Exception occurred during event validation: ${errorContent}`
+            );
         }
     }
 }
 
-export default RecentCrawlEventAdapter;
+export {
+    ValidRecentCrawlEvent,
+    RecentCrawlEventAdapter
+};
