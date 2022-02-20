@@ -118,6 +118,7 @@ Resources:
       Layers:
         - Ref: URLsRepositoryLibraryLayer
         - Ref: ContentRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
       Environment:
