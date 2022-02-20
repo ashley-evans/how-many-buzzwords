@@ -89,7 +89,7 @@ describe('given a URL that has not been crawled before', () => {
 test('returns repository error if thrown', async () => {
     jest.resetAllMocks();
     
-    const expectedError = new Error('teste error');
+    const expectedError = new Error('test error');
     mockRepository.getPathnames.mockRejectedValue(expectedError);
 
     expect.assertions(1);
