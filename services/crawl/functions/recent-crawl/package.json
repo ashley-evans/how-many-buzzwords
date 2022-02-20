@@ -3,8 +3,5 @@
     "version": "1.0.0",
     "dependencies": {
         "dayjs": "1.10.7"
-    },
-    "devDependencies": {
-        "ajv": "8.8.2"
     }
 }
