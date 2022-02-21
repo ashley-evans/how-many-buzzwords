@@ -9,7 +9,7 @@ paths:
     post:
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-  /urls/{baseURL}:
+  /url/{baseURL}:
     get:
       parameters: [
         {
@@ -23,6 +23,20 @@ paths:
       ]
       x-amazon-apigateway-integration:
         $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
+  /content:
+    get:
+      parameters: [
+        {
+          name: "url",
+          in: "query",
+          required: true,
+          schema: {
+            type: "string"
+          }
+        }
+      ]
+      x-amazon-apigateway-integration:
+        $ref: "#/components/x-amazon-apigateway-integrations/get-content-integration"
 components:
   x-amazon-apigateway-integrations:
     invoke-crawl-state-machine:
@@ -47,5 +61,17 @@ components:
       credentials:
         Fn::GetAtt:
         - "GetURLsAccessRole"
+        - "Arn"
+      payloadFormatVersion: "1.0"
+    get-content-integration:
+      type: "aws_proxy"
+      httpMethod: "POST"
+      uri: 
+        Fn::GetAtt:
+        - "GetContent"
+        - "Arn"
+      credentials:
+        Fn::GetAtt:
+        - "GetContentAccessRole"
         - "Arn"
       payloadFormatVersion: "1.0"

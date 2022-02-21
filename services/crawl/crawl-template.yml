@@ -197,7 +197,7 @@ Resources:
       Layers:
         - Ref: URLsRepositoryLibraryLayer
         - Ref: CrawlCommonLayer
-      Timeout: 10
+      Timeout: 6
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
@@ -272,6 +272,50 @@ Resources:
         Variables:
           TABLE_NAME: !Ref URLsTable
           MAX_CRAWL_AGE_HOURS: 48
+  GetContent:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-content.handler
+      Runtime: nodejs14.x
+      CodeUri: ./functions/urls-crud/functions/get-content
+      Description: GETs any stored content for a given URL
+      Layers:
+        - Ref: ContentRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
+      Timeout: 6
+      Policies:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - Version: '2012-10-17'
+        Statement:
+        - Sid: S3GetPolicy
+          Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: !Sub "${CrawlContentBucket.Arn}/*"
+      Environment:
+        Variables:
+          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
+  GetContentAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeGetContentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt GetContent.Arn
+                Effect: Allow
   CrawlStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -342,6 +386,11 @@ Resources:
                   - states:StartExecution
                 Resource: !GetAtt CrawlStateMachine.Arn
                 Effect: Allow
+  CrawlHTTPGatewayAccessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/CrawlHTTPGatewayAccessLogs-${EnvironmentNameSuffix}"
+      RetentionInDays: 30
   CrawlHTTPGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -351,6 +400,9 @@ Resources:
           Parameters:
             Location: ./crawl-openapi.yml
       FailOnWarnings: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt CrawlHTTPGatewayAccessLogs.Arn
+        Format: "{\"requestId\":\"$context.requestId\", \"errorMessage\":\"$context.error.message\", \"path\":\"$context.path\"}"
 Outputs:
   EventBusARN:
     Description: The ARN for the Crawl Service's Event Bus
