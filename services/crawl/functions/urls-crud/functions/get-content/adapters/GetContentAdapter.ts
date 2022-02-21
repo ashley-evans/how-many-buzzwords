@@ -31,7 +31,7 @@ class GetContentAdapter implements APIGatewayAdapter {
                 `${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
             );
             return this.createResponse(
-                StatusCodes.INTERNAL_SERVER_ERROR,
+                StatusCodes.BAD_REQUEST,
                 'text/plain',
                 message
             );
@@ -45,15 +45,18 @@ class GetContentAdapter implements APIGatewayAdapter {
                 content
             );
         } catch (ex) {
-            const message = 'Error occurred during retrieval of page content';
+            const content = ex instanceof Error 
+                ? ex.message 
+                : JSON.stringify(ex);
             console.error(
-                message + 
-                `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+                'Error occurred during retrieval of page content:' + 
+                content
             );
+
             return this.createResponse(
-                StatusCodes.INTERNAL_SERVER_ERROR,
+                StatusCodes.NOT_FOUND,
                 'text/plain',
-                message
+                'No content found for given URL.'
             );
         }
     }

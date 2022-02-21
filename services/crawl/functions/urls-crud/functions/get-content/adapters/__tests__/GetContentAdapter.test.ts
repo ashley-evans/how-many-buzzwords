@@ -68,8 +68,8 @@ describe.each([
         );
     });
 
-    test('returns 500 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    test('returns 400 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
     });
 
     test('returns error in response body', () => {
@@ -108,8 +108,8 @@ describe('given an event that fails validation', () => {
         );
     });
 
-    test('returns 500 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    test('returns 400 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
     });
 
     test('returns error in response body', () => {
@@ -221,12 +221,13 @@ describe('given port rejects promise', () => {
         );
     });
 
-    test('returns 500 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    test('returns 404 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
     });
 
-    test('returns error in response body', () => {
-        expect(response.body).toContain(
-            'Error occurred during retrieval of page content');
+    test('returns not crawled message in body', () => {
+        expect(response.body).toEqual(
+            'No content found for given URL.'
+        );
     });
 });
