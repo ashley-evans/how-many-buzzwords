@@ -74,8 +74,8 @@ describe.each([
         );
     });
 
-    test('returns 500 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    test('returns 400 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
     });
 
     test('returns error in response body', () => {
@@ -114,8 +114,8 @@ describe('given an event that fails validation', () => {
         );
     });
 
-    test('returns 500 response', () => {
-        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    test('returns 400 response', () => {
+        expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
     });
 
     test('returns error in response body', () => {

@@ -31,7 +31,7 @@ class GetURLsAdapter implements APIGatewayAdapter {
                 `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
             );
             return this.createResponse(
-                StatusCodes.INTERNAL_SERVER_ERROR,
+                StatusCodes.BAD_REQUEST,
                 'text/plain',
                 message
             );
