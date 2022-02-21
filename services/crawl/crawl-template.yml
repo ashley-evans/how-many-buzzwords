@@ -6,17 +6,6 @@ Parameters:
     Description: Environment name suffixed to service resources
     Default: dev
 Resources:
-  CrawlNodeDependencyLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub CrawlNodeDependencyLayer-${EnvironmentNameSuffix}
-      Description: Common crawl service node module layer
-      CompatibleRuntimes:
-        - nodejs14.x
-      ContentUri: ./functions
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
   CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -176,7 +165,6 @@ Resources:
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
       Layers:
-        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Events:
         URLsTableStreamEvent:
