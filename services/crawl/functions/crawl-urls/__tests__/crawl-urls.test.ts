@@ -10,11 +10,13 @@ const mockEvent = mock<CrawlEvent>();
 const VALID_MAX_CRAWL_DEPTH = '1';
 const VALID_MAX_REQUESTS_PER_CRAWL = '1';
 const VALID_TABLE_NAME = 'test';
+const VALID_BUCKET_NAME = 'test_bucket';
 
 beforeEach(() => {
     process.env.MAX_CRAWL_DEPTH = VALID_MAX_CRAWL_DEPTH;
     process.env.MAX_REQUESTS_PER_CRAWL = VALID_MAX_REQUESTS_PER_CRAWL;
     process.env.TABLE_NAME = VALID_TABLE_NAME;
+    process.env.CONTENT_BUCKET_NAME = VALID_BUCKET_NAME;
 });
 
 test.each([
@@ -51,10 +53,18 @@ test.each([
     }
 );
 
-test('throws error if table name is undefined', async () => {
+test('throws error if urls table name is undefined', async () => {
     delete process.env.TABLE_NAME;
 
     await expect(handler(mockEvent)).rejects.toThrow(
         new Error('URLs Table Name has not been set.')
+    );
+});
+
+test('throws error if content bucket name is undefined', async () => {
+    delete process.env.CONTENT_BUCKET_NAME;
+
+    await expect(handler(mockEvent)).rejects.toThrow(
+        new Error('Content Bucket Name has not been set.')
     );
 });

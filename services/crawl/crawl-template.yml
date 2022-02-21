@@ -6,17 +6,6 @@ Parameters:
     Description: Environment name suffixed to service resources
     Default: dev
 Resources:
-  CrawlNodeDependencyLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub CrawlNodeDependencyLayer-${EnvironmentNameSuffix}
-      Description: Common crawl service node module layer
-      CompatibleRuntimes:
-        - nodejs14.x
-      ContentUri: ./functions
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
   CrawlCommonLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -32,6 +21,16 @@ Resources:
     Properties:
       LayerName: !Sub URLsRepositoryLibraryLayer-${EnvironmentNameSuffix}
       ContentUri: ./libs/urls-repository-library
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
+  ContentRepositoryLibraryLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ContentRepositoryLibraryLayer-${EnvironmentNameSuffix}
+      ContentUri: ./libs/content-repository-library
       CompatibleRuntimes:
         - nodejs14.x
       RetentionPolicy: Delete
@@ -53,6 +52,15 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+  CrawlContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
   CrawlURLsRole:
     Type: AWS::IAM::Role
     Properties:
@@ -78,6 +86,14 @@ Resources:
                   - dynamodb:PutItem
                 Resource: !GetAtt URLsTable.Arn
                 Effect: Allow
+        - PolicyName: ContentBucketCrawlPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:PutObject
+                Resource: !Sub "${CrawlContentBucket.Arn}/*"
+                Effect: Allow
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   CrawlURLs:
@@ -90,14 +106,16 @@ Resources:
       Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
       Layers:
         - Ref: URLsRepositoryLibraryLayer
+        - Ref: ContentRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
+          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
           MAX_REQUESTS_PER_CRAWL: 50
           MAX_CRAWL_DEPTH: 20
-          ERROR_LOGGING_ENABLED: true
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
   CrawlServiceEventBus:
     Type: AWS::Events::EventBus
@@ -147,7 +165,6 @@ Resources:
       CodeUri: ./functions/publish-urls
       Description: Publishes crawled URLs to an SNS Topic for subscribers
       Layers:
-        - Ref: CrawlNodeDependencyLayer
         - Ref: CrawlCommonLayer
       Events:
         URLsTableStreamEvent:
@@ -158,16 +175,17 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
-  URLsCRUDFunction:
+  GetURLs:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: urls-crud.handler
+      Handler: get-urls.handler
       Runtime: nodejs14.x
-      CodeUri: ./functions/urls-crud
-      Description: CRUD function for the URLs Table
+      CodeUri: ./functions/urls-crud/functions/get-urls
+      Description: GETs the pathnames crawled from a given URL
       Layers:
-        - Ref: CrawlNodeDependencyLayer
+        - Ref: URLsRepositoryLibraryLayer
         - Ref: CrawlCommonLayer
+      Timeout: 6
       Policies:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       - Version: '2012-10-17'
@@ -175,13 +193,13 @@ Resources:
         - Sid: URLsTableCRUDPolicy
           Effect: Allow
           Action:
-          - dynamodb:Query
+            - dynamodb:DescribeTable
+            - dynamodb:Query
           Resource: !GetAtt URLsTable.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
-          ERROR_LOGGING_ENABLED: true
-  URLsCRUDAccessRole:
+  GetURLsAccessRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -194,13 +212,13 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-        - PolicyName: InvokeURLsCRUDFunctionPolicy
+        - PolicyName: InvokeGetURLsPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Action:
                   - lambda:InvokeFunction
-                Resource: !GetAtt URLsCRUDFunction.Arn
+                Resource: !GetAtt GetURLs.Arn
                 Effect: Allow
   RecentCrawlRole:
     Type: AWS::IAM::Role
@@ -237,10 +255,55 @@ Resources:
       Description: Returns whether the URL has been crawled within configured time
       Layers:
         - Ref: URLsRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
           MAX_CRAWL_AGE_HOURS: 48
+  GetContent:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-content.handler
+      Runtime: nodejs14.x
+      CodeUri: ./functions/urls-crud/functions/get-content
+      Description: GETs any stored content for a given URL
+      Layers:
+        - Ref: ContentRepositoryLibraryLayer
+        - Ref: CrawlCommonLayer
+      Timeout: 6
+      Policies:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - Version: '2012-10-17'
+        Statement:
+        - Sid: S3GetPolicy
+          Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: !Sub "${CrawlContentBucket.Arn}/*"
+      Environment:
+        Variables:
+          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
+  GetContentAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeGetContentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt GetContent.Arn
+                Effect: Allow
   CrawlStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -311,6 +374,11 @@ Resources:
                   - states:StartExecution
                 Resource: !GetAtt CrawlStateMachine.Arn
                 Effect: Allow
+  CrawlHTTPGatewayAccessLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/vendedlogs/CrawlHTTPGatewayAccessLogs-${EnvironmentNameSuffix}"
+      RetentionInDays: 30
   CrawlHTTPGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -320,6 +388,9 @@ Resources:
           Parameters:
             Location: ./crawl-openapi.yml
       FailOnWarnings: true
+      AccessLogSettings:
+        DestinationArn: !GetAtt CrawlHTTPGatewayAccessLogs.Arn
+        Format: "{\"requestId\":\"$context.requestId\", \"errorMessage\":\"$context.error.message\", \"path\":\"$context.path\"}"
 Outputs:
   EventBusARN:
     Description: The ARN for the Crawl Service's Event Bus

@@ -1,12 +1,21 @@
 import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    ContentRepository
+} from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
-import CrawlProvider from "../ports/CrawlProvider";
+import { CrawlProvider, CrawlResult } from "../ports/CrawlProvider";
+
+type PathnameStored = {
+    pathname: string,
+    stored: boolean
+};
 
 class Crawl implements CrawlPort {
     constructor(
         private crawler: CrawlProvider, 
-        private repository: Repository
+        private urlRepository: Repository,
+        private contentRepository: ContentRepository 
     ) {}
 
     async crawl(
@@ -14,38 +23,36 @@ class Crawl implements CrawlPort {
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
-            const pathnames: string[] = [];
-            const storagePromises: Promise<boolean>[] = [];
+            const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
-                next: (childURL) => {
-                    const promise = this.storePathname(baseURL, childURL);
-                    storagePromises.push(promise);
-                    promise
-                        .then(() => {
-                            pathnames.push(childURL.pathname);
-                        })
-                        .catch((ex) => {
-                            console.error(
-                                `An error occured during storage: ${ex}`
-                            );
-                            resolve({ 
-                                success: false,
-                                pathnames
-                            });
-                        });
+                next: (result) => {
+                    const promise = this.storeChildPage(
+                        baseURL,
+                        result
+                    );
+                    pathnameStorages.push(promise);
                 },
                 complete: async () => {
-                    await Promise.allSettled(storagePromises);
-                    resolve({ 
-                        success: pathnames.length != 0,
+                    const pathnames = await this.getSuccessfulCrawls(
+                        pathnameStorages
+                    );
+                    const success = this.wasCrawlSuccessful(
+                        pathnames,
+                        pathnameStorages.length
+                    );
+                    resolve({
+                        success,
                         pathnames
                     });
                 },
-                error: (ex: unknown) => {
+                error: async (ex: unknown) => {
                     console.error(
                         `Error occured during crawling: ${JSON.stringify(ex)}`
                     );
 
+                    const pathnames = await this.getSuccessfulCrawls(
+                        pathnameStorages
+                    );
                     resolve({
                         success: false,
                         pathnames
@@ -55,21 +62,44 @@ class Crawl implements CrawlPort {
         });
     }
 
-    private storePathname(baseURL: URL, childURL: URL): Promise<boolean> {
-        return new Promise((resolve) => {
-            this.repository.storePathname(
-                baseURL.hostname,
-                childURL.pathname
-            ).then((value: boolean) => {
-                resolve(value);
-            }).catch((ex: unknown) => {
-                console.error(
-                    `Error occured during storage: ${JSON.stringify(ex)}`
-                );
-                
-                resolve(false);
-            });
-        });
+    private async storeChildPage(
+        baseURL: URL,
+        crawlResult: CrawlResult
+    ): Promise<PathnameStored> {
+        const isURLStored = await this.urlRepository.storePathname(
+            baseURL.hostname, 
+            crawlResult.url.pathname
+        );
+
+        let isAllDataStored = false;
+        if (isURLStored) {
+            isAllDataStored = await this.contentRepository.storePageContent(
+                crawlResult.url,
+                crawlResult.content
+            );
+        }
+
+        return {
+            pathname: crawlResult.url.pathname,
+            stored: isAllDataStored
+        };
+    }
+
+    private async getSuccessfulCrawls(
+        promises: Promise<PathnameStored>[]
+    ): Promise<string[]> {
+        const results = await Promise.allSettled(promises);
+        return results.reduce((accumulator: string[], current) => {
+            if (current.status === 'fulfilled' && current.value.stored) {
+                accumulator.push(current.value.pathname);
+            }
+            return accumulator;
+        }, []);
+    }
+
+    private wasCrawlSuccessful(successPathnames: string[], expected: number) {
+        return successPathnames.length == expected 
+            && successPathnames.length > 0;
     }
 }
 

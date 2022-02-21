@@ -11,21 +11,21 @@ import {
     PseudoUrl
 } from "apify";
 import { Observable, Subject } from "rxjs";
-import CrawlProvider from "../ports/CrawlProvider";
+import { CrawlResult, CrawlProvider } from "../ports/CrawlProvider";
 
 class ApifyProvider implements CrawlProvider {
     maxCrawlDepth: number;
     maxRequests: number;
     
-    private crawledURLs: Subject<URL>;
+    private crawledURLs: Subject<CrawlResult>;
 
     constructor(maxCrawlDepth: number, maxRequests: number) {
         this.maxCrawlDepth = maxCrawlDepth;
         this.maxRequests = maxRequests;
-        this.crawledURLs = new Subject<URL>();
+        this.crawledURLs = new Subject<CrawlResult>();
     }
 
-    crawl(baseURL: URL, maxDepth?: number): Observable<URL> {
+    crawl(baseURL: URL, maxDepth?: number): Observable<CrawlResult> {
         this.createRequestQueue(baseURL, maxDepth).then(
             async (requestQueue) => {
                 const domainMatcher = this.createDomainMatcher(baseURL);
@@ -107,7 +107,7 @@ class ApifyProvider implements CrawlProvider {
         inputs : CheerioHandlePageInputs,
         requestQueue: RequestQueue,
         maxCrawlDepth: number,
-        crawledURLs: Subject<URL>,
+        crawledURLs: Subject<CrawlResult>,
         crawlerPattern: PseudoUrl
     ) {
         const { request, $ } = inputs;
@@ -147,7 +147,10 @@ class ApifyProvider implements CrawlProvider {
             });
         }
 
-        crawledURLs.next(new URL(request.url));
+        crawledURLs.next({
+            url: new URL(request.url),
+            content: inputs.body.toString()
+        });
     }
 }
 
