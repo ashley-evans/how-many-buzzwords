@@ -6,14 +6,29 @@ usage() {
     exit 1; 
 }
 
-deletestack() {
+getstackname() {
     local stack_name=$( node $script_dir/helpers/get-sam-config-value.js -c $1 -e $environment -v stack_name)
 
     if [ $? -ne 0 ]; then
         exit 1
     fi
 
-    $script_dir/helpers/teardown-stack.sh -s $stack_name
+    echo $stack_name
+}
+
+deletecrawlcontent() {
+    echo "Emptying crawled content bucket"
+
+    content_bucket_physical_id=$(aws cloudformation describe-stack-resource \
+        --stack-name "$1" \
+        --logical-resource-id CrawlContentBucket \
+        | jq -r .StackResourceDetail.PhysicalResourceId)
+
+    aws s3 rm "s3://$content_bucket_physical_id/" --recursive
+}
+
+deletestack() {
+    $script_dir/helpers/teardown-stack.sh -s $1
 }
 
 while getopts "e:h" opt; do
@@ -56,7 +71,9 @@ if [ ! -f $keyphrase_config_path ]; then
     exit 1
 else
     echo "Deleting keyphrase service..."
-    deletestack $keyphrase_config_path
+    stack_name=$(getstackname $keyphrase_config_path)
+
+    deletestack $stack_name
 fi
 
 crawl_config_path="$root_dir/services/crawl/samconfig.toml"
@@ -65,5 +82,8 @@ if [ ! -f $crawl_config_path ]; then
     exit 1
 else
     echo "Deleting crawl service..."
-    deletestack $crawl_config_path
+    stack_name=$(getstackname $crawl_config_path)
+
+    deletecrawlcontent $stack_name
+    deletestack $stack_name
 fi

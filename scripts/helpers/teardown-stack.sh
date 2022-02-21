@@ -37,6 +37,10 @@ echo "Deleting stack: \"$stack\""
 aws cloudformation delete-stack --stack-name $stack
 aws cloudformation wait stack-delete-complete --stack-name $stack
 
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 echo "Deleting layers associated with stack: \"$stack\""
