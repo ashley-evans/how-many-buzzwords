@@ -29,9 +29,18 @@ function createCrawlProvider(): CrawlProvider {
         throw new Error('Max requests per crawl is not a number.');
     }
 
+    const minConcurrency = Number(process.env.MIN_CONCURRENCY);
+    const maxConcurrency = Number(process.env.MAX_CONCURRENCY);
+    const autoscaleInterval = Number(process.env.AUTOSCALE_INTERVAL);
+
     return new ApifyProvider({
         maxCrawlDepth,
-        maxRequests
+        maxRequests,
+        minConcurrency: isNaN(minConcurrency) ? undefined : minConcurrency,
+        maxConcurrency: isNaN(maxConcurrency) ? undefined : maxConcurrency,
+        autoScaleInterval: isNaN(autoscaleInterval)
+            ? undefined 
+            : autoscaleInterval
     });
 }
 
