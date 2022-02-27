@@ -25,6 +25,8 @@ class ApifyProvider implements CrawlProvider {
     private crawledURLs: Subject<CrawlResult>;
 
     constructor(private settings: CrawlerSettings) {
+        console.log(`Configured to run with: ${JSON.stringify(settings)}`);
+
         this.crawledURLs = new Subject<CrawlResult>();
     }
 
