@@ -109,7 +109,7 @@ Resources:
         - Ref: ContentRepositoryLibraryLayer
         - Ref: CrawlCommonLayer
       Timeout: 120
-      MemorySize: 256
+      MemorySize: 2048
       Environment:
         Variables:
           TABLE_NAME: !Ref URLsTable
@@ -117,6 +117,10 @@ Resources:
           MAX_REQUESTS_PER_CRAWL: 50
           MAX_CRAWL_DEPTH: 20
           APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
+          APIFY_MEMORY_MBYTES: 1536
+          MIN_CONCURRENCY: 10
+          MAX_CONCURRENCY: 20
+          AUTOSCALE_INTERVAL: 20
   CrawlServiceEventBus:
     Type: AWS::Events::EventBus
     Properties:
