@@ -9,7 +9,7 @@ import {
 } from "buzzword-aws-crawl-urls-repository-library";
 import { ObjectValidator, AjvValidator } from "buzzword-aws-crawl-common";
 
-import ApifyProvider from "./adapters/ApifyProvider";
+import { ApifyProvider } from "./adapters/ApifyProvider";
 import {
     CrawlEventAdapter,
     ValidCrawlEvent
@@ -24,15 +24,15 @@ function createCrawlProvider(): CrawlProvider {
         throw new Error('Max Crawl Depth is not a number.');
     }
 
-    const maxRequestsPerCrawl = Number(process.env.MAX_REQUESTS_PER_CRAWL);
-    if (isNaN(maxRequestsPerCrawl)) {
+    const maxRequests = Number(process.env.MAX_REQUESTS_PER_CRAWL);
+    if (isNaN(maxRequests)) {
         throw new Error('Max requests per crawl is not a number.');
     }
 
-    return new ApifyProvider(
+    return new ApifyProvider({
         maxCrawlDepth,
-        maxRequestsPerCrawl
-    );
+        maxRequests
+    });
 }
 
 function createRepostiory(): Repository {
