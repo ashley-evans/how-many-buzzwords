@@ -13,15 +13,18 @@ import {
 import { Observable, Subject } from "rxjs";
 import { CrawlResult, CrawlProvider } from "../ports/CrawlProvider";
 
+type CrawlerSettings = {
+    maxCrawlDepth: number,
+    maxRequests: number,
+    minConcurrency?: number,
+    maxConcurrency?: number,
+    autoScaleInterval?: number
+}
+
 class ApifyProvider implements CrawlProvider {
-    maxCrawlDepth: number;
-    maxRequests: number;
-    
     private crawledURLs: Subject<CrawlResult>;
 
-    constructor(maxCrawlDepth: number, maxRequests: number) {
-        this.maxCrawlDepth = maxCrawlDepth;
-        this.maxRequests = maxRequests;
+    constructor(private settings: CrawlerSettings) {
         this.crawledURLs = new Subject<CrawlResult>();
     }
 
@@ -74,7 +77,7 @@ class ApifyProvider implements CrawlProvider {
         requestQueue: RequestQueue,
         crawlerPattern: PseudoUrl
     ): CheerioCrawler {
-        const maxCrawlDepth = this.maxCrawlDepth;
+        const maxCrawlDepth = this.settings.maxCrawlDepth;
         const crawledURLs = this.crawledURLs;
         const crawlPage = this.crawlPage;
         
@@ -89,7 +92,7 @@ class ApifyProvider implements CrawlProvider {
                 );
             }),
             requestQueue,
-            maxRequestsPerCrawl: this.maxRequests,
+            maxRequestsPerCrawl: this.settings.maxRequests,
             preNavigationHooks: [
                 async (
                     crawlingContext: CrawlingContext,
@@ -97,7 +100,12 @@ class ApifyProvider implements CrawlProvider {
                 ) => {
                     requestAsBrowerOptions.useHttp2 = false;
                 },
-            ]
+            ],
+            minConcurrency: this.settings.minConcurrency ?? 1,
+            maxConcurrency: this.settings.maxConcurrency ?? 2,
+            autoscaledPoolOptions: {
+                autoscaleIntervalSecs: this.settings.autoScaleInterval ?? 10
+            }
         };
 
         return new CheerioCrawler(crawlerOptions);
@@ -154,4 +162,7 @@ class ApifyProvider implements CrawlProvider {
     }
 }
 
-export default ApifyProvider;
+export {
+    ApifyProvider,
+    CrawlerSettings
+};

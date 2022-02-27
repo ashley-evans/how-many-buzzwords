@@ -6,9 +6,6 @@ type CrawlResult = {
 }
 
 interface CrawlProvider {
-    maxCrawlDepth: number;
-    maxRequests: number;
-
     crawl(baseURL: URL, maxDepth?: number): Observable<CrawlResult>;
 }
 
