@@ -1,0 +1,8 @@
+{
+    "name": "buzzword-aws-keyphrase-repository-library",
+    "version": "1.0.0",
+    "main": "./index.js",
+    "dependencies": {
+        "dynamoose": "2.8.5"
+    }
+}
