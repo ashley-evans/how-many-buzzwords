@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 interface CRUDGatewayAdapter {
     handleRequest(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>;

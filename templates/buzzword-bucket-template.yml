@@ -1,12 +1,12 @@
 Description: S3 Bucket that contains dependencies for Buzzword Stack
 Resources:
-  BuzzwordBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: buzzword-bucket
-      AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+    BuzzwordBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: buzzword-bucket
+            AccessControl: Private
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true

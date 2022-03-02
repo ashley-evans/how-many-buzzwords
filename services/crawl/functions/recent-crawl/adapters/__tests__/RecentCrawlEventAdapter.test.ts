@@ -1,22 +1,22 @@
-import { mock } from 'jest-mock-extended';
-import { ObjectValidator } from 'buzzword-aws-crawl-common';
+import { mock } from "jest-mock-extended";
+import { ObjectValidator } from "buzzword-aws-crawl-common";
 
 import {
     RecentCrawlEventAdapter,
-    ValidRecentCrawlEvent
-} from '../RecentCrawlEventAdapter';
+    ValidRecentCrawlEvent,
+} from "../RecentCrawlEventAdapter";
 import {
     RecentCrawlAdapterResponse,
-    RecentCrawlEvent
+    RecentCrawlEvent,
 } from "../../ports/RecentCrawlAdapter";
 import {
     RecentCrawlPort,
-    RecentCrawlResponse
-} from '../../ports/RecentCrawlPort';
+    RecentCrawlResponse,
+} from "../../ports/RecentCrawlPort";
 
-const VALID_URL = new URL('https://www.example.com/');
+const VALID_URL = new URL("https://www.example.com/");
 const VALID_EVENT: ValidRecentCrawlEvent = {
-    url: VALID_URL.toString()
+    url: VALID_URL.toString(),
 };
 
 const mockPort = mock<RecentCrawlPort>();
@@ -33,70 +33,53 @@ function createEvent(url: URL | string): RecentCrawlEvent {
 }
 
 test.each([
-    [
-        'invalid url (numeric)',
-        '1'
-    ],
-    [
-        'invalid url',
-        `test ${VALID_URL.toString()}`
-    ]
-])(
-    'throws exception given %s',
-    async (message: string, eventURL: string) => {
-        jest.resetAllMocks();
-
-        mockValidator.validate.mockReturnValue({ url: eventURL });
-        const event = createEvent(eventURL);
-
-        expect.assertions(1);
-        await expect(
-            adapter.hasCrawledRecently(event)
-        ).rejects.toEqual(
-            expect.objectContaining({
-                message: expect.stringContaining(
-                    'Exception occurred during event validation:'
-                )
-            })
-        );
-    }
-);
-
-test('throws exception if validator throws an exception', async () => {
+    ["invalid url (numeric)", "1"],
+    ["invalid url", `test ${VALID_URL.toString()}`],
+])("throws exception given %s", async (message: string, eventURL: string) => {
     jest.resetAllMocks();
 
-    mockValidator.validate.mockImplementation(() => { throw new Error(); });
+    mockValidator.validate.mockReturnValue({ url: eventURL });
+    const event = createEvent(eventURL);
+
+    expect.assertions(1);
+    await expect(adapter.hasCrawledRecently(event)).rejects.toEqual(
+        expect.objectContaining({
+            message: expect.stringContaining(
+                "Exception occurred during event validation:"
+            ),
+        })
+    );
+});
+
+test("throws exception if validator throws an exception", async () => {
+    jest.resetAllMocks();
+
+    mockValidator.validate.mockImplementation(() => {
+        throw new Error();
+    });
 
     const event = createEvent(VALID_URL);
 
     expect.assertions(1);
-    await expect(
-        adapter.hasCrawledRecently(event)
-    ).rejects.toEqual(
+    await expect(adapter.hasCrawledRecently(event)).rejects.toEqual(
         expect.objectContaining({
             message: expect.stringContaining(
-                'Exception occurred during event validation:'
-            )
+                "Exception occurred during event validation:"
+            ),
         })
     );
 });
 
 describe.each([
-    [
-        'that has been crawled recently',
-        true
-    ],
-    [
-        'that has not been crawled recently',
-        false
-    ]
+    ["that has been crawled recently", true],
+    ["that has not been crawled recently", false],
 ])(
-    'given an event with a valid URL %s',
+    "given an event with a valid URL %s",
     (message: string, recentlyCrawled: boolean) => {
         const event = createEvent(VALID_URL);
         const successResponse: RecentCrawlResponse = {
             recentlyCrawled,
-            crawlTime: new Date()
+            crawlTime: new Date(),
         };
 
         let response: RecentCrawlAdapterResponse;
@@ -109,31 +92,31 @@ describe.each([
             response = await adapter.hasCrawledRecently(event);
         });
 
-        test('calls object validator with provided event', () => {
+        test("calls object validator with provided event", () => {
             expect(mockValidator.validate).toHaveBeenCalledTimes(1);
             expect(mockValidator.validate).toHaveBeenCalledWith(event);
         });
 
-        test('calls domain with valid URL', () => {
+        test("calls domain with valid URL", () => {
             expect(mockPort.hasCrawledRecently).toHaveBeenCalledTimes(1);
             expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(VALID_URL);
         });
 
-        test('returns valid URL in response', () => {
+        test("returns valid URL in response", () => {
             expect(response.baseURL).toEqual(VALID_URL.toString());
         });
 
-        test('returns whether recently crawled in response', () => {
+        test("returns whether recently crawled in response", () => {
             expect(response.recentlyCrawled).toEqual(recentlyCrawled);
         });
-        
-        test('returns crawl date time in response', () => {
+
+        test("returns crawl date time in response", () => {
             expect(response.crawlTime).toEqual(successResponse.crawlTime);
         });
     }
 );
 
-describe('given an event with a valid URL that has never been crawled', () => {
+describe("given an event with a valid URL that has never been crawled", () => {
     const event = createEvent(VALID_URL);
 
     let response: RecentCrawlAdapterResponse;
@@ -146,27 +129,25 @@ describe('given an event with a valid URL that has never been crawled', () => {
         response = await adapter.hasCrawledRecently(event);
     });
 
-    test('calls object validator with provided event', () => {
+    test("calls object validator with provided event", () => {
         expect(mockValidator.validate).toHaveBeenCalledTimes(1);
         expect(mockValidator.validate).toHaveBeenCalledWith(event);
     });
 
-    test('calls domain with valid URL', () => {
+    test("calls domain with valid URL", () => {
         expect(mockPort.hasCrawledRecently).toHaveBeenCalledTimes(1);
-        expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(
-            VALID_URL
-        );
+        expect(mockPort.hasCrawledRecently).toHaveBeenCalledWith(VALID_URL);
     });
 
-    test('returns valid URL in response', () => {
+    test("returns valid URL in response", () => {
         expect(response.baseURL).toEqual(VALID_URL.toString());
     });
 
-    test('returns not recently crawled in response', () => {
+    test("returns not recently crawled in response", () => {
         expect(response.recentlyCrawled).toEqual(false);
     });
-    
-    test('returns no crawl datetime in response', () => {
+
+    test("returns no crawl datetime in response", () => {
         expect(response.crawlTime).toBeUndefined();
     });
 });

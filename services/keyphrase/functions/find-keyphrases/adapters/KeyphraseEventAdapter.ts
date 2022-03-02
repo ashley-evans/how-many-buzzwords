@@ -5,12 +5,12 @@ import KeyphrasesPort from "../ports/KeyphrasePort";
 import {
     KeyphrasesEvent,
     KeyphrasesResponse,
-    KeyphrasePrimaryAdapter 
+    KeyphrasePrimaryAdapter,
 } from "../ports/KeyphrasePrimaryAdapter";
 
 interface RequestBody {
-    baseURL: string,
-    pathname: string
+    baseURL: string;
+    pathname: string;
 }
 
 class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
@@ -37,7 +37,7 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
             return {
                 success: false,
                 baseURL: event.baseURL,
-                pathname: event.pathname
+                pathname: event.pathname,
             };
         }
 
@@ -45,14 +45,14 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
             const success = await this.keyphraseFinder.findKeyphrases(url);
             if (!success) {
                 throw new KeyphrasesError(
-                    'Keyphrase finder failed to execute.'
+                    "Keyphrase finder failed to execute."
                 );
             }
 
-            return { 
+            return {
                 success,
                 baseURL: url.hostname,
-                pathname: url.pathname
+                pathname: url.pathname,
             };
         } catch (ex: unknown) {
             if (ex instanceof KeyphrasesError) {
@@ -71,14 +71,15 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
             properties: {
                 baseURL: {
                     type: "string",
-                    pattern: '^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.' + 
-                    '[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
+                    pattern:
+                        "^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\." +
+                        "[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$",
                 },
                 pathname: {
-                    type: "string"
-                }
+                    type: "string",
+                },
             },
-            required: ["baseURL", "pathname"]
+            required: ["baseURL", "pathname"],
         };
 
         return this.ajv.compile(schema);

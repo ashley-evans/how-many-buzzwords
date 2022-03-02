@@ -1,14 +1,14 @@
-import { mock } from 'jest-mock-extended';
+import { mock } from "jest-mock-extended";
 
-jest.mock('buzzword-aws-crawl-urls-repository-library');
+jest.mock("buzzword-aws-crawl-urls-repository-library");
 
-import { handler } from '../recent-crawl';
-import { RecentCrawlEvent } from '../ports/RecentCrawlAdapter';
+import { handler } from "../recent-crawl";
+import { RecentCrawlEvent } from "../ports/RecentCrawlAdapter";
 
 const mockEvent = mock<RecentCrawlEvent>();
 
-const VALID_MAX_CRAWL_AGE_HOURS = '1';
-const VALID_TABLE_NAME = 'test';
+const VALID_MAX_CRAWL_AGE_HOURS = "1";
+const VALID_TABLE_NAME = "test";
 
 beforeEach(() => {
     process.env.MAX_CRAWL_AGE_HOURS = VALID_MAX_CRAWL_AGE_HOURS;
@@ -16,24 +16,12 @@ beforeEach(() => {
 });
 
 test.each([
-    [
-        'undefined',
-        undefined
-    ],
-    [
-        'not a number',
-        'wibble'
-    ],
-    [
-        'zero',
-        0
-    ],
-    [
-        'negative',
-        -1
-    ]
+    ["undefined", undefined],
+    ["not a number", "wibble"],
+    ["zero", 0],
+    ["negative", -1],
 ])(
-    'throws error if max crawl age in hours is %s',
+    "throws error if max crawl age in hours is %s",
     async (message: string, value?: string | number) => {
         if (value) {
             process.env.MAX_CRAWL_AGE_HOURS = value.toString();
@@ -42,15 +30,15 @@ test.each([
         }
 
         await expect(handler(mockEvent)).rejects.toThrow(
-            new Error('Max crawl age configuration is invalid.')
+            new Error("Max crawl age configuration is invalid.")
         );
     }
 );
 
-test('throws error if table name is undefined', async () => {
+test("throws error if table name is undefined", async () => {
     delete process.env.TABLE_NAME;
 
     await expect(handler(mockEvent)).rejects.toThrow(
-        new Error('URLs Table Name has not been set.')
+        new Error("URLs Table Name has not been set.")
     );
 });

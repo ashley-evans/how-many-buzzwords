@@ -1,13 +1,10 @@
 type CrawlerResponse = {
-    success: boolean,
-    pathnames?: string[]
-}
+    success: boolean;
+    pathnames?: string[];
+};
 
 interface CrawlPort {
-    crawl(baseURL: URL, maxCrawlDepth?: number): Promise<CrawlerResponse>
+    crawl(baseURL: URL, maxCrawlDepth?: number): Promise<CrawlerResponse>;
 }
 
-export {
-    CrawlerResponse,
-    CrawlPort
-};
+export { CrawlerResponse, CrawlPort };

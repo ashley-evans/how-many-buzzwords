@@ -1,13 +1,10 @@
 type RecentCrawlResponse = {
-    recentlyCrawled: boolean,
-    crawlTime: Date
+    recentlyCrawled: boolean;
+    crawlTime: Date;
 };
 
 interface RecentCrawlPort {
-    hasCrawledRecently(baseURL: URL): Promise<RecentCrawlResponse | undefined>
+    hasCrawledRecently(baseURL: URL): Promise<RecentCrawlResponse | undefined>;
 }
 
-export {
-    RecentCrawlResponse,
-    RecentCrawlPort
-};
+export { RecentCrawlResponse, RecentCrawlPort };

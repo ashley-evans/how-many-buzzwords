@@ -1,60 +1,60 @@
 Description: IAM Users and Policies for CI and CD pipeline tasks
 Parameters:
-  GithubOrganisation:
-    Type: String
-  RepositoryName:
-    Type: String
+    GithubOrganisation:
+        Type: String
+    RepositoryName:
+        Type: String
 Resources:
-  GithubOIDCProvider:
-    Type: AWS::IAM::OIDCProvider
-    Properties:
-      Url: https://token.actions.githubusercontent.com
-      ClientIdList: 
-        - sts.amazonaws.com
-      ThumbprintList:
-        - 6938fd4d98bab03faadb97b34396831e3780aea1
-  DeployRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action: 
-          - sts:AssumeRoleWithWebIdentity
-          Principal: 
-            Federated: !Ref GithubOIDCProvider
-          Condition:
-            StringLike:
-              token.actions.githubusercontent.com:sub: !Sub repo:${GithubOrganisation}/${RepositoryName}:*
-      Policies:
-        - PolicyName: StepFunctionDeployPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - states:*
-                Effect: Allow
-                Resource: arn:aws:states:*
-        - PolicyName: EventBridgeDeployPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - events:*
-                Effect: Allow
-                Resource: arn:aws:events:*
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
-        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
-        - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-        - arn:aws:iam::aws:policy/IAMFullAccess
+    GithubOIDCProvider:
+        Type: AWS::IAM::OIDCProvider
+        Properties:
+            Url: https://token.actions.githubusercontent.com
+            ClientIdList:
+                - sts.amazonaws.com
+            ThumbprintList:
+                - 6938fd4d98bab03faadb97b34396831e3780aea1
+    DeployRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRoleWithWebIdentity
+                      Principal:
+                          Federated: !Ref GithubOIDCProvider
+                      Condition:
+                          StringLike:
+                              token.actions.githubusercontent.com:sub: !Sub repo:${GithubOrganisation}/${RepositoryName}:*
+            Policies:
+                - PolicyName: StepFunctionDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - states:*
+                            Effect: Allow
+                            Resource: arn:aws:states:*
+                - PolicyName: EventBridgeDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:*
+                            Effect: Allow
+                            Resource: arn:aws:events:*
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+                - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+                - arn:aws:iam::aws:policy/AmazonS3FullAccess
+                - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+                - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+                - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+                - arn:aws:iam::aws:policy/IAMFullAccess
 Outputs:
-  DeployRoleARN: 
-    Description: The ARN of the deployment role required to deploy stacks
-    Value: !GetAtt DeployRole.Arn
+    DeployRoleARN:
+        Description: The ARN of the deployment role required to deploy stacks
+        Value: !GetAtt DeployRole.Arn

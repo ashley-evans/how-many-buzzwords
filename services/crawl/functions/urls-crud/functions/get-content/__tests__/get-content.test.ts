@@ -1,16 +1,16 @@
-import { mock } from 'jest-mock-extended';
+import { mock } from "jest-mock-extended";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
-jest.mock('buzzword-aws-crawl-urls-repository-library');
+jest.mock("buzzword-aws-crawl-urls-repository-library");
 
-import { handler } from '../get-content';
+import { handler } from "../get-content";
 
 const mockEvent = mock<APIGatewayProxyEvent>();
 
-test('throws error if content bucket name is undefined', async () => {
+test("throws error if content bucket name is undefined", async () => {
     delete process.env.CONTENT_BUCKET_NAME;
 
     await expect(handler(mockEvent)).rejects.toThrow(
-        new Error('Content Bucket Name has not been set.')
+        new Error("Content Bucket Name has not been set.")
     );
 });

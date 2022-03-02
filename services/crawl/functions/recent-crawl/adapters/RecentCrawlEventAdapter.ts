@@ -3,12 +3,12 @@ import { ObjectValidator } from "buzzword-aws-crawl-common";
 import {
     RecentCrawlAdapter,
     RecentCrawlAdapterResponse,
-    RecentCrawlEvent
+    RecentCrawlEvent,
 } from "../ports/RecentCrawlAdapter";
-import { RecentCrawlPort } from '../ports/RecentCrawlPort';
+import { RecentCrawlPort } from "../ports/RecentCrawlPort";
 
 type ValidRecentCrawlEvent = {
-    url: string
+    url: string;
 };
 
 class RecentCrawlEventAdapter implements RecentCrawlAdapter {
@@ -27,13 +27,13 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
             return {
                 baseURL: url.toString(),
                 recentlyCrawled: response.recentlyCrawled,
-                crawlTime: response.crawlTime
+                crawlTime: response.crawlTime,
             };
         }
 
         return {
             baseURL: url.toString(),
-            recentlyCrawled: false
+            recentlyCrawled: false,
         };
     }
 
@@ -43,9 +43,8 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
 
             return new URL(validated.url);
         } catch (ex) {
-            const errorContent = ex instanceof Error 
-                ? ex.message 
-                : JSON.stringify(ex);
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
 
             throw new Error(
                 `Exception occurred during event validation: ${errorContent}`
@@ -54,7 +53,4 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
     }
 }
 
-export {
-    ValidRecentCrawlEvent,
-    RecentCrawlEventAdapter
-};
+export { ValidRecentCrawlEvent, RecentCrawlEventAdapter };

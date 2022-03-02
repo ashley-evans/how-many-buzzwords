@@ -1,88 +1,89 @@
-const middy = require('@middy/core');
-const validator = require('@middy/validator');
-const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
+const middy = require("@middy/core");
+const validator = require("@middy/validator");
+const { DynamoDBClient, QueryCommand } = require("@aws-sdk/client-dynamodb");
 const {
     ApiGatewayManagementApiClient,
     PostToConnectionCommand,
-    GoneException
-} = require('@aws-sdk/client-apigatewaymanagementapi');
-const { INSERT_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require('./constants');
+    GoneException,
+} = require("@aws-sdk/client-apigatewaymanagementapi");
+const { INSERT_EVENT_NAME, GONE_EXCEPTION_MESSAGE } = require("./constants");
 
 const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
-    type: 'object',
-    required: ['Records'],
+    type: "object",
+    required: ["Records"],
     properties: {
         Records: {
-            type: 'array',
+            type: "array",
             items: {
-                type: 'object',
-                required: ['eventName', 'dynamodb'],
+                type: "object",
+                required: ["eventName", "dynamodb"],
                 properties: {
                     eventName: {
-                        type: 'string'
+                        type: "string",
                     },
                     dynamodb: {
-                        type: 'object',
+                        type: "object",
                         properties: {
                             NewImage: {
-                                type: 'object',
+                                type: "object",
                                 required: [
-                                    'ConnectionEndpoint',
-                                    'ConnectionId',
-                                    'SearchKey'
+                                    "ConnectionEndpoint",
+                                    "ConnectionId",
+                                    "SearchKey",
                                 ],
                                 properties: {
                                     ConnectionEndpoint: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string',
-                                                // eslint-disable-next-line max-len
-                                                pattern: '(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)'
-                                            }
-                                        }
+                                                type: "string",
+                                                pattern:
+                                                    "(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)",
+                                            },
+                                        },
                                     },
                                     ConnectionId: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
-                                            S: { type: 'string' }
-                                        }
+                                            S: { type: "string" },
+                                        },
                                     },
                                     SearchKey: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string',
-                                                // eslint-disable-next-line max-len
-                                                pattern: process.env.SEARCH_KEY_PATTERN
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                                                type: "string",
+                                                pattern:
+                                                    process.env
+                                                        .SEARCH_KEY_PATTERN,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
 };
 
 const queryCurrentState = (searchKeyValue) => {
     const params = {
         TableName: process.env.TABLE_NAME,
-        KeyConditionExpression: '#sk = :searchvalue',
+        KeyConditionExpression: "#sk = :searchvalue",
         ExpressionAttributeNames: {
-            '#sk': process.env.SEARCH_KEY
+            "#sk": process.env.SEARCH_KEY,
         },
         ExpressionAttributeValues: {
-            ':searchvalue': { S: searchKeyValue }
-        }
+            ":searchvalue": { S: searchKeyValue },
+        },
     };
 
     return ddbClient.send(new QueryCommand(params));
@@ -90,20 +91,22 @@ const queryCurrentState = (searchKeyValue) => {
 
 const postDataToClient = async (endpoint, clientId, data) => {
     const apiGatewayClient = new ApiGatewayManagementApiClient({
-        endpoint
+        endpoint,
     });
 
     const params = {
         ConnectionId: clientId,
-        Data: JSON.stringify(data)
+        Data: JSON.stringify(data),
     };
 
     try {
         await apiGatewayClient.send(new PostToConnectionCommand(params));
     } catch (ex) {
-        if (ex.message === GONE_EXCEPTION_MESSAGE ||
-            ex instanceof GoneException) {
-            console.log('Client unavailable, not repeating');
+        if (
+            ex.message === GONE_EXCEPTION_MESSAGE ||
+            ex instanceof GoneException
+        ) {
+            console.log("Client unavailable, not repeating");
         } else {
             throw ex;
         }
@@ -117,8 +120,8 @@ const baseHandler = async (event) => {
             console.log(`Received a ${record.eventName} record. Ignoring.`);
         } else if (!recordValues) {
             console.log(
-                'Received a record with missing new image field: ' +
-                `${JSON.stringify(record)}. Ignoring.`
+                "Received a record with missing new image field: " +
+                    `${JSON.stringify(record)}. Ignoring.`
             );
         } else {
             const searchKeyValue = recordValues.SearchKey.S;
@@ -132,9 +135,10 @@ const baseHandler = async (event) => {
     }
 };
 
-const handler = middy(baseHandler)
-    .use(validator({ inputSchema: INPUT_SCHEMA }));
+const handler = middy(baseHandler).use(
+    validator({ inputSchema: INPUT_SCHEMA })
+);
 
 module.exports = {
-    handler
+    handler,
 };

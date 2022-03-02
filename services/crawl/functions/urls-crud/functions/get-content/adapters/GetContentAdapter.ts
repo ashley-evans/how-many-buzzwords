@@ -1,13 +1,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ObjectValidator } from "buzzword-aws-crawl-common";
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
 import GetContentPort from "../ports/GetContentPort";
 
 type ValidParameters = {
-    url: string
-}
+    url: string;
+};
 
 class GetContentAdapter implements APIGatewayAdapter {
     constructor(
@@ -25,49 +25,43 @@ class GetContentAdapter implements APIGatewayAdapter {
             );
             validatedURL = this.parseURL(validatedParameters.url);
         } catch (ex) {
-            const message = 'Invalid event';
+            const message = "Invalid event";
             console.error(
-                message + 
-                `${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+                message +
+                    `${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
             );
             return this.createResponse(
                 StatusCodes.BAD_REQUEST,
-                'text/plain',
+                "text/plain",
                 message
             );
         }
 
         try {
             const content = await this.port.getPageContent(validatedURL);
-            return this.createResponse(
-                StatusCodes.OK,
-                'text/html',
-                content
-            );
+            return this.createResponse(StatusCodes.OK, "text/html", content);
         } catch (ex) {
-            const content = ex instanceof Error 
-                ? ex.message 
-                : JSON.stringify(ex);
+            const content =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
             console.error(
-                'Error occurred during retrieval of page content:' + 
-                content
+                "Error occurred during retrieval of page content:" + content
             );
 
             return this.createResponse(
                 StatusCodes.NOT_FOUND,
-                'text/plain',
-                'No content found for given URL.'
+                "text/plain",
+                "No content found for given URL."
             );
         }
     }
 
     private parseURL(url: string): URL {
         if (!isNaN(parseInt(url))) {
-            throw 'Number provided when expecting URL';
+            throw "Number provided when expecting URL";
         }
 
         url = decodeURIComponent(url);
-        if (!url.startsWith('https://') && !url.startsWith('http://')) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
             url = `http://${url}`;
         }
 
@@ -82,14 +76,11 @@ class GetContentAdapter implements APIGatewayAdapter {
         return {
             statusCode: code,
             headers: {
-                'Content-Type': contentType
+                "Content-Type": contentType,
             },
-            body
+            body,
         };
     }
 }
 
-export {
-    GetContentAdapter,
-    ValidParameters
-};
+export { GetContentAdapter, ValidParameters };

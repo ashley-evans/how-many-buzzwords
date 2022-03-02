@@ -2,16 +2,16 @@ import { JSONSchemaType } from "ajv";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
     Repository,
-    URLsTableRepository
+    URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
 import { AjvValidator, ObjectValidator } from "buzzword-aws-crawl-common";
 
-import GetURLsDomain from './domain/GetURLsDomain';
+import GetURLsDomain from "./domain/GetURLsDomain";
 import { GetURLsAdapter, ValidParameters } from "./adapters/GetURLsAdapter";
 
-function createRepository() : Repository {
+function createRepository(): Repository {
     if (!process.env.TABLE_NAME) {
-        throw new Error('URLs Table Name has not been set.');
+        throw new Error("URLs Table Name has not been set.");
     }
 
     return new URLsTableRepository(process.env.TABLE_NAME);
@@ -22,15 +22,14 @@ function createValidator(): ObjectValidator<ValidParameters> {
         type: "object",
         properties: {
             baseURL: {
-                type: "string"
-            }
+                type: "string",
+            },
         },
-        required: ["baseURL"]
+        required: ["baseURL"],
     };
 
     return new AjvValidator<ValidParameters>(schema);
 }
-
 
 async function handler(
     event: APIGatewayProxyEvent
@@ -44,6 +43,4 @@ async function handler(
     return adapter.handleRequest(event);
 }
 
-export {
-    handler
-};
+export { handler };

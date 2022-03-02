@@ -4,14 +4,8 @@
         "module": "commonjs",
         "outDir": "dist",
         "allowJs": true,
-        "lib": [
-            "DOM"
-        ]
+        "lib": ["DOM"]
     },
-    "include": [
-        "services"
-    ],
-    "exclude": [
-        "scripts"
-    ]
+    "include": ["services"],
+    "exclude": ["scripts"]
 }

@@ -1,20 +1,20 @@
-const middy = require('@middy/core');
-const validator = require('@middy/validator');
+const middy = require("@middy/core");
+const validator = require("@middy/validator");
 const {
     DynamoDBClient,
     QueryCommand,
-    DeleteItemCommand
-} = require('@aws-sdk/client-dynamodb');
+    DeleteItemCommand,
+} = require("@aws-sdk/client-dynamodb");
 const {
     ApiGatewayManagementApiClient,
     PostToConnectionCommand,
-    GoneException
-} = require('@aws-sdk/client-apigatewaymanagementapi');
+    GoneException,
+} = require("@aws-sdk/client-apigatewaymanagementapi");
 const {
     dynamoDBEventTypes,
     apiGatewayExceptionMessages,
-    activeConnectionsTableKeyFields
-} = require('./constants');
+    activeConnectionsTableKeyFields,
+} = require("./constants");
 
 const SEARCH_KEY = process.env.SEARCH_KEY;
 const TABLE_NAME = process.env.TABLE_NAME;
@@ -22,71 +22,71 @@ const TABLE_NAME = process.env.TABLE_NAME;
 const ddbClient = new DynamoDBClient({});
 
 const INPUT_SCHEMA = {
-    type: 'object',
-    required: ['Records'],
+    type: "object",
+    required: ["Records"],
     properties: {
         Records: {
-            type: 'array',
+            type: "array",
             items: {
-                type: 'object',
-                required: ['eventName', 'dynamodb'],
+                type: "object",
+                required: ["eventName", "dynamodb"],
                 properties: {
                     eventName: {
-                        type: 'string'
+                        type: "string",
                     },
                     dynamodb: {
-                        type: 'object',
-                        required: ['Keys'],
+                        type: "object",
+                        required: ["Keys"],
                         properties: {
                             Keys: {
-                                type: 'object',
+                                type: "object",
                                 required: [SEARCH_KEY],
                                 properties: {
                                     [SEARCH_KEY]: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string'
-                                            }
-                                        }
-                                    }
-                                }
+                                                type: "string",
+                                            },
+                                        },
+                                    },
+                                },
                             },
                             NewImage: {
-                                type: 'object',
+                                type: "object",
                                 required: [SEARCH_KEY],
                                 properties: {
                                     [SEARCH_KEY]: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string'
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                                                type: "string",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
 };
 
 const getListeningClients = (clientSearchKey) => {
     const params = {
         TableName: process.env.TABLE_NAME,
         IndexName: process.env.INDEX_NAME,
-        KeyConditionExpression: '#sk = :searchvalue',
+        KeyConditionExpression: "#sk = :searchvalue",
         ExpressionAttributeNames: {
-            '#sk': activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH
+            "#sk": activeConnectionsTableKeyFields.SECONDARY_INDEX_HASH,
         },
         ExpressionAttributeValues: {
-            ':searchvalue': { S: clientSearchKey }
-        }
+            ":searchvalue": { S: clientSearchKey },
+        },
     };
 
     return ddbClient.send(new QueryCommand(params));
@@ -94,27 +94,29 @@ const getListeningClients = (clientSearchKey) => {
 
 const postDataToClient = async (endpoint, clientId, data) => {
     const apiGatewayClient = new ApiGatewayManagementApiClient({
-        endpoint
+        endpoint,
     });
 
     const params = {
         ConnectionId: clientId,
-        Data: JSON.stringify(data)
+        Data: JSON.stringify(data),
     };
 
     try {
         await apiGatewayClient.send(new PostToConnectionCommand(params));
     } catch (ex) {
-        if (ex.message === apiGatewayExceptionMessages.GONE_EXCEPTION ||
-            ex instanceof GoneException) {
-            console.log('Client unavailable, removing connection details');
+        if (
+            ex.message === apiGatewayExceptionMessages.GONE_EXCEPTION ||
+            ex instanceof GoneException
+        ) {
+            console.log("Client unavailable, removing connection details");
 
             const params2 = {
                 TableName: TABLE_NAME,
                 Key: {
                     [activeConnectionsTableKeyFields.PRIMARY_INDEX_HASH]:
-                        clientId
-                }
+                        clientId,
+                },
             };
 
             await ddbClient.send(new DeleteItemCommand(params2));
@@ -140,7 +142,7 @@ const baseHandler = async (event) => {
 
             const data = {
                 eventName: record.eventName,
-                value: dataValue
+                value: dataValue,
             };
             await postDataToClient(
                 client.ConnectionEndpoint.S,
@@ -151,9 +153,10 @@ const baseHandler = async (event) => {
     }
 };
 
-const handler = middy(baseHandler)
-    .use(validator({ inputSchema: INPUT_SCHEMA }));
+const handler = middy(baseHandler).use(
+    validator({ inputSchema: INPUT_SCHEMA })
+);
 
 module.exports = {
-    handler
+    handler,
 };

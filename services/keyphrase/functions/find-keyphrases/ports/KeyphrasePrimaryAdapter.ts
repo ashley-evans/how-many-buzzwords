@@ -1,20 +1,16 @@
 type KeyphrasesEvent = {
-    baseURL?: string,
-    pathname?: string
+    baseURL?: string;
+    pathname?: string;
 };
 
 type KeyphrasesResponse = {
-    success: boolean,
-    baseURL?: string,
-    pathname?: string
+    success: boolean;
+    baseURL?: string;
+    pathname?: string;
 };
 
 interface KeyphrasePrimaryAdapter {
-    findKeyphrases(event: KeyphrasesEvent): Promise<KeyphrasesResponse>
+    findKeyphrases(event: KeyphrasesEvent): Promise<KeyphrasesResponse>;
 }
 
-export {
-    KeyphrasesEvent,
-    KeyphrasesResponse,
-    KeyphrasePrimaryAdapter
-};
+export { KeyphrasesEvent, KeyphrasesResponse, KeyphrasePrimaryAdapter };

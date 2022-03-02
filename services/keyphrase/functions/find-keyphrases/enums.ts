@@ -1,13 +1,10 @@
 enum KeyphraseTableKeyFields {
-    HashKey = 'BaseUrl',
-    SortKey = 'KeyPhrase'
+    HashKey = "BaseUrl",
+    SortKey = "KeyPhrase",
 }
 
 enum KeyphraseTableNonKeyFields {
-    Occurrence = 'Occurrences'
+    Occurrence = "Occurrences",
 }
 
-export {
-    KeyphraseTableKeyFields,
-    KeyphraseTableNonKeyFields
-};
+export { KeyphraseTableKeyFields, KeyphraseTableNonKeyFields };

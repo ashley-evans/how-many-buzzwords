@@ -1,19 +1,15 @@
 enum URLsTableKeyFields {
-    HashKey = 'BaseUrl',
-    SortKey = 'Pathname'
+    HashKey = "BaseUrl",
+    SortKey = "Pathname",
 }
 
 enum CrawlTopicMessageAttributes {
-    EventType = 'EventType'
+    EventType = "EventType",
 }
 
 enum CrawlEventTypes {
-    NewURLCrawled = 'NewURLCrawled',
-    CrawlComplete = 'CrawlComplete'
+    NewURLCrawled = "NewURLCrawled",
+    CrawlComplete = "CrawlComplete",
 }
 
-export {
-    URLsTableKeyFields,
-    CrawlTopicMessageAttributes,
-    CrawlEventTypes
-};
+export { URLsTableKeyFields, CrawlTopicMessageAttributes, CrawlEventTypes };

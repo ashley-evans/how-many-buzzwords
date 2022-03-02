@@ -1,5 +1,5 @@
 import { PathOrFileDescriptor, readFileSync } from "fs";
-import nock, { ReplyHeaders} from "nock";
+import nock, { ReplyHeaders } from "nock";
 
 function mockURLFromFile(
     urlMatcher: RegExp | URL,
@@ -8,19 +8,14 @@ function mockURLFromFile(
     persist: boolean
 ) {
     const replyHeaders: ReplyHeaders = {
-        'content-type': 'text/html'
+        "content-type": "text/html",
     };
 
-    const matcher = urlMatcher instanceof RegExp 
-        ? urlMatcher 
-        : urlMatcher.toString();
+    const matcher =
+        urlMatcher instanceof RegExp ? urlMatcher : urlMatcher.toString();
     const mock = nock(matcher)
         .get(pathname)
-        .reply(
-            200,
-            readFileSync(filePath),
-            replyHeaders
-        );
+        .reply(200, readFileSync(filePath), replyHeaders);
 
     if (persist) {
         mock.persist();
@@ -29,6 +24,4 @@ function mockURLFromFile(
     return mock;
 }
 
-export {
-    mockURLFromFile
-};
+export { mockURLFromFile };

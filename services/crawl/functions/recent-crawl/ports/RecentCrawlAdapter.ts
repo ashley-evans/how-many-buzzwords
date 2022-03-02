@@ -3,19 +3,15 @@ type RecentCrawlEvent = {
 };
 
 type RecentCrawlAdapterResponse = {
-    baseURL: string,
-    recentlyCrawled: boolean,
-    crawlTime?: Date
-}
+    baseURL: string;
+    recentlyCrawled: boolean;
+    crawlTime?: Date;
+};
 
 interface RecentCrawlAdapter {
     hasCrawledRecently(
         event: RecentCrawlEvent
-    ): Promise<RecentCrawlAdapterResponse>
+    ): Promise<RecentCrawlAdapterResponse>;
 }
 
-export {
-    RecentCrawlEvent,
-    RecentCrawlAdapterResponse,
-    RecentCrawlAdapter
-};
+export { RecentCrawlEvent, RecentCrawlAdapterResponse, RecentCrawlAdapter };

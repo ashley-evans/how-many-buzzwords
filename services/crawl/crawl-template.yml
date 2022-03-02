@@ -1,401 +1,401 @@
 Transform: AWS::Serverless-2016-10-31
 Description: Crawl Service
 Parameters:
-  EnvironmentNameSuffix:
-    Type: String
-    Description: Environment name suffixed to service resources
-    Default: dev
+    EnvironmentNameSuffix:
+        Type: String
+        Description: Environment name suffixed to service resources
+        Default: dev
 Resources:
-  CrawlCommonLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub CrawlCommonLayer-${EnvironmentNameSuffix}
-      ContentUri: ./common
-      CompatibleRuntimes:
-        - nodejs14.x
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
-  URLsRepositoryLibraryLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub URLsRepositoryLibraryLayer-${EnvironmentNameSuffix}
-      ContentUri: ./libs/urls-repository-library
-      CompatibleRuntimes:
-        - nodejs14.x
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
-  ContentRepositoryLibraryLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub ContentRepositoryLibraryLayer-${EnvironmentNameSuffix}
-      ContentUri: ./libs/content-repository-library
-      CompatibleRuntimes:
-        - nodejs14.x
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
-  URLsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: BaseUrl
-          AttributeType: S
-        - AttributeName: Pathname
-          AttributeType: S
-      KeySchema:
-        - AttributeName: BaseUrl
-          KeyType: HASH
-        - AttributeName: Pathname
-          KeyType: RANGE
-      StreamSpecification:
-        StreamViewType: NEW_IMAGE
-  CrawlContentBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-  CrawlURLsRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: URLsTableCrawlPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - dynamodb:DescribeTable
-                  - dynamodb:Query
-                  - dynamodb:BatchWriteItem
-                  - dynamodb:PutItem
-                Resource: !GetAtt URLsTable.Arn
-                Effect: Allow
-        - PolicyName: ContentBucketCrawlPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - s3:PutObject
-                Resource: !Sub "${CrawlContentBucket.Arn}/*"
-                Effect: Allow
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  CrawlURLs:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: crawl-urls.handler
-      Role: !GetAtt CrawlURLsRole.Arn
-      Runtime: nodejs14.x
-      CodeUri: ./functions/crawl-urls
-      Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
-      Layers:
-        - Ref: URLsRepositoryLibraryLayer
-        - Ref: ContentRepositoryLibraryLayer
-        - Ref: CrawlCommonLayer
-      Timeout: 120
-      MemorySize: 2048
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref URLsTable
-          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
-          MAX_REQUESTS_PER_CRAWL: 50
-          MAX_CRAWL_DEPTH: 20
-          APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
-          APIFY_MEMORY_MBYTES: 1536
-          MIN_CONCURRENCY: 10
-          MAX_CONCURRENCY: 20
-          AUTOSCALE_INTERVAL: 20
-  CrawlServiceEventBus:
-    Type: AWS::Events::EventBus
-    Properties:
-      Name: !Sub "CrawlServiceEventBus-${EnvironmentNameSuffix}"
-  PublishURLFunctionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: URLsTableReadStreamPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - dynamodb:DescribeStream
-                  - dynamodb:GetRecords
-                  - dynamodb:GetShardIterator
-                  - dynamodb:ListStreams
-                Resource: !GetAtt URLsTable.StreamArn
-                Effect: Allow
-        - PolicyName: PutEventsPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                - events:PutEvents
-                Resource: !GetAtt CrawlServiceEventBus.Arn
-                Effect: Allow
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  PublishURLsLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: publish-urls.handler
-      Role: !GetAtt PublishURLFunctionRole.Arn
-      Runtime: nodejs14.x
-      CodeUri: ./functions/publish-urls
-      Description: Publishes crawled URLs to an SNS Topic for subscribers
-      Layers:
-        - Ref: CrawlCommonLayer
-      Events:
-        URLsTableStreamEvent:
-          Type: DynamoDB
-          Properties:
-            Stream: !GetAtt URLsTable.StreamArn
-            StartingPosition: LATEST
-      Environment:
-        Variables:
-          EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
-  GetURLs:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: get-urls.handler
-      Runtime: nodejs14.x
-      CodeUri: ./functions/urls-crud/functions/get-urls
-      Description: GETs the pathnames crawled from a given URL
-      Layers:
-        - Ref: URLsRepositoryLibraryLayer
-        - Ref: CrawlCommonLayer
-      Timeout: 6
-      Policies:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      - Version: '2012-10-17'
-        Statement:
-        - Sid: URLsTableCRUDPolicy
-          Effect: Allow
-          Action:
-            - dynamodb:DescribeTable
-            - dynamodb:Query
-          Resource: !GetAtt URLsTable.Arn
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref URLsTable
-  GetURLsAccessRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Policies:
-        - PolicyName: InvokeGetURLsPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt GetURLs.Arn
-                Effect: Allow
-  RecentCrawlRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: URLsTableCrawlPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - dynamodb:DescribeTable
-                  - dynamodb:Query
-                Resource: !GetAtt URLsTable.Arn
-                Effect: Allow
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  RecentCrawl:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: recent-crawl.handler
-      Role: !GetAtt RecentCrawlRole.Arn
-      Runtime: nodejs14.x
-      CodeUri: ./functions/recent-crawl
-      Description: Returns whether the URL has been crawled within configured time
-      Layers:
-        - Ref: URLsRepositoryLibraryLayer
-        - Ref: CrawlCommonLayer
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref URLsTable
-          MAX_CRAWL_AGE_HOURS: 48
-  GetContent:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: get-content.handler
-      Runtime: nodejs14.x
-      CodeUri: ./functions/urls-crud/functions/get-content
-      Description: GETs any stored content for a given URL
-      Layers:
-        - Ref: ContentRepositoryLibraryLayer
-        - Ref: CrawlCommonLayer
-      Timeout: 6
-      Policies:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      - Version: '2012-10-17'
-        Statement:
-        - Sid: S3GetPolicy
-          Effect: Allow
-          Action:
-            - s3:GetObject
-          Resource: !Sub "${CrawlContentBucket.Arn}/*"
-      Environment:
-        Variables:
-          CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
-  GetContentAccessRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Policies:
-        - PolicyName: InvokeGetContentPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt GetContent.Arn
-                Effect: Allow
-  CrawlStateMachineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - states.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Policies:
-        - PolicyName: InvokeCrawlURLs
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt CrawlURLs.Arn
-                Effect: Allow
-        - PolicyName: InvokeRecentCrawl
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - lambda:InvokeFunction
-                Resource: !GetAtt RecentCrawl.Arn
-                Effect: Allow
-        - PolicyName: PutEventsPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - events:PutEvents
-                Resource: !GetAtt CrawlServiceEventBus.Arn
-                Effect: Allow
-  CrawlStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      Type: STANDARD
-      Tracing:
-        Enabled: true
-      DefinitionUri: ./crawl-state-machine.asl.json
-      DefinitionSubstitutions:
-        RecentCrawlARN: !GetAtt RecentCrawl.Arn
-        CrawlURLsARN: !GetAtt CrawlURLs.Arn
-        CrawlServiceEventBusARN: !GetAtt CrawlServiceEventBus.Arn
-      Role: !GetAtt CrawlStateMachineRole.Arn
-  InvokeCrawlStateMachineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - apigateway.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Policies:
-        - PolicyName: InvokeCrawlStateMachine
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - states:StartExecution
-                Resource: !GetAtt CrawlStateMachine.Arn
-                Effect: Allow
-  CrawlHTTPGatewayAccessLogs:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/vendedlogs/CrawlHTTPGatewayAccessLogs-${EnvironmentNameSuffix}"
-      RetentionInDays: 30
-  CrawlHTTPGateway:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      DefinitionBody:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./crawl-openapi.yml
-      FailOnWarnings: true
-      AccessLogSettings:
-        DestinationArn: !GetAtt CrawlHTTPGatewayAccessLogs.Arn
-        Format: "{\"requestId\":\"$context.requestId\", \"errorMessage\":\"$context.error.message\", \"path\":\"$context.path\"}"
+    CrawlCommonLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub CrawlCommonLayer-${EnvironmentNameSuffix}
+            ContentUri: ./common
+            CompatibleRuntimes:
+                - nodejs14.x
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
+    URLsRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub URLsRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            ContentUri: ./libs/urls-repository-library
+            CompatibleRuntimes:
+                - nodejs14.x
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
+    ContentRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub ContentRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            ContentUri: ./libs/content-repository-library
+            CompatibleRuntimes:
+                - nodejs14.x
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
+    URLsTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            BillingMode: PAY_PER_REQUEST
+            AttributeDefinitions:
+                - AttributeName: BaseUrl
+                  AttributeType: S
+                - AttributeName: Pathname
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: BaseUrl
+                  KeyType: HASH
+                - AttributeName: Pathname
+                  KeyType: RANGE
+            StreamSpecification:
+                StreamViewType: NEW_IMAGE
+    CrawlContentBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            AccessControl: Private
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
+    CrawlURLsRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: URLsTableCrawlPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:Query
+                                - dynamodb:BatchWriteItem
+                                - dynamodb:PutItem
+                            Resource: !GetAtt URLsTable.Arn
+                            Effect: Allow
+                - PolicyName: ContentBucketCrawlPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - s3:PutObject
+                            Resource: !Sub "${CrawlContentBucket.Arn}/*"
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    CrawlURLs:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: crawl-urls.handler
+            Role: !GetAtt CrawlURLsRole.Arn
+            Runtime: nodejs14.x
+            CodeUri: ./functions/crawl-urls
+            Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
+            Layers:
+                - Ref: URLsRepositoryLibraryLayer
+                - Ref: ContentRepositoryLibraryLayer
+                - Ref: CrawlCommonLayer
+            Timeout: 120
+            MemorySize: 2048
+            Environment:
+                Variables:
+                    TABLE_NAME: !Ref URLsTable
+                    CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
+                    MAX_REQUESTS_PER_CRAWL: 50
+                    MAX_CRAWL_DEPTH: 20
+                    APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
+                    APIFY_MEMORY_MBYTES: 1536
+                    MIN_CONCURRENCY: 10
+                    MAX_CONCURRENCY: 20
+                    AUTOSCALE_INTERVAL: 20
+    CrawlServiceEventBus:
+        Type: AWS::Events::EventBus
+        Properties:
+            Name: !Sub "CrawlServiceEventBus-${EnvironmentNameSuffix}"
+    PublishURLFunctionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: URLsTableReadStreamPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeStream
+                                - dynamodb:GetRecords
+                                - dynamodb:GetShardIterator
+                                - dynamodb:ListStreams
+                            Resource: !GetAtt URLsTable.StreamArn
+                            Effect: Allow
+                - PolicyName: PutEventsPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:PutEvents
+                            Resource: !GetAtt CrawlServiceEventBus.Arn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    PublishURLsLambda:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: publish-urls.handler
+            Role: !GetAtt PublishURLFunctionRole.Arn
+            Runtime: nodejs14.x
+            CodeUri: ./functions/publish-urls
+            Description: Publishes crawled URLs to an SNS Topic for subscribers
+            Layers:
+                - Ref: CrawlCommonLayer
+            Events:
+                URLsTableStreamEvent:
+                    Type: DynamoDB
+                    Properties:
+                        Stream: !GetAtt URLsTable.StreamArn
+                        StartingPosition: LATEST
+            Environment:
+                Variables:
+                    EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
+    GetURLs:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: get-urls.handler
+            Runtime: nodejs14.x
+            CodeUri: ./functions/urls-crud/functions/get-urls
+            Description: GETs the pathnames crawled from a given URL
+            Layers:
+                - Ref: URLsRepositoryLibraryLayer
+                - Ref: CrawlCommonLayer
+            Timeout: 6
+            Policies:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                - Version: "2012-10-17"
+                  Statement:
+                      - Sid: URLsTableCRUDPolicy
+                        Effect: Allow
+                        Action:
+                            - dynamodb:DescribeTable
+                            - dynamodb:Query
+                        Resource: !GetAtt URLsTable.Arn
+            Environment:
+                Variables:
+                    TABLE_NAME: !Ref URLsTable
+    GetURLsAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - apigateway.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeGetURLsPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt GetURLs.Arn
+                            Effect: Allow
+    RecentCrawlRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: URLsTableCrawlPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:Query
+                            Resource: !GetAtt URLsTable.Arn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    RecentCrawl:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: recent-crawl.handler
+            Role: !GetAtt RecentCrawlRole.Arn
+            Runtime: nodejs14.x
+            CodeUri: ./functions/recent-crawl
+            Description: Returns whether the URL has been crawled within configured time
+            Layers:
+                - Ref: URLsRepositoryLibraryLayer
+                - Ref: CrawlCommonLayer
+            Environment:
+                Variables:
+                    TABLE_NAME: !Ref URLsTable
+                    MAX_CRAWL_AGE_HOURS: 48
+    GetContent:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: get-content.handler
+            Runtime: nodejs14.x
+            CodeUri: ./functions/urls-crud/functions/get-content
+            Description: GETs any stored content for a given URL
+            Layers:
+                - Ref: ContentRepositoryLibraryLayer
+                - Ref: CrawlCommonLayer
+            Timeout: 6
+            Policies:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                - Version: "2012-10-17"
+                  Statement:
+                      - Sid: S3GetPolicy
+                        Effect: Allow
+                        Action:
+                            - s3:GetObject
+                        Resource: !Sub "${CrawlContentBucket.Arn}/*"
+            Environment:
+                Variables:
+                    CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
+    GetContentAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - apigateway.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeGetContentPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt GetContent.Arn
+                            Effect: Allow
+    CrawlStateMachineRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - states.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeCrawlURLs
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt CrawlURLs.Arn
+                            Effect: Allow
+                - PolicyName: InvokeRecentCrawl
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt RecentCrawl.Arn
+                            Effect: Allow
+                - PolicyName: PutEventsPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:PutEvents
+                            Resource: !GetAtt CrawlServiceEventBus.Arn
+                            Effect: Allow
+    CrawlStateMachine:
+        Type: AWS::Serverless::StateMachine
+        Properties:
+            Type: STANDARD
+            Tracing:
+                Enabled: true
+            DefinitionUri: ./crawl-state-machine.asl.json
+            DefinitionSubstitutions:
+                RecentCrawlARN: !GetAtt RecentCrawl.Arn
+                CrawlURLsARN: !GetAtt CrawlURLs.Arn
+                CrawlServiceEventBusARN: !GetAtt CrawlServiceEventBus.Arn
+            Role: !GetAtt CrawlStateMachineRole.Arn
+    InvokeCrawlStateMachineRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - apigateway.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeCrawlStateMachine
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - states:StartExecution
+                            Resource: !GetAtt CrawlStateMachine.Arn
+                            Effect: Allow
+    CrawlHTTPGatewayAccessLogs:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Sub "/aws/vendedlogs/CrawlHTTPGatewayAccessLogs-${EnvironmentNameSuffix}"
+            RetentionInDays: 30
+    CrawlHTTPGateway:
+        Type: AWS::Serverless::HttpApi
+        Properties:
+            DefinitionBody:
+                Fn::Transform:
+                    Name: AWS::Include
+                    Parameters:
+                        Location: ./crawl-openapi.yml
+            FailOnWarnings: true
+            AccessLogSettings:
+                DestinationArn: !GetAtt CrawlHTTPGatewayAccessLogs.Arn
+                Format: '{"requestId":"$context.requestId", "errorMessage":"$context.error.message", "path":"$context.path"}'
 Outputs:
-  EventBusARN:
-    Description: The ARN for the Crawl Service's Event Bus
-    Value: !GetAtt CrawlServiceEventBus.Arn
+    EventBusARN:
+        Description: The ARN for the Crawl Service's Event Bus
+        Value: !GetAtt CrawlServiceEventBus.Arn
