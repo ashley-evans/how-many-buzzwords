@@ -34,7 +34,6 @@ const INPUT_SCHEMA = {
                 },
                 domainName: {
                     type: "string",
-                    // eslint-disable-next-line max-len
                     pattern:
                         "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$",
                 },
