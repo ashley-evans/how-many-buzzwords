@@ -51,7 +51,7 @@ jobs:
             - name: Validate Templates
               run: |
                   xargs -n1 -r0a <(find -name *-template.yml -print0) cfn-lint
-    lint:
+    format:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
@@ -64,6 +64,16 @@ jobs:
             - name: Run linters
               run: |
                   npm run lint
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "14"
+            - name: Run formatters
+              run: |
+                  npm run format:check
     audit:
         runs-on: ubuntu-latest
         steps:
