@@ -1,71 +1,70 @@
-const middy = require('@middy/core');
-const validator = require('@middy/validator');
+const middy = require("@middy/core");
+const validator = require("@middy/validator");
 const {
     EventBridgeClient,
-    PutEventsCommand
-} = require('@aws-sdk/client-eventbridge');
+    PutEventsCommand,
+} = require("@aws-sdk/client-eventbridge");
 
-const {
-    URLsTableKeyFields
-} = require('buzzword-aws-crawl-common');
+const { URLsTableKeyFields } = require("buzzword-aws-crawl-common");
 
 const INPUT_SCHEMA = {
-    type: 'object',
-    required: ['Records'],
+    type: "object",
+    required: ["Records"],
     properties: {
         Records: {
-            type: 'array',
+            type: "array",
             items: {
-                type: 'object',
-                required: ['dynamodb'],
+                type: "object",
+                required: ["dynamodb"],
                 properties: {
                     dynamodb: {
-                        type: 'object',
-                        required: ['NewImage'],
+                        type: "object",
+                        required: ["NewImage"],
                         properties: {
                             NewImage: {
-                                type: 'object',
+                                type: "object",
                                 required: [
                                     URLsTableKeyFields.HashKey,
-                                    URLsTableKeyFields.SortKey
+                                    URLsTableKeyFields.SortKey,
                                 ],
                                 properties: {
                                     [URLsTableKeyFields.HashKey]: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string',
+                                                type: "string",
                                                 // eslint-disable-next-line max-len
-                                                pattern: '^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
-                                            }
-                                        }
+                                                pattern:
+                                                    "^(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$",
+                                            },
+                                        },
                                     },
                                     [URLsTableKeyFields.SortKey]: {
-                                        type: 'object',
-                                        required: ['S'],
+                                        type: "object",
+                                        required: ["S"],
                                         properties: {
                                             S: {
-                                                type: 'string',
-                                                pattern: '^/.*$'
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                                                type: "string",
+                                                pattern: "^/.*$",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
 };
 
 const client = new EventBridgeClient({});
 
 const baseHandler = async (event) => {
     const records = event.Records;
-    const entries = records.map(record => {
+    const entries = records.map((record) => {
         const newImage = record?.dynamodb?.NewImage;
         if (newImage) {
             return createEntry(
@@ -81,12 +80,12 @@ const baseHandler = async (event) => {
 const createEntry = (baseURL, pathname) => {
     return {
         EventBusName: process.env.EVENT_BUS_ARN,
-        Source: 'crawl.aws.buzzword',
-        DetailType: 'New URL Crawled via Crawl Service',
+        Source: "crawl.aws.buzzword",
+        DetailType: "New URL Crawled via Crawl Service",
         Detail: JSON.stringify({
             baseURL,
-            pathname
-        })
+            pathname,
+        }),
     };
 };
 
@@ -96,17 +95,17 @@ const publishEvent = async (entries) => {
     }
 
     const input = {
-        Entries: entries
+        Entries: entries,
     };
     const command = new PutEventsCommand(input);
 
     client.send(command);
 };
 
-
-const handler = middy(baseHandler)
-    .use(validator({ inputSchema: INPUT_SCHEMA }));
+const handler = middy(baseHandler).use(
+    validator({ inputSchema: INPUT_SCHEMA })
+);
 
 module.exports = {
-    handler
+    handler,
 };

@@ -1,35 +1,30 @@
 import { Repository } from "buzzword-aws-crawl-urls-repository-library";
-import {
-    ContentRepository
-} from "buzzword-aws-crawl-content-repository-library";
+import { ContentRepository } from "buzzword-aws-crawl-content-repository-library";
 
-import { CrawlerResponse, CrawlPort} from "../ports/CrawlPort";
+import { CrawlerResponse, CrawlPort } from "../ports/CrawlPort";
 import { CrawlProvider, CrawlResult } from "../ports/CrawlProvider";
 
 type PathnameStored = {
-    pathname: string,
-    stored: boolean
+    pathname: string;
+    stored: boolean;
 };
 
 class Crawl implements CrawlPort {
     constructor(
-        private crawler: CrawlProvider, 
+        private crawler: CrawlProvider,
         private urlRepository: Repository,
-        private contentRepository: ContentRepository 
+        private contentRepository: ContentRepository
     ) {}
 
     async crawl(
-        baseURL: URL, 
+        baseURL: URL,
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
             const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
                 next: (result) => {
-                    const promise = this.storeChildPage(
-                        baseURL,
-                        result
-                    );
+                    const promise = this.storeChildPage(baseURL, result);
                     pathnameStorages.push(promise);
                 },
                 complete: async () => {
@@ -42,7 +37,7 @@ class Crawl implements CrawlPort {
                     );
                     resolve({
                         success,
-                        pathnames
+                        pathnames,
                     });
                 },
                 error: async (ex: unknown) => {
@@ -55,9 +50,9 @@ class Crawl implements CrawlPort {
                     );
                     resolve({
                         success: false,
-                        pathnames
+                        pathnames,
                     });
-                }
+                },
             });
         });
     }
@@ -67,7 +62,7 @@ class Crawl implements CrawlPort {
         crawlResult: CrawlResult
     ): Promise<PathnameStored> {
         const isURLStored = await this.urlRepository.storePathname(
-            baseURL.hostname, 
+            baseURL.hostname,
             crawlResult.url.pathname
         );
 
@@ -81,7 +76,7 @@ class Crawl implements CrawlPort {
 
         return {
             pathname: crawlResult.url.pathname,
-            stored: isAllDataStored
+            stored: isAllDataStored,
         };
     }
 
@@ -90,7 +85,7 @@ class Crawl implements CrawlPort {
     ): Promise<string[]> {
         const results = await Promise.allSettled(promises);
         return results.reduce((accumulator: string[], current) => {
-            if (current.status === 'fulfilled' && current.value.stored) {
+            if (current.status === "fulfilled" && current.value.stored) {
                 accumulator.push(current.value.pathname);
             }
             return accumulator;
@@ -98,8 +93,9 @@ class Crawl implements CrawlPort {
     }
 
     private wasCrawlSuccessful(successPathnames: string[], expected: number) {
-        return successPathnames.length == expected 
-            && successPathnames.length > 0;
+        return (
+            successPathnames.length == expected && successPathnames.length > 0
+        );
     }
 }
 

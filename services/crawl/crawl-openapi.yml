@@ -1,77 +1,75 @@
 openapi: "3.0.1"
 info:
-  title: 
-    Fn::Sub: "buzzword-crawl-service-${EnvironmentNameSuffix}"
-  description: "Crawl Service API Gateway"
-  version: "1.0"
+    title:
+        Fn::Sub: "buzzword-crawl-service-${EnvironmentNameSuffix}"
+    description: "Crawl Service API Gateway"
+    version: "1.0"
 paths:
-  /crawl:
-    post:
-      x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-  /url/{baseURL}:
-    get:
-      parameters: [
-        {
-          name: "baseURL",
-          in: "path",
-          required: true,
-          schema: {
-            type: "string"
-          }
-        }
-      ]
-      x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
-  /content:
-    get:
-      parameters: [
-        {
-          name: "url",
-          in: "query",
-          required: true,
-          schema: {
-            type: "string"
-          }
-        }
-      ]
-      x-amazon-apigateway-integration:
-        $ref: "#/components/x-amazon-apigateway-integrations/get-content-integration"
+    /crawl:
+        post:
+            x-amazon-apigateway-integration:
+                $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
+    /url/{baseURL}:
+        get:
+            parameters:
+                [
+                    {
+                        name: "baseURL",
+                        in: "path",
+                        required: true,
+                        schema: { type: "string" },
+                    },
+                ]
+            x-amazon-apigateway-integration:
+                $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
+    /content:
+        get:
+            parameters:
+                [
+                    {
+                        name: "url",
+                        in: "query",
+                        required: true,
+                        schema: { type: "string" },
+                    },
+                ]
+            x-amazon-apigateway-integration:
+                $ref: "#/components/x-amazon-apigateway-integrations/get-content-integration"
 components:
-  x-amazon-apigateway-integrations:
-    invoke-crawl-state-machine:
-      type: "aws_proxy"
-      integrationSubtype: "StepFunctions-StartExecution"
-      credentials:
-        Fn::GetAtt:
-        - "InvokeCrawlStateMachineRole"
-        - "Arn"
-      requestParameters:
-        StateMachineArn:
-          Ref: "CrawlStateMachine"
-        Input: "$request.body.MessageBody"
-      payloadFormatVersion: "1.0"
-    get-urls-integration:
-      type: "aws_proxy"
-      httpMethod: "POST"
-      uri: 
-        Fn::GetAtt:
-        - "GetURLs"
-        - "Arn"
-      credentials:
-        Fn::GetAtt:
-        - "GetURLsAccessRole"
-        - "Arn"
-      payloadFormatVersion: "1.0"
-    get-content-integration:
-      type: "aws_proxy"
-      httpMethod: "POST"
-      uri: 
-        Fn::GetAtt:
-        - "GetContent"
-        - "Arn"
-      credentials:
-        Fn::GetAtt:
-        - "GetContentAccessRole"
-        - "Arn"
-      payloadFormatVersion: "1.0"
+    x-amazon-apigateway-integrations:
+        invoke-crawl-state-machine:
+            type: "aws_proxy"
+            integrationSubtype: "StepFunctions-StartExecution"
+            credentials:
+                Fn::GetAtt:
+                    - "InvokeCrawlStateMachineRole"
+                    - "Arn"
+            requestParameters:
+                StateMachineArn:
+                    Ref: "CrawlStateMachine"
+                Input: "$request.body.MessageBody"
+            payloadFormatVersion: "1.0"
+        get-urls-integration:
+            type: "aws_proxy"
+            httpMethod: "POST"
+            uri:
+                Fn::GetAtt:
+                    - "GetURLs"
+                    - "Arn"
+            credentials:
+                Fn::GetAtt:
+                    - "GetURLsAccessRole"
+                    - "Arn"
+            payloadFormatVersion: "1.0"
+        get-content-integration:
+            type: "aws_proxy"
+            httpMethod: "POST"
+            uri:
+                Fn::GetAtt:
+                    - "GetContent"
+                    - "Arn"
+            credentials:
+                Fn::GetAtt:
+                    - "GetContentAccessRole"
+                    - "Arn"
+            payloadFormatVersion: "1.0"

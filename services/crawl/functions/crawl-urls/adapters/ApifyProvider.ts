@@ -8,18 +8,18 @@ import {
     CheerioCrawlerOptions,
     CrawlingContext,
     RequestAsBrowserOptions,
-    PseudoUrl
+    PseudoUrl,
 } from "apify";
 import { Observable, Subject } from "rxjs";
 import { CrawlResult, CrawlProvider } from "../ports/CrawlProvider";
 
 type CrawlerSettings = {
-    maxCrawlDepth: number,
-    maxRequests: number,
-    minConcurrency?: number,
-    maxConcurrency?: number,
-    autoScaleInterval?: number
-}
+    maxCrawlDepth: number;
+    maxRequests: number;
+    minConcurrency?: number;
+    maxConcurrency?: number;
+    autoScaleInterval?: number;
+};
 
 class ApifyProvider implements CrawlProvider {
     private crawledURLs: Subject<CrawlResult>;
@@ -56,18 +56,18 @@ class ApifyProvider implements CrawlProvider {
 
         if (maxDepth !== undefined) {
             request.userData = {
-                maxCrawlDepth: maxDepth
+                maxCrawlDepth: maxDepth,
             };
         }
 
         const requestQueue = await openRequestQueue();
         await requestQueue.addRequest(request);
-        
+
         return requestQueue;
     }
 
     private createDomainMatcher(url: URL): PseudoUrl {
-        const domainName = url.hostname.replace('www.', '');
+        const domainName = url.hostname.replace("www.", "");
         const matcherRegExp = new RegExp(
             `(^|\\s)https?://(www.)?${domainName}([-a-zA-Z0-9()@:%_+.~#?&//=]*)`
         );
@@ -82,9 +82,9 @@ class ApifyProvider implements CrawlProvider {
         const maxCrawlDepth = this.settings.maxCrawlDepth;
         const crawledURLs = this.crawledURLs;
         const crawlPage = this.crawlPage;
-        
+
         const crawlerOptions: CheerioCrawlerOptions = {
-            handlePageFunction: (async (context: CheerioHandlePageInputs) => {
+            handlePageFunction: async (context: CheerioHandlePageInputs) => {
                 crawlPage(
                     context,
                     requestQueue,
@@ -92,7 +92,7 @@ class ApifyProvider implements CrawlProvider {
                     crawledURLs,
                     crawlerPattern
                 );
-            }),
+            },
             requestQueue,
             maxRequestsPerCrawl: this.settings.maxRequests,
             preNavigationHooks: [
@@ -106,15 +106,15 @@ class ApifyProvider implements CrawlProvider {
             minConcurrency: this.settings.minConcurrency ?? 1,
             maxConcurrency: this.settings.maxConcurrency ?? 2,
             autoscaledPoolOptions: {
-                autoscaleIntervalSecs: this.settings.autoScaleInterval ?? 10
-            }
+                autoscaleIntervalSecs: this.settings.autoScaleInterval ?? 10,
+            },
         };
 
         return new CheerioCrawler(crawlerOptions);
     }
 
     private async crawlPage(
-        inputs : CheerioHandlePageInputs,
+        inputs: CheerioHandlePageInputs,
         requestQueue: RequestQueue,
         maxCrawlDepth: number,
         crawledURLs: Subject<CrawlResult>,
@@ -125,8 +125,8 @@ class ApifyProvider implements CrawlProvider {
 
         const requestUserData = request.userData;
 
-        const currentDepth = isNaN(requestUserData.currentDepth) 
-            ? 0 
+        const currentDepth = isNaN(requestUserData.currentDepth)
+            ? 0
             : Number(requestUserData.currentDepth);
 
         let maxDepthAllowed = maxCrawlDepth;
@@ -146,25 +146,20 @@ class ApifyProvider implements CrawlProvider {
                 transformRequestFunction: (request) => {
                     request.userData = {
                         currentDepth: currentDepth + 1,
-                        maxCrawlDepth: maxDepthAllowed
+                        maxCrawlDepth: maxDepthAllowed,
                     };
-    
+
                     return request;
                 },
-                pseudoUrls: [
-                    crawlerPattern
-                ]
+                pseudoUrls: [crawlerPattern],
             });
         }
 
         crawledURLs.next({
             url: new URL(request.url),
-            content: inputs.body.toString()
+            content: inputs.body.toString(),
         });
     }
 }
 
-export {
-    ApifyProvider,
-    CrawlerSettings
-};
+export { ApifyProvider, CrawlerSettings };

@@ -1,14 +1,14 @@
-import { mock } from 'jest-mock-extended';
+import { mock } from "jest-mock-extended";
 import {
     Pathname,
-    Repository
-} from 'buzzword-aws-crawl-urls-repository-library';
+    Repository,
+} from "buzzword-aws-crawl-urls-repository-library";
 
-import RecentCrawlDomain from '../RecentCrawlDomain';
-import { RecentCrawlResponse } from '../../ports/RecentCrawlPort';
+import RecentCrawlDomain from "../RecentCrawlDomain";
+import { RecentCrawlResponse } from "../../ports/RecentCrawlPort";
 
 const MAX_AGE_HOURS = 1;
-const VALID_URL = new URL('https://www.example.com/');
+const VALID_URL = new URL("https://www.example.com/");
 
 const mockRepository = mock<Repository>();
 const domain = new RecentCrawlDomain(mockRepository, MAX_AGE_HOURS);
@@ -23,29 +23,26 @@ function createPathnameEntry(pathname: string, date: Date): Pathname {
     return {
         pathname,
         createdAt: date,
-        updatedAt: date
+        updatedAt: date,
     };
 }
 
 describe.each([
     [
-        'before max age',
+        "before max age",
         createPathnameEntry(
             VALID_URL.pathname,
             createDate(MAX_AGE_HOURS * -1 - 1)
         ),
-        false
+        false,
     ],
     [
-        'after max age',
-        createPathnameEntry(
-            VALID_URL.pathname,
-            createDate(MAX_AGE_HOURS - 1)
-        ),
-        true
-    ]
+        "after max age",
+        createPathnameEntry(VALID_URL.pathname, createDate(MAX_AGE_HOURS - 1)),
+        true,
+    ],
 ])(
-    'given a pathname entry that is %s',
+    "given a pathname entry that is %s",
     (message: string, pathnameEntry: Pathname, expectedResult: boolean) => {
         let response: RecentCrawlResponse | undefined;
 
@@ -55,22 +52,19 @@ describe.each([
             response = await domain.hasCrawledRecently(VALID_URL);
         });
 
-        test(
-            'calls repository with hostname and pathname from provided URL',
-            () => {
-                expect(mockRepository.getPathname).toHaveBeenCalledTimes(1);
-                expect(mockRepository.getPathname).toHaveBeenCalledWith(
-                    VALID_URL.hostname,
-                    VALID_URL.pathname
-                );
-            }
-        );
+        test("calls repository with hostname and pathname from provided URL", () => {
+            expect(mockRepository.getPathname).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getPathname).toHaveBeenCalledWith(
+                VALID_URL.hostname,
+                VALID_URL.pathname
+            );
+        });
 
-        test('returns not crawled recently', () => {
+        test("returns not crawled recently", () => {
             expect(response?.recentlyCrawled).toEqual(expectedResult);
         });
 
-        test('returns time of the last crawl', () => {
+        test("returns time of the last crawl", () => {
             expect(response?.crawlTime).toEqual(pathnameEntry.createdAt);
         });
 
@@ -80,7 +74,7 @@ describe.each([
     }
 );
 
-describe('given no pathname entry exists', () => {
+describe("given no pathname entry exists", () => {
     let response: RecentCrawlResponse | undefined;
 
     beforeAll(async () => {
@@ -89,7 +83,7 @@ describe('given no pathname entry exists', () => {
         response = await domain.hasCrawledRecently(VALID_URL);
     });
 
-    test('returns undefined', () => {
+    test("returns undefined", () => {
         expect(response).toBeUndefined();
     });
 

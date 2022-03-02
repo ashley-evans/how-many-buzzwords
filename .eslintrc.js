@@ -3,45 +3,33 @@ module.exports = {
     env: {
         node: true,
         es2021: true,
-        'jest/globals': true
+        "jest/globals": true,
     },
-    extends: [
-        'eslint:recommended',
-        'prettier'
-    ],
+    extends: ["eslint:recommended", "prettier"],
     parserOptions: {
         ecmaVersion: 2021,
-        sourceType: 'module'
+        sourceType: "module",
     },
     rules: {
-        'jest/no-disabled-tests': "error",
-        'jest/no-focused-tests': "error",
-        'jest/no-identical-title': "error",
-        'jest/valid-expect': "error"
+        "jest/no-disabled-tests": "error",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error",
+        "jest/valid-expect": "error",
     },
-    plugins: [
-        'jest'
-    ],
+    plugins: ["jest"],
     overrides: [
         {
-            files: [
-                '**/*.ts',
-                '**/*.tsx'
-            ],
-            parser: '@typescript-eslint/parser',
+            files: ["**/*.ts", "**/*.tsx"],
+            parser: "@typescript-eslint/parser",
             parserOptions: {
                 tsconfigRootDir: __dirname,
-                project: [
-                    './tsconfig.json'
-                ]
+                project: ["./tsconfig.json"],
             },
-            plugins: [
-                '@typescript-eslint',
-            ],
+            plugins: ["@typescript-eslint"],
             extends: [
-                'eslint:recommended',
-                'plugin:@typescript-eslint/recommended',
-            ]
-        }
-    ]
+                "eslint:recommended",
+                "plugin:@typescript-eslint/recommended",
+            ],
+        },
+    ],
 };

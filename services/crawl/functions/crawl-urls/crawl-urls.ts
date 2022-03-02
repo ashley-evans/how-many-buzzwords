@@ -1,18 +1,18 @@
 import { JSONSchemaType } from "ajv";
 import {
     ContentRepository,
-    S3Repository
+    S3Repository,
 } from "buzzword-aws-crawl-content-repository-library";
 import {
     Repository,
-    URLsTableRepository
+    URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
 import { ObjectValidator, AjvValidator } from "buzzword-aws-crawl-common";
 
 import { ApifyProvider } from "./adapters/ApifyProvider";
 import {
     CrawlEventAdapter,
-    ValidCrawlEvent
+    ValidCrawlEvent,
 } from "./adapters/CrawlEventAdapter";
 import Crawl from "./domain/Crawl";
 import { CrawlProvider } from "./ports/CrawlProvider";
@@ -21,12 +21,12 @@ import { CrawlEvent, CrawlResponse } from "./ports/PrimaryAdapter";
 function createCrawlProvider(): CrawlProvider {
     const maxCrawlDepth = Number(process.env.MAX_CRAWL_DEPTH);
     if (isNaN(maxCrawlDepth)) {
-        throw new Error('Max Crawl Depth is not a number.');
+        throw new Error("Max Crawl Depth is not a number.");
     }
 
     const maxRequests = Number(process.env.MAX_REQUESTS_PER_CRAWL);
     if (isNaN(maxRequests)) {
-        throw new Error('Max requests per crawl is not a number.');
+        throw new Error("Max requests per crawl is not a number.");
     }
 
     const minConcurrency = Number(process.env.MIN_CONCURRENCY);
@@ -39,14 +39,14 @@ function createCrawlProvider(): CrawlProvider {
         minConcurrency: isNaN(minConcurrency) ? undefined : minConcurrency,
         maxConcurrency: isNaN(maxConcurrency) ? undefined : maxConcurrency,
         autoScaleInterval: isNaN(autoscaleInterval)
-            ? undefined 
-            : autoscaleInterval
+            ? undefined
+            : autoscaleInterval,
     });
 }
 
 function createRepostiory(): Repository {
     if (!process.env.TABLE_NAME) {
-        throw new Error('URLs Table Name has not been set.');
+        throw new Error("URLs Table Name has not been set.");
     }
 
     return new URLsTableRepository(process.env.TABLE_NAME);
@@ -54,7 +54,7 @@ function createRepostiory(): Repository {
 
 function createContentRepository(): ContentRepository {
     if (!process.env.CONTENT_BUCKET_NAME) {
-        throw new Error('Content Bucket Name has not been set.');
+        throw new Error("Content Bucket Name has not been set.");
     }
 
     return new S3Repository(process.env.CONTENT_BUCKET_NAME);
@@ -65,14 +65,14 @@ function createValidator(): ObjectValidator<ValidCrawlEvent> {
         type: "object",
         properties: {
             url: {
-                type: "string"
+                type: "string",
             },
             depth: {
-                type: "integer", 
-                nullable: true
-            }
+                type: "integer",
+                nullable: true,
+            },
         },
-        required: ["url"]
+        required: ["url"],
     };
 
     return new AjvValidator<ValidCrawlEvent>(schema, { coerceTypes: true });
@@ -96,6 +96,4 @@ const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
     return await primaryAdapter.crawl(event);
 };
 
-export {
-    handler
-};
+export { handler };

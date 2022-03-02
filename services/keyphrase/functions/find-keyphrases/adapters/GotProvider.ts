@@ -5,7 +5,7 @@ class GotProvider implements HTTPRequestProvider {
     async getBody(url: URL): Promise<string> {
         const response = await gotScraping({
             url: url.toString(),
-            http2: false
+            http2: false,
         });
 
         return response.body;

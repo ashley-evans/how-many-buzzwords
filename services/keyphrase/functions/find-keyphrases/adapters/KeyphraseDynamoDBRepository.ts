@@ -5,13 +5,13 @@ import {
     PutItemCommandInput,
     QueryCommand,
     QueryCommandInput,
-    QueryCommandOutput
+    QueryCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 
 import { KeyphraseTableKeyFields, KeyphraseTableNonKeyFields } from "../enums";
 import {
     KeyphraseOccurrences,
-    KeyphraseRepository
+    KeyphraseRepository,
 } from "../ports/KeyphraseRepository";
 
 class KeyphraseDynamoDBRepository implements KeyphraseRepository {
@@ -44,15 +44,16 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
     private async queryOccurrences(url: string): Promise<QueryCommandOutput> {
         const input: QueryCommandInput = {
             TableName: this.tableName,
-            KeyConditionExpression: '#url = :searchUrl',
+            KeyConditionExpression: "#url = :searchUrl",
             ExpressionAttributeNames: {
-                '#url': KeyphraseTableKeyFields.HashKey
+                "#url": KeyphraseTableKeyFields.HashKey,
             },
             ExpressionAttributeValues: {
-                ':searchUrl': { S: url }
+                ":searchUrl": { S: url },
             },
-            ProjectionExpression: KeyphraseTableKeyFields.SortKey +
-                `,${KeyphraseTableNonKeyFields.Occurrence}`
+            ProjectionExpression:
+                KeyphraseTableKeyFields.SortKey +
+                `,${KeyphraseTableNonKeyFields.Occurrence}`,
         };
         const command = new QueryCommand(input);
 
@@ -70,15 +71,14 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
         for (const item of items) {
             const keyphraseAttribute = item[KeyphraseTableKeyFields.SortKey];
             if (!keyphraseAttribute || !keyphraseAttribute.S) {
-                throw new Error('Query returned item with no keyphrase');
+                throw new Error("Query returned item with no keyphrase");
             }
 
-            const occurrenceAttribute = item[
-                KeyphraseTableNonKeyFields.Occurrence
-            ];
+            const occurrenceAttribute =
+                item[KeyphraseTableNonKeyFields.Occurrence];
             if (!occurrenceAttribute || isNaN(Number(occurrenceAttribute.N))) {
                 throw new Error(
-                    'Query returned item with occurrences that is not a number'
+                    "Query returned item with occurrences that is not a number"
                 );
             }
 
@@ -87,7 +87,7 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
 
             response.push({
                 keyphrase,
-                occurrences
+                occurrences,
             });
         }
 
@@ -102,15 +102,15 @@ class KeyphraseDynamoDBRepository implements KeyphraseRepository {
             TableName: this.tableName,
             Item: {
                 [KeyphraseTableKeyFields.HashKey]: {
-                    S: url 
+                    S: url,
                 },
                 [KeyphraseTableKeyFields.SortKey]: {
-                    S: occurrence.keyphrase 
+                    S: occurrence.keyphrase,
                 },
                 [KeyphraseTableNonKeyFields.Occurrence]: {
-                    N: occurrence.occurrences.toString()
-                } 
-            }
+                    N: occurrence.occurrences.toString(),
+                },
+            },
         };
         const command = new PutItemCommand(input);
 

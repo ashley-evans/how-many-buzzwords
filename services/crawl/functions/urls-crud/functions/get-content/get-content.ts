@@ -2,19 +2,19 @@ import { JSONSchemaType } from "ajv";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
     ContentRepository,
-    S3Repository
+    S3Repository,
 } from "buzzword-aws-crawl-content-repository-library";
 import { AjvValidator, ObjectValidator } from "buzzword-aws-crawl-common";
 
 import GetContentDomain from "./domain/GetContentDomain";
 import {
     GetContentAdapter,
-    ValidParameters
+    ValidParameters,
 } from "./adapters/GetContentAdapter";
 
 function createContentRepository(): ContentRepository {
     if (!process.env.CONTENT_BUCKET_NAME) {
-        throw new Error('Content Bucket Name has not been set.');
+        throw new Error("Content Bucket Name has not been set.");
     }
 
     return new S3Repository(process.env.CONTENT_BUCKET_NAME);
@@ -25,15 +25,14 @@ function createValidator(): ObjectValidator<ValidParameters> {
         type: "object",
         properties: {
             url: {
-                type: "string"
-            }
+                type: "string",
+            },
         },
-        required: ["url"]
+        required: ["url"],
     };
 
     return new AjvValidator<ValidParameters>(schema);
 }
-
 
 async function handler(
     event: APIGatewayProxyEvent
@@ -47,6 +46,4 @@ async function handler(
     return adapter.handleRequest(event);
 }
 
-export {
-    handler
-};
+export { handler };

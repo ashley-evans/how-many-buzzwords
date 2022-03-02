@@ -1,11 +1,11 @@
 import {
     URLsTableKeyFields,
     CrawlTopicMessageAttributes,
-    CrawlEventTypes 
-} from './enums';
+    CrawlEventTypes,
+} from "./enums";
 
-import AjvValidator from './helpers/AjvValidator';
-import ObjectValidator from './interfaces/ObjectValidator';
+import AjvValidator from "./helpers/AjvValidator";
+import ObjectValidator from "./interfaces/ObjectValidator";
 
 export {
     AjvValidator,

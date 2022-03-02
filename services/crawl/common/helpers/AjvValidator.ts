@@ -1,6 +1,6 @@
-import Ajv, { JSONSchemaType, ValidateFunction, Options } from 'ajv';
+import Ajv, { JSONSchemaType, ValidateFunction, Options } from "ajv";
 
-import ObjectValidator from '../interfaces/ObjectValidator';
+import ObjectValidator from "../interfaces/ObjectValidator";
 
 class AjvValidator<ValidType> implements ObjectValidator<ValidType> {
     private validator: ValidateFunction<ValidType>;
@@ -11,7 +11,7 @@ class AjvValidator<ValidType> implements ObjectValidator<ValidType> {
     }
 
     validate(event: unknown): ValidType {
-        if (typeof event === 'string') {
+        if (typeof event === "string") {
             event = JSON.parse(event);
         }
 

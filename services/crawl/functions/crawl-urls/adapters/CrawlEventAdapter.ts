@@ -1,16 +1,16 @@
-import { ObjectValidator } from 'buzzword-aws-crawl-common';
+import { ObjectValidator } from "buzzword-aws-crawl-common";
 
 import { CrawlPort } from "../ports/CrawlPort";
 import {
     CrawlEvent,
     CrawlResponse,
-    PrimaryAdapter
+    PrimaryAdapter,
 } from "../ports/PrimaryAdapter";
 import CrawlError from "../errors/CrawlError";
 
 interface ValidCrawlEvent {
-    url: string,
-    depth?: number
+    url: string;
+    depth?: number;
 }
 
 class CrawlEventAdapter implements PrimaryAdapter {
@@ -27,9 +27,8 @@ class CrawlEventAdapter implements PrimaryAdapter {
 
             url = new URL(validatedEvent.url);
         } catch (ex) {
-            const errorContent = ex instanceof Error 
-                ? ex.message 
-                : JSON.stringify(ex);
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
             console.error(
                 `Error occurred in event validation: ${errorContent}`
             );
@@ -39,14 +38,14 @@ class CrawlEventAdapter implements PrimaryAdapter {
 
         try {
             const response = await this.crawler.crawl(
-                url, 
+                url,
                 validatedEvent.depth
             );
 
             if (!response.success) {
                 const crawledErrorText = response.pathnames
                     ? response.pathnames.toString()
-                    : 'No pages';
+                    : "No pages";
                 throw new CrawlError(
                     `Crawl failed to execute. Crawled: ${crawledErrorText}`
                 );
@@ -55,7 +54,7 @@ class CrawlEventAdapter implements PrimaryAdapter {
             return {
                 success: true,
                 baseURL: url.hostname,
-                pathnames: response.pathnames
+                pathnames: response.pathnames,
             };
         } catch (ex) {
             if (ex instanceof CrawlError) {
@@ -69,7 +68,4 @@ class CrawlEventAdapter implements PrimaryAdapter {
     }
 }
 
-export {
-    CrawlEventAdapter,
-    ValidCrawlEvent
-};
+export { CrawlEventAdapter, ValidCrawlEvent };

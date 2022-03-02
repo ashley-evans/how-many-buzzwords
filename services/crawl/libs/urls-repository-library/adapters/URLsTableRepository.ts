@@ -1,9 +1,9 @@
-import dynamoose from 'dynamoose';
+import dynamoose from "dynamoose";
 
-import URLsTableKeyFields from '../enums/URLsTableKeyFields';
-import { Pathname, Repository } from '../ports/Repository';
-import URLsTableSchema from '../schemas/URLsTableSchema';
-import URLsTableDocument from '../schemas/URLsTableDocument';
+import URLsTableKeyFields from "../enums/URLsTableKeyFields";
+import { Pathname, Repository } from "../ports/Repository";
+import URLsTableSchema from "../schemas/URLsTableSchema";
+import URLsTableDocument from "../schemas/URLsTableDocument";
 
 class URLsTableRepository implements Repository {
     private model;
@@ -22,7 +22,7 @@ class URLsTableRepository implements Repository {
         const pathnames = await this.getPathnames(baseURL);
         const items = pathnames.map((pathname) => ({
             [URLsTableKeyFields.HashKey]: baseURL,
-            [URLsTableKeyFields.SortKey]: pathname.pathname
+            [URLsTableKeyFields.SortKey]: pathname.pathname,
         }));
 
         try {
@@ -43,7 +43,7 @@ class URLsTableRepository implements Repository {
         return documents.map((document) => ({
             pathname: document.Pathname,
             createdAt: document.createdAt,
-            updatedAt: document.updatedAt
+            updatedAt: document.updatedAt,
         }));
     }
 
@@ -52,8 +52,10 @@ class URLsTableRepository implements Repository {
         pathname: string
     ): Promise<Pathname | undefined> {
         const documents = await this.model
-            .query(URLsTableKeyFields.HashKey).eq(baseURL)
-            .where(URLsTableKeyFields.SortKey).eq(pathname)
+            .query(URLsTableKeyFields.HashKey)
+            .eq(baseURL)
+            .where(URLsTableKeyFields.SortKey)
+            .eq(pathname)
             .exec();
 
         if (documents.count == 0) {
@@ -63,19 +65,19 @@ class URLsTableRepository implements Repository {
         return {
             pathname: documents[0].Pathname,
             createdAt: documents[0].createdAt,
-            updatedAt: documents[0].updatedAt
+            updatedAt: documents[0].updatedAt,
         };
     }
 
     async storePathname(baseURL: string, pathname: string): Promise<boolean> {
         try {
             await this.model.create(
-                { 
+                {
                     BaseUrl: baseURL,
-                    Pathname: pathname
+                    Pathname: pathname,
                 },
                 {
-                    overwrite: true
+                    overwrite: true,
                 }
             );
 
@@ -84,7 +86,7 @@ class URLsTableRepository implements Repository {
         } catch (ex) {
             console.error(
                 `An occurred during storage of ${pathname} for ${baseURL}:` +
-                JSON.stringify(ex)
+                    JSON.stringify(ex)
             );
 
             return false;

@@ -1,56 +1,54 @@
-const middy = require('@middy/core');
-const validator = require('@middy/validator');
-const httpErrorHandler = require('@middy/http-error-handler');
-const {
-    DynamoDBClient,
-    QueryCommand
-} = require('@aws-sdk/client-dynamodb');
-const { StatusCodes } = require('http-status-codes');
+const middy = require("@middy/core");
+const validator = require("@middy/validator");
+const httpErrorHandler = require("@middy/http-error-handler");
+const { DynamoDBClient, QueryCommand } = require("@aws-sdk/client-dynamodb");
+const { StatusCodes } = require("http-status-codes");
 
-const { keyPhraseTableKeyFields } = require('./constants');
+const { keyPhraseTableKeyFields } = require("./constants");
 
 const ddbClient = new DynamoDBClient({});
 
 const supportedMethods = Object.freeze({
-    GET: 'GET'
+    GET: "GET",
 });
 
 const INPUT_SCHEMA = {
-    type: 'object',
-    required: ['httpMethod'],
+    type: "object",
+    required: ["httpMethod"],
     properties: {
         httpMethod: {
-            type: 'string',
-            enum: Object.values(supportedMethods)
+            type: "string",
+            enum: Object.values(supportedMethods),
         },
         pathParameters: {
-            type: 'object',
-            required: ['baseUrl'],
+            type: "object",
+            required: ["baseUrl"],
             properties: {
                 baseUrl: {
-                    type: 'string',
+                    type: "string",
                     // eslint-disable-next-line max-len
-                    pattern: '^(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$'
-                }
-            }
-        }
-    }
+                    pattern:
+                        "^(http(s)?:\\/\\/)?(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$",
+                },
+            },
+        },
+    },
 };
 
 const removeUrlProtocol = (url) => {
-    return url.replace('http://', '').replace('https://', '');
+    return url.replace("http://", "").replace("https://", "");
 };
 
 const getKeyphrases = async (baseUrl) => {
     const params = {
         TableName: process.env.TABLE_NAME,
-        KeyConditionExpression: '#baseUrl = :searchUrl',
+        KeyConditionExpression: "#baseUrl = :searchUrl",
         ExpressionAttributeNames: {
-            '#baseUrl': keyPhraseTableKeyFields.HASH_KEY
+            "#baseUrl": keyPhraseTableKeyFields.HASH_KEY,
         },
         ExpressionAttributeValues: {
-            ':searchUrl': { S: baseUrl }
-        }
+            ":searchUrl": { S: baseUrl },
+        },
     };
 
     return await ddbClient.send(new QueryCommand(params));
@@ -59,12 +57,12 @@ const getKeyphrases = async (baseUrl) => {
 const createResponse = (statusCode, body, contentType) => {
     const response = {
         statusCode,
-        body
+        body,
     };
 
     if (contentType) {
         response.headers = {
-            'Content-Type': contentType
+            "Content-Type": contentType,
         };
     }
 
@@ -76,15 +74,13 @@ const baseHandler = async (event) => {
     try {
         const response = await getKeyphrases(baseUrl);
         if (response.Items.length === 0) {
-            return createResponse(
-                StatusCodes.NOT_FOUND
-            );
+            return createResponse(StatusCodes.NOT_FOUND);
         }
 
         return createResponse(
             StatusCodes.OK,
             JSON.stringify(response.Items),
-            'application/json'
+            "application/json"
         );
     } catch (ex) {
         console.error(ex.message);
@@ -92,7 +88,7 @@ const baseHandler = async (event) => {
         return createResponse(
             StatusCodes.INTERNAL_SERVER_ERROR,
             ex.message,
-            'text/plain'
+            "text/plain"
         );
     }
 };
@@ -101,7 +97,7 @@ const handler = middy(baseHandler)
     .use(validator({ inputSchema: INPUT_SCHEMA }))
     .use(
         httpErrorHandler(
-            process.env.ERROR_LOGGING_ENABLED === 'false'
+            process.env.ERROR_LOGGING_ENABLED === "false"
                 ? { logger: false }
                 : undefined
         )
@@ -109,5 +105,5 @@ const handler = middy(baseHandler)
 
 module.exports = {
     handler,
-    supportedMethods
+    supportedMethods,
 };

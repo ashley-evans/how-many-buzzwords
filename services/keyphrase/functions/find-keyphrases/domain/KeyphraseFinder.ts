@@ -3,11 +3,11 @@ import HTTPRequestProvider from "../ports/HTTPRequestProvider";
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import {
     KeyphraseProvider,
-    KeyphraseResponse
+    KeyphraseResponse,
 } from "../ports/KeyphraseProvider";
 import {
     KeyphraseOccurrences,
-    KeyphraseRepository
+    KeyphraseRepository,
 } from "../ports/KeyphraseRepository";
 import OccurrenceCounter from "../ports/OccurrenceCounter";
 
@@ -32,7 +32,7 @@ class KeyphraseFinder implements KeyphrasesPort {
 
             return false;
         }
-        
+
         if (content) {
             let previousPhrases: KeyphraseOccurrences[];
             try {
@@ -41,10 +41,10 @@ class KeyphraseFinder implements KeyphrasesPort {
                 );
             } catch (ex: unknown) {
                 console.error(
-                    'Error occurred during existing keyphrase retrieval: ' +
-                    JSON.stringify(ex)
+                    "Error occurred during existing keyphrase retrieval: " +
+                        JSON.stringify(ex)
                 );
-    
+
                 return false;
             }
 
@@ -60,8 +60,8 @@ class KeyphraseFinder implements KeyphrasesPort {
                 );
             } catch (ex: unknown) {
                 console.error(
-                    'Error occurred during occurrence storage: ' + 
-                    JSON.stringify(ex)
+                    "Error occurred during occurrence storage: " +
+                        JSON.stringify(ex)
                 );
 
                 return false;
@@ -79,7 +79,7 @@ class KeyphraseFinder implements KeyphrasesPort {
         const phrases = await this.keyphraseProvider.findKeyphrases(text);
 
         const combinedPhrases = this.combinePhrases(
-            phrases, 
+            phrases,
             previousPhrases.map((occurence) => occurence.keyphrase)
         );
 
@@ -93,7 +93,7 @@ class KeyphraseFinder implements KeyphrasesPort {
         const allPhrases = [
             ...keyphrases.keywords,
             ...keyphrases.keyphrases,
-            ...existing
+            ...existing,
         ];
 
         return [...new Set(allPhrases)];
@@ -106,18 +106,12 @@ class KeyphraseFinder implements KeyphrasesPort {
         return words.map((word) => this.countOccurrences(text, word));
     }
 
-    private countOccurrences(
-        text: string,
-        word: string 
-    ): KeyphraseOccurrences {
-        const occurrences = this.occurrenceCounter.countOccurrences(
-            text,
-            word
-        );
+    private countOccurrences(text: string, word: string): KeyphraseOccurrences {
+        const occurrences = this.occurrenceCounter.countOccurrences(text, word);
 
         return {
             keyphrase: word,
-            occurrences
+            occurrences,
         };
     }
 
@@ -127,13 +121,13 @@ class KeyphraseFinder implements KeyphrasesPort {
     ): KeyphraseOccurrences[] {
         return newOccurrences.map((occurrence) => {
             const match = existingOccurrences.find(
-                x => x.keyphrase === occurrence.keyphrase
+                (x) => x.keyphrase === occurrence.keyphrase
             );
             const phrase: KeyphraseOccurrences = {
                 keyphrase: occurrence.keyphrase,
-                occurrences: occurrence.occurrences
+                occurrences: occurrence.occurrences,
             };
-            
+
             if (match) {
                 phrase.occurrences += match.occurrences;
             }

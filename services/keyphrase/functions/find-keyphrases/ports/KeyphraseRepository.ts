@@ -1,6 +1,6 @@
 type KeyphraseOccurrences = {
-    keyphrase: string,
-    occurrences: number
+    keyphrase: string;
+    occurrences: number;
 };
 
 interface KeyphraseRepository {
@@ -12,7 +12,4 @@ interface KeyphraseRepository {
     ): Promise<boolean>;
 }
 
-export {
-    KeyphraseOccurrences,
-    KeyphraseRepository
-};
+export { KeyphraseOccurrences, KeyphraseRepository };

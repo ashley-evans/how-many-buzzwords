@@ -1,18 +1,21 @@
-import { Schema } from 'dynamoose';
+import { Schema } from "dynamoose";
 
-import URLsTableKeyFields from '../enums/URLsTableKeyFields';
+import URLsTableKeyFields from "../enums/URLsTableKeyFields";
 
-const schema = new Schema({
-    [URLsTableKeyFields.HashKey]: {
-        type: String,
-        hashKey: true
+const schema = new Schema(
+    {
+        [URLsTableKeyFields.HashKey]: {
+            type: String,
+            hashKey: true,
+        },
+        [URLsTableKeyFields.SortKey]: {
+            type: String,
+            rangeKey: true,
+        },
     },
-    [URLsTableKeyFields.SortKey]: {
-        type: String,
-        rangeKey: true
+    {
+        timestamps: true,
     }
-}, {
-    timestamps: true
-});
+);
 
 export default schema;

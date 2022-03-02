@@ -1,15 +1,12 @@
-import { Observable } from 'rxjs';
+import { Observable } from "rxjs";
 
 type CrawlResult = {
-    url: URL,
-    content: string
-}
+    url: URL;
+    content: string;
+};
 
 interface CrawlProvider {
     crawl(baseURL: URL, maxDepth?: number): Observable<CrawlResult>;
 }
 
-export { 
-    CrawlResult,
-    CrawlProvider
-};
+export { CrawlResult, CrawlProvider };

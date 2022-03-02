@@ -3,9 +3,9 @@ import {
     GetObjectCommandInput,
     GetObjectCommand,
     PutObjectCommandInput,
-    PutObjectCommand
-} from '@aws-sdk/client-s3';
-import { Readable } from 'stream';
+    PutObjectCommand,
+} from "@aws-sdk/client-s3";
+import { Readable } from "stream";
 
 import ContentRepository from "../ports/ContentRepository";
 
@@ -19,7 +19,7 @@ class S3Repository implements ContentRepository {
     async getPageContent(url: URL): Promise<string> {
         const params: GetObjectCommandInput = {
             Bucket: this.bucketName,
-            Key: this.getContentKey(url)
+            Key: this.getContentKey(url),
         };
 
         const response = await this.client.send(new GetObjectCommand(params));
@@ -30,16 +30,15 @@ class S3Repository implements ContentRepository {
         const params: PutObjectCommandInput = {
             Bucket: this.bucketName,
             Key: this.getContentKey(url),
-            Body: content
+            Body: content,
         };
 
         try {
             await this.client.send(new PutObjectCommand(params));
             return true;
         } catch (ex) {
-            const errorContent = ex instanceof Error 
-                ? ex.message 
-                : JSON.stringify(ex);
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
 
             console.error(
                 `Error occurred during page content storage: ${errorContent}`
@@ -50,9 +49,9 @@ class S3Repository implements ContentRepository {
 
     private getContentKey(url: URL): string {
         let storagePath: string;
-        if (url.pathname === '/') {
+        if (url.pathname === "/") {
             storagePath = url.hostname;
-        } else if (url.pathname.endsWith('/')) {
+        } else if (url.pathname.endsWith("/")) {
             storagePath = `${url.hostname}${url.pathname.slice(0, -1)}`;
         } else {
             storagePath = `${url.hostname}${url.pathname}`;
@@ -61,19 +60,17 @@ class S3Repository implements ContentRepository {
         return `${storagePath}.html`;
     }
 
-    private async convertStreamToString(
-        stream?: Readable
-    ): Promise<string> {
+    private async convertStreamToString(stream?: Readable): Promise<string> {
         if (!stream) {
-            throw 'No content returned from S3';
+            throw "No content returned from S3";
         }
 
         return new Promise((resolve, reject) => {
             const chunks: Buffer[] = [];
 
-            stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-            stream.on('error', reject);
-            stream.on('end', () => {
+            stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+            stream.on("error", reject);
+            stream.on("end", () => {
                 resolve(Buffer.concat(chunks).toString("utf-8"));
             });
         });

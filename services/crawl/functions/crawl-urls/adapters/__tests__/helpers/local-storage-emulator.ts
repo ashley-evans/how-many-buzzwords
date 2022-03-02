@@ -1,27 +1,21 @@
-import {
-    LOCAL_STORAGE_SUBDIRS,
-    LOCAL_ENV_VARS, 
-    ENV_VARS
-} from '@apify/consts';
-import fs from 'fs-extra';
-import path from 'path';
+import { LOCAL_STORAGE_SUBDIRS, LOCAL_ENV_VARS, ENV_VARS } from "@apify/consts";
+import fs from "fs-extra";
+import path from "path";
 
 const LOCAL_STORAGE_DIRECTORIES: string[] = Object.values(
     LOCAL_STORAGE_SUBDIRS
 );
-const DEFAULT_FOLDERS = LOCAL_STORAGE_DIRECTORIES.concat(
-    [
-        `${LOCAL_STORAGE_SUBDIRS.datasets}/${LOCAL_ENV_VARS[
-            ENV_VARS.DEFAULT_DATASET_ID
-        ]}`,
-        `${LOCAL_STORAGE_SUBDIRS.keyValueStores}/${LOCAL_ENV_VARS[
-            ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID
-        ]}`,
-        `${LOCAL_STORAGE_SUBDIRS.requestQueues}/${LOCAL_ENV_VARS[
-            ENV_VARS.DEFAULT_REQUEST_QUEUE_ID
-        ]}`
-    ]
-);
+const DEFAULT_FOLDERS = LOCAL_STORAGE_DIRECTORIES.concat([
+    `${LOCAL_STORAGE_SUBDIRS.datasets}/${
+        LOCAL_ENV_VARS[ENV_VARS.DEFAULT_DATASET_ID]
+    }`,
+    `${LOCAL_STORAGE_SUBDIRS.keyValueStores}/${
+        LOCAL_ENV_VARS[ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID]
+    }`,
+    `${LOCAL_STORAGE_SUBDIRS.requestQueues}/${
+        LOCAL_ENV_VARS[ENV_VARS.DEFAULT_REQUEST_QUEUE_ID]
+    }`,
+]);
 
 function init(storageDirectory: string) {
     fs.ensureDirSync(storageDirectory);
@@ -55,8 +49,4 @@ function destroy() {
     delete process.env.APIFY_LOCAL_STORAGE_DIR;
 }
 
-export {
-    init,
-    clean,
-    destroy
-};
+export { init, clean, destroy };

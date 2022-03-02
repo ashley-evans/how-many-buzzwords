@@ -1,20 +1,19 @@
 import GotProvider from "./adapters/GotProvider";
 import HTMLParser from "./adapters/HTMLParser";
-import KeyphraseDynamoDBRepository from 
-    "./adapters/KeyphraseDynamoDBRepository";
+import KeyphraseDynamoDBRepository from "./adapters/KeyphraseDynamoDBRepository";
 import EventAdapter from "./adapters/KeyphraseEventAdapter";
 import RegexCounter from "./adapters/RegexCounter";
 import RetextProvider from "./adapters/RetextProvider";
 import KeyphraseFinder from "./domain/KeyphraseFinder";
 import {
     KeyphrasesEvent,
-    KeyphrasesResponse
+    KeyphrasesResponse,
 } from "./ports/KeyphrasePrimaryAdapter";
 import { KeyphraseRepository } from "./ports/KeyphraseRepository";
 
 function createRepository(): KeyphraseRepository {
     if (!process.env.TABLE_NAME) {
-        throw new Error('Keyphrases Table Name has not been set.');
+        throw new Error("Keyphrases Table Name has not been set.");
     }
 
     return new KeyphraseDynamoDBRepository(process.env.TABLE_NAME);
@@ -41,6 +40,4 @@ const handler = async (event: KeyphrasesEvent): Promise<KeyphrasesResponse> => {
     return await primaryAdapter.findKeyphrases(event);
 };
 
-export {
-    handler
-};
+export { handler };

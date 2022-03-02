@@ -1,6 +1,6 @@
-import { Document } from 'dynamoose/dist/Document';
+import { Document } from "dynamoose/dist/Document";
 
-import URLsTableKeyFields from '../enums/URLsTableKeyFields';
+import URLsTableKeyFields from "../enums/URLsTableKeyFields";
 
 class URLsTableDocument extends Document {
     [URLsTableKeyFields.HashKey]: string;

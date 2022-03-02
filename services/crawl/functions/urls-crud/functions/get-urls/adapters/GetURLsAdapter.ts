@@ -1,12 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ObjectValidator } from "buzzword-aws-crawl-common";
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
 import { GetURLsPort } from "../ports/GetURLsPort";
 
 type ValidParameters = {
-    baseURL: string
+    baseURL: string;
 };
 
 class GetURLsAdapter implements APIGatewayAdapter {
@@ -25,14 +25,14 @@ class GetURLsAdapter implements APIGatewayAdapter {
             );
             validatedURL = this.parseURL(validatedParameters.baseURL);
         } catch (ex) {
-            const message = 'Invalid event';
+            const message = "Invalid event";
             console.error(
-                message + 
-                `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+                message +
+                    `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
             );
             return this.createResponse(
                 StatusCodes.BAD_REQUEST,
-                'text/plain',
+                "text/plain",
                 message
             );
         }
@@ -42,28 +42,28 @@ class GetURLsAdapter implements APIGatewayAdapter {
             if (response.length > 0) {
                 return this.createResponse(
                     StatusCodes.OK,
-                    'application/json',
+                    "application/json",
                     JSON.stringify({
                         baseURL: validatedURL.hostname,
-                        pathnames: response
+                        pathnames: response,
                     })
                 );
             }
 
             return this.createResponse(
                 StatusCodes.NOT_FOUND,
-                'text/plain',
-                'URL provided has not been crawled recently.'
+                "text/plain",
+                "URL provided has not been crawled recently."
             );
         } catch (ex) {
-            const message = 'Error occurred during GET';
+            const message = "Error occurred during GET";
             console.error(
-                message + 
-                `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+                message +
+                    `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
             );
             return this.createResponse(
                 StatusCodes.INTERNAL_SERVER_ERROR,
-                'text/plain',
+                "text/plain",
                 message
             );
         }
@@ -71,10 +71,10 @@ class GetURLsAdapter implements APIGatewayAdapter {
 
     private parseURL(url: string): URL {
         if (!isNaN(parseInt(url))) {
-            throw 'Number provided when expecting URL';
+            throw "Number provided when expecting URL";
         }
 
-        if (!url.startsWith('https://') && !url.startsWith('http://')) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
             url = `http://${url}`;
         }
 
@@ -89,14 +89,11 @@ class GetURLsAdapter implements APIGatewayAdapter {
         return {
             statusCode: code,
             headers: {
-                'Content-Type': contentType
+                "Content-Type": contentType,
             },
-            body
+            body,
         };
     }
 }
 
-export {
-    GetURLsAdapter,
-    ValidParameters
-};
+export { GetURLsAdapter, ValidParameters };
