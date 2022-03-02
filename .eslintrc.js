@@ -6,31 +6,14 @@ module.exports = {
         'jest/globals': true
     },
     extends: [
-        'eslint:recommended'
+        'eslint:recommended',
+        'prettier'
     ],
     parserOptions: {
         ecmaVersion: 2021,
         sourceType: 'module'
     },
     rules: {
-        indent: [
-            'error',
-            4,
-            {
-                'SwitchCase': 1
-            }
-        ],
-        semi: [
-            'error',
-            'always'
-        ],
-        'max-len': [
-            'error',
-            {
-                'ignoreRegExpLiterals': true,
-                'ignorePattern': 'eslint-disable-next-line'
-            }
-        ],
         'jest/no-disabled-tests': "error",
         'jest/no-focused-tests': "error",
         'jest/no-identical-title': "error",

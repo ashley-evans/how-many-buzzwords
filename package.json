@@ -15,6 +15,7 @@
         "copyfiles": "^2.4.1",
         "dynamodb-admin": "^4.1.0",
         "eslint": "^7.32.0",
+        "eslint-config-prettier": "^8.4.0",
         "eslint-config-standard": "^16.0.3",
         "eslint-plugin-import": "^2.23.4",
         "eslint-plugin-jest": "^24.4.0",
