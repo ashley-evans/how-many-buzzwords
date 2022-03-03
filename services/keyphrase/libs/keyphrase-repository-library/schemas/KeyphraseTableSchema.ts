@@ -1,6 +1,9 @@
 import { Schema } from "dynamoose";
 
-import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
+import {
+    KeyphraseTableKeyFields,
+    KeyphraseTableNonKeyFields,
+} from "../enums/KeyphraseTableFields";
 
 const schema = new Schema({
     [KeyphraseTableKeyFields.HashKey]: {
@@ -10,6 +13,9 @@ const schema = new Schema({
     [KeyphraseTableKeyFields.RangeKey]: {
         type: String,
         rangeKey: true,
+    },
+    [KeyphraseTableNonKeyFields.Occurrence]: {
+        type: Number,
     },
 });
 
