@@ -6,7 +6,10 @@ type KeyphraseOccurrences = {
 interface Repository {
     deleteKeyphrases(baseURL: string): Promise<boolean>;
     getKeyphrases(baseURL: string): Promise<KeyphraseOccurrences[]>;
-    storeKeyphrase(baseURL: string, occurrences: number): Promise<boolean>;
+    storeKeyphrase(
+        baseURL: string,
+        occurrences: KeyphraseOccurrences
+    ): Promise<boolean>;
 }
 
 export { KeyphraseOccurrences, Repository };
