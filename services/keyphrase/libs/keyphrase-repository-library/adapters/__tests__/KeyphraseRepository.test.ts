@@ -36,10 +36,10 @@ const TEST_KEYPHRASES = [
 const repository = new KeyphraseRepository(TABLE_NAME, true);
 
 describe.each([
-    ["one", [TEST_KEYPHRASES[0]]],
-    ["multiple", TEST_KEYPHRASES],
+    ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
+    ["multiple keyphrase occurrences", TEST_KEYPHRASES],
 ])(
-    "given %s keyphrase occurrences stored for URL",
+    "GET: given %s stored for URL",
     (message: string, occurrences: KeyphraseOccurrences[]) => {
         beforeAll(async () => {
             for (const occurrence of occurrences) {
@@ -82,3 +82,31 @@ describe("given keyphrase occurrences stored for multiple URLs", () => {
         await repository.deleteKeyphrases(otherURL);
     });
 });
+
+describe.each([
+    ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
+    ["multiple keyphrase occurrences", TEST_KEYPHRASES],
+])(
+    "DELETE: given %s stored for URL",
+    (message: string, occurrences: KeyphraseOccurrences[]) => {
+        let response: boolean;
+
+        beforeAll(async () => {
+            for (const occurrence of occurrences) {
+                await repository.storeKeyphrase(VALID_URL, occurrence);
+            }
+
+            response = await repository.deleteKeyphrases(VALID_URL);
+        }, 1000000);
+
+        test("returns no pathnames following deletion", async () => {
+            const result = await repository.getKeyphrases(VALID_URL);
+
+            expect(result).toHaveLength(0);
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    }
+);
