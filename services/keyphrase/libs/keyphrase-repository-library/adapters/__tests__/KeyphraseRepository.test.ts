@@ -97,7 +97,7 @@ describe.each([
             }
 
             response = await repository.deleteKeyphrases(VALID_URL);
-        }, 1000000);
+        });
 
         test("returns no pathnames following deletion", async () => {
             const result = await repository.getKeyphrases(VALID_URL);
@@ -110,3 +110,9 @@ describe.each([
         });
     }
 );
+
+test("delete returns failure given no keyphrase occurrences stored", async () => {
+    const response = await repository.deleteKeyphrases(VALID_URL);
+
+    expect(response).toEqual(false);
+});

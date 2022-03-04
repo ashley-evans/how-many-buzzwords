@@ -25,8 +25,17 @@ class KeyphraseRepository implements Repository {
             [KeyphraseTableKeyFields.RangeKey]: keyphrase.keyphrase,
         }));
 
-        await this.model.batchDelete(documents);
-        return true;
+        if (documents.length == 0) {
+            return false;
+        }
+
+        try {
+            await this.model.batchDelete(documents);
+            return true;
+        } catch (ex) {
+            console.error(`An error occured during deletion: ${ex}`);
+            return false;
+        }
     }
 
     async getKeyphrases(baseURL: string): Promise<KeyphraseOccurrences[]> {
