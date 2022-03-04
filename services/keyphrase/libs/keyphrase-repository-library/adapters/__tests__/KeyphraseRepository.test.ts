@@ -36,6 +36,7 @@ const TEST_KEYPHRASES = [
 const repository = new KeyphraseRepository(TABLE_NAME, true);
 
 describe.each([
+    ["no keyphrase occurrences", []],
     ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
     ["multiple keyphrase occurrences", TEST_KEYPHRASES],
 ])(
