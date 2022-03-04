@@ -59,3 +59,26 @@ describe.each([
         });
     }
 );
+
+describe("given keyphrase occurrences stored for multiple URLs", () => {
+    const expectedKeyphrase = TEST_KEYPHRASES[0];
+    const otherKeyphrase = TEST_KEYPHRASES[1];
+    const otherURL = "www.text.com";
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(VALID_URL, expectedKeyphrase);
+        await repository.storeKeyphrase(otherURL, otherKeyphrase);
+    });
+
+    test("get returns only keyphrases related to provided URL", async () => {
+        const response = await repository.getKeyphrases(VALID_URL);
+
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual(expectedKeyphrase);
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL);
+        await repository.deleteKeyphrases(otherURL);
+    });
+});
