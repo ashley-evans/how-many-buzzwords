@@ -20,6 +20,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    KeyphraseRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub KeyphraseRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer enabling typed access to Keyphrase Table in DynamoDB
+            CompatibleRuntimes:
+                - nodejs14.x
+            ContentUri: ./libs/keyphrase-repository-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
