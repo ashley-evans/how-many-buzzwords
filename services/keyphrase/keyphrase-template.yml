@@ -66,7 +66,8 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
-                                - dynamodb:PutItem
+                                - dynamodb:DescribeTable
+                                - dynamodb:BatchWriteItem
                                 - dynamodb:Query
                             Resource: !GetAtt KeyphrasesTable.Arn
                             Effect: Allow
