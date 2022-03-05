@@ -98,8 +98,35 @@ class KeyphraseRepository implements Repository {
             };
         });
 
-        const result = await this.model.batchPut(documents);
-        return result.unprocessedItems.length == 0;
+        try {
+            const result = await this.model.batchPut(documents);
+            const success = result.unprocessedItems.length == 0;
+            if (success) {
+                console.log(
+                    `Successfully stored: ${JSON.stringify(
+                        occurrences
+                    )} for ${baseURL}`
+                );
+
+                return success;
+            }
+
+            console.error(
+                `Batch write failed to write the following: ${JSON.stringify(
+                    result.unprocessedItems
+                )} for ${baseURL}`
+            );
+
+            return false;
+        } catch (ex) {
+            console.error(
+                `An error occurred during the storage of ${JSON.stringify(
+                    occurrences
+                )} for ${baseURL}. Error: ${ex}`
+            );
+
+            return false;
+        }
     }
 }
 
