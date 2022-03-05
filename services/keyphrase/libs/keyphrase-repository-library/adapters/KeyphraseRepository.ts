@@ -33,7 +33,9 @@ class KeyphraseRepository implements Repository {
             await this.model.batchDelete(documents);
             return true;
         } catch (ex) {
-            console.error(`An error occured during deletion: ${ex}`);
+            console.error(
+                `An error occured during keyphrase deletion for URL: ${baseURL}. Error: ${ex}`
+            );
             return false;
         }
     }
@@ -54,18 +56,34 @@ class KeyphraseRepository implements Repository {
         baseURL: string,
         occurrences: KeyphraseOccurrences
     ): Promise<boolean> {
-        await this.model.create(
-            {
-                BaseUrl: baseURL,
-                KeyPhrase: occurrences.keyphrase,
-                Occurrences: occurrences.occurrences,
-            },
-            {
-                overwrite: true,
-            }
-        );
+        try {
+            await this.model.create(
+                {
+                    BaseUrl: baseURL,
+                    KeyPhrase: occurrences.keyphrase,
+                    Occurrences: occurrences.occurrences,
+                },
+                {
+                    overwrite: true,
+                }
+            );
 
-        return true;
+            console.log(
+                `Successfully stored: ${JSON.stringify(
+                    occurrences
+                )} for ${baseURL}`
+            );
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An error occurred during the storage of ${JSON.stringify(
+                    occurrences
+                )} for ${baseURL}. Error: ${ex}`
+            );
+
+            return false;
+        }
     }
 }
 
