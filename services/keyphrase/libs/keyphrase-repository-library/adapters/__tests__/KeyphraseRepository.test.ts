@@ -36,6 +36,10 @@ const TEST_KEYPHRASES = [
 
 const repository = new KeyphraseRepository(TABLE_NAME, true);
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 describe.each([
     ["no keyphrase occurrences", []],
     ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
