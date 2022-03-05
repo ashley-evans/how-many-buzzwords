@@ -81,7 +81,7 @@ Resources:
             CodeUri: ./functions/find-keyphrases
             Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
             Layers:
-                - Ref: KeyphraseNodeDependencyLayer
+                - Ref: KeyphraseRepositoryLibraryLayer
             Timeout: 30
             MemorySize: 256
             Environment:
