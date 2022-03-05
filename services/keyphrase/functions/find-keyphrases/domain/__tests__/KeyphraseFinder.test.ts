@@ -75,6 +75,7 @@ describe("happy path", () => {
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
         mockRepository.getKeyphrases.mockResolvedValue([]);
+        mockRepository.storeKeyphrases.mockResolvedValue(true);
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
@@ -176,6 +177,10 @@ describe("handles no keywords found", () => {
 
     test("does not call count occurrences", () => {
         expect(mockOccurrenceCounter.countOccurrences).toBeCalledTimes(0);
+    });
+
+    test("does not attempt to store any keyphrase occurrences", () => {
+        expect(mockRepository.storeKeyphrases).toBeCalledTimes(0);
     });
 
     test("returns true", () => {
@@ -284,6 +289,14 @@ describe("error handling", () => {
 
     test("returns failure if storing of occurrences throws an error", async () => {
         mockRepository.storeKeyphrases.mockRejectedValue(new Error());
+
+        const result = await keyphraseFinder.findKeyphrases(VALID_URL);
+
+        expect(result).toBe(false);
+    });
+
+    test("returns failure if storing of occurrences returns failure", async () => {
+        mockRepository.storeKeyphrases.mockResolvedValue(false);
 
         const result = await keyphraseFinder.findKeyphrases(VALID_URL);
 

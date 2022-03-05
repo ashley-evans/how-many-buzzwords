@@ -54,8 +54,12 @@ class KeyphraseFinder implements KeyphrasesPort {
                 previousPhrases
             );
 
+            if (occurrences.length == 0) {
+                return true;
+            }
+
             try {
-                await this.repository.storeKeyphrases(
+                return await this.repository.storeKeyphrases(
                     url.hostname,
                     this.addOccurrences(occurrences, previousPhrases)
                 );
