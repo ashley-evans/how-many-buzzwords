@@ -54,11 +54,16 @@ class KeyphraseRepository implements Repository {
         baseURL: string,
         occurrences: KeyphraseOccurrences
     ): Promise<boolean> {
-        await this.model.create({
-            BaseUrl: baseURL,
-            KeyPhrase: occurrences.keyphrase,
-            Occurrences: occurrences.occurrences,
-        });
+        await this.model.create(
+            {
+                BaseUrl: baseURL,
+                KeyPhrase: occurrences.keyphrase,
+                Occurrences: occurrences.occurrences,
+            },
+            {
+                overwrite: true,
+            }
+        );
 
         return true;
     }

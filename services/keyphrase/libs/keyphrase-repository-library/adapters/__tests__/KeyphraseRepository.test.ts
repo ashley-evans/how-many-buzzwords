@@ -84,6 +84,34 @@ describe("given keyphrase occurrences stored for multiple URLs", () => {
     });
 });
 
+describe("PUT: Overwrites existing keyphrase occurrence", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
+
+        response = await repository.storeKeyphrase(
+            VALID_URL,
+            TEST_KEYPHRASES[0]
+        );
+    });
+
+    test("does not add duplicate keyphrase occurrences", async () => {
+        const result = await repository.getKeyphrases(VALID_URL);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual(TEST_KEYPHRASES[0]);
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL);
+    });
+});
+
 describe.each([
     ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
     ["multiple keyphrase occurrences", TEST_KEYPHRASES],
