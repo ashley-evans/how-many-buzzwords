@@ -28,6 +28,7 @@ function createKeyphraseOccurrence(
 
 const TABLE_NAME = "keyphrase-table";
 const VALID_URL = "www.example.com";
+const OTHER_URL = "www.test.com";
 const TEST_KEYPHRASES = [
     createKeyphraseOccurrence("test", 5),
     createKeyphraseOccurrence("wibble", 2),
@@ -64,11 +65,10 @@ describe.each([
 describe("given keyphrase occurrences stored for multiple URLs", () => {
     const expectedKeyphrase = TEST_KEYPHRASES[0];
     const otherKeyphrase = TEST_KEYPHRASES[1];
-    const otherURL = "www.text.com";
 
     beforeAll(async () => {
         await repository.storeKeyphrase(VALID_URL, expectedKeyphrase);
-        await repository.storeKeyphrase(otherURL, otherKeyphrase);
+        await repository.storeKeyphrase(OTHER_URL, otherKeyphrase);
     });
 
     test("get returns only keyphrases related to provided URL", async () => {
@@ -80,7 +80,7 @@ describe("given keyphrase occurrences stored for multiple URLs", () => {
 
     afterAll(async () => {
         await repository.deleteKeyphrases(VALID_URL);
-        await repository.deleteKeyphrases(otherURL);
+        await repository.deleteKeyphrases(OTHER_URL);
     });
 });
 
@@ -116,4 +116,34 @@ test("delete returns failure given no keyphrase occurrences stored", async () =>
     const response = await repository.deleteKeyphrases(VALID_URL);
 
     expect(response).toEqual(false);
+});
+
+describe("DELETE: only effects associated keyphrase occurrences", () => {
+    const expectedKeyphrase = TEST_KEYPHRASES[1];
+
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
+        await repository.storeKeyphrase(OTHER_URL, expectedKeyphrase);
+
+        response = await repository.deleteKeyphrases(VALID_URL);
+    });
+
+    test("returns no keyphrase occurrences for affected URL", async () => {
+        const result = await repository.getKeyphrases(VALID_URL);
+
+        expect(result).toHaveLength(0);
+    });
+
+    test("returns keyphrase occurrences for non-affected URL", async () => {
+        const result = await repository.getKeyphrases(OTHER_URL);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual(expectedKeyphrase);
+    });
+
+    test("deletion returns success", () => {
+        expect(response).toEqual(true);
+    });
 });
