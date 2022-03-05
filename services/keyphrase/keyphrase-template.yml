@@ -20,6 +20,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    KeyphraseRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub KeyphraseRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer enabling typed access to Keyphrase Table in DynamoDB
+            CompatibleRuntimes:
+                - nodejs14.x
+            ContentUri: ./libs/keyphrase-repository-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -55,7 +66,8 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
-                                - dynamodb:PutItem
+                                - dynamodb:DescribeTable
+                                - dynamodb:BatchWriteItem
                                 - dynamodb:Query
                             Resource: !GetAtt KeyphrasesTable.Arn
                             Effect: Allow
@@ -70,7 +82,7 @@ Resources:
             CodeUri: ./functions/find-keyphrases
             Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
             Layers:
-                - Ref: KeyphraseNodeDependencyLayer
+                - Ref: KeyphraseRepositoryLibraryLayer
             Timeout: 30
             MemorySize: 256
             Environment:

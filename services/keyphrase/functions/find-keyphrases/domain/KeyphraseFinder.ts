@@ -1,3 +1,8 @@
+import {
+    Repository,
+    KeyphraseOccurrences,
+} from "buzzword-aws-keyphrase-repository-library";
+
 import HTMLParsingProvider from "../ports/HTMLParsingProvider";
 import HTTPRequestProvider from "../ports/HTTPRequestProvider";
 import KeyphrasesPort from "../ports/KeyphrasePort";
@@ -5,10 +10,6 @@ import {
     KeyphraseProvider,
     KeyphraseResponse,
 } from "../ports/KeyphraseProvider";
-import {
-    KeyphraseOccurrences,
-    KeyphraseRepository,
-} from "../ports/KeyphraseRepository";
 import OccurrenceCounter from "../ports/OccurrenceCounter";
 
 class KeyphraseFinder implements KeyphrasesPort {
@@ -17,7 +18,7 @@ class KeyphraseFinder implements KeyphrasesPort {
         private htmlParser: HTMLParsingProvider,
         private keyphraseProvider: KeyphraseProvider,
         private occurrenceCounter: OccurrenceCounter,
-        private repository: KeyphraseRepository
+        private repository: Repository
     ) {}
 
     async findKeyphrases(url: URL): Promise<boolean> {
@@ -36,7 +37,7 @@ class KeyphraseFinder implements KeyphrasesPort {
         if (content) {
             let previousPhrases: KeyphraseOccurrences[];
             try {
-                previousPhrases = await this.repository.getOccurrences(
+                previousPhrases = await this.repository.getKeyphrases(
                     url.hostname
                 );
             } catch (ex: unknown) {
@@ -53,8 +54,12 @@ class KeyphraseFinder implements KeyphrasesPort {
                 previousPhrases
             );
 
+            if (occurrences.length == 0) {
+                return true;
+            }
+
             try {
-                await this.repository.storeOccurrences(
+                return await this.repository.storeKeyphrases(
                     url.hostname,
                     this.addOccurrences(occurrences, previousPhrases)
                 );

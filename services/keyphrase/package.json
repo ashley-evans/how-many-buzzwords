@@ -1,0 +1,7 @@
+{
+    "name": "buzzword-aws-keyphrase",
+    "version": "1.0.0",
+    "devDependencies": {
+        "buzzword-aws-keyphrase-repository-library": "file:libs/keyphrase-repository-library"
+    }
+}
