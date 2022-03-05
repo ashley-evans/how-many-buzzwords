@@ -26,6 +26,18 @@ function createKeyphraseOccurrence(
     };
 }
 
+function createRandomOccurrences(
+    numberToCreate: number
+): KeyphraseOccurrences[] {
+    const result: KeyphraseOccurrences[] = [];
+    for (let i = 1; i <= numberToCreate; i++) {
+        const occurrence = createKeyphraseOccurrence(`test-${i}`, i);
+        result.push(occurrence);
+    }
+
+    return result;
+}
+
 const TABLE_NAME = "keyphrase-table";
 const VALID_URL = "www.example.com";
 const OTHER_URL = "www.test.com";
@@ -142,28 +154,39 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     });
 });
 
-describe("BATCH PUT: Stores all keyphrase occurrences", () => {
-    let response: boolean;
+describe.each([
+    ["less than 25", createRandomOccurrences(24)],
+    ["greater than 25", createRandomOccurrences(26)],
+])(
+    "BATCH PUT: Stores all keyphrase occurrences given %s items",
+    (message: string, expectedOccurrences: KeyphraseOccurrences[]) => {
+        let response: boolean;
 
-    beforeAll(async () => {
-        response = await repository.storeKeyphrases(VALID_URL, TEST_KEYPHRASES);
-    });
+        beforeAll(async () => {
+            response = await repository.storeKeyphrases(
+                VALID_URL,
+                expectedOccurrences
+            );
+        });
 
-    test("stores all provided keyphrases occurrences succesfully", async () => {
-        const results = await repository.getKeyphrases(VALID_URL);
+        test("stores all provided keyphrases occurrences succesfully", async () => {
+            const results = await repository.getKeyphrases(VALID_URL);
 
-        expect(results).toHaveLength(TEST_KEYPHRASES.length);
-        expect(results).toEqual(expect.arrayContaining(TEST_KEYPHRASES));
-    });
+            expect(results).toHaveLength(expectedOccurrences.length);
+            expect(results).toEqual(
+                expect.arrayContaining(expectedOccurrences)
+            );
+        });
 
-    test("returns success", () => {
-        expect(response).toEqual(true);
-    });
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
 
-    afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL);
-    });
-});
+        afterAll(async () => {
+            await repository.deleteKeyphrases(VALID_URL);
+        });
+    }
+);
 
 describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
     let response: boolean;
@@ -190,8 +213,9 @@ describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
 });
 
 describe.each([
-    ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
-    ["multiple keyphrase occurrences", TEST_KEYPHRASES],
+    ["one occurrence", [TEST_KEYPHRASES[0]]],
+    ["less than 25 occurrences", createRandomOccurrences(24)],
+    ["greater than 25 occurrences", createRandomOccurrences(26)],
 ])(
     "DELETE: given %s stored for URL",
     (message: string, occurrences: KeyphraseOccurrences[]) => {

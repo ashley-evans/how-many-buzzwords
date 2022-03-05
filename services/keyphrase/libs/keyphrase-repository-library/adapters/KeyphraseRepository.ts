@@ -5,6 +5,11 @@ import { KeyphraseOccurrences, Repository } from "../ports/Repository";
 import KeyphraseTableDocument from "../schemas/KeyphraseTableDocument";
 import KeyphraseTableSchema from "../schemas/KeyphraseTableSchema";
 
+type KeyphraseOccurrenceKeys = {
+    [KeyphraseTableKeyFields.HashKey]: string;
+    [KeyphraseTableKeyFields.RangeKey]: string;
+};
+
 class KeyphraseRepository implements Repository {
     private model;
 
@@ -20,22 +25,38 @@ class KeyphraseRepository implements Repository {
 
     async deleteKeyphrases(baseURL: string): Promise<boolean> {
         const keyphrases = await this.getKeyphrases(baseURL);
-        const documents = keyphrases.map((keyphrase) => ({
-            [KeyphraseTableKeyFields.HashKey]: baseURL,
-            [KeyphraseTableKeyFields.RangeKey]: keyphrase.keyphrase,
-        }));
-
-        if (documents.length == 0) {
+        if (keyphrases.length == 0) {
             return false;
         }
 
+        const batches = keyphrases.reduce(
+            (result: KeyphraseOccurrenceKeys[][], item, index) => {
+                const batchIndex = Math.floor(index / 25);
+                if (!result[batchIndex]) {
+                    result[batchIndex] = [];
+                }
+
+                result[batchIndex].push({
+                    BaseUrl: baseURL,
+                    KeyPhrase: item.keyphrase,
+                });
+
+                return result;
+            },
+            []
+        );
+
+        const promises = batches.map((batch) =>
+            this.deleteKeyphraseBatch(baseURL, batch)
+        );
+
         try {
-            await this.model.batchDelete(documents);
-            return true;
+            return (await Promise.all(promises)).every(Boolean);
         } catch (ex) {
             console.error(
                 `An error occured during keyphrase deletion for URL: ${baseURL}. Error: ${ex}`
             );
+
             return false;
         }
     }
@@ -90,34 +111,30 @@ class KeyphraseRepository implements Repository {
         baseURL: string,
         occurrences: KeyphraseOccurrences[]
     ): Promise<boolean> {
-        const documents = occurrences.map((occurrence) => {
-            return {
-                BaseUrl: baseURL,
-                KeyPhrase: occurrence.keyphrase,
-                Occurrences: occurrence.occurrences,
-            };
-        });
+        const batches = occurrences.reduce(
+            (result: Partial<KeyphraseTableDocument>[][], item, index) => {
+                const batchIndex = Math.floor(index / 25);
+                if (!result[batchIndex]) {
+                    result[batchIndex] = [];
+                }
+
+                result[batchIndex].push({
+                    BaseUrl: baseURL,
+                    KeyPhrase: item.keyphrase,
+                    Occurrences: item.occurrences,
+                });
+
+                return result;
+            },
+            []
+        );
+
+        const promises = batches.map((batch) =>
+            this.storeKeyphrasesBatch(baseURL, batch)
+        );
 
         try {
-            const result = await this.model.batchPut(documents);
-            const success = result.unprocessedItems.length == 0;
-            if (success) {
-                console.log(
-                    `Successfully stored: ${JSON.stringify(
-                        occurrences
-                    )} for ${baseURL}`
-                );
-
-                return success;
-            }
-
-            console.error(
-                `Batch write failed to write the following: ${JSON.stringify(
-                    result.unprocessedItems
-                )} for ${baseURL}`
-            );
-
-            return false;
+            return (await Promise.all(promises)).every(Boolean);
         } catch (ex) {
             console.error(
                 `An error occurred during the storage of ${JSON.stringify(
@@ -127,6 +144,60 @@ class KeyphraseRepository implements Repository {
 
             return false;
         }
+    }
+
+    private async deleteKeyphraseBatch(
+        baseURL: string,
+        batch: KeyphraseOccurrenceKeys[]
+    ): Promise<boolean> {
+        if (batch.length > 25) {
+            return false;
+        }
+
+        const result = await this.model.batchDelete(batch);
+        const success = result.unprocessedItems.length == 0;
+        if (success) {
+            console.log(
+                `Successfully deleted: ${JSON.stringify(batch)} for ${baseURL}`
+            );
+
+            return success;
+        }
+
+        console.error(
+            `Batch write failed to write the following: ${JSON.stringify(
+                result.unprocessedItems
+            )} for ${baseURL}`
+        );
+
+        return false;
+    }
+
+    private async storeKeyphrasesBatch(
+        baseURL: string,
+        batch: Partial<KeyphraseTableDocument>[]
+    ): Promise<boolean> {
+        if (batch.length > 25) {
+            return false;
+        }
+
+        const result = await this.model.batchPut(batch);
+        const success = result.unprocessedItems.length == 0;
+        if (success) {
+            console.log(
+                `Successfully stored: ${JSON.stringify(batch)} for ${baseURL}`
+            );
+
+            return success;
+        }
+
+        console.error(
+            `Batch write failed to write the following: ${JSON.stringify(
+                result.unprocessedItems
+            )} for ${baseURL}`
+        );
+
+        return false;
     }
 }
 
