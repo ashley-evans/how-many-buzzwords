@@ -149,7 +149,31 @@ describe("BATCH PUT: Stores all keyphrase occurrences", () => {
         response = await repository.storeKeyphrases(VALID_URL, TEST_KEYPHRASES);
     });
 
-    test("stores all provided keyphrases succesfully", async () => {
+    test("stores all provided keyphrases occurrences succesfully", async () => {
+        const results = await repository.getKeyphrases(VALID_URL);
+
+        expect(results).toHaveLength(TEST_KEYPHRASES.length);
+        expect(results).toEqual(expect.arrayContaining(TEST_KEYPHRASES));
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL);
+    });
+});
+
+describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
+        response = await repository.storeKeyphrases(VALID_URL, TEST_KEYPHRASES);
+    });
+
+    test("does not add duplicate keyphrase occurrences", async () => {
         const results = await repository.getKeyphrases(VALID_URL);
 
         expect(results).toHaveLength(TEST_KEYPHRASES.length);
