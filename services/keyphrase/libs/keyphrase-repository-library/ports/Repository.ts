@@ -10,6 +10,10 @@ interface Repository {
         baseURL: string,
         occurrences: KeyphraseOccurrences
     ): Promise<boolean>;
+    storeKeyphrases(
+        baseURL: string,
+        occurrences: KeyphraseOccurrences[]
+    ): Promise<boolean>;
 }
 
 export { KeyphraseOccurrences, Repository };

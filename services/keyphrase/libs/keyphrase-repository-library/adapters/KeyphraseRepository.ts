@@ -85,6 +85,22 @@ class KeyphraseRepository implements Repository {
             return false;
         }
     }
+
+    async storeKeyphrases(
+        baseURL: string,
+        occurrences: KeyphraseOccurrences[]
+    ): Promise<boolean> {
+        const documents = occurrences.map((occurrence) => {
+            return {
+                BaseUrl: baseURL,
+                KeyPhrase: occurrence.keyphrase,
+                Occurrences: occurrence.occurrences,
+            };
+        });
+
+        const result = await this.model.batchPut(documents);
+        return result.unprocessedItems.length == 0;
+    }
 }
 
 export default KeyphraseRepository;

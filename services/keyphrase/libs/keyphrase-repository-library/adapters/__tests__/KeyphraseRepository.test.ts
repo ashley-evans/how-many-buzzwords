@@ -142,6 +142,29 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     });
 });
 
+describe("BATCH PUT: Stores all keyphrase occurrences", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        response = await repository.storeKeyphrases(VALID_URL, TEST_KEYPHRASES);
+    });
+
+    test("stores all provided keyphrases succesfully", async () => {
+        const results = await repository.getKeyphrases(VALID_URL);
+
+        expect(results).toHaveLength(TEST_KEYPHRASES.length);
+        expect(results).toEqual(expect.arrayContaining(TEST_KEYPHRASES));
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL);
+    });
+});
+
 describe.each([
     ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
     ["multiple keyphrase occurrences", TEST_KEYPHRASES],
