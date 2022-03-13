@@ -39,11 +39,11 @@ function createRandomOccurrences(
 }
 
 const TABLE_NAME = "keyphrase-table";
-const VALID_URL = "www.example.com";
-const OTHER_URL = "www.test.com";
+const VALID_URL = new URL("http://www.example.com/example");
+const OTHER_URL = new URL("http://www.test.com/test");
 const TEST_KEYPHRASES = [
     createKeyphraseOccurrence("test", 5),
-    createKeyphraseOccurrence("wibble", 2),
+    createKeyphraseOccurrence("wibble", 3),
 ];
 
 const repository = new KeyphraseRepository(TABLE_NAME, true);
@@ -61,19 +61,29 @@ describe.each([
     (message: string, occurrences: KeyphraseOccurrences[]) => {
         beforeAll(async () => {
             for (const occurrence of occurrences) {
-                await repository.storeKeyphrase(VALID_URL, occurrence);
+                await repository.storeKeyphrase(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrence
+                );
             }
         });
 
         test("get returns each keyphrase occurrence", async () => {
-            const response = await repository.getKeyphrases(VALID_URL);
+            const response = await repository.getKeyphrases(VALID_URL.hostname);
 
             expect(response).toHaveLength(occurrences.length);
-            expect(response).toEqual(expect.arrayContaining(occurrences));
+            for (const occurrence of occurrences) {
+                expect(response).toContainEqual({
+                    pathname: VALID_URL.pathname,
+                    keyphrase: occurrence.keyphrase,
+                    occurrences: occurrence.occurrences,
+                });
+            }
         });
 
         afterAll(async () => {
-            await repository.deleteKeyphrases(VALID_URL);
+            await repository.deleteKeyphrases(VALID_URL.hostname);
         });
     }
 );
@@ -83,20 +93,32 @@ describe("given keyphrase occurrences stored for multiple URLs", () => {
     const otherKeyphrase = TEST_KEYPHRASES[1];
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(VALID_URL, expectedKeyphrase);
-        await repository.storeKeyphrase(OTHER_URL, otherKeyphrase);
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expectedKeyphrase
+        );
+        await repository.storeKeyphrase(
+            OTHER_URL.hostname,
+            OTHER_URL.pathname,
+            otherKeyphrase
+        );
     });
 
     test("get returns only keyphrases related to provided URL", async () => {
-        const response = await repository.getKeyphrases(VALID_URL);
+        const response = await repository.getKeyphrases(VALID_URL.hostname);
 
         expect(response).toHaveLength(1);
-        expect(response[0]).toEqual(expectedKeyphrase);
+        expect(response[0]).toEqual({
+            pathname: VALID_URL.pathname,
+            keyphrase: expectedKeyphrase.keyphrase,
+            occurrences: expectedKeyphrase.occurrences,
+        });
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL);
-        await repository.deleteKeyphrases(OTHER_URL);
+        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.deleteKeyphrases(OTHER_URL.hostname);
     });
 });
 
@@ -105,16 +127,21 @@ describe("PUT: Stores new keyphrase occurrence", () => {
 
     beforeAll(async () => {
         response = await repository.storeKeyphrase(
-            VALID_URL,
+            VALID_URL.hostname,
+            VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
     });
 
     test("stores the keyphrase occurrence successfully", async () => {
-        const result = await repository.getKeyphrases(VALID_URL);
+        const result = await repository.getKeyphrases(VALID_URL.hostname);
 
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(TEST_KEYPHRASES[0]);
+        expect(result[0]).toEqual({
+            pathname: VALID_URL.pathname,
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
     });
 
     test("returns success", () => {
@@ -122,7 +149,7 @@ describe("PUT: Stores new keyphrase occurrence", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL);
+        await repository.deleteKeyphrases(VALID_URL.hostname);
     });
 });
 
@@ -130,19 +157,28 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0]
+        );
 
         response = await repository.storeKeyphrase(
-            VALID_URL,
+            VALID_URL.hostname,
+            VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
     });
 
     test("does not add duplicate keyphrase occurrences", async () => {
-        const result = await repository.getKeyphrases(VALID_URL);
+        const result = await repository.getKeyphrases(VALID_URL.hostname);
 
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(TEST_KEYPHRASES[0]);
+        expect(result[0]).toEqual({
+            pathname: VALID_URL.pathname,
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
     });
 
     test("returns success", () => {
@@ -150,7 +186,7 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL);
+        await repository.deleteKeyphrases(VALID_URL.hostname);
     });
 });
 
@@ -164,18 +200,23 @@ describe.each([
 
         beforeAll(async () => {
             response = await repository.storeKeyphrases(
-                VALID_URL,
+                VALID_URL.hostname,
+                VALID_URL.pathname,
                 expectedOccurrences
             );
         });
 
         test("stores all provided keyphrases occurrences succesfully", async () => {
-            const results = await repository.getKeyphrases(VALID_URL);
+            const results = await repository.getKeyphrases(VALID_URL.hostname);
 
             expect(results).toHaveLength(expectedOccurrences.length);
-            expect(results).toEqual(
-                expect.arrayContaining(expectedOccurrences)
-            );
+            for (const occurrence of expectedOccurrences) {
+                expect(results).toContainEqual({
+                    pathname: VALID_URL.pathname,
+                    keyphrase: occurrence.keyphrase,
+                    occurrences: occurrence.occurrences,
+                });
+            }
         });
 
         test("returns success", () => {
@@ -183,7 +224,7 @@ describe.each([
         });
 
         afterAll(async () => {
-            await repository.deleteKeyphrases(VALID_URL);
+            await repository.deleteKeyphrases(VALID_URL.hostname);
         });
     }
 );
@@ -192,15 +233,29 @@ describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
-        response = await repository.storeKeyphrases(VALID_URL, TEST_KEYPHRASES);
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0]
+        );
+        response = await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES
+        );
     });
 
     test("does not add duplicate keyphrase occurrences", async () => {
-        const results = await repository.getKeyphrases(VALID_URL);
+        const results = await repository.getKeyphrases(VALID_URL.hostname);
 
         expect(results).toHaveLength(TEST_KEYPHRASES.length);
-        expect(results).toEqual(expect.arrayContaining(TEST_KEYPHRASES));
+        for (const occurrence of TEST_KEYPHRASES) {
+            expect(results).toContainEqual({
+                pathname: VALID_URL.pathname,
+                keyphrase: occurrence.keyphrase,
+                occurrences: occurrence.occurrences,
+            });
+        }
     });
 
     test("returns success", () => {
@@ -208,7 +263,7 @@ describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL);
+        await repository.deleteKeyphrases(VALID_URL.hostname);
     });
 });
 
@@ -222,15 +277,17 @@ describe.each([
         let response: boolean;
 
         beforeAll(async () => {
-            for (const occurrence of occurrences) {
-                await repository.storeKeyphrase(VALID_URL, occurrence);
-            }
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrences
+            );
 
-            response = await repository.deleteKeyphrases(VALID_URL);
+            response = await repository.deleteKeyphrases(VALID_URL.hostname);
         });
 
         test("returns no pathnames following deletion", async () => {
-            const result = await repository.getKeyphrases(VALID_URL);
+            const result = await repository.getKeyphrases(VALID_URL.hostname);
 
             expect(result).toHaveLength(0);
         });
@@ -242,7 +299,7 @@ describe.each([
 );
 
 test("delete returns failure given no keyphrase occurrences stored", async () => {
-    const response = await repository.deleteKeyphrases(VALID_URL);
+    const response = await repository.deleteKeyphrases(VALID_URL.hostname);
 
     expect(response).toEqual(false);
 });
@@ -253,23 +310,35 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(VALID_URL, TEST_KEYPHRASES[0]);
-        await repository.storeKeyphrase(OTHER_URL, expectedKeyphrase);
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0]
+        );
+        await repository.storeKeyphrase(
+            OTHER_URL.hostname,
+            VALID_URL.pathname,
+            expectedKeyphrase
+        );
 
-        response = await repository.deleteKeyphrases(VALID_URL);
+        response = await repository.deleteKeyphrases(VALID_URL.hostname);
     });
 
     test("returns no keyphrase occurrences for affected URL", async () => {
-        const result = await repository.getKeyphrases(VALID_URL);
+        const result = await repository.getKeyphrases(VALID_URL.hostname);
 
         expect(result).toHaveLength(0);
     });
 
     test("returns keyphrase occurrences for non-affected URL", async () => {
-        const result = await repository.getKeyphrases(OTHER_URL);
+        const result = await repository.getKeyphrases(OTHER_URL.hostname);
 
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(expectedKeyphrase);
+        expect(result[0]).toEqual({
+            pathname: VALID_URL.pathname,
+            keyphrase: expectedKeyphrase.keyphrase,
+            occurrences: expectedKeyphrase.occurrences,
+        });
     });
 
     test("deletion returns success", () => {

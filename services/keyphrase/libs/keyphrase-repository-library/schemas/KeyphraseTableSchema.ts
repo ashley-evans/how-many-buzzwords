@@ -14,7 +14,7 @@ const schema = new Schema({
         type: String,
         rangeKey: true,
     },
-    [KeyphraseTableNonKeyFields.Occurrence]: {
+    [KeyphraseTableNonKeyFields.Occurrences]: {
         type: Number,
     },
 });

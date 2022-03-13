@@ -8,7 +8,7 @@ import {
 class KeyphraseTableDocument extends Document {
     [KeyphraseTableKeyFields.HashKey]: string;
     [KeyphraseTableKeyFields.RangeKey]: string;
-    [KeyphraseTableNonKeyFields.Occurrence]: number;
+    [KeyphraseTableNonKeyFields.Occurrences]: number;
 }
 
 export default KeyphraseTableDocument;

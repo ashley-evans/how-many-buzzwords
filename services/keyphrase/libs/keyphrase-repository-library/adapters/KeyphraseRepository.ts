@@ -1,7 +1,11 @@
 import dynamoose from "dynamoose";
 
 import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
-import { KeyphraseOccurrences, Repository } from "../ports/Repository";
+import {
+    KeyphraseOccurrences,
+    PathnameOccurrences,
+    Repository,
+} from "../ports/Repository";
 import KeyphraseTableDocument from "../schemas/KeyphraseTableDocument";
 import KeyphraseTableSchema from "../schemas/KeyphraseTableSchema";
 
@@ -37,8 +41,8 @@ class KeyphraseRepository implements Repository {
                 }
 
                 result[batchIndex].push({
-                    BaseUrl: baseURL,
-                    KeyPhrase: item.keyphrase,
+                    pk: baseURL,
+                    sk: this.createSortKey(item.pathname, item.keyphrase),
                 });
 
                 return result;
@@ -61,27 +65,32 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    async getKeyphrases(baseURL: string): Promise<KeyphraseOccurrences[]> {
+    async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
         const documents = await this.model
             .query(KeyphraseTableKeyFields.HashKey)
             .eq(baseURL)
             .exec();
 
-        return documents.map((document) => ({
-            keyphrase: document.KeyPhrase,
-            occurrences: document.Occurrences,
-        }));
+        return documents.map((document) => {
+            const splitSK = document.sk.split("#");
+            return {
+                pathname: splitSK[0],
+                keyphrase: splitSK[1],
+                occurrences: document.Occurrences,
+            };
+        });
     }
 
     async storeKeyphrase(
         baseURL: string,
+        pathname: string,
         occurrences: KeyphraseOccurrences
     ): Promise<boolean> {
         try {
             await this.model.create(
                 {
-                    BaseUrl: baseURL,
-                    KeyPhrase: occurrences.keyphrase,
+                    pk: baseURL,
+                    sk: this.createSortKey(pathname, occurrences.keyphrase),
                     Occurrences: occurrences.occurrences,
                 },
                 {
@@ -109,6 +118,7 @@ class KeyphraseRepository implements Repository {
 
     async storeKeyphrases(
         baseURL: string,
+        pathanme: string,
         occurrences: KeyphraseOccurrences[]
     ): Promise<boolean> {
         const batches = occurrences.reduce(
@@ -119,8 +129,8 @@ class KeyphraseRepository implements Repository {
                 }
 
                 result[batchIndex].push({
-                    BaseUrl: baseURL,
-                    KeyPhrase: item.keyphrase,
+                    pk: baseURL,
+                    sk: this.createSortKey(pathanme, item.keyphrase),
                     Occurrences: item.occurrences,
                 });
 
@@ -198,6 +208,10 @@ class KeyphraseRepository implements Repository {
         );
 
         return false;
+    }
+
+    private createSortKey(pathname: string, keyphrase: string): string {
+        return `${pathname}#${keyphrase}`;
     }
 }
 
