@@ -7,14 +7,7 @@ import dynamoose from "dynamoose";
 import { KeyphraseOccurrences } from "../../ports/Repository";
 import KeyphraseRepository from "../KeyphraseRepository";
 
-dynamoose.aws.sdk.config.update({
-    region: "eu-west-2",
-    credentials: {
-        accessKeyId: "x",
-        secretAccessKey: "x",
-    },
-});
-dynamoose.aws.ddb.local();
+dynamoose.aws.ddb.local("http://localhost:8000");
 
 function createKeyphraseOccurrence(
     keyphrase: string,

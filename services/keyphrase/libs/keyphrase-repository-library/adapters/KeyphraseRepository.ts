@@ -20,11 +20,12 @@ class KeyphraseRepository implements Repository {
     constructor(tableName: string, createTable?: boolean) {
         this.model = dynamoose.model<KeyphraseTableDocument>(
             tableName,
-            KeyphraseTableSchema,
-            {
-                create: createTable || false,
-            }
+            KeyphraseTableSchema
         );
+
+        new dynamoose.Table(tableName, [this.model], {
+            create: createTable || false,
+        });
     }
 
     async deleteKeyphrases(baseURL: string): Promise<boolean> {
