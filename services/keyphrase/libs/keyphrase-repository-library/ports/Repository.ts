@@ -12,6 +12,10 @@ type PathnameOccurrences = {
 interface Repository {
     deleteKeyphrases(baseURL: string): Promise<boolean>;
     getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
+    getPathKeyphrases(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
     storeKeyphrase(
         baseURL: string,
         pathname: string,

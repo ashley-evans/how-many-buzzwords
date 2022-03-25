@@ -82,6 +82,30 @@ class KeyphraseRepository implements Repository {
         });
     }
 
+    async getPathKeyphrases(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]> {
+        const documents = await this.model
+            .query({
+                [KeyphraseTableKeyFields.HashKey]: {
+                    eq: baseURL,
+                },
+                [KeyphraseTableKeyFields.RangeKey]: {
+                    beginsWith: `${pathname}#`,
+                },
+            })
+            .exec();
+
+        return documents.map((document) => {
+            const splitSK = document.sk.split("#");
+            return {
+                keyphrase: splitSK[1],
+                occurrences: document.Occurrences,
+            };
+        });
+    }
+
     async storeKeyphrase(
         baseURL: string,
         pathname: string,

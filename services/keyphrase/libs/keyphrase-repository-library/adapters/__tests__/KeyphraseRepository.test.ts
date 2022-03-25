@@ -50,7 +50,7 @@ describe.each([
     ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
     ["multiple keyphrase occurrences", TEST_KEYPHRASES],
 ])(
-    "GET: given %s stored for URL",
+    "GET ALL: given %s stored for URL",
     (message: string, occurrences: KeyphraseOccurrences[]) => {
         beforeAll(async () => {
             for (const occurrence of occurrences) {
@@ -81,7 +81,7 @@ describe.each([
     }
 );
 
-describe("GET: given keyphrases occurrences stored against multiple paths on base URL", () => {
+describe("GET ALL: given keyphrases occurrences stored against multiple paths on base URL", () => {
     const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
 
     beforeAll(async () => {
@@ -118,9 +118,8 @@ describe("GET: given keyphrases occurrences stored against multiple paths on bas
     });
 });
 
-describe("GET: given keyphrase occurrences stored for multiple URLs", () => {
+describe("GET ALL: given keyphrase occurrences stored for multiple URLs", () => {
     const expectedKeyphrase = TEST_KEYPHRASES[0];
-    const otherKeyphrase = TEST_KEYPHRASES[1];
 
     beforeAll(async () => {
         await repository.storeKeyphrase(
@@ -131,7 +130,7 @@ describe("GET: given keyphrase occurrences stored for multiple URLs", () => {
         await repository.storeKeyphrase(
             OTHER_URL.hostname,
             OTHER_URL.pathname,
-            otherKeyphrase
+            TEST_KEYPHRASES[1]
         );
     });
 
@@ -141,6 +140,114 @@ describe("GET: given keyphrase occurrences stored for multiple URLs", () => {
         expect(response).toHaveLength(1);
         expect(response[0]).toEqual({
             pathname: VALID_URL.pathname,
+            keyphrase: expectedKeyphrase.keyphrase,
+            occurrences: expectedKeyphrase.occurrences,
+        });
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.deleteKeyphrases(OTHER_URL.hostname);
+    });
+});
+
+describe.each([
+    ["no keyphrase occurrences", []],
+    ["one keyphrase occurrence", [TEST_KEYPHRASES[0]]],
+    ["multiple keyphrase occurrences", TEST_KEYPHRASES],
+])(
+    "GET PATH: given %s stored for URL on a specific path",
+    (message: string, occurrences: KeyphraseOccurrences[]) => {
+        beforeAll(async () => {
+            for (const occurrence of occurrences) {
+                await repository.storeKeyphrase(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrence
+                );
+            }
+        });
+
+        test("get returns each keyphrase occurrence", async () => {
+            const response = await repository.getPathKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname
+            );
+
+            expect(response).toHaveLength(occurrences.length);
+            for (const occurrence of occurrences) {
+                expect(response).toContainEqual({
+                    keyphrase: occurrence.keyphrase,
+                    occurrences: occurrence.occurrences,
+                });
+            }
+        });
+
+        afterAll(async () => {
+            await repository.deleteKeyphrases(VALID_URL.hostname);
+        });
+    }
+);
+
+describe("GET PATH: given keyphrase occurrences stored for multiple paths on same URL", () => {
+    const expectedKeyphrase = TEST_KEYPHRASES[0];
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expectedKeyphrase
+        );
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            `${VALID_URL.pathname}1`,
+            TEST_KEYPHRASES[1]
+        );
+    });
+
+    test("get returns only keyphrases related to provided path", async () => {
+        const response = await repository.getPathKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname
+        );
+
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual({
+            keyphrase: expectedKeyphrase.keyphrase,
+            occurrences: expectedKeyphrase.occurrences,
+        });
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL.hostname);
+    });
+});
+
+describe("GET PATH: given keyphrase occurrences stored for same path on multiple URLs", () => {
+    const expectedKeyphrase = TEST_KEYPHRASES[0];
+    const path = "/duplicate";
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            path,
+            expectedKeyphrase
+        );
+        await repository.storeKeyphrase(
+            OTHER_URL.hostname,
+            path,
+            TEST_KEYPHRASES[1]
+        );
+    });
+
+    test("get returns only keyphrases related to provided URL and path", async () => {
+        const response = await repository.getPathKeyphrases(
+            VALID_URL.hostname,
+            path
+        );
+
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual({
             keyphrase: expectedKeyphrase.keyphrase,
             occurrences: expectedKeyphrase.occurrences,
         });
