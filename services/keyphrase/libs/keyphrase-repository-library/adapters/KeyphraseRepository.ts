@@ -6,7 +6,7 @@ import {
     PathnameOccurrences,
     Repository,
 } from "../ports/Repository";
-import KeyphraseTableDocument from "../schemas/KeyphraseTableDocument";
+import KeyphraseTableItem from "../schemas/KeyphraseTableItem";
 import KeyphraseTableSchema from "../schemas/KeyphraseTableSchema";
 
 type KeyphraseOccurrenceKeys = {
@@ -18,7 +18,7 @@ class KeyphraseRepository implements Repository {
     private model;
 
     constructor(tableName: string, createTable?: boolean) {
-        this.model = dynamoose.model<KeyphraseTableDocument>(
+        this.model = dynamoose.model<KeyphraseTableItem>(
             tableName,
             KeyphraseTableSchema
         );
@@ -64,6 +64,10 @@ class KeyphraseRepository implements Repository {
 
             return false;
         }
+    }
+
+    async getKeyphraseUsages(keyphrase: string): Promise<string[]> {
+        throw new Error("Method not implemented." + keyphrase);
     }
 
     async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
@@ -147,7 +151,7 @@ class KeyphraseRepository implements Repository {
         occurrences: KeyphraseOccurrences[]
     ): Promise<boolean> {
         const batches = occurrences.reduce(
-            (result: Partial<KeyphraseTableDocument>[][], item, index) => {
+            (result: Partial<KeyphraseTableItem>[][], item, index) => {
                 const batchIndex = Math.floor(index / 25);
                 if (!result[batchIndex]) {
                     result[batchIndex] = [];
@@ -210,7 +214,7 @@ class KeyphraseRepository implements Repository {
 
     private async storeKeyphrasesBatch(
         baseURL: string,
-        batch: Partial<KeyphraseTableDocument>[]
+        batch: Partial<KeyphraseTableItem>[]
     ): Promise<boolean> {
         if (batch.length > 25) {
             return false;
