@@ -81,7 +81,7 @@ describe.each([
     }
 );
 
-describe("given keyphrases occurrences stored against multiple paths on base URL", () => {
+describe("GET: given keyphrases occurrences stored against multiple paths on base URL", () => {
     const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
 
     beforeAll(async () => {
@@ -118,7 +118,7 @@ describe("given keyphrases occurrences stored against multiple paths on base URL
     });
 });
 
-describe("given keyphrase occurrences stored for multiple URLs", () => {
+describe("GET: given keyphrase occurrences stored for multiple URLs", () => {
     const expectedKeyphrase = TEST_KEYPHRASES[0];
     const otherKeyphrase = TEST_KEYPHRASES[1];
 
@@ -327,6 +327,37 @@ describe.each([
         });
     }
 );
+
+describe("DELETE: given keyphrases occurrences stored against multiple paths on base URL", () => {
+    const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
+
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0]
+        );
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            OTHER_PATHNAME,
+            TEST_KEYPHRASES[1]
+        );
+
+        response = await repository.deleteKeyphrases(VALID_URL.hostname);
+    });
+
+    test("returns no pathnames following deletion", async () => {
+        const result = await repository.getKeyphrases(VALID_URL.hostname);
+
+        expect(result).toHaveLength(0);
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+});
 
 test("delete returns failure given no keyphrase occurrences stored", async () => {
     const response = await repository.deleteKeyphrases(VALID_URL.hostname);
