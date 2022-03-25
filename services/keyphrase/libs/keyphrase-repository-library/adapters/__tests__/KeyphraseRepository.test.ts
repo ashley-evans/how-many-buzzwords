@@ -81,6 +81,43 @@ describe.each([
     }
 );
 
+describe("given keyphrases occurrences stored against multiple paths on base URL", () => {
+    const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
+
+    beforeAll(async () => {
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0]
+        );
+        await repository.storeKeyphrase(
+            VALID_URL.hostname,
+            OTHER_PATHNAME,
+            TEST_KEYPHRASES[1]
+        );
+    });
+
+    test("get returns all keyphrases related to a given base URL", async () => {
+        const response = await repository.getKeyphrases(VALID_URL.hostname);
+
+        expect(response).toHaveLength(2);
+        expect(response).toContainEqual({
+            pathname: VALID_URL.pathname,
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
+        expect(response).toContainEqual({
+            pathname: OTHER_PATHNAME,
+            keyphrase: TEST_KEYPHRASES[1].keyphrase,
+            occurrences: TEST_KEYPHRASES[1].occurrences,
+        });
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(VALID_URL.hostname);
+    });
+});
+
 describe("given keyphrase occurrences stored for multiple URLs", () => {
     const expectedKeyphrase = TEST_KEYPHRASES[0];
     const otherKeyphrase = TEST_KEYPHRASES[1];
