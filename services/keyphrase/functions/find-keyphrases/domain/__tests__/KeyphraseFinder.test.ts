@@ -2,7 +2,6 @@ import { mock } from "jest-mock-extended";
 import {
     Repository,
     KeyphraseOccurrences,
-    PathnameOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
 
 import HTMLParsingProvider from "../../ports/HTMLParsingProvider";
@@ -59,18 +58,6 @@ function createKeyphraseOccurrence(
     };
 }
 
-function createPathnameOccurrence(
-    pathname: string,
-    keyphrase: string,
-    occurrences: number
-): PathnameOccurrences {
-    return {
-        pathname,
-        keyphrase,
-        occurrences,
-    };
-}
-
 beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -87,7 +74,7 @@ describe("happy path", () => {
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
-        mockRepository.getKeyphrases.mockResolvedValue([]);
+        mockRepository.getPathKeyphrases.mockResolvedValue([]);
         mockRepository.storeKeyphrases.mockResolvedValue(true);
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
 
@@ -184,7 +171,7 @@ describe("handles no keywords found", () => {
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse([], [])
         );
-        mockRepository.getKeyphrases.mockResolvedValue([]);
+        mockRepository.getPathKeyphrases.mockResolvedValue([]);
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
@@ -217,18 +204,19 @@ describe("handles existing keyphrases", () => {
         const previousOccurrences = [
             ...PREVIOUS_KEYWORDS,
             ...PREVIOUS_KEYPHRASES,
-        ].map((phrase) =>
-            createPathnameOccurrence(VALID_URL.pathname, phrase, 1)
-        );
-        mockRepository.getKeyphrases.mockResolvedValue(previousOccurrences);
+        ].map((phrase) => createKeyphraseOccurrence(phrase, 1));
+        mockRepository.getPathKeyphrases.mockResolvedValue(previousOccurrences);
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
 
         await keyphraseFinder.findKeyphrases(VALID_URL);
     });
 
-    test("requests previous keyphrases from repository for URL provided", () => {
-        expect(mockRepository.getKeyphrases).toBeCalledTimes(1);
-        expect(mockRepository.getKeyphrases).toBeCalledWith(VALID_URL.hostname);
+    test("requests previous keyphrases from repository for URL and path provided", () => {
+        expect(mockRepository.getPathKeyphrases).toBeCalledTimes(1);
+        expect(mockRepository.getPathKeyphrases).toBeCalledWith(
+            VALID_URL.hostname,
+            VALID_URL.pathname
+        );
     });
 
     test("counts only unique keyphrases/words occurrences in text", () => {
@@ -270,7 +258,7 @@ describe("error handling", () => {
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
-        mockRepository.getKeyphrases.mockResolvedValue([]);
+        mockRepository.getPathKeyphrases.mockResolvedValue([]);
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
     });
 
@@ -321,7 +309,7 @@ describe("error handling", () => {
     });
 
     test("returns failure if previous keyphrase retrieval throws an error", async () => {
-        mockRepository.getKeyphrases.mockRejectedValue(new Error());
+        mockRepository.getPathKeyphrases.mockRejectedValue(new Error());
 
         const result = await keyphraseFinder.findKeyphrases(VALID_URL);
 
