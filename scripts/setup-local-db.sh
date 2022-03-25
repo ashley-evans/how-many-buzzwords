@@ -3,8 +3,7 @@
 usage() {
     echo "Usage:
     -d [Port to map DynamoDB container onto host]
-    -g [Port for DynamoDB GUI to listen on]
-    -i [Flag to use integration test access keys]" 1>&2;
+    -g [Port for DynamoDB GUI to listen on]" 1>&2;
     exit 1;
 }
 
@@ -21,16 +20,13 @@ stop_container() {
 
 trap stop_container SIGINT SIGTERM
 
-while getopts "d:g:ih" opt; do
+while getopts "d:g:h" opt; do
     case $opt in
         d)
             dynamodb_port=$OPTARG
             ;;
         g)
             gui_port=$OPTARG
-            ;;
-        i)
-            integration_tests=true
             ;;
         h)
             usage
@@ -71,12 +67,5 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 echo "Setting up GUI for DynamoDB container"
 
-if [ $integration_tests ]; then
-    AWS_ACCESS_KEY_ID=x \
-    AWS_SECRET_ACCESS_KEY=x \
-    DYNAMO_ENDPOINT=http://localhost:$dynamodb_port \
-    $root_dir/node_modules/.bin/dynamodb-admin -p $gui_port
-else
-    DYNAMO_ENDPOINT=http://localhost:$dynamodb_port \
-    $root_dir/node_modules/.bin/dynamodb-admin -p $gui_port
-fi
+DYNAMO_ENDPOINT=http://localhost:$dynamodb_port \
+$root_dir/node_modules/.bin/dynamodb-admin -p $gui_port
