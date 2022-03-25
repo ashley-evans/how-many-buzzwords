@@ -2,6 +2,7 @@ import { mock } from "jest-mock-extended";
 import {
     Repository,
     KeyphraseOccurrences,
+    PathnameOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
 
 import HTMLParsingProvider from "../../ports/HTMLParsingProvider";
@@ -53,6 +54,18 @@ function createKeyphraseOccurrence(
     occurrences: number
 ): KeyphraseOccurrences {
     return {
+        keyphrase,
+        occurrences,
+    };
+}
+
+function createPathnameOccurrence(
+    pathname: string,
+    keyphrase: string,
+    occurrences: number
+): PathnameOccurrences {
+    return {
+        pathname,
         keyphrase,
         occurrences,
     };
@@ -130,6 +143,7 @@ describe("happy path", () => {
         );
         expect(mockRepository.storeKeyphrases).toBeCalledWith(
             VALID_URL.hostname,
+            VALID_URL.pathname,
             expected
         );
     });
@@ -203,7 +217,9 @@ describe("handles existing keyphrases", () => {
         const previousOccurrences = [
             ...PREVIOUS_KEYWORDS,
             ...PREVIOUS_KEYPHRASES,
-        ].map((phrase) => createKeyphraseOccurrence(phrase, 1));
+        ].map((phrase) =>
+            createPathnameOccurrence(VALID_URL.pathname, phrase, 1)
+        );
         mockRepository.getKeyphrases.mockResolvedValue(previousOccurrences);
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
 
@@ -239,6 +255,7 @@ describe("handles existing keyphrases", () => {
         expect(mockRepository.storeKeyphrases).toBeCalledTimes(1);
         expect(mockRepository.storeKeyphrases).toBeCalledWith(
             VALID_URL.hostname,
+            VALID_URL.pathname,
             expected
         );
     });

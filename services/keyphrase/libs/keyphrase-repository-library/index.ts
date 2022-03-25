@@ -1,4 +1,13 @@
-import { KeyphraseOccurrences, Repository } from "./ports/Repository";
+import {
+    KeyphraseOccurrences,
+    PathnameOccurrences,
+    Repository,
+} from "./ports/Repository";
 import KeyphraseRepository from "./adapters/KeyphraseRepository";
 
-export { KeyphraseOccurrences, KeyphraseRepository, Repository };
+export {
+    KeyphraseOccurrences,
+    PathnameOccurrences,
+    Repository,
+    KeyphraseRepository,
+};

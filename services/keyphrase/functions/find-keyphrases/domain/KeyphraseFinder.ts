@@ -61,6 +61,7 @@ class KeyphraseFinder implements KeyphrasesPort {
             try {
                 return await this.repository.storeKeyphrases(
                     url.hostname,
+                    url.pathname,
                     this.addOccurrences(occurrences, previousPhrases)
                 );
             } catch (ex: unknown) {
