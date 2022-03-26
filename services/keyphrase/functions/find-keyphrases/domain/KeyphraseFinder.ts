@@ -37,8 +37,9 @@ class KeyphraseFinder implements KeyphrasesPort {
         if (content) {
             let previousPhrases: KeyphraseOccurrences[];
             try {
-                previousPhrases = await this.repository.getKeyphrases(
-                    url.hostname
+                previousPhrases = await this.repository.getPathKeyphrases(
+                    url.hostname,
+                    url.pathname
                 );
             } catch (ex: unknown) {
                 console.error(
@@ -61,6 +62,7 @@ class KeyphraseFinder implements KeyphrasesPort {
             try {
                 return await this.repository.storeKeyphrases(
                     url.hostname,
+                    url.pathname,
                     this.addOccurrences(occurrences, previousPhrases)
                 );
             } catch (ex: unknown) {

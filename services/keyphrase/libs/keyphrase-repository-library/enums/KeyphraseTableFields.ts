@@ -1,10 +1,11 @@
 enum KeyphraseTableKeyFields {
-    HashKey = "BaseUrl",
-    RangeKey = "KeyPhrase",
+    HashKey = "pk",
+    RangeKey = "sk",
+    KeyphraseUsageIndexHashKey = "kui_pk",
 }
 
 enum KeyphraseTableNonKeyFields {
-    Occurrence = "Occurrences",
+    Occurrences = "Occurrences",
 }
 
 export { KeyphraseTableKeyFields, KeyphraseTableNonKeyFields };

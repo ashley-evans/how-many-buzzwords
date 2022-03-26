@@ -1,14 +1,14 @@
-import { Document } from "dynamoose/dist/Document";
+import { Item } from "dynamoose/dist/Item";
 
 import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
 } from "../enums/KeyphraseTableFields";
 
-class KeyphraseTableDocument extends Document {
+class KeyphraseTableOccurrenceItem extends Item {
     [KeyphraseTableKeyFields.HashKey]: string;
     [KeyphraseTableKeyFields.RangeKey]: string;
-    [KeyphraseTableNonKeyFields.Occurrence]: number;
+    [KeyphraseTableNonKeyFields.Occurrences]: number;
 }
 
-export default KeyphraseTableDocument;
+export default KeyphraseTableOccurrenceItem;

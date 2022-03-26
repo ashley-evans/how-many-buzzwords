@@ -3,17 +3,31 @@ type KeyphraseOccurrences = {
     occurrences: number;
 };
 
+type PathnameOccurrences = {
+    pathname: string;
+    keyphrase: string;
+    occurrences: number;
+};
+
 interface Repository {
-    deleteKeyphrases(baseURL: string): Promise<boolean>;
-    getKeyphrases(baseURL: string): Promise<KeyphraseOccurrences[]>;
-    storeKeyphrase(
+    deleteKeyphrases(baseURL: string, skPrefix?: string): Promise<boolean>;
+    getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
+    getPathKeyphrases(
         baseURL: string,
-        occurrences: KeyphraseOccurrences
-    ): Promise<boolean>;
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
     storeKeyphrases(
         baseURL: string,
-        occurrences: KeyphraseOccurrences[]
+        pathname: string,
+        occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
+    deleteTotals(baseURL?: string): Promise<boolean>;
+    getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
+    storeTotals(
+        totals: KeyphraseOccurrences | KeyphraseOccurrences[],
+        baseURL?: string
+    ): Promise<boolean>;
+    getKeyphraseUsages(keyphrase: string): Promise<string[]>;
 }
 
-export { KeyphraseOccurrences, Repository };
+export { KeyphraseOccurrences, PathnameOccurrences, Repository };
