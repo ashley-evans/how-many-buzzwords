@@ -304,6 +304,62 @@ describe("GET TOTAL: Only returns totals related to provided base URL", () => {
     });
 });
 
+describe.each([
+    ["no pages", []],
+    ["one page", [VALID_URL.hostname]],
+    ["multiple pages", [VALID_URL.hostname, OTHER_URL.hostname]],
+])(
+    "GET USAGES: given keyphrase used on %s",
+    (message: string, pages: string[]) => {
+        const expectedKeyphrase = TEST_KEYPHRASES[0];
+
+        beforeAll(async () => {
+            for (const page of pages) {
+                await repository.storeTotals(expectedKeyphrase, page);
+            }
+        });
+
+        test("get returns all pages keyphrase is used on", async () => {
+            const response = await repository.getKeyphraseUsages(
+                expectedKeyphrase.keyphrase
+            );
+
+            expect(response).toHaveLength(pages.length);
+            expect(response).toEqual(pages);
+        });
+
+        afterAll(async () => {
+            for (const page of pages) {
+                await repository.deleteTotals(page);
+            }
+        });
+    }
+);
+
+describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
+    const expectedKeyphrase = TEST_KEYPHRASES[0];
+    const expectedPage = VALID_URL.hostname;
+
+    beforeAll(async () => {
+        await repository.storeTotals(expectedKeyphrase, expectedPage);
+        await repository.storeTotals(TEST_KEYPHRASES[1], OTHER_URL.hostname);
+    });
+
+    test("get returns only totals associated with provied base URL", async () => {
+        const response = await repository.getKeyphraseUsages(
+            expectedKeyphrase.keyphrase
+        );
+
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual(expectedPage);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals(expectedPage);
+        await repository.deleteTotals(OTHER_URL.hostname);
+    });
+});
+
 describe("PUT: Stores new keyphrase occurrence", () => {
     let response: boolean;
 

@@ -1,5 +1,6 @@
 import { Schema } from "dynamoose";
 
+import KeyphraseTableConstants from "../enums/KeyphraseTableConstants";
 import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
@@ -21,7 +22,7 @@ const schema = new Schema({
     [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: {
         type: String,
         index: {
-            name: "KeyphraseUsageIndex",
+            name: KeyphraseTableConstants.KeyphraseUsageIndexName,
             rangeKey: KeyphraseTableKeyFields.HashKey,
             project: false,
         },

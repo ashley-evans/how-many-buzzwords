@@ -1,5 +1,6 @@
 enum KeyphraseTableConstants {
     TotalKey = "TOTAL",
+    KeyphraseUsageIndexName = "KeyphraseUsageIndex",
     KeyphraseEntityKey = "KEYPHRASE",
 }
 

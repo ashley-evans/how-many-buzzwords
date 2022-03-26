@@ -27,6 +27,7 @@ interface Repository {
         totals: KeyphraseOccurrences | KeyphraseOccurrences[],
         baseURL?: string
     ): Promise<boolean>;
+    getKeyphraseUsages(keyphrase: string): Promise<string[]>;
 }
 
 export { KeyphraseOccurrences, PathnameOccurrences, Repository };

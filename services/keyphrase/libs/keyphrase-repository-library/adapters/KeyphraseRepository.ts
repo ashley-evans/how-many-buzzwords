@@ -165,6 +165,16 @@ class KeyphraseRepository implements Repository {
         return this.deleteKeyphrases(KeyphraseTableConstants.TotalKey);
     }
 
+    async getKeyphraseUsages(keyphrase: string): Promise<string[]> {
+        const usages = (await this.totalModel
+            .query(KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey)
+            .eq(`${KeyphraseTableConstants.KeyphraseEntityKey}#${keyphrase}`)
+            .using(KeyphraseTableConstants.KeyphraseUsageIndexName)
+            .exec()) as QueryResponse<KeyphraseTableTotalItem>;
+
+        return usages.map((usage) => usage.pk);
+    }
+
     private async queryKeyphrases(
         pk: string,
         sk?: string
@@ -181,6 +191,7 @@ class KeyphraseRepository implements Repository {
                 })
                 .exec();
         }
+
         return this.occurrenceModel
             .query(KeyphraseTableKeyFields.HashKey)
             .eq(pk)
