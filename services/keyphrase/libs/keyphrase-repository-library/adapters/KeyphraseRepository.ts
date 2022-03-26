@@ -6,8 +6,8 @@ import {
     PathnameOccurrences,
     Repository,
 } from "../ports/Repository";
-import KeyphraseTableItem from "../schemas/KeyphraseTableItem";
-import KeyphraseTableSchema from "../schemas/KeyphraseTableSchema";
+import KeyphraseTableOccurrenceItem from "../schemas/KeyphraseTableOccurrenceItem";
+import KeyphraseTableOccurrenceSchema from "../schemas/KeyphraseTableOccurrenceSchema";
 
 type KeyphraseOccurrenceKeys = {
     [KeyphraseTableKeyFields.HashKey]: string;
@@ -15,15 +15,16 @@ type KeyphraseOccurrenceKeys = {
 };
 
 class KeyphraseRepository implements Repository {
-    private model;
+    private pathOccurrenceModel;
 
     constructor(tableName: string, createTable?: boolean) {
-        this.model = dynamoose.model<KeyphraseTableItem>(
-            tableName,
-            KeyphraseTableSchema
-        );
+        this.pathOccurrenceModel =
+            dynamoose.model<KeyphraseTableOccurrenceItem>(
+                tableName,
+                KeyphraseTableOccurrenceSchema
+            );
 
-        new dynamoose.Table(tableName, [this.model], {
+        new dynamoose.Table(tableName, [this.pathOccurrenceModel], {
             create: createTable || false,
         });
     }
@@ -71,7 +72,7 @@ class KeyphraseRepository implements Repository {
     }
 
     async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
-        const documents = await this.model
+        const documents = await this.pathOccurrenceModel
             .query(KeyphraseTableKeyFields.HashKey)
             .eq(baseURL)
             .exec();
@@ -90,7 +91,7 @@ class KeyphraseRepository implements Repository {
         baseURL: string,
         pathname: string
     ): Promise<KeyphraseOccurrences[]> {
-        const documents = await this.model
+        const documents = await this.pathOccurrenceModel
             .query({
                 [KeyphraseTableKeyFields.HashKey]: {
                     eq: baseURL,
@@ -116,7 +117,7 @@ class KeyphraseRepository implements Repository {
         occurrences: KeyphraseOccurrences
     ): Promise<boolean> {
         try {
-            await this.model.create(
+            await this.pathOccurrenceModel.create(
                 {
                     pk: baseURL,
                     sk: this.createSortKey(pathname, occurrences.keyphrase),
@@ -151,7 +152,11 @@ class KeyphraseRepository implements Repository {
         occurrences: KeyphraseOccurrences[]
     ): Promise<boolean> {
         const batches = occurrences.reduce(
-            (result: Partial<KeyphraseTableItem>[][], item, index) => {
+            (
+                result: Partial<KeyphraseTableOccurrenceItem>[][],
+                item,
+                index
+            ) => {
                 const batchIndex = Math.floor(index / 25);
                 if (!result[batchIndex]) {
                     result[batchIndex] = [];
@@ -193,7 +198,7 @@ class KeyphraseRepository implements Repository {
             return false;
         }
 
-        const result = await this.model.batchDelete(batch);
+        const result = await this.pathOccurrenceModel.batchDelete(batch);
         const success = result.unprocessedItems.length == 0;
         if (success) {
             console.log(
@@ -214,13 +219,13 @@ class KeyphraseRepository implements Repository {
 
     private async storeKeyphrasesBatch(
         baseURL: string,
-        batch: Partial<KeyphraseTableItem>[]
+        batch: Partial<KeyphraseTableOccurrenceItem>[]
     ): Promise<boolean> {
         if (batch.length > 25) {
             return false;
         }
 
-        const result = await this.model.batchPut(batch);
+        const result = await this.pathOccurrenceModel.batchPut(batch);
         const success = result.unprocessedItems.length == 0;
         if (success) {
             console.log(

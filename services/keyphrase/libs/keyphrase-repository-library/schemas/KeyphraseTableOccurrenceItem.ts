@@ -5,10 +5,10 @@ import {
     KeyphraseTableNonKeyFields,
 } from "../enums/KeyphraseTableFields";
 
-class KeyphraseTableItem extends Item {
+class KeyphraseTableOccurrenceItem extends Item {
     [KeyphraseTableKeyFields.HashKey]: string;
     [KeyphraseTableKeyFields.RangeKey]: string;
     [KeyphraseTableNonKeyFields.Occurrences]: number;
 }
 
-export default KeyphraseTableItem;
+export default KeyphraseTableOccurrenceItem;
