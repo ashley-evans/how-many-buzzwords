@@ -335,7 +335,7 @@ describe.each([
     ["less than 25", createRandomOccurrences(24)],
     ["greater than 25", createRandomOccurrences(26)],
 ])(
-    "BATCH PUT: Stores all keyphrase occurrences given %s items",
+    "PUT: Stores all keyphrase occurrences given %s items",
     (message: string, expectedOccurrences: KeyphraseOccurrences[]) => {
         let response: boolean;
 
@@ -347,7 +347,7 @@ describe.each([
             );
         });
 
-        test("stores all provided keyphrases occurrences succesfully", async () => {
+        test("stores all provided keyphrases occurrences successfully", async () => {
             const results = await repository.getKeyphrases(VALID_URL.hostname);
 
             expect(results).toHaveLength(expectedOccurrences.length);
@@ -370,7 +370,7 @@ describe.each([
     }
 );
 
-describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
+describe("PUT: Overwrites existing keyphrase occurrences given multiple stored simultaneously", () => {
     let response: boolean;
 
     beforeAll(async () => {
@@ -405,6 +405,122 @@ describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
 
     afterAll(async () => {
         await repository.deleteKeyphrases(VALID_URL.hostname);
+    });
+});
+
+describe("PUT TOTAL: Stores new keyphrase total", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        response = await repository.storeTotals(TEST_KEYPHRASES[0]);
+    });
+
+    test("stores total entry successfully", async () => {
+        const results = await repository.getTotals();
+
+        expect(results).toHaveLength(1);
+        expect(results[0]).toEqual({
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals();
+    });
+});
+
+describe("PUT TOTAL: Overwrites existing keyphrase total", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeTotals(TEST_KEYPHRASES[0]);
+        response = await repository.storeTotals(TEST_KEYPHRASES[0]);
+    });
+
+    test("does not add duplicate total entries", async () => {
+        const results = await repository.getTotals();
+
+        expect(results).toHaveLength(1);
+        expect(results[0]).toEqual({
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals();
+    });
+});
+
+describe.each([
+    ["less than 25", createRandomOccurrences(24)],
+    ["greater than 25", createRandomOccurrences(26)],
+])(
+    "PUT TOTAL: Stores all totals given %s items",
+    (message: string, totals: KeyphraseOccurrences[]) => {
+        let response: boolean;
+
+        beforeAll(async () => {
+            response = await repository.storeTotals(totals);
+        });
+
+        test("stores all provided totals successfully", async () => {
+            const results = await repository.getTotals();
+
+            expect(results).toHaveLength(totals.length);
+            for (const total of totals) {
+                expect(results).toContainEqual({
+                    keyphrase: total.keyphrase,
+                    occurrences: total.occurrences,
+                });
+            }
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+
+        afterAll(async () => {
+            await repository.deleteTotals();
+        });
+    }
+);
+
+describe("PUT TOTAL: Overwrites existing totals given multiple stored simultaneously", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeTotals(TEST_KEYPHRASES[0]);
+        response = await repository.storeTotals(TEST_KEYPHRASES);
+    });
+
+    test("does not add duplicate totals", async () => {
+        const results = await repository.getTotals();
+
+        expect(results).toHaveLength(TEST_KEYPHRASES.length);
+        for (const occurrence of TEST_KEYPHRASES) {
+            expect(results).toContainEqual({
+                keyphrase: occurrence.keyphrase,
+                occurrences: occurrence.occurrences,
+            });
+        }
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals();
     });
 });
 

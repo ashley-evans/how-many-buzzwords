@@ -2,6 +2,7 @@ import dynamoose from "dynamoose";
 import { QueryResponse } from "dynamoose/dist/ItemRetriever";
 
 import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
+import KeyphraseTableConstants from "../enums/KeyphraseTableConstants";
 import {
     KeyphraseOccurrences,
     PathnameOccurrences,
@@ -17,16 +18,15 @@ type KeyphraseOccurrenceKeys = {
 
 class KeyphraseRepository implements Repository {
     private static BATCH_SIZE = 25;
-    private pathOccurrenceModel;
+    private occurrenceModel;
 
     constructor(tableName: string, createTable?: boolean) {
-        this.pathOccurrenceModel =
-            dynamoose.model<KeyphraseTableOccurrenceItem>(
-                tableName,
-                KeyphraseTableOccurrenceSchema
-            );
+        this.occurrenceModel = dynamoose.model<KeyphraseTableOccurrenceItem>(
+            "occurrence",
+            KeyphraseTableOccurrenceSchema
+        );
 
-        new dynamoose.Table(tableName, [this.pathOccurrenceModel], {
+        new dynamoose.Table(tableName, [this.occurrenceModel], {
             create: createTable || false,
         });
     }
@@ -53,10 +53,6 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    async getKeyphraseUsages(keyphrase: string): Promise<string[]> {
-        throw new Error("Method not implemented." + keyphrase);
-    }
-
     async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
         const documents = await this.queryKeyphrases(baseURL);
         return documents.map((document) => {
@@ -73,7 +69,7 @@ class KeyphraseRepository implements Repository {
         baseURL: string,
         pathname: string
     ): Promise<KeyphraseOccurrences[]> {
-        const documents = await this.pathOccurrenceModel
+        const documents = await this.occurrenceModel
             .query({
                 [KeyphraseTableKeyFields.HashKey]: {
                     eq: baseURL,
@@ -98,39 +94,49 @@ class KeyphraseRepository implements Repository {
         pathname: string,
         occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean> {
-        if (!Array.isArray(occurrences)) {
-            return this.storeIndividualKeyphrase(
-                baseURL,
-                pathname,
-                occurrences
-            );
-        }
-
-        const items = occurrences.map((occurrence) =>
-            this.createOccurrenceItem(baseURL, pathname, occurrence)
-        );
-        const batches = this.createBatches(items);
-        const promises = batches.map((batch) =>
-            this.storeKeyphrasesBatch(baseURL, batch)
-        );
-
-        try {
-            return (await Promise.all(promises)).every(Boolean);
-        } catch (ex) {
-            console.error(
-                `An error occurred during the storage of ${JSON.stringify(
-                    occurrences
-                )} for ${baseURL}. Error: ${ex}`
+        if (Array.isArray(occurrences)) {
+            const items = occurrences.map((occurrence) =>
+                this.createOccurrenceItem(baseURL, pathname, occurrence)
             );
 
-            return false;
+            return this.storeOccurrenceItems(items);
         }
+
+        const item = this.createOccurrenceItem(baseURL, pathname, occurrences);
+        return this.storeIndividualKeyphrase(item);
+    }
+
+    async storeTotals(
+        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
+    ): Promise<boolean> {
+        if (Array.isArray(totals)) {
+            const items = totals.map((total) => this.createTotalItem(total));
+            return this.storeOccurrenceItems(items);
+        }
+
+        const item = this.createTotalItem(totals);
+        return this.storeIndividualKeyphrase(item);
+    }
+
+    async getTotals(): Promise<KeyphraseOccurrences[]> {
+        const totals = await this.queryKeyphrases(
+            KeyphraseTableConstants.TotalKey
+        );
+
+        return totals.map((total) => ({
+            keyphrase: total.sk,
+            occurrences: total.Occurrences,
+        }));
+    }
+
+    async deleteTotals(): Promise<boolean> {
+        return this.deleteKeyphrases(KeyphraseTableConstants.TotalKey);
     }
 
     private async queryKeyphrases(
         baseURL: string
     ): Promise<QueryResponse<KeyphraseTableOccurrenceItem>> {
-        return this.pathOccurrenceModel
+        return this.occurrenceModel
             .query(KeyphraseTableKeyFields.HashKey)
             .eq(baseURL)
             .exec();
@@ -146,34 +152,35 @@ class KeyphraseRepository implements Repository {
     }
 
     private async storeIndividualKeyphrase(
-        baseURL: string,
-        pathname: string,
-        occurrence: KeyphraseOccurrences
+        item: Partial<KeyphraseTableOccurrenceItem>
     ) {
         try {
-            await this.pathOccurrenceModel.create(
-                this.createOccurrenceItem(baseURL, pathname, occurrence),
-                {
-                    overwrite: true,
-                }
-            );
+            await this.occurrenceModel.create(item, {
+                overwrite: true,
+            });
 
-            console.log(
-                `Successfully stored: ${JSON.stringify(
-                    occurrence
-                )} for ${baseURL}`
-            );
+            console.log(`Successfully stored: ${JSON.stringify(item)}`);
 
             return true;
         } catch (ex) {
             console.error(
                 `An error occurred during the storage of ${JSON.stringify(
-                    occurrence
-                )} for ${baseURL}. Error: ${ex}`
+                    item
+                )}. Error: ${ex}`
             );
 
             return false;
         }
+    }
+
+    private createTotalItem(
+        total: KeyphraseOccurrences
+    ): Partial<KeyphraseTableOccurrenceItem> {
+        return {
+            pk: KeyphraseTableConstants.TotalKey,
+            sk: total.keyphrase,
+            Occurrences: total.occurrences,
+        };
     }
 
     private createOccurrenceItem(
@@ -196,7 +203,7 @@ class KeyphraseRepository implements Repository {
             return false;
         }
 
-        const result = await this.pathOccurrenceModel.batchDelete(batch);
+        const result = await this.occurrenceModel.batchDelete(batch);
         const success = result.unprocessedItems.length == 0;
         if (success) {
             console.log(
@@ -215,20 +222,38 @@ class KeyphraseRepository implements Repository {
         return false;
     }
 
+    private async storeOccurrenceItems(
+        items: Partial<KeyphraseTableOccurrenceItem>[]
+    ) {
+        const batches = this.createBatches(items);
+        const promises = batches.map((batch) =>
+            this.storeKeyphrasesBatch(batch)
+        );
+
+        try {
+            return (await Promise.all(promises)).every(Boolean);
+        } catch (ex) {
+            console.error(
+                `An error occurred during the storage of ${JSON.stringify(
+                    items
+                )}. Error: ${ex}`
+            );
+
+            return false;
+        }
+    }
+
     private async storeKeyphrasesBatch(
-        baseURL: string,
         batch: Partial<KeyphraseTableOccurrenceItem>[]
     ): Promise<boolean> {
         if (batch.length > KeyphraseRepository.BATCH_SIZE) {
             return false;
         }
 
-        const result = await this.pathOccurrenceModel.batchPut(batch);
+        const result = await this.occurrenceModel.batchPut(batch);
         const success = result.unprocessedItems.length == 0;
         if (success) {
-            console.log(
-                `Successfully stored: ${JSON.stringify(batch)} for ${baseURL}`
-            );
+            console.log(`Successfully stored: ${JSON.stringify(batch)}`);
 
             return success;
         }
@@ -236,7 +261,7 @@ class KeyphraseRepository implements Repository {
         console.error(
             `Batch write failed to write the following: ${JSON.stringify(
                 result.unprocessedItems
-            )} for ${baseURL}`
+            )}`
         );
 
         return false;

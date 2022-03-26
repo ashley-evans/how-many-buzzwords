@@ -21,6 +21,11 @@ interface Repository {
         pathname: string,
         occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
+    deleteTotals(): Promise<boolean>;
+    getTotals(): Promise<KeyphraseOccurrences[]>;
+    storeTotals(
+        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
+    ): Promise<boolean>;
 }
 
 export { KeyphraseOccurrences, PathnameOccurrences, Repository };
