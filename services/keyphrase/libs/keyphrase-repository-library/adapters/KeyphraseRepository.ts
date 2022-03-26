@@ -35,23 +35,16 @@ class KeyphraseRepository implements Repository {
             return false;
         }
 
-        const batches = keyphrases.reduce(
-            (result: KeyphraseOccurrenceKeys[][], item, index) => {
-                const batchIndex = Math.floor(index / 25);
-                if (!result[batchIndex]) {
-                    result[batchIndex] = [];
-                }
+        const keys = keyphrases.map((item) => {
+            const keyFields: KeyphraseOccurrenceKeys = {
+                pk: baseURL,
+                sk: this.createSortKey(item.pathname, item.keyphrase),
+            };
 
-                result[batchIndex].push({
-                    pk: baseURL,
-                    sk: this.createSortKey(item.pathname, item.keyphrase),
-                });
+            return keyFields;
+        });
 
-                return result;
-            },
-            []
-        );
-
+        const batches = this.createBatches(keys);
         const promises = batches.map((batch) =>
             this.deleteKeyphraseBatch(baseURL, batch)
         );
@@ -124,28 +117,17 @@ class KeyphraseRepository implements Repository {
             );
         }
 
-        const batches = occurrences.reduce(
-            (
-                result: Partial<KeyphraseTableOccurrenceItem>[][],
-                item,
-                index
-            ) => {
-                const batchIndex = Math.floor(index / 25);
-                if (!result[batchIndex]) {
-                    result[batchIndex] = [];
-                }
+        const items = occurrences.map((occurrence) => {
+            const item: Partial<KeyphraseTableOccurrenceItem> = {
+                pk: baseURL,
+                sk: this.createSortKey(pathname, occurrence.keyphrase),
+                Occurrences: occurrence.occurrences,
+            };
 
-                result[batchIndex].push({
-                    pk: baseURL,
-                    sk: this.createSortKey(pathname, item.keyphrase),
-                    Occurrences: item.occurrences,
-                });
+            return item;
+        });
 
-                return result;
-            },
-            []
-        );
-
+        const batches = this.createBatches(items);
         const promises = batches.map((batch) =>
             this.storeKeyphrasesBatch(baseURL, batch)
         );
@@ -254,6 +236,18 @@ class KeyphraseRepository implements Repository {
 
     private createSortKey(pathname: string, keyphrase: string): string {
         return `${pathname}#${keyphrase}`;
+    }
+
+    private createBatches<Type>(inputArray: Type[], batchSize = 25): Type[][] {
+        return inputArray.reduce((result: Type[][], item, index) => {
+            const batchIndex = Math.floor(index / batchSize);
+            if (!result[batchIndex]) {
+                result[batchIndex] = [];
+            }
+
+            result[batchIndex].push(item);
+            return result;
+        }, []);
     }
 }
 
