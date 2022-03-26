@@ -1,6 +1,7 @@
 enum KeyphraseTableKeyFields {
     HashKey = "pk",
     RangeKey = "sk",
+    KeyphraseUsageIndexHashKey = "kui_pk",
 }
 
 enum KeyphraseTableNonKeyFields {

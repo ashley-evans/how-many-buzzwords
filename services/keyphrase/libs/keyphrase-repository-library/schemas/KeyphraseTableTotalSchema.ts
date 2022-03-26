@@ -18,6 +18,14 @@ const schema = new Schema({
         type: Number,
         required: true,
     },
+    [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: {
+        type: String,
+        index: {
+            name: "KeyphraseUsageIndex",
+            rangeKey: KeyphraseTableKeyFields.RangeKey,
+            project: false,
+        },
+    },
 });
 
 export default schema;
