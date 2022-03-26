@@ -32,11 +32,6 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
-            - name: Configure Test AWS Credentials
-              run: |
-                  export AWS_ACCESS_KEY_ID=x
-                  export AWS_SECRET_ACCESS_KEY=x
-                  export AWS_REGION=eu-west-2
             - name: Setup DynamoDB local
               uses: rrainn/dynamodb-action@v2.0.1
               with:

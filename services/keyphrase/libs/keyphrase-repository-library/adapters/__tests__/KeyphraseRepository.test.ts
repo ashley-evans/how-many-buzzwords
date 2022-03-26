@@ -2,6 +2,10 @@
  * @group integration
  */
 
+process.env.AWS_ACCESS_KEY_ID = "x";
+process.env.AWS_SECRET_ACCESS_KEY = "x";
+process.env.AWS_REGION = "eu-west-2";
+
 import dynamoose from "dynamoose";
 
 import { KeyphraseOccurrences } from "../../ports/Repository";
