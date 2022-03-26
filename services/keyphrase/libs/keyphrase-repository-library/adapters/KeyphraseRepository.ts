@@ -111,46 +111,19 @@ class KeyphraseRepository implements Repository {
         });
     }
 
-    async storeKeyphrase(
-        baseURL: string,
-        pathname: string,
-        occurrences: KeyphraseOccurrences
-    ): Promise<boolean> {
-        try {
-            await this.pathOccurrenceModel.create(
-                {
-                    pk: baseURL,
-                    sk: this.createSortKey(pathname, occurrences.keyphrase),
-                    Occurrences: occurrences.occurrences,
-                },
-                {
-                    overwrite: true,
-                }
-            );
-
-            console.log(
-                `Successfully stored: ${JSON.stringify(
-                    occurrences
-                )} for ${baseURL}`
-            );
-
-            return true;
-        } catch (ex) {
-            console.error(
-                `An error occurred during the storage of ${JSON.stringify(
-                    occurrences
-                )} for ${baseURL}. Error: ${ex}`
-            );
-
-            return false;
-        }
-    }
-
     async storeKeyphrases(
         baseURL: string,
-        pathanme: string,
-        occurrences: KeyphraseOccurrences[]
+        pathname: string,
+        occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean> {
+        if (!Array.isArray(occurrences)) {
+            return this.storeIndividualKeyphrase(
+                baseURL,
+                pathname,
+                occurrences
+            );
+        }
+
         const batches = occurrences.reduce(
             (
                 result: Partial<KeyphraseTableOccurrenceItem>[][],
@@ -164,7 +137,7 @@ class KeyphraseRepository implements Repository {
 
                 result[batchIndex].push({
                     pk: baseURL,
-                    sk: this.createSortKey(pathanme, item.keyphrase),
+                    sk: this.createSortKey(pathname, item.keyphrase),
                     Occurrences: item.occurrences,
                 });
 
@@ -183,6 +156,41 @@ class KeyphraseRepository implements Repository {
             console.error(
                 `An error occurred during the storage of ${JSON.stringify(
                     occurrences
+                )} for ${baseURL}. Error: ${ex}`
+            );
+
+            return false;
+        }
+    }
+
+    private async storeIndividualKeyphrase(
+        baseURL: string,
+        pathname: string,
+        occurrence: KeyphraseOccurrences
+    ) {
+        try {
+            await this.pathOccurrenceModel.create(
+                {
+                    pk: baseURL,
+                    sk: this.createSortKey(pathname, occurrence.keyphrase),
+                    Occurrences: occurrence.occurrences,
+                },
+                {
+                    overwrite: true,
+                }
+            );
+
+            console.log(
+                `Successfully stored: ${JSON.stringify(
+                    occurrence
+                )} for ${baseURL}`
+            );
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An error occurred during the storage of ${JSON.stringify(
+                    occurrence
                 )} for ${baseURL}. Error: ${ex}`
             );
 

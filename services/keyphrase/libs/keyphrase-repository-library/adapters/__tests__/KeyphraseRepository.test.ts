@@ -58,7 +58,7 @@ describe.each([
     (message: string, occurrences: KeyphraseOccurrences[]) => {
         beforeAll(async () => {
             for (const occurrence of occurrences) {
-                await repository.storeKeyphrase(
+                await repository.storeKeyphrases(
                     VALID_URL.hostname,
                     VALID_URL.pathname,
                     occurrence
@@ -89,12 +89,12 @@ describe("GET ALL: given keyphrases occurrences stored against multiple paths on
     const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             OTHER_PATHNAME,
             TEST_KEYPHRASES[1]
@@ -126,12 +126,12 @@ describe("GET ALL: given keyphrase occurrences stored for multiple URLs", () => 
     const expectedKeyphrase = TEST_KEYPHRASES[0];
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             expectedKeyphrase
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             OTHER_URL.hostname,
             OTHER_URL.pathname,
             TEST_KEYPHRASES[1]
@@ -164,7 +164,7 @@ describe.each([
     (message: string, occurrences: KeyphraseOccurrences[]) => {
         beforeAll(async () => {
             for (const occurrence of occurrences) {
-                await repository.storeKeyphrase(
+                await repository.storeKeyphrases(
                     VALID_URL.hostname,
                     VALID_URL.pathname,
                     occurrence
@@ -197,12 +197,12 @@ describe("GET PATH: given keyphrase occurrences stored for multiple paths on sam
     const expectedKeyphrase = TEST_KEYPHRASES[0];
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             expectedKeyphrase
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             `${VALID_URL.pathname}1`,
             TEST_KEYPHRASES[1]
@@ -232,12 +232,12 @@ describe("GET PATH: given keyphrase occurrences stored for same path on multiple
     const path = "/duplicate";
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             path,
             expectedKeyphrase
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             OTHER_URL.hostname,
             path,
             TEST_KEYPHRASES[1]
@@ -267,7 +267,7 @@ describe("PUT: Stores new keyphrase occurrence", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        response = await repository.storeKeyphrase(
+        response = await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
@@ -298,13 +298,13 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
 
-        response = await repository.storeKeyphrase(
+        response = await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
@@ -374,7 +374,7 @@ describe("BATCH PUT: Overwrites existing keyphrase occurrences", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
@@ -445,12 +445,12 @@ describe("DELETE: given keyphrases occurrences stored against multiple paths on 
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             OTHER_PATHNAME,
             TEST_KEYPHRASES[1]
@@ -482,12 +482,12 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
     let response: boolean;
 
     beforeAll(async () => {
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
             TEST_KEYPHRASES[0]
         );
-        await repository.storeKeyphrase(
+        await repository.storeKeyphrases(
             OTHER_URL.hostname,
             OTHER_URL.pathname,
             expectedKeyphrase

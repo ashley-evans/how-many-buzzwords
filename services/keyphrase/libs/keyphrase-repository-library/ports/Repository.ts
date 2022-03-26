@@ -16,15 +16,10 @@ interface Repository {
         baseURL: string,
         pathname: string
     ): Promise<KeyphraseOccurrences[]>;
-    storeKeyphrase(
-        baseURL: string,
-        pathname: string,
-        occurrences: KeyphraseOccurrences
-    ): Promise<boolean>;
     storeKeyphrases(
         baseURL: string,
         pathname: string,
-        occurrences: KeyphraseOccurrences[]
+        occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
 }
 
