@@ -489,7 +489,7 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
         );
         await repository.storeKeyphrase(
             OTHER_URL.hostname,
-            VALID_URL.pathname,
+            OTHER_URL.pathname,
             expectedKeyphrase
         );
 
@@ -507,7 +507,7 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
 
         expect(result).toHaveLength(1);
         expect(result[0]).toEqual({
-            pathname: VALID_URL.pathname,
+            pathname: OTHER_URL.pathname,
             keyphrase: expectedKeyphrase.keyphrase,
             occurrences: expectedKeyphrase.occurrences,
         });
@@ -515,5 +515,9 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
 
     test("deletion returns success", () => {
         expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteKeyphrases(OTHER_URL.hostname);
     });
 });
