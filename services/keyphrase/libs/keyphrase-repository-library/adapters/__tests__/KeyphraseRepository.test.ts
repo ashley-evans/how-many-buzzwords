@@ -283,6 +283,27 @@ describe.each([
     }
 );
 
+describe("GET TOTAL: Only returns totals related to provided base URL", () => {
+    const expectedTotal = TEST_KEYPHRASES[0];
+
+    beforeAll(async () => {
+        await repository.storeTotals(expectedTotal, VALID_URL.hostname);
+        await repository.storeTotals(TEST_KEYPHRASES[1], OTHER_URL.hostname);
+    });
+
+    test("get returns only totals associated with provied base URL", async () => {
+        const response = await repository.getTotals(VALID_URL.hostname);
+
+        expect(response).toHaveLength(1);
+        expect(response[0]).toEqual(expectedTotal);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals(VALID_URL.hostname);
+        await repository.deleteTotals(OTHER_URL.hostname);
+    });
+});
+
 describe("PUT: Stores new keyphrase occurrence", () => {
     let response: boolean;
 
@@ -428,42 +449,18 @@ describe("PUT: Overwrites existing keyphrase occurrences given multiple stored s
     });
 });
 
-describe("PUT TOTAL: Stores new keyphrase total", () => {
+describe.each([
+    ["global keyphrase total", undefined],
+    ["keyphrase total for given base URL", VALID_URL.hostname],
+])("PUT TOTAL: Stores new %s", (message: string, baseURL?: string) => {
     let response: boolean;
 
     beforeAll(async () => {
-        response = await repository.storeTotals(TEST_KEYPHRASES[0]);
+        response = await repository.storeTotals(TEST_KEYPHRASES[0], baseURL);
     });
 
     test("stores total entry successfully", async () => {
-        const results = await repository.getTotals();
-
-        expect(results).toHaveLength(1);
-        expect(results[0]).toEqual({
-            keyphrase: TEST_KEYPHRASES[0].keyphrase,
-            occurrences: TEST_KEYPHRASES[0].occurrences,
-        });
-    });
-
-    test("returns success", () => {
-        expect(response).toEqual(true);
-    });
-
-    afterAll(async () => {
-        await repository.deleteTotals();
-    });
-});
-
-describe("PUT TOTAL: Overwrites existing keyphrase total", () => {
-    let response: boolean;
-
-    beforeAll(async () => {
-        await repository.storeTotals(TEST_KEYPHRASES[0]);
-        response = await repository.storeTotals(TEST_KEYPHRASES[0]);
-    });
-
-    test("does not add duplicate total entries", async () => {
-        const results = await repository.getTotals();
+        const results = await repository.getTotals(baseURL);
 
         expect(results).toHaveLength(1);
         expect(results[0]).toEqual({
@@ -482,19 +479,59 @@ describe("PUT TOTAL: Overwrites existing keyphrase total", () => {
 });
 
 describe.each([
-    ["less than 25", createRandomOccurrences(24)],
-    ["greater than 25", createRandomOccurrences(26)],
+    ["global keyphrase total", undefined],
+    ["keyphrase total for given base URL", VALID_URL.hostname],
+])("PUT TOTAL: Overwrites existing %s", (message: string, baseURL?: string) => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeTotals(TEST_KEYPHRASES[0], baseURL);
+        response = await repository.storeTotals(TEST_KEYPHRASES[0], baseURL);
+    });
+
+    test("does not add duplicate total entries", async () => {
+        const results = await repository.getTotals(baseURL);
+
+        expect(results).toHaveLength(1);
+        expect(results[0]).toEqual({
+            keyphrase: TEST_KEYPHRASES[0].keyphrase,
+            occurrences: TEST_KEYPHRASES[0].occurrences,
+        });
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteTotals(baseURL);
+    });
+});
+
+describe.each([
+    ["less than 25 global totals", createRandomOccurrences(24)],
+    ["greater than 25 global totals", createRandomOccurrences(26)],
+    [
+        "less than 25 keyphrase total for given base URL",
+        createRandomOccurrences(24),
+        VALID_URL.hostname,
+    ],
+    [
+        "greater than 25 keyphrase total for given base URL",
+        createRandomOccurrences(26),
+        VALID_URL.hostname,
+    ],
 ])(
-    "PUT TOTAL: Stores all totals given %s items",
-    (message: string, totals: KeyphraseOccurrences[]) => {
+    "PUT TOTAL: Stores all totals given %s",
+    (message: string, totals: KeyphraseOccurrences[], baseURL?: string) => {
         let response: boolean;
 
         beforeAll(async () => {
-            response = await repository.storeTotals(totals);
+            response = await repository.storeTotals(totals, baseURL);
         });
 
         test("stores all provided totals successfully", async () => {
-            const results = await repository.getTotals();
+            const results = await repository.getTotals(baseURL);
 
             expect(results).toHaveLength(totals.length);
             for (const total of totals) {
@@ -510,39 +547,45 @@ describe.each([
         });
 
         afterAll(async () => {
-            await repository.deleteTotals();
+            await repository.deleteTotals(baseURL);
         });
     }
 );
 
-describe("PUT TOTAL: Overwrites existing totals given multiple stored simultaneously", () => {
-    let response: boolean;
+describe.each([
+    ["global keyphrase total", undefined],
+    ["keyphrase total for given base URL", VALID_URL.hostname],
+])(
+    "PUT TOTAL: Overwrites %s provided multiple stored simultaneously",
+    (message: string, baseURL?: string) => {
+        let response: boolean;
 
-    beforeAll(async () => {
-        await repository.storeTotals(TEST_KEYPHRASES[0]);
-        response = await repository.storeTotals(TEST_KEYPHRASES);
-    });
+        beforeAll(async () => {
+            await repository.storeTotals(TEST_KEYPHRASES[0], baseURL);
+            response = await repository.storeTotals(TEST_KEYPHRASES, baseURL);
+        });
 
-    test("does not add duplicate totals", async () => {
-        const results = await repository.getTotals();
+        test("does not add duplicate totals", async () => {
+            const results = await repository.getTotals(baseURL);
 
-        expect(results).toHaveLength(TEST_KEYPHRASES.length);
-        for (const occurrence of TEST_KEYPHRASES) {
-            expect(results).toContainEqual({
-                keyphrase: occurrence.keyphrase,
-                occurrences: occurrence.occurrences,
-            });
-        }
-    });
+            expect(results).toHaveLength(TEST_KEYPHRASES.length);
+            for (const occurrence of TEST_KEYPHRASES) {
+                expect(results).toContainEqual({
+                    keyphrase: occurrence.keyphrase,
+                    occurrences: occurrence.occurrences,
+                });
+            }
+        });
 
-    test("returns success", () => {
-        expect(response).toEqual(true);
-    });
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
 
-    afterAll(async () => {
-        await repository.deleteTotals();
-    });
-});
+        afterAll(async () => {
+            await repository.deleteTotals(baseURL);
+        });
+    }
+);
 
 describe.each([
     ["one occurrence", [TEST_KEYPHRASES[0]]],
@@ -659,21 +702,36 @@ describe("DELETE: only effects associated keyphrase occurrences", () => {
 });
 
 describe.each([
-    ["one total", [TEST_KEYPHRASES[0]]],
-    ["less than 25 totals", createRandomOccurrences(24)],
-    ["greater than 25 totals", createRandomOccurrences(26)],
+    ["one global keyphrase total", [TEST_KEYPHRASES[0]]],
+    ["less than 25 global keyphrase totals", createRandomOccurrences(24)],
+    ["greater than 25 global keyphrase totals", createRandomOccurrences(26)],
+    [
+        "one total for provided base URL",
+        [TEST_KEYPHRASES[0]],
+        VALID_URL.hostname,
+    ],
+    [
+        "less than 25 keyphrase totals for provided base URL",
+        createRandomOccurrences(24),
+        VALID_URL.hostname,
+    ],
+    [
+        "greater than 25 keyphrase totals for provided base URL",
+        createRandomOccurrences(26),
+        VALID_URL.hostname,
+    ],
 ])(
     "DELETE TOTAL: given %s stored",
-    (message: string, totals: KeyphraseOccurrences[]) => {
+    (message: string, totals: KeyphraseOccurrences[], baseURL?: string) => {
         let response: boolean;
 
         beforeAll(async () => {
-            await repository.storeTotals(totals);
-            response = await repository.deleteTotals();
+            await repository.storeTotals(totals, baseURL);
+            response = await repository.deleteTotals(baseURL);
         });
 
         test("returns no pathnames following deletion", async () => {
-            const result = await repository.getTotals();
+            const result = await repository.getTotals(baseURL);
 
             expect(result).toHaveLength(0);
         });
@@ -684,8 +742,14 @@ describe.each([
     }
 );
 
-test("DELETE TOTAL: returns failure given no totals stored", async () => {
-    const response = await repository.deleteTotals();
+test.each([
+    ["global keyphrase totals", undefined],
+    ["keyphrase totals for provided base URL", VALID_URL.hostname],
+])(
+    "DELETE TOTAL: returns failure given no %s stored",
+    async (message: string, baseURL?: string) => {
+        const response = await repository.deleteTotals(baseURL);
 
-    expect(response).toEqual(false);
-});
+        expect(response).toEqual(false);
+    }
+);

@@ -22,9 +22,10 @@ const schema = new Schema({
         type: String,
         index: {
             name: "KeyphraseUsageIndex",
-            rangeKey: KeyphraseTableKeyFields.RangeKey,
+            rangeKey: KeyphraseTableKeyFields.HashKey,
             project: false,
         },
+        required: true,
     },
 });
 
