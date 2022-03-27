@@ -21,8 +21,15 @@ sequential() {
 
 parallel() {
     for folder in $2; do
-        echo "Running npm $1 in $folder..."
-        npm --prefix $folder $1 --cache=$folder/.npm-cache &
+        (
+            echo "Running npm $1 in $folder..."
+            npm --prefix $folder $1 --cache=$folder/.npm-cache
+        ) &
+
+        job_count=$(jobs -r -p | wc -l)
+        if [[ $job_count -ge $3 ]]; then
+            wait -n
+        fi
     done
 
     wait
@@ -61,7 +68,7 @@ if [ $run_parallel ]; then
         threads=5
     fi
 
-    parallel "$cmd" "$folders"
+    parallel "$cmd" "$folders" $threads
 else
     sequential "$cmd" "$folders"
 fi
