@@ -2,14 +2,33 @@
 
 usage() {
     echo "Usage:
-    -c [Mandatory: Executes given npm command on all modules]" 1>&2;
+    -c [Mandatory: Executes given npm command on all modules]
+    -p [Flag to execute the given npm command in parallel threads]" 1>&2;
     exit 1; 
 }
 
-while getopts "c:h" opt; do
+sequential() {
+    for folder in $2; do
+        echo "Running npm $1 in $folder..."
+        npm --prefix $folder $1
+
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
+    done
+}
+
+parallel() {
+    echo "WIP"
+}
+
+while getopts "c:ph" opt; do
     case $opt in
         c)
             cmd=$OPTARG
+            ;;
+        p)
+            run_parallel=true
             ;;
         h)
             usage
@@ -28,11 +47,8 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package.json -printf '%h\n')
 
-for folder in $folders; do
-    echo "Running npm $cmd in $folder..."
-    npm --prefix $folder $cmd
-
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
-done
+if [ $run_parallel ]; then
+    parallel
+else
+    sequential "$cmd" "$folders"
+fi
