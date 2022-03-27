@@ -25,9 +25,9 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ $clean ]; then
     echo "Clean installing..."
     rm -rf $root_dir/dist
-    npm --prefix $root_dir run ci
+    npm --prefix $root_dir run ci:parallel
 else 
-    npm --prefix $root_dir run i
+    npm --prefix $root_dir run i:parallel
 fi
 
 if [ $? -ne 0 ]; then
