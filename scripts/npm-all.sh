@@ -3,7 +3,8 @@
 usage() {
     echo "Usage:
     -c [Mandatory: Executes given npm command on all modules]
-    -p [Flag to execute the given npm command in parallel threads]" 1>&2;
+    -p [Flag to execute the given npm command in parallel threads]
+    -t [Number of threads to execute npm command across. Default 5]" 1>&2;
     exit 1; 
 }
 
@@ -27,13 +28,16 @@ parallel() {
     wait
 }
 
-while getopts "c:ph" opt; do
+while getopts "c:pt:h" opt; do
     case $opt in
         c)
             cmd=$OPTARG
             ;;
         p)
             run_parallel=true
+            ;;
+        t)
+            threads=$OPTARG
             ;;
         h)
             usage
@@ -53,6 +57,10 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package.json -printf '%h\n')
 
 if [ $run_parallel ]; then
+    if [ -z $threads ]; then
+        threads=5
+    fi
+
     parallel "$cmd" "$folders"
 else
     sequential "$cmd" "$folders"
