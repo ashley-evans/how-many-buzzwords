@@ -2,6 +2,7 @@
 
 node_modules/
 /aws/deploy_node_modules/
+.npm-cache
 
 # AWS Stack Output
 

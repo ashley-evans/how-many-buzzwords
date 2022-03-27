@@ -1,2 +1,17 @@
-node_modules
-dist
+# NPM
+
+node_modules/
+/aws/deploy_node_modules/
+.npm-cache
+
+# AWS Stack Output
+
+.aws-sam/
+
+# Apify Output
+
+apify_storage/
+
+# TSC Output
+
+dist/

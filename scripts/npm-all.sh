@@ -24,7 +24,7 @@ parallel() {
     for folder in $2; do
         echo "Running npm $1 in $folder..."
         (
-            output=$(npm --prefix $folder $1 --cache=$folder/.npm-cache)
+            output=$(npm --prefix $folder $1 --cache=$folder/.npm-cache --loglevel=error --progress=false)
             if [ $? -ne 0 ]; then
                 echo "An error occurred during execution of npm $1 in $folder:"
                 echo "$output"
