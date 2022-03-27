@@ -32,7 +32,13 @@ sudo apt-get install jq
 Run the following command to install all of the dependencies for the buzzword project:
 
 ```shell
-npm run ci
+npm run ci:sequential
+```
+
+Dependencies can also be installed in parallel by running:
+
+```shell
+npm run ci:parallel
 ```
 
 ## Cloudformation Template Validation
