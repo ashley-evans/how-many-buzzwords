@@ -21,7 +21,7 @@ jobs:
                   node-version: "14"
             - name: Install Dependencies
               run: |
-                  npm run ci
+                  npm run ci:parallel
             - name: Run Unit Tests
               run: |
                   npm run test:unit
@@ -39,7 +39,7 @@ jobs:
                   cors: "*"
             - name: Install Dependencies
               run: |
-                  npm run ci
+                  npm run ci:parallel
             - name: Run Integration Tests
               run: |
                   npm run test:integration
@@ -70,7 +70,7 @@ jobs:
                   node-version: "14"
             - name: Install Dependencies
               run: |
-                  npm run ci
+                  npm run ci:parallel
             - name: Run linters
               run: |
                   npm run lint
@@ -83,7 +83,7 @@ jobs:
                   node-version: "14"
             - name: Audit Dependencies
               run: |
-                  npm run audit
+                  npm run audit:parallel
     deploy-crawl-service:
         runs-on: ubuntu-latest
         needs:
