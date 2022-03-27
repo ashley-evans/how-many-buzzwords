@@ -46,11 +46,14 @@ parallel() {
 
     for key in ${!pids[@]}; do
         wait ${pids[${key}]}
-        if [ $? -ne 0 ]; then
+        exit_code=$?
+        if [ $exit_code -ne 0 ] && [ $exit_code -ne 127 ]; then
             wait
             exit 1
         fi
     done
+
+    exit 0
 }
 
 while getopts "c:pt:h" opt; do
