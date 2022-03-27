@@ -19,7 +19,12 @@ sequential() {
 }
 
 parallel() {
-    echo "WIP"
+    for folder in $2; do
+        echo "Running npm $1 in $folder..."
+        npm --prefix $folder $1 --cache=$folder/.npm-cache &
+    done
+
+    wait
 }
 
 while getopts "c:ph" opt; do
@@ -48,7 +53,7 @@ root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package.json -printf '%h\n')
 
 if [ $run_parallel ]; then
-    parallel
+    parallel "$cmd" "$folders"
 else
     sequential "$cmd" "$folders"
 fi
