@@ -1,4 +1,4 @@
-interface ActiveConnectionsRepository {
+interface ActiveConnectionsRepositoryPort {
     storeConnection(
         connectionID: string,
         callbackURL: URL,
@@ -6,4 +6,4 @@ interface ActiveConnectionsRepository {
     ): Promise<boolean>;
 }
 
-export default ActiveConnectionsRepository;
+export default ActiveConnectionsRepositoryPort;
