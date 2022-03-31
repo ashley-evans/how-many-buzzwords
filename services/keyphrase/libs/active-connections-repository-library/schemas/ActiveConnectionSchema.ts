@@ -4,6 +4,7 @@ import {
     ActiveConnectionsTableKeyFields,
     ActiveConnectionsTableNonKeyFields,
 } from "../enums/ActiveConnectionsTableFields";
+import ActiveConnectionsTableConstants from "../enums/ActiveConnectionsTableConstants";
 
 const schema = new Schema({
     [ActiveConnectionsTableKeyFields.ConnectionIDKey]: {
@@ -12,6 +13,12 @@ const schema = new Schema({
     },
     [ActiveConnectionsTableKeyFields.ListeningURLKey]: {
         type: String,
+        index: {
+            name: ActiveConnectionsTableConstants.ListeningConnectionsIndexName,
+            global: true,
+            rangeKey: ActiveConnectionsTableKeyFields.ConnectionIDKey,
+            project: true,
+        },
         required: true,
     },
     [ActiveConnectionsTableNonKeyFields.CallbackURLKey]: {
