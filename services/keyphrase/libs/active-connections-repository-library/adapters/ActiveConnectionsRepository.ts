@@ -39,25 +39,37 @@ class ActiveConnectionsRepository implements ActiveConnectionsRepositoryPort {
         connection: Connection,
         baseURL: string
     ): Promise<boolean> {
-        await this.activeConnectionModel.create(
-            {
-                ConnectionID: connection.connectionID,
-                ListeningURL: baseURL,
-                CallbackURL: connection.callbackURL.toString(),
-            },
-            {
-                overwrite: true,
-            }
-        );
+        try {
+            await this.activeConnectionModel.create(
+                {
+                    ConnectionID: connection.connectionID,
+                    ListeningURL: baseURL,
+                    CallbackURL: connection.callbackURL.toString(),
+                },
+                {
+                    overwrite: true,
+                }
+            );
 
-        return true;
+            console.log(
+                `Successfully stored connection ID: ${connection.connectionID} against URL: ${baseURL}`
+            );
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An error occurred while storing connection ID: ${connection.connectionID} against URL: ${baseURL}. Error: ${ex}`
+            );
+
+            return false;
+        }
     }
 
     async deleteConnection(connectionID: string): Promise<boolean> {
         try {
             await this.activeConnectionModel.delete(connectionID);
 
-            console.log(`Succesfully deleted connection ID: ${connectionID}`);
+            console.log(`Successfully deleted connection ID: ${connectionID}`);
 
             return true;
         } catch (ex) {
