@@ -39,11 +39,16 @@ class ActiveConnectionsRepository implements ActiveConnectionsRepositoryPort {
         connection: Connection,
         baseURL: string
     ): Promise<boolean> {
-        await this.activeConnectionModel.create({
-            ConnectionID: connection.connectionID,
-            ListeningURL: baseURL,
-            CallbackURL: connection.callbackURL.toString(),
-        });
+        await this.activeConnectionModel.create(
+            {
+                ConnectionID: connection.connectionID,
+                ListeningURL: baseURL,
+                CallbackURL: connection.callbackURL.toString(),
+            },
+            {
+                overwrite: true,
+            }
+        );
 
         return true;
     }

@@ -25,6 +25,7 @@ const OTHER_CONNECTION: Connection = {
     callbackURL: new URL("https://www.wibble.com/"),
 };
 const EXPECTED_BASE_URL = "www.example.com";
+const OTHER_BASE_URL = "www.connection.com";
 
 describe.each([
     ["no connections are", []],
@@ -69,6 +70,44 @@ describe("PUT: Stores the new active connection details", () => {
     });
 
     test("stores a connection listening to the provided base URL successfully", async () => {
+        const connections = await repository.getListeningConnections(
+            EXPECTED_BASE_URL
+        );
+
+        expect(connections).toHaveLength(1);
+        expect(connections[0]).toEqual(EXPECTED_CONNECTION);
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+
+    afterAll(async () => {
+        await repository.deleteConnection(EXPECTED_CONNECTION.connectionID);
+    });
+});
+
+describe("PUT: Overwrites existing active connection details given new base URL", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.storeConnection(EXPECTED_CONNECTION, OTHER_BASE_URL);
+
+        response = await repository.storeConnection(
+            EXPECTED_CONNECTION,
+            EXPECTED_BASE_URL
+        );
+    });
+
+    test("overwrites the old base URL entry", async () => {
+        const connections = await repository.getListeningConnections(
+            OTHER_BASE_URL
+        );
+
+        expect(connections).toHaveLength(0);
+    });
+
+    test("stores the new connection information against the new base URL", async () => {
         const connections = await repository.getListeningConnections(
             EXPECTED_BASE_URL
         );
