@@ -54,9 +54,19 @@ class ActiveConnectionsRepository implements ActiveConnectionsRepositoryPort {
     }
 
     async deleteConnection(connectionID: string): Promise<boolean> {
-        await this.activeConnectionModel.delete(connectionID);
+        try {
+            await this.activeConnectionModel.delete(connectionID);
 
-        return true;
+            console.log(`Succesfully deleted connection ID: ${connectionID}`);
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An error occurred while deleting connection ID: ${connectionID}. Error: ${ex}`
+            );
+
+            return false;
+        }
     }
 }
 

@@ -27,6 +27,10 @@ const OTHER_CONNECTION: Connection = {
 const EXPECTED_BASE_URL = "www.example.com";
 const OTHER_BASE_URL = "www.connection.com";
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 describe.each([
     ["no connections are", []],
     ["a single connection is", [EXPECTED_CONNECTION]],
@@ -149,5 +153,36 @@ describe("DELETE: Given connection ID stored in DB", () => {
 
     test("deletion returns success", () => {
         expect(response).toEqual(true);
+    });
+});
+
+test("DELETE: Returns success if connection ID not stored in DB", async () => {
+    const response = await repository.deleteConnection("invalid");
+
+    expect(response).toEqual(true);
+});
+
+describe("DELETE: Only affects provided connection ID given multiple listening to same URL", () => {
+    beforeAll(async () => {
+        await repository.storeConnection(
+            EXPECTED_CONNECTION,
+            EXPECTED_BASE_URL
+        );
+        await repository.storeConnection(OTHER_CONNECTION, EXPECTED_BASE_URL);
+
+        await repository.deleteConnection(OTHER_CONNECTION.connectionID);
+    });
+
+    test("does not delete other connections", async () => {
+        const connections = await repository.getListeningConnections(
+            EXPECTED_BASE_URL
+        );
+
+        expect(connections).toHaveLength(1);
+        expect(connections[0]).toEqual(EXPECTED_CONNECTION);
+    });
+
+    afterAll(async () => {
+        await repository.deleteConnection(EXPECTED_CONNECTION.connectionID);
     });
 });
