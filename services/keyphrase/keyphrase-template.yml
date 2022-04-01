@@ -31,6 +31,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    ActiveConnectionsRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub ActiveConnectionsRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer enabling typed access to Active Connections Table in DynamoDB
+            CompatibleRuntimes:
+                - nodejs14.x
+            ContentUri: ./libs/active-connections-repository-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
