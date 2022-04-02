@@ -65,6 +65,10 @@ class AWSWebSocketClient implements WebSocketClient {
                 return false;
             }
 
+            console.error(
+                `An error occurred while sending data: ${data} to connection ID: ${connectionID}. Error: "${ex}"`
+            );
+
             throw ex;
         }
     }

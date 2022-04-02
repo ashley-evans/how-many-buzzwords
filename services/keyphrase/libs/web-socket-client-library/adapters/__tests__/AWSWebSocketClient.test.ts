@@ -78,7 +78,9 @@ test("returns false if connection provided is no longer active", async () => {
 });
 
 test("throws an exception if an unknown error occurs during data sending", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     awsMockClient.reset();
+
     const expectedError = new Error("test");
     awsMockClient.on(PostToConnectionCommand).rejects(expectedError);
 
@@ -144,6 +146,7 @@ test("returns no failed connection IDs if request fail due to connection no long
 });
 
 test("returns failed connection Ids if requests fail due to unknown error during data transmission", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     const expectedConnectionIDs = ["test_1", "test_2"];
 
     awsMockClient.reset();
