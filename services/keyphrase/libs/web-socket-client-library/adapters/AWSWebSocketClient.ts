@@ -1,6 +1,7 @@
 import { Buffer } from "buffer";
 import {
     ApiGatewayManagementApiClient,
+    GoneException,
     PostToConnectionCommand,
     PostToConnectionCommandInput,
 } from "@aws-sdk/client-apigatewaymanagementapi";
@@ -22,9 +23,20 @@ class AWSWebSocketClient implements WebSocketClient {
             ConnectionId: connectionID,
         };
 
-        await this.client.send(new PostToConnectionCommand(input));
+        try {
+            await this.client.send(new PostToConnectionCommand(input));
+            return true;
+        } catch (ex) {
+            if (this.isGoneException(ex)) {
+                return false;
+            }
 
-        return true;
+            throw ex;
+        }
+    }
+
+    private isGoneException(exception: unknown): exception is GoneException {
+        return (exception as GoneException).name == "GoneException";
     }
 }
 
