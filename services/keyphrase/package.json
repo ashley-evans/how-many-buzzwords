@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "devDependencies": {
         "buzzword-aws-active-connections-repository-library": "file:libs/active-connections-repository-library",
-        "buzzword-aws-keyphrase-repository-library": "file:libs/keyphrase-repository-library"
+        "buzzword-aws-keyphrase-repository-library": "file:libs/keyphrase-repository-library",
+        "buzzword-aws-web-socket-client-library": "file:libs/web-socket-client-library"
     }
 }
