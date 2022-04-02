@@ -92,7 +92,7 @@ describe.each([
     (message: string, connectionIDs: string[]) => {
         const expectedData = "test";
 
-        let response: boolean;
+        let response: string[];
         let clientCalls: SinonSpyCall<
             [PostToConnectionCommand],
             Promise<PostToConnectionCommandOutput>
@@ -122,8 +122,8 @@ describe.each([
             }
         });
 
-        test("returns success", () => {
-            expect(response).toEqual(true);
+        test("returns no failing connection IDs", () => {
+            expect(response).toEqual([]);
         });
     }
 );

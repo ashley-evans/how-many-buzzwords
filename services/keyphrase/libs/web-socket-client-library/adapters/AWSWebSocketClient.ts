@@ -17,16 +17,18 @@ class AWSWebSocketClient implements WebSocketClient {
         });
     }
 
+    sendData(data: string, connectionID: string): Promise<boolean>;
+    sendData(data: string, connectionIDs: string[]): Promise<string[]>;
     async sendData(
         data: string,
         connectionIDs: string | string[]
-    ): Promise<boolean> {
+    ): Promise<boolean | string[]> {
         if (Array.isArray(connectionIDs)) {
             for (const connectionID of connectionIDs) {
                 await this.sendDataToIndividual(data, connectionID);
             }
 
-            return true;
+            return [];
         }
 
         return this.sendDataToIndividual(data, connectionIDs);
