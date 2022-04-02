@@ -19,6 +19,7 @@ class AWSWebSocketClient implements WebSocketClient {
 
     sendData(data: string, connectionID: string): Promise<boolean>;
     sendData(data: string, connectionIDs: string[]): Promise<string[]>;
+
     async sendData(
         data: string,
         connectionIDs: string | string[]
