@@ -15,3 +15,4 @@ apify_storage/
 # TSC Output
 
 dist/
+dist-packages/

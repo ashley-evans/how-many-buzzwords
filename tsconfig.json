@@ -6,6 +6,5 @@
         "allowJs": true,
         "lib": ["DOM"]
     },
-    "include": ["services"],
-    "exclude": ["scripts"]
+    "include": ["packages", "services"]
 }
