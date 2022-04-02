@@ -62,7 +62,7 @@ describe.each([
     }
 );
 
-test("returns failure if connection with provided ID is no longer active", async () => {
+test("returns false if connection provided is no longer active", async () => {
     awsMockClient.reset();
     const exception = mock<GoneException>();
     exception.name = "GoneException";
@@ -73,7 +73,7 @@ test("returns failure if connection with provided ID is no longer active", async
     expect(response).toEqual(false);
 });
 
-test("throws an exception if an error occurs during data sending", async () => {
+test("throws an exception if an unknown error occurs during data sending", async () => {
     awsMockClient.reset();
     const expectedError = new Error("test");
     awsMockClient.on(PostToConnectionCommand).rejects(expectedError);
@@ -127,3 +127,27 @@ describe.each([
         });
     }
 );
+
+test("returns no failed connection IDs if request fail due to connection no longer being active", async () => {
+    awsMockClient.reset();
+    const exception = mock<GoneException>();
+    exception.name = "GoneException";
+    awsMockClient.on(PostToConnectionCommand).rejects(exception);
+
+    const response = await client.sendData("test", ["test_1", "test_2"]);
+
+    expect(response).toHaveLength(0);
+});
+
+test("returns failed connection Ids if requests fail due to unknown error during data transmission", async () => {
+    const expectedConnectionIDs = ["test_1", "test_2"];
+
+    awsMockClient.reset();
+    const expectedError = new Error("test");
+    awsMockClient.on(PostToConnectionCommand).rejects(expectedError);
+
+    const response = await client.sendData("test", expectedConnectionIDs);
+
+    expect(response).toHaveLength(expectedConnectionIDs.length);
+    expect(response).toEqual(expect.arrayContaining(expectedConnectionIDs));
+});

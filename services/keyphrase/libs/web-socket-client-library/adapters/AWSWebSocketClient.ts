@@ -24,11 +24,16 @@ class AWSWebSocketClient implements WebSocketClient {
         connectionIDs: string | string[]
     ): Promise<boolean | string[]> {
         if (Array.isArray(connectionIDs)) {
+            const failedTransmissions = [];
             for (const connectionID of connectionIDs) {
-                await this.sendDataToIndividual(data, connectionID);
+                try {
+                    await this.sendDataToIndividual(data, connectionID);
+                } catch {
+                    failedTransmissions.push(connectionID);
+                }
             }
 
-            return [];
+            return failedTransmissions;
         }
 
         return this.sendDataToIndividual(data, connectionIDs);
