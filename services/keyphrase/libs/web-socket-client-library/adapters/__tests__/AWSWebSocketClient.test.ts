@@ -83,3 +83,47 @@ test("throws an exception if an error occurs during data sending", async () => {
         client.sendData("test", EXPECTED_CONNECTION_ID)
     ).rejects.toThrow(expectedError);
 });
+
+describe.each([
+    ["one connection", ["connection_1"]],
+    ["multiple connections", ["connection_1", "connection_2"]],
+])(
+    "calls endpoint with provided data for %s",
+    (message: string, connectionIDs: string[]) => {
+        const expectedData = "test";
+
+        let response: boolean;
+        let clientCalls: SinonSpyCall<
+            [PostToConnectionCommand],
+            Promise<PostToConnectionCommandOutput>
+        >[];
+
+        beforeAll(async () => {
+            awsMockClient.reset();
+
+            response = await client.sendData(expectedData, connectionIDs);
+            clientCalls = awsMockClient.commandCalls(PostToConnectionCommand);
+        });
+
+        test("calls the endpoint once per connection ID", () => {
+            expect(clientCalls).toHaveLength(connectionIDs.length);
+            for (const call of clientCalls) {
+                expect(call.args).toHaveLength(1);
+            }
+        });
+
+        test("provides the given data to each connection ID", () => {
+            const inputs = clientCalls.map((call) => call.args[0].input);
+            for (const connectionID of connectionIDs) {
+                expect(inputs).toContainEqual({
+                    Data: Buffer.from(expectedData),
+                    ConnectionId: connectionID,
+                });
+            }
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    }
+);
