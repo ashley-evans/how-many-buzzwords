@@ -42,6 +42,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    WebSocketClientLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub WebSocketClientLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer containing web socket API client implementations
+            CompatibleRuntimes:
+                - nodejs14.x
+            ContentUri: ./libs/web-socket-client-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
