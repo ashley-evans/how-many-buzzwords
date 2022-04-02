@@ -51,9 +51,17 @@ class AWSWebSocketClient implements WebSocketClient {
 
         try {
             await this.client.send(new PostToConnectionCommand(input));
+            console.log(
+                `Successfully sent data: ${data} to connection ID: ${connectionID}`
+            );
+
             return true;
         } catch (ex) {
             if (this.isGoneException(ex)) {
+                console.log(
+                    `Connection with ID: ${connectionID} no longer exists`
+                );
+
                 return false;
             }
 

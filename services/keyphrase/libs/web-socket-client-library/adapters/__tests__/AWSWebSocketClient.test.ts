@@ -17,6 +17,10 @@ const awsMockClient = mockClient(ApiGatewayManagementApiClient);
 
 const client = new AWSWebSocketClient(EXPECTED_ENDPOINT);
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 describe.each([
     ["string", "test"],
     ["JSON object", JSON.stringify({ test: "test" })],
