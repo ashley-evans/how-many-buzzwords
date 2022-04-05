@@ -33,4 +33,4 @@ jobs:
                   npm --prefix ${{ inputs.path }} ci
             - name: Run Unit Tests
               run: |
-                  ./node_modules/.bin/jest --testPathPattern=${{ input.path }}
+                  ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }}
