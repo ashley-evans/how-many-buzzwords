@@ -2,6 +2,13 @@ name: Validate and Deploy
 on: [push]
 
 jobs:
+    build-deploy-object-validator-package:
+        name: Build and Deploy Object Validator Package
+        runs-on: ubuntu-latest
+        steps:
+            - uses: ./.github/workflows/package.yml
+              with:
+                  path: ./packages/object-validator
     compile:
         runs-on: ubuntu-latest
         steps:
