@@ -35,7 +35,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Running TSC..."
-$root_dir/node_modules/.bin/tsc --project $root_dir/tsconfig.build.json
+$root_dir/node_modules/.bin/tsc --project $root_dir/services
 
 if [ $? -ne 0 ]; then
     exit 1
