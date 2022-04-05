@@ -19,7 +19,7 @@ jobs:
                   npm --prefix ${{ inputs.path }} ci
             - name: Compile Package
               run: |
-                  ./node_modules/.bin/tsc --project ${{ input.path }}
+                  ./node_modules/.bin/tsc --project ${{ inputs.path }}
     unit-test:
         runs-on: ubuntu-latest
         steps:
