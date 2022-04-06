@@ -3,6 +3,7 @@ on: [push]
 
 jobs:
     build-deploy-object-validator-package:
+        name: Object Validator Package
         uses: ./.github/workflows/package.yml
         with:
             path: ./packages/object-validator
