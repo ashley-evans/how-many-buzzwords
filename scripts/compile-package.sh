@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Copying required deployment files to built directory..."
-$root_dir/node_modules/.bin/copyfiles -E -u 1 \
+$root_dir/node_modules/.bin/copyfiles -E -u 2 \
     -e "**/node_modules/**" \
     "$path/package.json" \
     $output_path
