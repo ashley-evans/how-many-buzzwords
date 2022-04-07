@@ -49,6 +49,6 @@ jobs:
                   ./scripts/compile-package.sh -c -p ${{ inputs.path }}
             - name: Publish Package
               run: |
-                  npm publish ./dist
+                  ./scripts/publish-package.sh -p ./dist
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
