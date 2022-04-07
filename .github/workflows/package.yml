@@ -43,6 +43,7 @@ jobs:
               with:
                   node-version: "14"
                   scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Compile Package
               run: |
                   ./scripts/compile-package.sh -c -p ${{ inputs.path }}
