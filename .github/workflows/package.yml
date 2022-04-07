@@ -42,6 +42,7 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
             - name: Compile Package
               run: |
                   ./scripts/compile-package.sh -c -p ${{ inputs.path }}
@@ -49,4 +50,4 @@ jobs:
               run: |
                   npm publish ./dist
               env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_PACKAGE_PUBLISH_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
