@@ -26,7 +26,7 @@ jobs:
                   node-version: "14"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
             - name: Run Unit Tests
               run: |
                   npm run test:unit
@@ -44,7 +44,7 @@ jobs:
                   cors: "*"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
             - name: Run Integration Tests
               run: |
                   npm run test:integration
@@ -75,7 +75,7 @@ jobs:
                   node-version: "14"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
             - name: Run linters
               run: |
                   npm run lint
