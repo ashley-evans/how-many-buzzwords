@@ -25,7 +25,13 @@ if [ -z $path ]; then
 fi
 
 package_name=$(jq -r .name $path/package.json)
-deployed_version=$(npm view $package_name version --registry https://npm.pkg.github.com)
+deployed_version=$(npm view $package_name version --registry https://npm.pkg.github.com --silent)
+
+if [ $? -ne 0 ]; then
+    echo "Package does not exist."
+    exit 0
+fi
+
 file_version=$(jq -r .version $path/package.json)
 
 if [ "$deployed_version" = "$file_version" ]; then
