@@ -67,7 +67,7 @@ jobs:
                   ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }}
     publish:
         runs-on: ubuntu-latest
-        needs: [compile, format, lint, unit-test]
+        needs: [compile, audit, format, lint, unit-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         steps:
             - uses: actions/checkout@v2
