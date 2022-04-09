@@ -6,6 +6,16 @@ Parameters:
         Description: Environment name suffixed to service resources
         Default: dev
 Resources:
+    CrawlNodeDependencyLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub CrawlNodeDependencyLayer-${EnvironmentNameSuffix}
+            ContentUri: ./functions
+            CompatibleRuntimes:
+                - nodejs14.x
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     CrawlCommonLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -107,7 +117,7 @@ Resources:
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: ContentRepositoryLibraryLayer
-                - Ref: CrawlCommonLayer
+                - Ref: CrawlNodeDependencyLayer
             Timeout: 120
             MemorySize: 2048
             Environment:
@@ -188,7 +198,7 @@ Resources:
             Description: GETs the pathnames crawled from a given URL
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
-                - Ref: CrawlCommonLayer
+                - Ref: CrawlNodeDependencyLayer
             Timeout: 6
             Policies:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -259,7 +269,7 @@ Resources:
             Description: Returns whether the URL has been crawled within configured time
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
-                - Ref: CrawlCommonLayer
+                - Ref: CrawlNodeDependencyLayer
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
@@ -273,7 +283,7 @@ Resources:
             Description: GETs any stored content for a given URL
             Layers:
                 - Ref: ContentRepositoryLibraryLayer
-                - Ref: CrawlCommonLayer
+                - Ref: CrawlNodeDependencyLayer
             Timeout: 6
             Policies:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
