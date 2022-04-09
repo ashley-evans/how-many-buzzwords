@@ -14,6 +14,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Compile Project
               run: |
                   npm run compile:clean
@@ -24,6 +26,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
                   npm run ci:sequential
@@ -37,6 +41,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Setup DynamoDB local
               uses: rrainn/dynamodb-action@v2.0.1
               with:
@@ -63,6 +69,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Run formatters
               run: |
                   npm run format:check
@@ -73,6 +81,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
                   npm run ci:sequential
@@ -86,6 +96,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
                   npm run audit:parallel
@@ -111,6 +123,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
@@ -149,6 +163,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
