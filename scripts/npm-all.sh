@@ -11,7 +11,7 @@ usage() {
 sequential() {
     for folder in $2; do
         echo "Running npm $1 in $folder..."
-        npm --prefix $folder $1
+        npm --prefix $folder $1 --loglevel verbose
 
         if [ $? -ne 0 ]; then
             exit 1
