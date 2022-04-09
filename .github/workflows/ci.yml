@@ -19,6 +19,8 @@ jobs:
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     unit-test:
         runs-on: ubuntu-latest
         steps:
@@ -31,6 +33,8 @@ jobs:
             - name: Install Dependencies
               run: |
                   npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Unit Tests
               run: |
                   npm run test:unit
@@ -51,6 +55,8 @@ jobs:
             - name: Install Dependencies
               run: |
                   npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Integration Tests
               run: |
                   npm run test:integration
@@ -69,8 +75,6 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
-                  scope: "@ashley-evans"
-                  registry-url: "https://npm.pkg.github.com"
             - name: Run formatters
               run: |
                   npm run format:check
@@ -89,6 +93,8 @@ jobs:
             - name: Run linters
               run: |
                   npm run lint
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     audit:
         runs-on: ubuntu-latest
         steps:
@@ -101,6 +107,8 @@ jobs:
             - name: Audit Dependencies
               run: |
                   npm run audit:parallel
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     deploy-crawl-service:
         runs-on: ubuntu-latest
         needs:
@@ -136,6 +144,8 @@ jobs:
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Cache deployment packages
               uses: actions/cache@v2
               env:
@@ -176,6 +186,8 @@ jobs:
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Cache deployment packages
               uses: actions/cache@v2
               env:
