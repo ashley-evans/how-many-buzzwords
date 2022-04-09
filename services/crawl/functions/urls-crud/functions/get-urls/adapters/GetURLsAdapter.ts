@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ObjectValidator } from "buzzword-aws-crawl-common";
+import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
 import { StatusCodes } from "http-status-codes";
 
 import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
