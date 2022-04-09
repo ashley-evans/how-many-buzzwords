@@ -9,7 +9,10 @@
         "registry": "https://npm.pkg.github.com"
     },
     "main": "./index.js",
-    "dependencies": {
-        "ajv": "8.8.2"
+    "devDependencies": {
+        "ajv": "^8.8.2"
+    },
+    "peerDependencies": {
+        "ajv": "^8.8.2"
     }
 }
