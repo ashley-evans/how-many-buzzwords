@@ -3,7 +3,10 @@ import {
     Repository,
     URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
-import { ObjectValidator, AjvValidator } from "buzzword-aws-crawl-common";
+import {
+    ObjectValidator,
+    AjvValidator,
+} from "@ashley-evans/buzzword-object-validator";
 
 import {
     RecentCrawlEvent,

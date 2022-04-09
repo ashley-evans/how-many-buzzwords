@@ -1,7 +1,7 @@
 import { mock } from "jest-mock-extended";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { StatusCodes } from "http-status-codes";
-import { ObjectValidator } from "buzzword-aws-crawl-common";
+import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
 
 import { GetURLsAdapter, ValidParameters } from "../GetURLsAdapter";
 import { PathnameResponse, GetURLsPort } from "../../ports/GetURLsPort";

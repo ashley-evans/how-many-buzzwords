@@ -2,6 +2,11 @@ name: Validate and Deploy
 on: [push]
 
 jobs:
+    build-deploy-object-validator-package:
+        name: Object Validator Package
+        uses: ./.github/workflows/package.yml
+        with:
+            path: ./packages/object-validator
     compile:
         runs-on: ubuntu-latest
         steps:
@@ -9,9 +14,13 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     unit-test:
         runs-on: ubuntu-latest
         steps:
@@ -19,9 +28,13 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Unit Tests
               run: |
                   npm run test:unit
@@ -32,6 +45,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Setup DynamoDB local
               uses: rrainn/dynamodb-action@v2.0.1
               with:
@@ -39,7 +54,9 @@ jobs:
                   cors: "*"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Integration Tests
               run: |
                   npm run test:integration
@@ -68,9 +85,13 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm run ci:parallel
+                  npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
               run: |
                   npm run lint
@@ -81,9 +102,13 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
                   npm run audit:parallel
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     deploy-crawl-service:
         runs-on: ubuntu-latest
         needs:
@@ -106,6 +131,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
@@ -117,6 +144,8 @@ jobs:
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Cache deployment packages
               uses: actions/cache@v2
               env:
@@ -144,6 +173,8 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
@@ -155,6 +186,8 @@ jobs:
             - name: Compile Project
               run: |
                   npm run compile:clean
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Cache deployment packages
               uses: actions/cache@v2
               env:

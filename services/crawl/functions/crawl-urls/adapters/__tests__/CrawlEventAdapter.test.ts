@@ -1,4 +1,4 @@
-import { ObjectValidator } from "buzzword-aws-crawl-common";
+import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
 import { mock } from "jest-mock-extended";
 
 import { CrawlPort } from "../../ports/CrawlPort";

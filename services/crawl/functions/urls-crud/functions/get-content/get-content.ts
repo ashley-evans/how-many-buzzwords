@@ -4,7 +4,10 @@ import {
     ContentRepository,
     S3Repository,
 } from "buzzword-aws-crawl-content-repository-library";
-import { AjvValidator, ObjectValidator } from "buzzword-aws-crawl-common";
+import {
+    AjvValidator,
+    ObjectValidator,
+} from "@ashley-evans/buzzword-object-validator";
 
 import GetContentDomain from "./domain/GetContentDomain";
 import {

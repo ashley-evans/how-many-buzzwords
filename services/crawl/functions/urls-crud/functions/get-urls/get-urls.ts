@@ -4,7 +4,10 @@ import {
     Repository,
     URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
-import { AjvValidator, ObjectValidator } from "buzzword-aws-crawl-common";
+import {
+    AjvValidator,
+    ObjectValidator,
+} from "@ashley-evans/buzzword-object-validator";
 
 import GetURLsDomain from "./domain/GetURLsDomain";
 import { GetURLsAdapter, ValidParameters } from "./adapters/GetURLsAdapter";

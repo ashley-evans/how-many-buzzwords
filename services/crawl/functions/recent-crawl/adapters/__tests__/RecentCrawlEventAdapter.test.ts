@@ -1,5 +1,5 @@
 import { mock } from "jest-mock-extended";
-import { ObjectValidator } from "buzzword-aws-crawl-common";
+import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
 
 import {
     RecentCrawlEventAdapter,
