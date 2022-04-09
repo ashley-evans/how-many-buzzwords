@@ -90,11 +90,11 @@ jobs:
             - name: Install Dependencies
               run: |
                   npm run ci:sequential
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
               run: |
                   npm run lint
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     audit:
         runs-on: ubuntu-latest
         steps:
