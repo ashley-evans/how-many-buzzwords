@@ -16,7 +16,7 @@ jobs:
               id: filter
               with:
                   base: master
-                  filter: |
+                  filters: |
                       package:
                           - ${{ inputs.path }}/**
     compile:
