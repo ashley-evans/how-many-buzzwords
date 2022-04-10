@@ -1,7 +1,13 @@
 on:
     workflow_call:
         inputs:
+            service_cache_key:
+                required: true
+                type: string
             path:
+                required: true
+                type: string
+            deploy_script_path:
                 required: true
                 type: string
 
@@ -114,3 +120,38 @@ jobs:
             - name: Run Integration Tests
               run: |
                   ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }} --verbose --group=integration
+    deploy:
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: read
+            packages: read
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
+            - uses: aws-actions/setup-sam@v1
+            - uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-region: eu-west-2
+                  role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+            - name: Cache deployment packages
+              uses: actions/cache@v2
+              env:
+                  cache-name: cache-deployment-packages
+              with:
+                  path: |
+                      .aws-sam/cache/**
+                      .aws-sam/build.toml
+                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-${{ hashFiles('${{ inputs.path }}/**/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-
+            - name: Deploy stack
+              run: |
+                  ${{ inputs.deploy_script_path }} -e production
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
