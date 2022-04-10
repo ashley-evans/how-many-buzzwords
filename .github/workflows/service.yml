@@ -10,6 +10,9 @@ on:
             deploy_script_path:
                 required: true
                 type: string
+        secrets:
+            deploy_role:
+                required: true
 
 jobs:
     compile:
@@ -138,7 +141,7 @@ jobs:
             - uses: aws-actions/configure-aws-credentials@v1
               with:
                   aws-region: eu-west-2
-                  role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+                  role-to-assume: ${{ secrets.deploy_role }}
             - name: Cache deployment packages
               uses: actions/cache@v2
               env:

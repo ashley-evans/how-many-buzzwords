@@ -14,6 +14,7 @@ jobs:
             service_cache_key: crawl-service
             path: ./services/crawl
             deploy_script_path: ./scripts/deploy-crawl-service.sh
+            deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
     build-deploy-keyphrase-service:
         name: Keyphrase Service
         uses: ./.github/workflows/service.yml
@@ -21,6 +22,7 @@ jobs:
             service_cache_key: keyphrase-service
             path: ./services/keyphrase
             deploy_script_path: ./scripts/deploy-keyphrase-service.sh
+            deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
     compile:
         runs-on: ubuntu-latest
         steps:
