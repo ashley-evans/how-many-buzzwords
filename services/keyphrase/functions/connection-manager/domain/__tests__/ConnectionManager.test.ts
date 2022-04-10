@@ -46,3 +46,29 @@ describe("given a new connection", () => {
         expect(response).toEqual(true);
     });
 });
+
+test("returns failure given the storage of a new connection fails", async () => {
+    jest.resetAllMocks();
+    mockRepository.storeConnection.mockResolvedValue(false);
+
+    const response = await manager.storeConnection(
+        CONNECTION_ID,
+        CALLBACK_URL,
+        BASE_URL
+    );
+
+    expect(response).toEqual(false);
+});
+
+test("returns failure if an exception occurs during new connection storage", async () => {
+    jest.resetAllMocks();
+    mockRepository.storeConnection.mockRejectedValue(new Error());
+
+    const response = await manager.storeConnection(
+        CONNECTION_ID,
+        CALLBACK_URL,
+        BASE_URL
+    );
+
+    expect(response).toEqual(false);
+});

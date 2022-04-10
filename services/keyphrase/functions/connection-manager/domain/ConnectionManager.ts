@@ -18,9 +18,14 @@ class ConnectionManager implements ConnectionManagerPort {
             callbackURL,
         };
 
-        await this.repository.storeConnection(connection, baseURL.hostname);
-
-        return true;
+        try {
+            return await this.repository.storeConnection(
+                connection,
+                baseURL.hostname
+            );
+        } catch {
+            return false;
+        }
     }
 
     deleteConnection(connectionID: string): Promise<boolean> {
