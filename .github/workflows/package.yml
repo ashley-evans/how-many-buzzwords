@@ -85,7 +85,7 @@ jobs:
                   npm --prefix ${{ inputs.path }} ci
             - name: Run Unit Tests
               run: |
-                  ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }}
+                  ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }} --verbose
     publish:
         runs-on: ubuntu-latest
         needs: [compile, audit, format, lint, unit-test]
