@@ -7,6 +7,16 @@ jobs:
         uses: ./.github/workflows/package.yml
         with:
             path: ./packages/object-validator
+    build-deploy-crawl-service:
+        name: Crawl Service
+        uses: ./.github/workflows/service.yml
+        with:
+            path: ./services/crawl
+    build-deploy-keyphrase-service:
+        name: Keyphrase Service
+        uses: ./.github/workflows/service.yml
+        with:
+            path: ./services/keyphrase
     compile:
         runs-on: ubuntu-latest
         steps:

@@ -51,8 +51,6 @@
         "test": "npm run test:unit && npm run test:integration",
         "test:unit": "node node_modules/.bin/jest --verbose --group=-integration",
         "test:integration": "node node_modules/.bin/jest --verbose --group=integration",
-        "prepare": "husky install",
-        "compile": "./scripts/compile.sh",
-        "compile:clean": "./scripts/compile.sh -c"
+        "prepare": "husky install"
     }
 }
