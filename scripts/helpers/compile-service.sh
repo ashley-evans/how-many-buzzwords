@@ -32,13 +32,14 @@ if [ -z $path ]; then
     usage
 fi
 
-root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+current_dir=$( pwd )
+script_dir=$( dirname "${BASH_SOURCE[0]}" )
+root_dir=$( dirname "$( dirname $script_dir )" )
+path=$(realpath --relative-to $current_dir $path)
 
 if [ -z $output_path ]; then
     output_path="$root_dir/dist"
 fi
-
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 if [ $clean ]; then
     echo "Clean installing..."
@@ -47,8 +48,10 @@ if [ $clean ]; then
         exit 1
     fi
 
+    npm --prefix $root_dir ci
     $script_dir/npm-all.sh -c ci -r $path
 else
+    npm --prefix $root_dir ci
     $script_dir/npm-all.sh -c i -r $path
 fi
 
@@ -71,4 +74,4 @@ $root_dir/node_modules/.bin/copyfiles -E -u 2 \
     "$path/**/package*.json" \
     "$path/**/Makefile" \
     "$path/**/*.asl.json" \
-    dist
+    $output_path

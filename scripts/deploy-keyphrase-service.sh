@@ -27,7 +27,13 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
-template_path="$root_dir/dist/keyphrase/keyphrase-template.yml"
+$script_dir/helpers/compile-service.sh -c -p $root_dir/services/keyphrase
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+template_path="$root_dir/dist/keyphrase-template.yml"
 if [ ! -f $template_path ]; then
     echo "Error: Cannot find template in built files."
     exit 1

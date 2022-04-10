@@ -33,10 +33,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "Building source code"
-
-npm --prefix $root_dir run compile:clean
-
 echo "Deploying Crawl Service"
 
 $script_dir/deploy-crawl-service.sh -e $environment
