@@ -54,7 +54,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm run ci:sequential
+                  npm ci
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
