@@ -150,7 +150,7 @@ jobs:
                   path: |
                       .aws-sam/cache/**
                       .aws-sam/build.toml
-                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-${{ hashFiles(format('${0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
                   restore-keys: |
                       ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-
             - name: Deploy stack
