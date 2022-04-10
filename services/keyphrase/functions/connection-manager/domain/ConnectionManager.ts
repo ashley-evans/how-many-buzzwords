@@ -28,8 +28,12 @@ class ConnectionManager implements ConnectionManagerPort {
         }
     }
 
-    deleteConnection(connectionID: string): Promise<boolean> {
-        throw new Error("Method not implemented." + connectionID);
+    async deleteConnection(connectionID: string): Promise<boolean> {
+        try {
+            return await this.repository.deleteConnection(connectionID);
+        } catch {
+            return false;
+        }
     }
 }
 

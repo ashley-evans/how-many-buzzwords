@@ -72,3 +72,46 @@ test("returns failure if an exception occurs during new connection storage", asy
 
     expect(response).toEqual(false);
 });
+
+describe("given a connection deletion request", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockRepository.deleteConnection.mockResolvedValue(true);
+
+        response = await manager.deleteConnection(CONNECTION_ID);
+    });
+
+    test("calls the repository once to delete the connection information", () => {
+        expect(mockRepository.deleteConnection).toHaveBeenCalledTimes(1);
+    });
+
+    test("provides the connection ID to the repository", () => {
+        expect(mockRepository.deleteConnection).toHaveBeenCalledWith(
+            CONNECTION_ID
+        );
+    });
+
+    test("returns success given connection deletion succeeded", () => {
+        expect(response).toEqual(true);
+    });
+});
+
+test("returns failure given the deletion of a connection fails", async () => {
+    jest.resetAllMocks();
+    mockRepository.deleteConnection.mockResolvedValue(false);
+
+    const response = await manager.deleteConnection(CONNECTION_ID);
+
+    expect(response).toEqual(false);
+});
+
+test("returns failure if an exception occurs during connection deletion", async () => {
+    jest.resetAllMocks();
+    mockRepository.deleteConnection.mockRejectedValue(new Error());
+
+    const response = await manager.deleteConnection(CONNECTION_ID);
+
+    expect(response).toEqual(false);
+});
