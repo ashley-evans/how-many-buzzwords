@@ -20,3 +20,17 @@ jobs:
                   ./scripts/helpers/compile-service.sh -c -p ${{ inputs.path }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    audit:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "14"
+                  scope: "@ashley-evans"
+                  registry-url: "https://npm.pkg.github.com"
+            - name: Audit Dependencies
+              run: |
+                  ./scripts/helpers/npm-all.sh -c audit -r ${{ inputs.path }}
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
