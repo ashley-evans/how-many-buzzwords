@@ -36,23 +36,21 @@
         "yargs": "^17.3.1"
     },
     "scripts": {
-        "audit:sequential": "./scripts/npm-all.sh -c \"audit --audit-level=critical\"",
-        "audit:parallel": "./scripts/npm-all.sh -c \"audit --audit-level=critical\" -p",
+        "audit:sequential": "./scripts/helpers/npm-all.sh -c audit",
+        "audit:parallel": "./scripts/helpers/npm-all.sh -c audit -p",
         "lint-js": "node node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
         "lint-packages": "node node_modules/.bin/npmPkgJsonLint '.'",
         "lint": "npm run lint-js && npm run lint-packages",
         "format:fix": "npx prettier --write .",
         "format:check": "npx prettier --check .",
-        "i:sequential": "./scripts/npm-all.sh -c i",
-        "i:parallel": "./scripts/npm-all.sh -c i -p",
-        "ci:sequential": "./scripts/npm-all.sh -c ci",
-        "ci:parallel": "./scripts/npm-all.sh -c ci -p",
+        "i:sequential": "./scripts/helpers/npm-all.sh -c i",
+        "i:parallel": "./scripts/helpers/npm-all.sh -c i -p",
+        "ci:sequential": "./scripts/helpers/npm-all.sh -c ci",
+        "ci:parallel": "./scripts/helpers/npm-all.sh -c ci -p",
         "clean": "rm -rf `find . -type d -name node_modules`",
         "test": "npm run test:unit && npm run test:integration",
         "test:unit": "node node_modules/.bin/jest --verbose --group=-integration",
         "test:integration": "node node_modules/.bin/jest --verbose --group=integration",
-        "prepare": "husky install",
-        "compile": "./scripts/compile.sh",
-        "compile:clean": "./scripts/compile.sh -c"
+        "prepare": "husky install"
     }
 }
