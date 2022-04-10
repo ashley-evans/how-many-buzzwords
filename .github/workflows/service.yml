@@ -65,6 +65,14 @@ jobs:
               run: |
                   ./node_modules/.bin/eslint ${{ inputs.path }} --max-warnings 0 --ext .js,.jsx,.ts,.tsx
                   ./node_modules/.bin/npmPkgJsonLint ${{ inputs.path }}
+    validate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: scottbrenner/cfn-lint-action@v2
+            - name: Validate Templates
+              run: |
+                  xargs -n1 -r0a <(find ${{ inputs.path }} -name *-template.yml -print0) cfn-lint
     unit-test:
         runs-on: ubuntu-latest
         steps:
