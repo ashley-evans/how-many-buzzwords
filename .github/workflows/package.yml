@@ -30,7 +30,7 @@ jobs:
                   node-version: "14"
             - name: Compile Package
               run: |
-                  ./scripts/compile-package.sh -c -p ${{ inputs.path }}
+                  ./scripts/helpers/compile-package.sh -c -p ${{ inputs.path }}
     audit:
         runs-on: ubuntu-latest
         steps:
@@ -99,7 +99,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Compile Package
               run: |
-                  ./scripts/compile-package.sh -c -p ${{ inputs.path }}
+                  ./scripts/helpers/compile-package.sh -c -p ${{ inputs.path }}
             - name: Publish Package
               run: |
                   ./scripts/publish-package.sh -p ./dist
