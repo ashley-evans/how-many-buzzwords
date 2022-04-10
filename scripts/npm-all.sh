@@ -4,7 +4,8 @@ usage() {
     echo "Usage:
     -c [Mandatory: Executes given npm command on all modules]
     -p [Flag to execute the given npm command in parallel threads]
-    -t [Number of threads to execute npm command across. Default 5]" 1>&2;
+    -t [Number of threads to execute npm command across. Default 5]
+    -r [Path to root folder to scope search]" 1>&2;
     exit 1; 
 }
 
@@ -56,7 +57,7 @@ parallel() {
     exit 0
 }
 
-while getopts "c:pt:h" opt; do
+while getopts "c:pt:r:h" opt; do
     case $opt in
         c)
             cmd=$OPTARG
@@ -66,6 +67,9 @@ while getopts "c:pt:h" opt; do
             ;;
         t)
             threads=$OPTARG
+            ;;
+        r)
+            root_dir=$OPTARG
             ;;
         h)
             usage
@@ -80,7 +84,9 @@ if [[ -z $cmd ]]; then
     usage
 fi
 
-root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+if [ -z $root_dir ]; then
+    root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+fi
 
 folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package.json -printf '%h\n')
 
