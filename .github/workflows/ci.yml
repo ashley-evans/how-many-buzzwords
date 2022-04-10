@@ -32,7 +32,7 @@ jobs:
             - uses: scottbrenner/cfn-lint-action@v2
             - name: Validate Templates
               run: |
-                  xargs -n1 -r0a <(find -name *-template.yml -print0) cfn-lint
+                  xargs -n1 -r0a <(find ./templates/ -name *-template.yml -print0) cfn-lint
     format:
         runs-on: ubuntu-latest
         steps:
@@ -42,7 +42,7 @@ jobs:
                   node-version: "14"
             - name: Run formatters
               run: |
-                  npm run format:check
+                  npx prettier --check . '!services/**' '!packages/**'
     lint:
         runs-on: ubuntu-latest
         steps:
@@ -59,7 +59,8 @@ jobs:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
               run: |
-                  npm run lint
+                  ./node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx --ignore-pattern 'services/**' --ignore-pattern 'packages/**'
+                  ./node_modules/.bin/npmPkgJsonLint ./package.json
     audit:
         runs-on: ubuntu-latest
         steps:
@@ -71,6 +72,6 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
-                  npm run audit:parallel
+                  npm audit
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
