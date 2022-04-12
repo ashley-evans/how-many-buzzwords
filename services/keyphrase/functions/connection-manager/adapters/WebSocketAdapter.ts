@@ -144,13 +144,29 @@ class WebSocketAdapter implements APIGatewayAdapter {
     private async deleteConnection(
         connectionID: string
     ): Promise<APIGatewayProxyResult> {
-        await this.port.deleteConnection(connectionID);
+        try {
+            const deleted = await this.port.deleteConnection(connectionID);
 
-        return this.createResponse(
-            StatusCodes.OK,
-            "text/plain",
-            "Successfully disconnected."
-        );
+            if (deleted) {
+                return this.createResponse(
+                    StatusCodes.OK,
+                    "text/plain",
+                    "Successfully disconnected."
+                );
+            }
+
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                "text/plain",
+                "Failed to disconnect."
+            );
+        } catch {
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                "text/plain",
+                "An error occurred during disconnection."
+            );
+        }
     }
 
     private createResponse(

@@ -311,6 +311,7 @@ describe("given a valid disconnect event", () => {
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockPort.deleteConnection.mockResolvedValue(true);
 
         response = await adapter.handleRequest(event);
     });
@@ -338,5 +339,75 @@ describe("given a valid disconnect event", () => {
 
     test("returns success message in response body", () => {
         expect(response.body).toEqual("Successfully disconnected.");
+    });
+});
+
+describe("given the connection deletion fails", () => {
+    const event = createEvent(
+        CONNECTION_ID,
+        CALLBACK_DOMAIN,
+        CALLBACK_STAGE,
+        ValidRouteKeys.disconnect
+    );
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.deleteConnection.mockResolvedValue(false);
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test("returns 500 response", () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test("returns plain text mime type in content type header", () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                "Content-Type": "text/plain",
+            })
+        );
+    });
+
+    test("returns failure message in response body", () => {
+        expect(response.body).toEqual("Failed to disconnect.");
+    });
+});
+
+describe("given an error occurs during the deletion of the connection", () => {
+    const event = createEvent(
+        CONNECTION_ID,
+        CALLBACK_DOMAIN,
+        CALLBACK_STAGE,
+        ValidRouteKeys.disconnect
+    );
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.deleteConnection.mockRejectedValue(new Error());
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test("returns 500 response", () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test("returns plain text mime type in content type header", () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                "Content-Type": "text/plain",
+            })
+        );
+    });
+
+    test("returns failure message in response body", () => {
+        expect(response.body).toEqual(
+            "An error occurred during disconnection."
+        );
     });
 });
