@@ -12,8 +12,8 @@ enum ValidRouteKeys {
 }
 
 type ValidEvent = {
-    queryStringParameters: {
-        baseURL: string;
+    queryStringParameters?: {
+        baseURL?: string;
     };
     requestContext: {
         connectionId: string;
@@ -31,9 +31,10 @@ const schema: JSONSchemaType<ValidEvent> = {
             properties: {
                 baseURL: {
                     type: "string",
+                    nullable: true,
                 },
             },
-            required: ["baseURL"],
+            nullable: true,
         },
         requestContext: {
             type: "object",
@@ -55,7 +56,7 @@ const schema: JSONSchemaType<ValidEvent> = {
             required: ["connectionId", "domainName", "stage", "routeKey"],
         },
     },
-    required: ["queryStringParameters", "requestContext"],
+    required: ["requestContext"],
 };
 
 class WebSocketAdapter implements APIGatewayAdapter {
@@ -69,13 +70,36 @@ class WebSocketAdapter implements APIGatewayAdapter {
         event: APIGatewayProxyEvent
     ): Promise<APIGatewayProxyResult> {
         let validatedEvent: ValidEvent;
-        let validatedBaseURL: URL;
         try {
             validatedEvent = this.validator.validate(event);
+        } catch (ex) {
+            console.error(ex);
+            return this.createResponse(
+                StatusCodes.BAD_REQUEST,
+                "text/plain",
+                "Invalid event"
+            );
+        }
+
+        if (validatedEvent.requestContext.routeKey == ValidRouteKeys.connect) {
+            return this.storeNewConnection(validatedEvent);
+        }
+
+        return this.deleteConnection(
+            validatedEvent.requestContext.connectionId
+        );
+    }
+
+    private async storeNewConnection(
+        validatedEvent: ValidEvent
+    ): Promise<APIGatewayProxyResult> {
+        let validatedBaseURL: URL;
+        try {
             validatedBaseURL = this.parseURL(
-                validatedEvent.queryStringParameters.baseURL
+                validatedEvent.queryStringParameters?.baseURL
             );
         } catch (ex) {
+            console.error(ex);
             return this.createResponse(
                 StatusCodes.BAD_REQUEST,
                 "text/plain",
@@ -117,6 +141,18 @@ class WebSocketAdapter implements APIGatewayAdapter {
         }
     }
 
+    private async deleteConnection(
+        connectionID: string
+    ): Promise<APIGatewayProxyResult> {
+        await this.port.deleteConnection(connectionID);
+
+        return this.createResponse(
+            StatusCodes.OK,
+            "text/plain",
+            "Successfully disconnected."
+        );
+    }
+
     private createResponse(
         statusCode: StatusCodes,
         contentType: string,
@@ -131,7 +167,11 @@ class WebSocketAdapter implements APIGatewayAdapter {
         };
     }
 
-    private parseURL(url: string): URL {
+    private parseURL(url?: string): URL {
+        if (!url) {
+            throw "No URL provided.";
+        }
+
         if (!isNaN(parseInt(url))) {
             throw "Number provided when expecting URL.";
         }

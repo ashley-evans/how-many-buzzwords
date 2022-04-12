@@ -47,6 +47,8 @@ function createEvent(
         event.queryStringParameters = {
             baseURL: baseURL.toString(),
         };
+    } else {
+        event.queryStringParameters = null;
     }
 
     return event;
@@ -101,6 +103,16 @@ describe.each([
             CALLBACK_STAGE,
             "test invalid route key",
             BASE_URL
+        ),
+    ],
+    [
+        "a missing base URL on a new connection request",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            CALLBACK_STAGE,
+            ValidRouteKeys.connect,
+            undefined
         ),
     ],
     [
@@ -189,6 +201,10 @@ describe.each([
                 EXPECTED_CALLBACK_URL,
                 expectedBaseURL
             );
+        });
+
+        test("does not call port to remove connection details", () => {
+            expect(mockPort.deleteConnection).not.toHaveBeenCalled();
         });
 
         test("returns 200 response", () => {
@@ -280,5 +296,47 @@ describe("given an error occurs during the storage of the new connection details
         expect(response.body).toEqual(
             "An error occurred during storage of connection information."
         );
+    });
+});
+
+describe("given a valid disconnect event", () => {
+    const event = createEvent(
+        CONNECTION_ID,
+        CALLBACK_DOMAIN,
+        CALLBACK_STAGE,
+        ValidRouteKeys.disconnect
+    );
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test("calls port to remove connection details", () => {
+        expect(mockPort.deleteConnection).toBeCalledTimes(1);
+        expect(mockPort.deleteConnection).toHaveBeenCalledWith(CONNECTION_ID);
+    });
+
+    test("does not call port to add new connection details", () => {
+        expect(mockPort.storeConnection).not.toHaveBeenCalled();
+    });
+
+    test("returns 200 response", () => {
+        expect(response.statusCode).toEqual(StatusCodes.OK);
+    });
+
+    test("returns plain text mime type in content type header", () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                "Content-Type": "text/plain",
+            })
+        );
+    });
+
+    test("returns success message in response body", () => {
+        expect(response.body).toEqual("Successfully disconnected.");
     });
 });
