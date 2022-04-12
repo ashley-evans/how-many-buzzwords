@@ -254,20 +254,22 @@ Resources:
         Properties:
             BillingMode: PAY_PER_REQUEST
             AttributeDefinitions:
-                - AttributeName: ConnectionId
+                - AttributeName: ConnectionID
                   AttributeType: S
-                - AttributeName: SearchKey
+                - AttributeName: ListeningURL
                   AttributeType: S
             KeySchema:
-                - AttributeName: ConnectionId
+                - AttributeName: ConnectionID
                   KeyType: HASH
             StreamSpecification:
                 StreamViewType: NEW_IMAGE
             GlobalSecondaryIndexes:
-                - IndexName: SearchKeyIndex
+                - IndexName: ListeningConnectionsIndex
                   KeySchema:
-                      - AttributeName: SearchKey
+                      - AttributeName: ListeningURL
                         KeyType: HASH
+                      - AttributeName: ConnectionID
+                        KeyType: RANGE
                   Projection:
                       ProjectionType: ALL
     ConnectionManagerRole:
@@ -289,6 +291,7 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
+                                - dynamodb:DescribeTable
                                 - dynamodb:PutItem
                                 - dynamodb:DeleteItem
                             Resource: !GetAtt ActiveConnectionsTable.Arn
@@ -304,13 +307,10 @@ Resources:
             CodeUri: ./functions/connection-manager
             Description: Manages active web socket connections
             Layers:
-                - Ref: KeyphraseNodeDependencyLayer
+                - Ref: ActiveConnectionsRepositoryLibraryLayer
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
-                    ERROR_LOGGING_ENABLED: true
-                    SEARCH_KEY: BaseUrl
-                    SEARCH_KEY_PATTERN: '^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$'
     KeyphraseWebSocketGateway:
         Type: AWS::ApiGatewayV2::Api
         Properties:

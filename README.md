@@ -106,10 +106,8 @@ To listen to the results of a crawl in real time use the `test-connect.sh` scrip
 Example usage:
 
 ```shell
-./scripts/testing/test-connect.sh -s dev -u www.example.com
+./scripts/testing/test-connect.sh -s dev -u https://www.example.com
 ```
-
-> Note: The URL cannot contain a protocol.
 
 ## Local Testing of Lambda functions
 

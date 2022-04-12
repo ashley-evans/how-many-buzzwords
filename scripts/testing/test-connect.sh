@@ -28,9 +28,9 @@ if [ -z $suffix ] || [ -z $url ]; then
     usage 
 fi
 
-regex='^(www.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)$'
+regex='^(http(s)?:\/\/)?(www.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)$'
 if [[ ! $url =~ $regex ]]; then
-    echo "Error: Invalid URL provided. The URL must not include any protocol." 1>&2;
+    echo "Error: Invalid URL provided" 1>&2;
     exit 1;
 fi
 
@@ -42,4 +42,4 @@ gateway_physical_id=$(aws cloudformation describe-stack-resource \
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$(dirname "$script_dir")")"
 
-"$root_dir"/node_modules/.bin/wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/\$default?BaseUrl=$url"
+"$root_dir"/node_modules/.bin/wscat -c "wss://$gateway_physical_id.execute-api.eu-west-2.amazonaws.com/\$default?baseURL=$url"
