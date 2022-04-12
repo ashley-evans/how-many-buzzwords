@@ -113,6 +113,16 @@ describe.each([
             "test www.example.com"
         ),
     ],
+    [
+        "an invalid base URL (numeric)",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            CALLBACK_STAGE,
+            ValidRouteKeys.connect,
+            "1"
+        ),
+    ],
 ])("given an event with %s", (message: string, event: APIGatewayProxyEvent) => {
     let response: APIGatewayProxyResult;
 
@@ -143,7 +153,10 @@ describe.each([
     });
 });
 
-describe.each([["base URL with protocol", BASE_URL]])(
+describe.each([
+    ["base URL with protocol", BASE_URL],
+    ["base URL without protocol", BASE_URL.hostname],
+])(
     "given a valid new connection event with a %s",
     (message: string, baseURL: URL | string) => {
         const event = createEvent(

@@ -72,7 +72,7 @@ class WebSocketAdapter implements APIGatewayAdapter {
         let validatedBaseURL: URL;
         try {
             validatedEvent = this.validator.validate(event);
-            validatedBaseURL = new URL(
+            validatedBaseURL = this.parseURL(
                 validatedEvent.queryStringParameters.baseURL
             );
         } catch (ex) {
@@ -113,6 +113,18 @@ class WebSocketAdapter implements APIGatewayAdapter {
             },
             body,
         };
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw "Number provided when expecting URL.";
+        }
+
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${url}`;
+        }
+
+        return new URL(url);
     }
 }
 
