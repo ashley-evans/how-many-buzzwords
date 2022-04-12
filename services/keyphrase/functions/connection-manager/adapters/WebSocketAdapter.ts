@@ -73,11 +73,17 @@ class WebSocketAdapter implements APIGatewayAdapter {
         try {
             validatedEvent = this.validator.validate(event);
         } catch (ex) {
-            console.error(ex);
+            const message = "Invalid event";
+            console.error(
+                `${message}: ${
+                    ex instanceof Error ? ex.message : JSON.stringify(ex)
+                }`
+            );
+
             return this.createResponse(
                 StatusCodes.BAD_REQUEST,
                 "text/plain",
-                "Invalid event"
+                message
             );
         }
 
@@ -132,11 +138,19 @@ class WebSocketAdapter implements APIGatewayAdapter {
                 "text/plain",
                 "Failed to store connection information."
             );
-        } catch {
+        } catch (ex) {
+            const message =
+                "An error occurred during storage of connection information.";
+            console.error(
+                `${message} Error: ${
+                    ex instanceof Error ? ex.message : JSON.stringify(ex)
+                }`
+            );
+
             return this.createResponse(
                 StatusCodes.INTERNAL_SERVER_ERROR,
                 "text/plain",
-                "An error occurred during storage of connection information."
+                message
             );
         }
     }
@@ -160,11 +174,18 @@ class WebSocketAdapter implements APIGatewayAdapter {
                 "text/plain",
                 "Failed to disconnect."
             );
-        } catch {
+        } catch (ex) {
+            const message = "An error occurred during disconnection.";
+            console.error(
+                `${message} Error: ${
+                    ex instanceof Error ? ex.message : JSON.stringify(ex)
+                }`
+            );
+
             return this.createResponse(
                 StatusCodes.INTERNAL_SERVER_ERROR,
                 "text/plain",
-                "An error occurred during disconnection."
+                message
             );
         }
     }
@@ -200,4 +221,4 @@ class WebSocketAdapter implements APIGatewayAdapter {
     }
 }
 
-export { WebSocketAdapter, ValidRouteKeys, ValidEvent };
+export { WebSocketAdapter, ValidRouteKeys };

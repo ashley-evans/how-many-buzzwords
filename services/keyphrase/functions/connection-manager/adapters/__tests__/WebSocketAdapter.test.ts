@@ -54,6 +54,10 @@ function createEvent(
     return event;
 }
 
+beforeAll(() => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+});
+
 describe.each([
     [
         "a missing connection ID",
