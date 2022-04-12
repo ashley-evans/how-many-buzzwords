@@ -49,8 +49,6 @@ function createEvent(
         };
     }
 
-    console.log(event);
-
     return event;
 }
 
@@ -63,6 +61,56 @@ describe.each([
             CALLBACK_STAGE,
             ValidRouteKeys.connect,
             BASE_URL
+        ),
+    ],
+    [
+        "a missing callback domain name",
+        createEvent(
+            CONNECTION_ID,
+            undefined,
+            CALLBACK_STAGE,
+            ValidRouteKeys.connect,
+            BASE_URL
+        ),
+    ],
+    [
+        "a missing callback stage name",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            undefined,
+            ValidRouteKeys.connect,
+            BASE_URL
+        ),
+    ],
+    [
+        "a missing route key",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            CALLBACK_STAGE,
+            undefined,
+            BASE_URL
+        ),
+    ],
+    [
+        "an invalid route key",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            CALLBACK_STAGE,
+            "test invalid route key",
+            BASE_URL
+        ),
+    ],
+    [
+        "an invalid base URL",
+        createEvent(
+            CONNECTION_ID,
+            CALLBACK_DOMAIN,
+            CALLBACK_STAGE,
+            ValidRouteKeys.connect,
+            "test www.example.com"
         ),
     ],
 ])("given an event with %s", (message: string, event: APIGatewayProxyEvent) => {

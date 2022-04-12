@@ -69,8 +69,12 @@ class WebSocketAdapter implements APIGatewayAdapter {
         event: APIGatewayProxyEvent
     ): Promise<APIGatewayProxyResult> {
         let validatedEvent: ValidEvent;
+        let validatedBaseURL: URL;
         try {
             validatedEvent = this.validator.validate(event);
+            validatedBaseURL = new URL(
+                validatedEvent.queryStringParameters.baseURL
+            );
         } catch (ex) {
             return this.createResponse(
                 StatusCodes.BAD_REQUEST,
@@ -87,7 +91,7 @@ class WebSocketAdapter implements APIGatewayAdapter {
         await this.port.storeConnection(
             requestContext.connectionId,
             callbackURL,
-            new URL(validatedEvent.queryStringParameters.baseURL)
+            validatedBaseURL
         );
 
         return this.createResponse(
