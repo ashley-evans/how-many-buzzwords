@@ -154,7 +154,8 @@ describe.each([
 });
 
 describe.each([
-    ["base URL with protocol", BASE_URL],
+    ["base URL with https protocol", BASE_URL],
+    ["base URL with http protocol", new URL("http://www.example.com")],
     ["base URL without protocol", BASE_URL.hostname],
 ])(
     "given a valid new connection event with a %s",
@@ -171,6 +172,7 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            mockPort.storeConnection.mockResolvedValue(true);
 
             response = await adapter.handleRequest(event);
         });
@@ -206,3 +208,77 @@ describe.each([
         });
     }
 );
+
+describe("given the new connection details fail to be stored", () => {
+    const event = createEvent(
+        CONNECTION_ID,
+        CALLBACK_DOMAIN,
+        CALLBACK_STAGE,
+        ValidRouteKeys.connect,
+        BASE_URL
+    );
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.storeConnection.mockResolvedValue(false);
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test("returns 500 response", () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test("returns plain text mime type in content type header", () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                "Content-Type": "text/plain",
+            })
+        );
+    });
+
+    test("returns failure message in response body", () => {
+        expect(response.body).toEqual(
+            "Failed to store connection information."
+        );
+    });
+});
+
+describe("given an error occurs during the storage of the new connection details", () => {
+    const event = createEvent(
+        CONNECTION_ID,
+        CALLBACK_DOMAIN,
+        CALLBACK_STAGE,
+        ValidRouteKeys.connect,
+        BASE_URL
+    );
+
+    let response: APIGatewayProxyResult;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockPort.storeConnection.mockRejectedValue(new Error());
+
+        response = await adapter.handleRequest(event);
+    });
+
+    test("returns 500 response", () => {
+        expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    test("returns plain text mime type in content type header", () => {
+        expect(response.headers).toEqual(
+            expect.objectContaining({
+                "Content-Type": "text/plain",
+            })
+        );
+    });
+
+    test("returns failure message in response body", () => {
+        expect(response.body).toEqual(
+            "An error occurred during storage of connection information."
+        );
+    });
+});

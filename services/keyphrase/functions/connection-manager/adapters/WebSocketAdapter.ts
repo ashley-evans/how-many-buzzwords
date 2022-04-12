@@ -88,17 +88,33 @@ class WebSocketAdapter implements APIGatewayAdapter {
             `https://${requestContext.domainName}/${requestContext.stage}`
         );
 
-        await this.port.storeConnection(
-            requestContext.connectionId,
-            callbackURL,
-            validatedBaseURL
-        );
+        try {
+            const stored = await this.port.storeConnection(
+                requestContext.connectionId,
+                callbackURL,
+                validatedBaseURL
+            );
 
-        return this.createResponse(
-            StatusCodes.OK,
-            "text/plain",
-            "Successfully connected."
-        );
+            if (stored) {
+                return this.createResponse(
+                    StatusCodes.OK,
+                    "text/plain",
+                    "Successfully connected."
+                );
+            }
+
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                "text/plain",
+                "Failed to store connection information."
+            );
+        } catch {
+            return this.createResponse(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                "text/plain",
+                "An error occurred during storage of connection information."
+            );
+        }
     }
 
     private createResponse(
