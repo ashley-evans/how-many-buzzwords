@@ -72,6 +72,6 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
-                  npm audit
+                  npm audit --audit-level=critical
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
