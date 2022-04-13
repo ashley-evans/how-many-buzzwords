@@ -1,8 +1,7 @@
-import { mockClient } from "aws-sdk-client-mock";
 import { mock } from "jest-mock-extended";
+import { mockClient } from "aws-sdk-client-mock";
 import {
     ApiGatewayManagementApiClient,
-    GoneException,
     PostToConnectionCommand,
     PostToConnectionCommandOutput,
 } from "@aws-sdk/client-apigatewaymanagementapi";
@@ -68,9 +67,9 @@ describe.each([
 
 test("returns false if connection provided is no longer active", async () => {
     awsMockClient.reset();
-    const exception = mock<GoneException>();
-    exception.name = "GoneException";
-    awsMockClient.on(PostToConnectionCommand).rejects(exception);
+    const mockError = mock<Error>();
+    mockError.name = "GoneException";
+    awsMockClient.on(PostToConnectionCommand).rejects(mockError);
 
     const response = await client.sendData("test", EXPECTED_CONNECTION_ID);
 
@@ -136,9 +135,9 @@ describe.each([
 
 test("returns no failed connection IDs if request fail due to connection no longer being active", async () => {
     awsMockClient.reset();
-    const exception = mock<GoneException>();
-    exception.name = "GoneException";
-    awsMockClient.on(PostToConnectionCommand).rejects(exception);
+    const mockError = mock<Error>();
+    mockError.name = "GoneException";
+    awsMockClient.on(PostToConnectionCommand).rejects(mockError);
 
     const response = await client.sendData("test", ["test_1", "test_2"]);
 
