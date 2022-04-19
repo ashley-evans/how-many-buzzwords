@@ -1,4 +1,4 @@
-import AWSWebSocketClient from "./adapters/AWSWebSocketClient";
-import WebSocketClient from "./ports/WebSocketClient";
+import AWSWebSocketClient from "./clients/AWSWebSocketClient";
+import WebSocketClient from "./interfaces/WebSocketClient";
 
 export { AWSWebSocketClient, WebSocketClient };
