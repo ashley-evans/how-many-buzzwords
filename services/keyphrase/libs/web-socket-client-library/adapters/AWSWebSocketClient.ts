@@ -6,7 +6,7 @@ import {
     PostToConnectionCommandInput,
 } from "@aws-sdk/client-apigatewaymanagementapi";
 
-import WebSocketClient from "../ports/WebSocketClient";
+import WebSocketClient from "../interfaces/WebSocketClient";
 
 class AWSWebSocketClient implements WebSocketClient {
     private client: ApiGatewayManagementApiClient;
