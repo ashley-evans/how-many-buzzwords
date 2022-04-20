@@ -16,7 +16,26 @@ class NewConnectionDomain implements NewConnectionPort {
         connections: Connection | Connection[]
     ): Promise<boolean | string[]> {
         if (Array.isArray(connections)) {
-            throw "Not implemented.";
+            const occurrences = await this.repository.getKeyphrases(
+                connections[0].baseURL
+            );
+
+            if (occurrences.length > 0) {
+                const client = this.clientFactory.createClient(
+                    connections[0].callbackURL
+                );
+
+                const connectionIDs = connections.map(
+                    (connection) => connection.connectionID
+                );
+
+                await client.sendData(
+                    JSON.stringify(occurrences),
+                    connectionIDs
+                );
+            }
+
+            return [];
         }
 
         const occurrences = await this.repository.getKeyphrases(

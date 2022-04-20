@@ -69,11 +69,11 @@ describe("given a single new connection listening to a baseURL that has no keyph
         );
     });
 
-    test("does not create a client to handle the request", () => {
+    test("does not create a client to handle the connections", () => {
         expect(mockClientFactory.createClient).not.toHaveBeenCalled();
     });
 
-    test("does not call any existing client references to handle the request", () => {
+    test("does not call any existing client references to handle the single connection", () => {
         expect(mockClient.sendData).not.toHaveBeenCalled();
     });
 
@@ -111,7 +111,7 @@ describe.each([
             );
         });
 
-        test("calls the web socket client factory to create a client to handle the request", () => {
+        test("calls the web socket client factory to create a client to handle the single connection", () => {
             expect(mockClientFactory.createClient).toHaveBeenCalledTimes(1);
             expect(mockClientFactory.createClient).toHaveBeenCalledWith(
                 connection.callbackURL
@@ -128,6 +128,91 @@ describe.each([
 
         test("returns success", () => {
             expect(response).toEqual(true);
+        });
+    }
+);
+
+describe("given multiple connections from the same callback address listening to the same base URL thas has no keyphrase occurrences stored", () => {
+    const connections = [
+        createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL),
+        createConnection("test_connection_id_2", CALLBACK_URL, BASE_URL),
+    ];
+
+    let response: string[];
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockClientFactory.createClient.mockReturnValue(mockClient);
+        mockRepository.getKeyphrases.mockResolvedValue([]);
+
+        response = await domain.provideCurrentKeyphrases(connections);
+    });
+
+    test("calls repository to obtain current keyphrase state for base URL", () => {
+        expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
+        expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(BASE_URL);
+    });
+
+    test("does not create a client to handle the connections", () => {
+        expect(mockClientFactory.createClient).not.toHaveBeenCalled();
+    });
+
+    test("does not call any existing client references to handle the single connection", () => {
+        expect(mockClient.sendData).not.toHaveBeenCalled();
+    });
+
+    test("returns no failure IDs", () => {
+        expect(response).toEqual([]);
+    });
+});
+
+describe.each([
+    ["a single keyphrase occurrence stored", createOccurrences(BASE_URL, 1)],
+    ["multiple keyphrase occurrences stored", createOccurrences(BASE_URL, 3)],
+])(
+    "given multiple connections from the same callback address listening to the same base URL with %s",
+    (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+        const connections = [
+            createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL),
+            createConnection("test_connection_id_2", CALLBACK_URL, BASE_URL),
+        ];
+
+        let response: string[];
+
+        beforeAll(async () => {
+            jest.resetAllMocks();
+            mockClientFactory.createClient.mockReturnValue(mockClient);
+            mockRepository.getKeyphrases.mockResolvedValue(expectedOccurrences);
+
+            response = await domain.provideCurrentKeyphrases(connections);
+        });
+
+        test("calls repository to obtain current keyphrase state for base URL", () => {
+            expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(BASE_URL);
+        });
+
+        test("calls the web socket client factory to create a client to handle all connections", () => {
+            expect(mockClientFactory.createClient).toHaveBeenCalledTimes(1);
+            expect(mockClientFactory.createClient).toHaveBeenCalledWith(
+                CALLBACK_URL
+            );
+        });
+
+        test("calls web socket client with returned keyphrase occurrences for each ", () => {
+            const expectedConnectionIDs = connections.map(
+                (connection) => connection.connectionID
+            );
+
+            expect(mockClient.sendData).toHaveBeenCalledTimes(1);
+            expect(mockClient.sendData).toHaveBeenCalledWith(
+                JSON.stringify(expectedOccurrences),
+                expectedConnectionIDs
+            );
+        });
+
+        test("returns no failure IDs", () => {
+            expect(response).toEqual([]);
         });
     }
 );
