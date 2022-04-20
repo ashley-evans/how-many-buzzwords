@@ -9,4 +9,5 @@ test("given a valid URL creates a web socket client for that URL", () => {
     const client = factory.createClient(url);
 
     expect(client).toBeInstanceOf(AWSWebSocketClient);
+    expect(client.getConfiguredEndpoint()).toEqual(url);
 });

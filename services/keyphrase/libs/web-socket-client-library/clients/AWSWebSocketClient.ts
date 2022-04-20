@@ -10,11 +10,17 @@ import WebSocketClient from "../interfaces/WebSocketClient";
 
 class AWSWebSocketClient implements WebSocketClient {
     private client: ApiGatewayManagementApiClient;
+    private configuredEndpoint: URL;
 
     constructor(endpoint: URL) {
+        this.configuredEndpoint = endpoint;
         this.client = new ApiGatewayManagementApiClient({
             endpoint: endpoint.toString(),
         });
+    }
+
+    getConfiguredEndpoint(): URL {
+        return this.configuredEndpoint;
     }
 
     sendData(data: string, connectionID: string): Promise<boolean>;
