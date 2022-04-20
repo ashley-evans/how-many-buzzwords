@@ -82,47 +82,52 @@ describe("given a single new connection listening to a baseURL that has no keyph
     });
 });
 
-describe("given a single new connection listening to a baseURL that has a single keyphrase occurrence", () => {
-    const expectedOccurrences = 1;
-    const connection = createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL);
-    const occurrences = createOccurrences(
-        connection.baseURL,
-        expectedOccurrences
-    );
-
-    let response: boolean;
-
-    beforeAll(async () => {
-        jest.resetAllMocks();
-        mockClientFactory.createClient.mockReturnValue(mockClient);
-        mockRepository.getKeyphrases.mockResolvedValue(occurrences);
-
-        response = await domain.provideCurrentKeyphrases(connection);
-    });
-
-    test("calls repository to obtain current keyphrase state for base URL", () => {
-        expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
-        expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(
-            connection.baseURL
+describe.each([
+    ["a single keyphrase occurrence stored", createOccurrences(BASE_URL, 1)],
+    ["multiple keyphrase occurrences stored", createOccurrences(BASE_URL, 3)],
+])(
+    "given a single new connection listening to a baseURL that has %s",
+    (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+        const connection = createConnection(
+            CONNECTION_ID,
+            CALLBACK_URL,
+            BASE_URL
         );
-    });
 
-    test("calls the web socket client factory to create a client to handle the request", () => {
-        expect(mockClientFactory.createClient).toHaveBeenCalledTimes(1);
-        expect(mockClientFactory.createClient).toHaveBeenCalledWith(
-            connection.callbackURL
-        );
-    });
+        let response: boolean;
 
-    test("calls web socket client with returned keyphrase occurrences", () => {
-        expect(mockClient.sendData).toHaveBeenCalledTimes(1);
-        expect(mockClient.sendData).toHaveBeenCalledWith(
-            JSON.stringify(occurrences),
-            connection.connectionID
-        );
-    });
+        beforeAll(async () => {
+            jest.resetAllMocks();
+            mockClientFactory.createClient.mockReturnValue(mockClient);
+            mockRepository.getKeyphrases.mockResolvedValue(expectedOccurrences);
 
-    test("returns success", () => {
-        expect(response).toEqual(true);
-    });
-});
+            response = await domain.provideCurrentKeyphrases(connection);
+        });
+
+        test("calls repository to obtain current keyphrase state for base URL", () => {
+            expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(
+                connection.baseURL
+            );
+        });
+
+        test("calls the web socket client factory to create a client to handle the request", () => {
+            expect(mockClientFactory.createClient).toHaveBeenCalledTimes(1);
+            expect(mockClientFactory.createClient).toHaveBeenCalledWith(
+                connection.callbackURL
+            );
+        });
+
+        test("calls web socket client with returned keyphrase occurrences", () => {
+            expect(mockClient.sendData).toHaveBeenCalledTimes(1);
+            expect(mockClient.sendData).toHaveBeenCalledWith(
+                JSON.stringify(expectedOccurrences),
+                connection.connectionID
+            );
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    }
+);
