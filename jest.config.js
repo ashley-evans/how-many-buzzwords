@@ -4,4 +4,11 @@ module.exports = {
     testEnvironment: "node",
     modulePathIgnorePatterns: [".aws-sam", "__tests__/helpers", "dist"],
     runner: "groups",
+    globals: {
+        "ts-jest": {
+            compiler: "ttypescript",
+            tsconfig: "<rootDir>/tsconfig.test.json",
+        },
+    },
+    setupFiles: ["<rootDir>/config/ts-auto-mock-config.ts"],
 };
