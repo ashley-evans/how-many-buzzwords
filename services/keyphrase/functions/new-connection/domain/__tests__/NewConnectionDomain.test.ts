@@ -1,4 +1,6 @@
 import { mock } from "jest-mock-extended";
+import { createMock } from "ts-auto-mock";
+import { On, method } from "ts-auto-mock/extension";
 import {
     PathnameOccurrences,
     Repository,
@@ -12,7 +14,7 @@ import NewConnectionDomain from "../NewConnectionDomain";
 import { Connection } from "../../ports/NewConnectionPort";
 
 const mockRepository = mock<Repository>();
-const mockClient = mock<WebSocketClient>();
+const mockClient = createMock<WebSocketClient>();
 const mockClientFactory = mock<WebSocketClientFactory>();
 
 const domain = new NewConnectionDomain(mockClientFactory, mockRepository);
@@ -98,6 +100,10 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            const mockSendData = On(mockClient).get(
+                method((mock) => mock.sendData)
+            );
+            mockSendData.mockResolvedValue(true);
             mockClientFactory.createClient.mockReturnValue(mockClient);
             mockRepository.getKeyphrases.mockResolvedValue(expectedOccurrences);
 
@@ -131,6 +137,90 @@ describe.each([
         });
     }
 );
+
+describe("given an error occurs while obtaining the keyphrase occurrences for a single connection", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockClientFactory.createClient.mockReturnValue(mockClient);
+        mockRepository.getKeyphrases.mockRejectedValue(new Error());
+
+        response = await domain.provideCurrentKeyphrases(
+            createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL)
+        );
+    });
+
+    test("does not create a client to handle the connections", () => {
+        expect(mockClientFactory.createClient).not.toHaveBeenCalled();
+    });
+
+    test("does not call any existing client references to handle the single connection", () => {
+        expect(mockClient.sendData).not.toHaveBeenCalled();
+    });
+
+    test("returns failure", () => {
+        expect(response).toEqual(false);
+    });
+});
+
+describe("given an error occurs during the creation of a web socket client to deal with a single connection", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockClientFactory.createClient.mockImplementation(() => {
+            throw new Error();
+        });
+        mockRepository.getKeyphrases.mockResolvedValue(
+            createOccurrences(BASE_URL, 1)
+        );
+
+        response = await domain.provideCurrentKeyphrases(
+            createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL)
+        );
+    });
+
+    test("does not call any existing client references to handle the single connection", () => {
+        expect(mockClient.sendData).not.toHaveBeenCalled();
+    });
+
+    test("returns failure", () => {
+        expect(response).toEqual(false);
+    });
+});
+
+test("returns failure if error occurs during the transmission of keyphrases state to a single connection", async () => {
+    jest.resetAllMocks();
+    mockRepository.getKeyphrases.mockResolvedValue(
+        createOccurrences(BASE_URL, 1)
+    );
+    mockClientFactory.createClient.mockReturnValue(mockClient);
+    const mockSendData = On(mockClient).get(method((mock) => mock.sendData));
+    mockSendData.mockRejectedValue(new Error());
+
+    const response = await domain.provideCurrentKeyphrases(
+        createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL)
+    );
+
+    expect(response).toEqual(false);
+});
+
+test("returns failure if the client fails to send keyphrase state to a single connection", async () => {
+    jest.resetAllMocks();
+    mockRepository.getKeyphrases.mockResolvedValue(
+        createOccurrences(BASE_URL, 1)
+    );
+    mockClientFactory.createClient.mockReturnValue(mockClient);
+    const mockSendData = On(mockClient).get(method((mock) => mock.sendData));
+    mockSendData.mockResolvedValue(false);
+
+    const response = await domain.provideCurrentKeyphrases(
+        createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL)
+    );
+
+    expect(response).toEqual(false);
+});
 
 describe("given multiple connections from the same callback address listening to the same base URL thas has no keyphrase occurrences stored", () => {
     const connections = [

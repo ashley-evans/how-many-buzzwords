@@ -38,21 +38,26 @@ class NewConnectionDomain implements NewConnectionPort {
             return [];
         }
 
-        const occurrences = await this.repository.getKeyphrases(
-            connections.baseURL
-        );
+        try {
+            const occurrences = await this.repository.getKeyphrases(
+                connections.baseURL
+            );
 
-        if (occurrences.length > 0) {
-            const client = this.clientFactory.createClient(
-                connections.callbackURL
-            );
-            await client.sendData(
-                JSON.stringify(occurrences),
-                connections.connectionID
-            );
+            if (occurrences.length > 0) {
+                const client = this.clientFactory.createClient(
+                    connections.callbackURL
+                );
+
+                return await client.sendData(
+                    JSON.stringify(occurrences),
+                    connections.connectionID
+                );
+            }
+
+            return true;
+        } catch {
+            return false;
         }
-
-        return true;
     }
 }
 
