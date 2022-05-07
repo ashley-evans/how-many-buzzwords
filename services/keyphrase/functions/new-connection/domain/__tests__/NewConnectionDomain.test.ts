@@ -100,7 +100,7 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
-            const mockSendData = On(mockClient).get(
+            const mockSendData: jest.Mock = On(mockClient).get(
                 method((mock) => mock.sendData)
             );
             mockSendData.mockResolvedValue(true);
@@ -196,7 +196,9 @@ test("returns failure if error occurs during the transmission of keyphrases stat
         createOccurrences(BASE_URL, 1)
     );
     mockClientFactory.createClient.mockReturnValue(mockClient);
-    const mockSendData = On(mockClient).get(method((mock) => mock.sendData));
+    const mockSendData: jest.Mock = On(mockClient).get(
+        method((mock) => mock.sendData)
+    );
     mockSendData.mockRejectedValue(new Error());
 
     const response = await domain.provideCurrentKeyphrases(
@@ -212,7 +214,9 @@ test("returns failure if the client fails to send keyphrase state to a single co
         createOccurrences(BASE_URL, 1)
     );
     mockClientFactory.createClient.mockReturnValue(mockClient);
-    const mockSendData = On(mockClient).get(method((mock) => mock.sendData));
+    const mockSendData: jest.Mock = On(mockClient).get(
+        method((mock) => mock.sendData)
+    );
     mockSendData.mockResolvedValue(false);
 
     const response = await domain.provideCurrentKeyphrases(
