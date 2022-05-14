@@ -12,7 +12,7 @@ Resources:
             LayerName: !Sub CrawlNodeDependencyLayer-${EnvironmentNameSuffix}
             ContentUri: ./functions
             CompatibleRuntimes:
-                - nodejs14.x
+                - nodejs16.x
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
@@ -22,7 +22,7 @@ Resources:
             LayerName: !Sub CrawlCommonLayer-${EnvironmentNameSuffix}
             ContentUri: ./common
             CompatibleRuntimes:
-                - nodejs14.x
+                - nodejs16.x
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
@@ -32,7 +32,7 @@ Resources:
             LayerName: !Sub URLsRepositoryLibraryLayer-${EnvironmentNameSuffix}
             ContentUri: ./libs/urls-repository-library
             CompatibleRuntimes:
-                - nodejs14.x
+                - nodejs16.x
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
@@ -42,7 +42,7 @@ Resources:
             LayerName: !Sub ContentRepositoryLibraryLayer-${EnvironmentNameSuffix}
             ContentUri: ./libs/content-repository-library
             CompatibleRuntimes:
-                - nodejs14.x
+                - nodejs16.x
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
@@ -111,7 +111,7 @@ Resources:
         Properties:
             Handler: crawl-urls.handler
             Role: !GetAtt CrawlURLsRole.Arn
-            Runtime: nodejs14.x
+            Runtime: nodejs16.x
             CodeUri: ./functions/crawl-urls
             Description: Crawls a batch of URLs and stores accessible pathnames in DynamoDB
             Layers:
@@ -175,7 +175,7 @@ Resources:
         Properties:
             Handler: publish-urls.handler
             Role: !GetAtt PublishURLFunctionRole.Arn
-            Runtime: nodejs14.x
+            Runtime: nodejs16.x
             CodeUri: ./functions/publish-urls
             Description: Publishes crawled URLs to an SNS Topic for subscribers
             Layers:
@@ -193,7 +193,7 @@ Resources:
         Type: AWS::Serverless::Function
         Properties:
             Handler: get-urls.handler
-            Runtime: nodejs14.x
+            Runtime: nodejs16.x
             CodeUri: ./functions/urls-crud/functions/get-urls
             Description: GETs the pathnames crawled from a given URL
             Layers:
@@ -264,7 +264,7 @@ Resources:
         Properties:
             Handler: recent-crawl.handler
             Role: !GetAtt RecentCrawlRole.Arn
-            Runtime: nodejs14.x
+            Runtime: nodejs16.x
             CodeUri: ./functions/recent-crawl
             Description: Returns whether the URL has been crawled within configured time
             Layers:
@@ -278,7 +278,7 @@ Resources:
         Type: AWS::Serverless::Function
         Properties:
             Handler: get-content.handler
-            Runtime: nodejs14.x
+            Runtime: nodejs16.x
             CodeUri: ./functions/urls-crud/functions/get-content
             Description: GETs any stored content for a given URL
             Layers:
