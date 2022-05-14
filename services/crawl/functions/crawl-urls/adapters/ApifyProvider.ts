@@ -6,8 +6,6 @@ import {
     openRequestQueue,
     CheerioCrawler,
     CheerioCrawlerOptions,
-    CrawlingContext,
-    RequestAsBrowserOptions,
     PseudoUrl,
 } from "apify";
 import { Observable, Subject } from "rxjs";
@@ -95,14 +93,6 @@ class ApifyProvider implements CrawlProvider {
             },
             requestQueue,
             maxRequestsPerCrawl: this.settings.maxRequests,
-            preNavigationHooks: [
-                async (
-                    crawlingContext: CrawlingContext,
-                    requestAsBrowerOptions: RequestAsBrowserOptions
-                ) => {
-                    requestAsBrowerOptions.useHttp2 = false;
-                },
-            ],
             minConcurrency: this.settings.minConcurrency ?? 1,
             maxConcurrency: this.settings.maxConcurrency ?? 2,
             autoscaledPoolOptions: {
