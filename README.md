@@ -20,6 +20,7 @@ The following CLI tools must be installed to validate, build, and test the buzzw
 
 -   AWS CLI - More information can be found here: https://aws.amazon.com/cli/
 -   SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+-   CloudFormation Linter - More information can be found here: https://github.com/aws-cloudformation/cfn-lint
 
 Many of the scripts used within the project require `jq` to function, this can be installed by executing:
 
