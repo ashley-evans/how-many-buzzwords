@@ -1,9 +1,17 @@
 {
-    "extends": "@tsconfig/node16/tsconfig.json",
-    "compilerOptions": {
-        "module": "commonjs",
-        "outDir": "dist",
-        "allowJs": true,
-        "lib": ["DOM"]
-    }
+    "files": [],
+    "references": [
+        {
+            "path": "packages/object-validator"
+        },
+        {
+            "path": "services/crawl"
+        },
+        {
+            "path": "services/keyphrase"
+        },
+        {
+            "path": "helpers"
+        }
+    ]
 }

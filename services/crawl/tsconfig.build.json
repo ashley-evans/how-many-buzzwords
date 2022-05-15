@@ -3,10 +3,5 @@
     "compilerOptions": {
         "rootDir": ""
     },
-    "references": [
-        {
-            "path": "../../helpers"
-        }
-    ],
-    "exclude": []
+    "exclude": ["**/__tests__/**/*", "jest.config.js"]
 }
