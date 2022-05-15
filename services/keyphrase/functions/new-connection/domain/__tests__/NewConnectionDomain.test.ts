@@ -410,4 +410,27 @@ describe("given multiple connections from the same callback address listening to
             expect(response).toContainEqual(connection.connectionID);
         }
     });
+
+    test("throws an exception if the client returns an unknown connection ID as failure", async () => {
+        jest.resetAllMocks();
+        mockRepository.getKeyphrases.mockResolvedValue(
+            createOccurrences(BASE_URL, 1)
+        );
+        mockClientFactory.createClient.mockReturnValue(mockClient);
+        const mockSendData: jest.Mock = On(mockClient).get(
+            method((mock) => mock.sendData)
+        );
+        const connectionIDs = connections.map(
+            (connection) => connection.connectionID
+        );
+        const failures = [...connectionIDs, "nonsense"];
+        mockSendData.mockResolvedValue(failures);
+
+        expect.assertions(1);
+        await expect(
+            domain.provideCurrentKeyphrases(connections)
+        ).rejects.toThrow(
+            `An unknown ID was returned from the web socket client. Expected: ${connectionIDs}. Returned: ${failures}`
+        );
+    });
 });

@@ -1,8 +1,5 @@
 import { WebSocketClientFactory } from "buzzword-aws-web-socket-client-library";
-import {
-    PathnameOccurrences,
-    Repository,
-} from "buzzword-aws-keyphrase-repository-library";
+import { Repository } from "buzzword-aws-keyphrase-repository-library";
 
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
 
@@ -19,9 +16,13 @@ class NewConnectionDomain implements NewConnectionPort {
         connections: Connection | Connection[]
     ): Promise<boolean | string[]> {
         if (Array.isArray(connections)) {
-            let occurrences: PathnameOccurrences[];
+            const connectionIDs = connections.map(
+                (connection) => connection.connectionID
+            );
+
+            let failures: string[];
             try {
-                occurrences = await this.repository.getKeyphrases(
+                const occurrences = await this.repository.getKeyphrases(
                     connections[0].baseURL
                 );
 
@@ -30,20 +31,27 @@ class NewConnectionDomain implements NewConnectionPort {
                         connections[0].callbackURL
                     );
 
-                    const connectionIDs = connections.map(
-                        (connection) => connection.connectionID
-                    );
-
-                    return await client.sendData(
+                    failures = await client.sendData(
                         JSON.stringify(occurrences),
                         connectionIDs
                     );
+                } else {
+                    return [];
                 }
-
-                return [];
             } catch {
                 return connections.map((connection) => connection.connectionID);
             }
+
+            const allIDsKnown = failures.every((id) =>
+                connectionIDs.includes(id)
+            );
+            if (!allIDsKnown) {
+                throw new Error(
+                    `An unknown ID was returned from the web socket client. Expected: ${connectionIDs}. Returned: ${failures}`
+                );
+            }
+
+            return failures;
         }
 
         try {
