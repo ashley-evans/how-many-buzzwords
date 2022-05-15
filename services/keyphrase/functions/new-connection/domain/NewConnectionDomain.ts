@@ -1,5 +1,8 @@
 import { WebSocketClientFactory } from "buzzword-aws-web-socket-client-library";
-import { Repository } from "buzzword-aws-keyphrase-repository-library";
+import {
+    PathnameOccurrences,
+    Repository,
+} from "buzzword-aws-keyphrase-repository-library";
 
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
 
@@ -16,26 +19,31 @@ class NewConnectionDomain implements NewConnectionPort {
         connections: Connection | Connection[]
     ): Promise<boolean | string[]> {
         if (Array.isArray(connections)) {
-            const occurrences = await this.repository.getKeyphrases(
-                connections[0].baseURL
-            );
-
-            if (occurrences.length > 0) {
-                const client = this.clientFactory.createClient(
-                    connections[0].callbackURL
+            let occurrences: PathnameOccurrences[];
+            try {
+                occurrences = await this.repository.getKeyphrases(
+                    connections[0].baseURL
                 );
 
-                const connectionIDs = connections.map(
-                    (connection) => connection.connectionID
-                );
+                if (occurrences.length > 0) {
+                    const client = this.clientFactory.createClient(
+                        connections[0].callbackURL
+                    );
 
-                await client.sendData(
-                    JSON.stringify(occurrences),
-                    connectionIDs
-                );
+                    const connectionIDs = connections.map(
+                        (connection) => connection.connectionID
+                    );
+
+                    return await client.sendData(
+                        JSON.stringify(occurrences),
+                        connectionIDs
+                    );
+                }
+
+                return [];
+            } catch {
+                return connections.map((connection) => connection.connectionID);
             }
-
-            return [];
         }
 
         try {
