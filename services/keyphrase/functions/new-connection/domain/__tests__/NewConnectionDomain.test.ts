@@ -390,26 +390,33 @@ describe("given multiple connections from the same callback address listening to
         }
     });
 
-    test("returns all IDs if the client fails to send keyphrase state to all connections", async () => {
-        jest.resetAllMocks();
-        mockRepository.getKeyphrases.mockResolvedValue(
-            createOccurrences(BASE_URL, 1)
-        );
-        mockClientFactory.createClient.mockReturnValue(mockClient);
-        const mockSendData: jest.Mock = On(mockClient).get(
-            method((mock) => mock.sendData)
-        );
-        mockSendData.mockResolvedValue(
-            connections.map((connection) => connection.connectionID)
-        );
+    test.each([
+        ["a single connection", [connections[0].connectionID]],
+        [
+            "all connections",
+            connections.map((connection) => connection.connectionID),
+        ],
+    ])(
+        "returns all IDs if the client fails to send keyphrase state to %s",
+        async (message: string, expectedFailureIDs: string[]) => {
+            jest.resetAllMocks();
+            mockRepository.getKeyphrases.mockResolvedValue(
+                createOccurrences(BASE_URL, 1)
+            );
+            mockClientFactory.createClient.mockReturnValue(mockClient);
+            const mockSendData: jest.Mock = On(mockClient).get(
+                method((mock) => mock.sendData)
+            );
+            mockSendData.mockResolvedValue(expectedFailureIDs);
 
-        const response = await domain.provideCurrentKeyphrases(connections);
+            const response = await domain.provideCurrentKeyphrases(connections);
 
-        expect(response.length).toEqual(connections.length);
-        for (const connection of connections) {
-            expect(response).toContainEqual(connection.connectionID);
+            expect(response.length).toEqual(expectedFailureIDs.length);
+            for (const failureID of expectedFailureIDs) {
+                expect(response).toContainEqual(failureID);
+            }
         }
-    });
+    );
 
     test("throws an exception if the client returns an unknown connection ID as failure", async () => {
         jest.resetAllMocks();
