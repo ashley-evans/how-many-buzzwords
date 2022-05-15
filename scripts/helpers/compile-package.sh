@@ -44,12 +44,21 @@ if [ $clean ]; then
     npm --prefix $root_dir ci
     npm --prefix $path ci
 else 
-    npm --prefix $root_dir ci
+    npm --prefix $root_dir i
     npm --prefix $path i
 fi
 
-echo "Compiling package..."
-$root_dir/node_modules/.bin/tsc --project $path --outDir $output_path
+if [ -f $path/tsconfig.build.json ]; then
+    config_path="$path/tsconfig.build.json"
+elif [ -f $path/tsconfig.json ]; then
+    config_path="$path/tsconfig.json"
+else
+    echo "No tsconfig.build.json or tsconfig.json file could be found." 1>&2;
+    exit 1
+fi
+
+echo "Compiling package using config: $config_path..."
+$root_dir/node_modules/.bin/tsc --project $config_path --outDir $output_path
 
 if [ $? -ne 0 ]; then
     exit 1
