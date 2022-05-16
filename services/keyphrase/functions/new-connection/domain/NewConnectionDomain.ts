@@ -26,35 +26,7 @@ class NewConnectionDomain implements NewConnectionPort {
         connections: Connection | Connection[]
     ): Promise<boolean | string[]> {
         if (Array.isArray(connections)) {
-            let baseURLOccurrences: Map<string, PathnameOccurrences[]>;
-            try {
-                baseURLOccurrences = await this.getAllKeyphraseOccurrences(
-                    connections.map((connection) => connection.baseURL)
-                );
-            } catch {
-                return connections.map((connection) => connection.connectionID);
-            }
-
-            const totalFailures: Set<string> = new Set();
-            for (const connection of connections) {
-                try {
-                    const data = baseURLOccurrences.get(connection.baseURL);
-                    if (data && data.length > 0) {
-                        const client = this.getClient(connection.callbackURL);
-                        const sent = await client.sendData(
-                            JSON.stringify(data),
-                            connection.connectionID
-                        );
-                        if (!sent) {
-                            totalFailures.add(connection.connectionID);
-                        }
-                    }
-                } catch {
-                    totalFailures.add(connection.connectionID);
-                }
-            }
-
-            return [...totalFailures];
+            return await this.handleMultipleConnections(connections);
         }
 
         try {
@@ -77,6 +49,49 @@ class NewConnectionDomain implements NewConnectionPort {
         } catch {
             return false;
         }
+    }
+
+    private async handleMultipleConnections(
+        connections: Connection[]
+    ): Promise<string[]> {
+        let baseURLOccurrences: Map<string, PathnameOccurrences[]>;
+        try {
+            baseURLOccurrences = await this.getAllKeyphraseOccurrences(
+                connections.map((connection) => connection.baseURL)
+            );
+        } catch {
+            return connections.map((connection) => connection.connectionID);
+        }
+
+        const failures = await Promise.all(
+            connections.map(async (connection) => {
+                try {
+                    const data = baseURLOccurrences.get(connection.baseURL);
+                    if (data && data.length > 0) {
+                        const client = this.getClient(connection.callbackURL);
+                        const sent = await client.sendData(
+                            JSON.stringify(data),
+                            connection.connectionID
+                        );
+
+                        if (!sent) {
+                            return connection.connectionID;
+                        }
+                    }
+                } catch {
+                    return connection.connectionID;
+                }
+            })
+        );
+
+        const totalFailures: Set<string> = new Set();
+        for (const failure of failures) {
+            if (failure) {
+                totalFailures.add(failure);
+            }
+        }
+
+        return [...totalFailures];
     }
 
     private async getAllKeyphraseOccurrences(

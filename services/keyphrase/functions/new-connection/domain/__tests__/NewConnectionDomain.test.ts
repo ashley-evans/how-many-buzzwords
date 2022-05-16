@@ -19,6 +19,7 @@ const mockClientFactory = mock<WebSocketClientFactory>();
 
 const CONNECTION_ID = "test_connection_id";
 const CALLBACK_URL = new URL("https://www.callback.com/");
+const OTHER_CALLBACK_URL = new URL("https://www.anothercallback.com/");
 const BASE_URL = "www.example.com";
 const OTHER_BASE_URL = "www.anotherexample.com";
 
@@ -247,14 +248,14 @@ describe("given a single new connection listening to a base URL", () => {
 
 describe.each([
     [
-        "same base URL",
+        "the same callback address listening to the same base URL",
         [
             createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL),
             createConnection("test_connection_id_2", CALLBACK_URL, BASE_URL),
         ],
     ],
     [
-        "multiple base URLs",
+        "the same callback address listening to multiple base URLs",
         [
             createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL),
             createConnection(
@@ -264,11 +265,27 @@ describe.each([
             ),
         ],
     ],
+    [
+        "multiple callback addresses listening to the same base URL",
+        [
+            createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL),
+            createConnection(
+                "test_connection_id_2",
+                OTHER_CALLBACK_URL,
+                BASE_URL
+            ),
+        ],
+    ],
 ])(
-    "given multiple connections from the same callback address listening to the %s",
+    "given multiple connections from %s",
     (message: string, connections: Connection[]) => {
         const uniqueBaseURLs = [
             ...new Set(connections.map((connection) => connection.baseURL)),
+        ];
+        const uniqueCallbackURLs = [
+            ...new Set(
+                connections.map((connections) => connections.callbackURL)
+            ),
         ];
 
         describe("given no keyphrase occurrences stored", () => {
@@ -352,16 +369,15 @@ describe.each([
                     ).toEqual(expect.arrayContaining(uniqueBaseURLs));
                 });
 
-                test("calls the web socket client factory to create a client to handle all connections", () => {
+                test("calls the web socket client factory to create a client to each unique callback URL", () => {
                     expect(
                         mockClientFactory.createClient
-                    ).toHaveBeenCalledTimes(1);
-                    expect(mockClientFactory.createClient).toHaveBeenCalledWith(
-                        CALLBACK_URL
-                    );
+                    ).toHaveBeenCalledTimes(uniqueCallbackURLs.length);
+                    expect(
+                        mockClientFactory.createClient.mock.calls.flat()
+                    ).toEqual(expect.arrayContaining(uniqueCallbackURLs));
                 });
 
-                // TODO: Different keyphrase occurrences per base URL?
                 test("calls web socket client with returned keyphrase occurrences for each connection", () => {
                     const expectedCalls = connections.map((connection) => {
                         return [
@@ -490,6 +506,27 @@ describe.each([
             for (const connection of connections) {
                 expect(response).toContainEqual(connection.connectionID);
             }
+        });
+
+        test("returns first ID if the client only fails to send keyphrase for first connection", async () => {
+            jest.resetAllMocks();
+            mockRepository.getKeyphrases.mockResolvedValue(
+                createOccurrences(BASE_URL, 1)
+            );
+            mockClientFactory.createClient.mockReturnValue(mockClient);
+            const mockSendData: jest.Mock = On(mockClient).get(
+                method((mock) => mock.sendData)
+            );
+            mockSendData.mockResolvedValue(true).mockResolvedValueOnce(false);
+            const domain = new NewConnectionDomain(
+                mockClientFactory,
+                mockRepository
+            );
+
+            const response = await domain.provideCurrentKeyphrases(connections);
+
+            expect(response.length).toEqual(1);
+            expect(response[0]).toEqual(connections[0].connectionID);
         });
     }
 );
