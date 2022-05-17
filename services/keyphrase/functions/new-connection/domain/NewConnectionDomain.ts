@@ -55,16 +55,19 @@ class NewConnectionDomain implements NewConnectionPort {
         connections: Connection[]
     ): Promise<string[]> {
         let baseURLOccurrences: Map<string, PathnameOccurrences[]>;
+        const uniqueConnections = this.removeDuplicateConnections(connections);
         try {
             baseURLOccurrences = await this.getAllKeyphraseOccurrences(
-                connections.map((connection) => connection.baseURL)
+                uniqueConnections.map((connection) => connection.baseURL)
             );
         } catch {
-            return connections.map((connection) => connection.connectionID);
+            return uniqueConnections.map(
+                (connection) => connection.connectionID
+            );
         }
 
         const failures = await Promise.all(
-            connections.map(async (connection) => {
+            uniqueConnections.map(async (connection) => {
                 try {
                     const data = baseURLOccurrences.get(connection.baseURL);
                     if (data && data.length > 0) {
@@ -117,6 +120,14 @@ class NewConnectionDomain implements NewConnectionPort {
         const newClient = this.clientFactory.createClient(callbackURL);
         this.clients.set(callbackURL, newClient);
         return newClient;
+    }
+
+    private removeDuplicateConnections(
+        connections: Connection[]
+    ): Connection[] {
+        return [
+            ...new Map(connections.map((v) => [v.connectionID, v])).values(),
+        ];
     }
 }
 
