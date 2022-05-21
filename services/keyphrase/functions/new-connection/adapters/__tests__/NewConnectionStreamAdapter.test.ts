@@ -46,7 +46,7 @@ function createRecord(
     eventName?: "INSERT" | "MODIFY" | "REMOVE",
     connectionID?: string,
     baseURL?: string,
-    callbackURL?: URL
+    callbackURL?: URL | string
 ): DynamoDBRecord {
     const record: DynamoDBRecord = {
         eventName,
@@ -104,6 +104,33 @@ describe.each([
         createEvent([
             createRecord("INSERT", undefined, BASE_URL, CALLBACK_URL),
         ]),
+    ],
+    [
+        "a record with a missing base URL",
+        createEvent([
+            createRecord("INSERT", CONNECTION_ID, undefined, CALLBACK_URL),
+        ]),
+    ],
+    [
+        "a record with a missing callback URL",
+        createEvent([
+            createRecord("INSERT", CONNECTION_ID, BASE_URL, undefined),
+        ]),
+    ],
+    [
+        "a record with an invalid callback URL",
+        createEvent([
+            createRecord(
+                "INSERT",
+                CONNECTION_ID,
+                BASE_URL,
+                "test www.example.com"
+            ),
+        ]),
+    ],
+    [
+        "a record with an invalid callback URL (numeric)",
+        createEvent([createRecord("INSERT", CONNECTION_ID, BASE_URL, "1")]),
     ],
 ])(
     "given an invalid event with %s",

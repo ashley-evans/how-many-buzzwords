@@ -1,7 +1,10 @@
 import { DynamoDBStreamEvent, SQSBatchResponse } from "aws-lambda";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
-import { ActiveConnectionsTableKeyFields } from "buzzword-aws-active-connections-repository-library";
+import {
+    ActiveConnectionsTableKeyFields,
+    ActiveConnectionsTableNonKeyFields,
+} from "buzzword-aws-active-connections-repository-library";
 
 import DynamoDBSteamAdapter from "../../interfaces/DynamoDBStreamAdapter";
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
@@ -15,6 +18,8 @@ type ValidNewConnectionRecord = {
     dynamodb: {
         NewImage: {
             [ActiveConnectionsTableKeyFields.ConnectionIDKey]: { S: string };
+            [ActiveConnectionsTableKeyFields.ListeningURLKey]: { S: string };
+            [ActiveConnectionsTableNonKeyFields.CallbackURLKey]: { S: string };
         };
     };
 };
@@ -51,9 +56,31 @@ const schema: JSONSchemaType<ValidNewConnectionEvent> = {
                                             },
                                             required: ["S"],
                                         },
+                                    [ActiveConnectionsTableKeyFields.ListeningURLKey]:
+                                        {
+                                            type: "object",
+                                            properties: {
+                                                S: {
+                                                    type: "string",
+                                                },
+                                            },
+                                            required: ["S"],
+                                        },
+                                    [ActiveConnectionsTableNonKeyFields.CallbackURLKey]:
+                                        {
+                                            type: "object",
+                                            properties: {
+                                                S: {
+                                                    type: "string",
+                                                },
+                                            },
+                                            required: ["S"],
+                                        },
                                 },
                                 required: [
                                     ActiveConnectionsTableKeyFields.ConnectionIDKey,
+                                    ActiveConnectionsTableKeyFields.ListeningURLKey,
+                                    ActiveConnectionsTableNonKeyFields.CallbackURLKey,
                                 ],
                             },
                         },
@@ -78,7 +105,9 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
         let connections: Connection[];
         try {
             const validatedEvent = this.validator.validate(event);
-            connections = this.mapConnectionDetails(validatedEvent.Records);
+            connections = validatedEvent.Records.map((record) =>
+                this.mapConnection(record)
+            );
         } catch {
             return { batchItemFailures: [] };
         }
@@ -88,18 +117,26 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
         return { batchItemFailures: [] };
     }
 
-    private mapConnectionDetails(
-        records: ValidNewConnectionRecord[]
-    ): Connection[] {
-        const connections: Connection[] = records.map(() => {
-            return {
-                connectionID: "test_connection_id",
-                callbackURL: new URL("https://www.callback.com/"),
-                baseURL: "www.example.com",
-            };
-        });
+    private mapConnection(record: ValidNewConnectionRecord): Connection {
+        const callbackURL =
+            record.dynamodb.NewImage[
+                ActiveConnectionsTableNonKeyFields.CallbackURLKey
+            ].S;
+        if (!isNaN(parseInt(callbackURL))) {
+            throw "Number provided when expecting URL.";
+        }
 
-        return connections;
+        return {
+            connectionID:
+                record.dynamodb.NewImage[
+                    ActiveConnectionsTableKeyFields.ConnectionIDKey
+                ].S,
+            callbackURL: new URL(callbackURL),
+            baseURL:
+                record.dynamodb.NewImage[
+                    ActiveConnectionsTableKeyFields.ListeningURLKey
+                ].S,
+        };
     }
 }
 
