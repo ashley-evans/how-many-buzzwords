@@ -10,7 +10,7 @@ import {
 } from "buzzword-aws-active-connections-repository-library/enums/ActiveConnectionsTableFields";
 
 import NewConnectionStreamAdapter from "../NewConnectionStreamAdapter";
-import { NewConnectionPort } from "../../ports/NewConnectionPort";
+import { NewConnectionPort, Connection } from "../../ports/NewConnectionPort";
 
 const mockPort = mock<NewConnectionPort>();
 
@@ -19,6 +19,28 @@ const adapter = new NewConnectionStreamAdapter(mockPort);
 const CONNECTION_ID = "test_connection_id";
 const CALLBACK_URL = new URL("https://www.callback.com/");
 const BASE_URL = "www.example.com";
+
+function createConnection(record: DynamoDBRecord): Connection {
+    if (record.dynamodb?.NewImage) {
+        const newImage = record.dynamodb.NewImage;
+        const connectionID =
+            newImage[ActiveConnectionsTableKeyFields.ConnectionIDKey].S;
+        const baseURL =
+            newImage[ActiveConnectionsTableKeyFields.ListeningURLKey].S;
+        const callbackURL =
+            newImage[ActiveConnectionsTableNonKeyFields.CallbackURLKey].S;
+
+        if (connectionID && baseURL && callbackURL) {
+            return {
+                connectionID,
+                baseURL,
+                callbackURL: new URL(callbackURL),
+            };
+        }
+    }
+
+    throw new Error(`Invalid record provided: ${JSON.stringify(record)}.`);
+}
 
 function createRecord(
     eventName?: "INSERT" | "MODIFY" | "REMOVE",
@@ -63,21 +85,33 @@ function createEvent(records?: DynamoDBRecord[]) {
     return event;
 }
 
-test.each([["missing records", createEvent()]])(
-    "throws exception given an event with %s",
-    async (message: string, event: DynamoDBStreamEvent) => {
-        jest.resetAllMocks();
+describe.each([
+    ["missing records", createEvent()],
+    [
+        "a record with a modify event type",
+        createEvent([
+            createRecord("MODIFY", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        ]),
+    ],
+])(
+    "given an invalid event with %s",
+    (message: string, event: DynamoDBStreamEvent) => {
+        let response: SQSBatchResponse;
 
-        expect.assertions(2);
-        await expect(adapter.handleEvent(event)).rejects.toEqual(
-            expect.objectContaining({
-                message: expect.stringContaining(
-                    "Exception occurred during event validation:"
-                ),
-            })
-        );
+        beforeAll(async () => {
+            jest.resetAllMocks();
 
-        expect(mockPort.provideCurrentKeyphrases).not.toHaveBeenCalled();
+            response = await adapter.handleEvent(event);
+        });
+
+        test("does not call port to send current keyphrase state", () => {
+            expect(mockPort.provideCurrentKeyphrases).not.toHaveBeenCalled();
+        });
+
+        test("returns no item failures", () => {
+            expect(response).toBeDefined();
+            expect(response.batchItemFailures).toHaveLength(0);
+        });
     }
 );
 
@@ -97,6 +131,17 @@ describe.each([
             jest.resetAllMocks();
 
             response = await adapter.handleEvent(event);
+        });
+
+        test("calls port to send current keyphrase state to new connection", () => {
+            const expectedConnections: Connection[] = event.Records.map(
+                (record) => createConnection(record)
+            );
+
+            expect(mockPort.provideCurrentKeyphrases).toHaveBeenCalledTimes(1);
+            expect(mockPort.provideCurrentKeyphrases).toHaveBeenCalledWith(
+                expect.arrayContaining(expectedConnections)
+            );
         });
 
         test("returns no item failures", () => {
