@@ -16,11 +16,12 @@ function createRepository(): Repository {
     return new KeyphraseRepository(process.env.TABLE_NAME);
 }
 
+const repository = createRepository();
+const factory = new AWSWebSocketClientFactory();
+const domain = new NewConnectionDomain(factory, repository);
+const adapter = new NewConnectionStreamAdapter(domain);
+
 async function handler(event: DynamoDBStreamEvent): Promise<SQSBatchResponse> {
-    const repository = createRepository();
-    const factory = new AWSWebSocketClientFactory();
-    const domain = new NewConnectionDomain(factory, repository);
-    const adapter = new NewConnectionStreamAdapter(domain);
     return adapter.handleEvent(event);
 }
 
