@@ -1,6 +1,7 @@
 import { DynamoDBStreamEvent, SQSBatchResponse } from "aws-lambda";
-import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import { JSONSchemaType } from "ajv";
+import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
+import { ActiveConnectionsTableKeyFields } from "buzzword-aws-active-connections-repository-library";
 
 import DynamoDBSteamAdapter from "../../interfaces/DynamoDBStreamAdapter";
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
@@ -11,6 +12,11 @@ enum ValidEventNames {
 
 type ValidNewConnectionRecord = {
     eventName: ValidEventNames.Insert;
+    dynamodb: {
+        NewImage: {
+            [ActiveConnectionsTableKeyFields.ConnectionIDKey]: { S: string };
+        };
+    };
 };
 
 type ValidNewConnectionEvent = {
@@ -28,6 +34,30 @@ const schema: JSONSchemaType<ValidNewConnectionEvent> = {
                     eventName: {
                         type: "string",
                         const: ValidEventNames.Insert,
+                    },
+                    dynamodb: {
+                        type: "object",
+                        properties: {
+                            NewImage: {
+                                type: "object",
+                                properties: {
+                                    [ActiveConnectionsTableKeyFields.ConnectionIDKey]:
+                                        {
+                                            type: "object",
+                                            properties: {
+                                                S: {
+                                                    type: "string",
+                                                },
+                                            },
+                                            required: ["S"],
+                                        },
+                                },
+                                required: [
+                                    ActiveConnectionsTableKeyFields.ConnectionIDKey,
+                                ],
+                            },
+                        },
+                        required: ["NewImage"],
                     },
                 },
                 required: ["eventName"],

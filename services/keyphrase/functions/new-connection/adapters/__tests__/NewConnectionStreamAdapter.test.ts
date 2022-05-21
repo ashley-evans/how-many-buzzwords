@@ -7,7 +7,7 @@ import {
 import {
     ActiveConnectionsTableKeyFields,
     ActiveConnectionsTableNonKeyFields,
-} from "buzzword-aws-active-connections-repository-library/enums/ActiveConnectionsTableFields";
+} from "buzzword-aws-active-connections-repository-library";
 
 import NewConnectionStreamAdapter from "../NewConnectionStreamAdapter";
 import { NewConnectionPort, Connection } from "../../ports/NewConnectionPort";
@@ -91,6 +91,18 @@ describe.each([
         "a record with a modify event type",
         createEvent([
             createRecord("MODIFY", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        ]),
+    ],
+    [
+        "a record with a remove event type",
+        createEvent([
+            createRecord("REMOVE", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        ]),
+    ],
+    [
+        "a record with a missing connection ID",
+        createEvent([
+            createRecord("INSERT", undefined, BASE_URL, CALLBACK_URL),
         ]),
     ],
 ])(
