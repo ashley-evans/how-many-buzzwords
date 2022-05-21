@@ -36,7 +36,7 @@ class NewConnectionDomain implements NewConnectionPort {
             );
 
             return await this.sendDataToConnection(connections, occurrences);
-        } catch (ex) {
+        } catch {
             return false;
         }
     }
@@ -68,7 +68,7 @@ class NewConnectionDomain implements NewConnectionPort {
                     if (!sent) {
                         return connection.connectionID;
                     }
-                } catch (ex) {
+                } catch {
                     return connection.connectionID;
                 }
             })
