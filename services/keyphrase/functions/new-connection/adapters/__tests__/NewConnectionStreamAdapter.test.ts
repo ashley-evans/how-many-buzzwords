@@ -19,6 +19,9 @@ const adapter = new NewConnectionStreamAdapter(mockPort);
 const CONNECTION_ID = "test_connection_id";
 const CALLBACK_URL = new URL("https://www.callback.com/");
 const BASE_URL = "www.example.com";
+const OTHER_CONNECTION_ID = "test_connection_id_2";
+const OTHER_CALLBACK_URL = new URL("https://www.another-callback.com/");
+const OTHER_BASE_URL = "www.otherexample.com";
 
 function createConnection(record: DynamoDBRecord): Connection {
     if (record.dynamodb?.NewImage) {
@@ -153,6 +156,45 @@ describe.each([
         });
     }
 );
+
+describe("given a event with both valid and invalid new connection records", () => {
+    const validRecords = [
+        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+    ];
+    const invalidRecords = [
+        createRecord(
+            "MODIFY",
+            OTHER_CONNECTION_ID,
+            OTHER_BASE_URL,
+            OTHER_CALLBACK_URL
+        ),
+    ];
+    const event = createEvent([...validRecords, ...invalidRecords]);
+
+    let response: SQSBatchResponse;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        response = await adapter.handleEvent(event);
+    });
+
+    test("calls port to send current keyphrase state to valid new connections", () => {
+        const expectedConnections: Connection[] = validRecords.map((record) =>
+            createConnection(record)
+        );
+
+        expect(mockPort.provideCurrentKeyphrases).toHaveBeenCalledTimes(1);
+        expect(mockPort.provideCurrentKeyphrases).toHaveBeenCalledWith(
+            expect.arrayContaining(expectedConnections)
+        );
+    });
+
+    test("returns no item failures", () => {
+        expect(response).toBeDefined();
+        expect(response.batchItemFailures).toHaveLength(0);
+    });
+});
 
 describe.each([
     [
