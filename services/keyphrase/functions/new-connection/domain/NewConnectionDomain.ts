@@ -25,6 +25,7 @@ class NewConnectionDomain implements NewConnectionPort {
     async provideCurrentKeyphrases(
         connections: Connection | Connection[]
     ): Promise<boolean | string[]> {
+        console.log(`Received connections: ${JSON.stringify(connections)}`);
         if (Array.isArray(connections)) {
             return await this.handleMultipleConnections(connections);
         }
@@ -34,19 +35,8 @@ class NewConnectionDomain implements NewConnectionPort {
                 connections.baseURL
             );
 
-            if (occurrences.length > 0) {
-                const client = this.clientFactory.createClient(
-                    connections.callbackURL
-                );
-
-                return await client.sendData(
-                    JSON.stringify(occurrences),
-                    connections.connectionID
-                );
-            }
-
-            return true;
-        } catch {
+            return await this.sendDataToConnection(connections, occurrences);
+        } catch (ex) {
             return false;
         }
     }
@@ -70,18 +60,15 @@ class NewConnectionDomain implements NewConnectionPort {
             uniqueConnections.map(async (connection) => {
                 try {
                     const data = baseURLOccurrences.get(connection.baseURL);
-                    if (data && data.length > 0) {
-                        const client = this.getClient(connection.callbackURL);
-                        const sent = await client.sendData(
-                            JSON.stringify(data),
-                            connection.connectionID
-                        );
+                    const sent = await this.sendDataToConnection(
+                        connection,
+                        data
+                    );
 
-                        if (!sent) {
-                            return connection.connectionID;
-                        }
+                    if (!sent) {
+                        return connection.connectionID;
                     }
-                } catch {
+                } catch (ex) {
                     return connection.connectionID;
                 }
             })
@@ -95,6 +82,21 @@ class NewConnectionDomain implements NewConnectionPort {
         }
 
         return [...totalFailures];
+    }
+
+    private async sendDataToConnection(
+        connection: Connection,
+        occurrences?: PathnameOccurrences[]
+    ): Promise<boolean> {
+        if (occurrences && occurrences.length > 0) {
+            const client = this.getClient(connection.callbackURL);
+            return client.sendData(
+                JSON.stringify(occurrences),
+                connection.connectionID
+            );
+        }
+
+        return true;
     }
 
     private async getAllKeyphraseOccurrences(
