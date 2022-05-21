@@ -91,7 +91,7 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
 
     async handleEvent(event: DynamoDBStreamEvent): Promise<SQSBatchResponse> {
         if (!Array.isArray(event.Records)) {
-            return { batchItemFailures: [] };
+            return this.createResponse();
         }
 
         const connections: Connection[] = [];
@@ -108,10 +108,26 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
         }
 
         if (connections.length > 0) {
-            await this.port.provideCurrentKeyphrases(connections);
+            try {
+                const failureIDs = await this.port.provideCurrentKeyphrases(
+                    connections
+                );
+
+                return this.createResponse(failureIDs);
+            } catch (ex) {
+                console.error(
+                    `An error occurred while sending keyphrase state: ${JSON.stringify(
+                        ex
+                    )}. Connections: ${JSON.stringify(connections)}`
+                );
+
+                return this.createResponse(
+                    connections.map((connection) => connection.connectionID)
+                );
+            }
         }
 
-        return { batchItemFailures: [] };
+        return this.createResponse();
     }
 
     private validateConnection(record: DynamoDBRecord): Connection {
@@ -136,6 +152,16 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
                     ActiveConnectionsTableKeyFields.ListeningURLKey
                 ].S,
         };
+    }
+
+    private createResponse(failureIDs?: string[]): SQSBatchResponse {
+        const batchItemFailures = failureIDs
+            ? failureIDs.map((id) => ({
+                  itemIdentifier: id,
+              }))
+            : [];
+
+        return { batchItemFailures };
     }
 }
 

@@ -88,6 +88,10 @@ function createEvent(records?: DynamoDBRecord[]) {
     return event;
 }
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 describe.each([
     ["missing records", createEvent()],
     [
@@ -175,6 +179,7 @@ describe("given a event with both valid and invalid new connection records", () 
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        mockPort.provideCurrentKeyphrases.mockResolvedValue([]);
 
         response = await adapter.handleEvent(event);
     });
@@ -203,6 +208,18 @@ describe.each([
             createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
         ]),
     ],
+    [
+        "multiple new connectionr records",
+        createEvent([
+            createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+            createRecord(
+                "INSERT",
+                OTHER_CONNECTION_ID,
+                OTHER_BASE_URL,
+                OTHER_CALLBACK_URL
+            ),
+        ]),
+    ],
 ])(
     "given a valid event with %s",
     (message: string, event: DynamoDBStreamEvent) => {
@@ -210,6 +227,7 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            mockPort.provideCurrentKeyphrases.mockResolvedValue([]);
 
             response = await adapter.handleEvent(event);
         });
@@ -231,3 +249,49 @@ describe.each([
         });
     }
 );
+
+test("returns failed connection IDs given a failure occurs during the sending of keyphrase state", async () => {
+    jest.resetAllMocks();
+    const expectedConnectionIDs = [CONNECTION_ID, OTHER_CONNECTION_ID];
+
+    mockPort.provideCurrentKeyphrases.mockResolvedValue(expectedConnectionIDs);
+    const event = createEvent([
+        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        createRecord(
+            "INSERT",
+            OTHER_CONNECTION_ID,
+            OTHER_BASE_URL,
+            OTHER_CALLBACK_URL
+        ),
+    ]);
+
+    const result = await adapter.handleEvent(event);
+
+    expect(result.batchItemFailures).toHaveLength(expectedConnectionIDs.length);
+    for (const failure of result.batchItemFailures) {
+        expect(expectedConnectionIDs).toContainEqual(failure.itemIdentifier);
+    }
+});
+
+test("returns all provided connection IDs if an error occurs during the sending of keyphrase state", async () => {
+    jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const expectedConnectionIDs = [CONNECTION_ID, OTHER_CONNECTION_ID];
+    mockPort.provideCurrentKeyphrases.mockRejectedValue(new Error());
+    const event = createEvent([
+        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        createRecord(
+            "INSERT",
+            OTHER_CONNECTION_ID,
+            OTHER_BASE_URL,
+            OTHER_CALLBACK_URL
+        ),
+    ]);
+
+    const result = await adapter.handleEvent(event);
+
+    expect(result.batchItemFailures).toHaveLength(expectedConnectionIDs.length);
+    for (const failure of result.batchItemFailures) {
+        expect(expectedConnectionIDs).toContainEqual(failure.itemIdentifier);
+    }
+});
