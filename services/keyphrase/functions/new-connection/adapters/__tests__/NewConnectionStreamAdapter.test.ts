@@ -17,9 +17,11 @@ const mockPort = mock<NewConnectionPort>();
 const adapter = new NewConnectionStreamAdapter(mockPort);
 
 const CONNECTION_ID = "test_connection_id";
+const SEQUENCE_NUMBER = "test_sequence_number";
 const CALLBACK_URL = new URL("https://www.callback.com/");
 const BASE_URL = "www.example.com";
 const OTHER_CONNECTION_ID = "test_connection_id_2";
+const OTHER_SEQUENCE_NUMBER = "test_sequence_number_2";
 const OTHER_CALLBACK_URL = new URL("https://www.another-callback.com/");
 const OTHER_BASE_URL = "www.otherexample.com";
 
@@ -47,6 +49,7 @@ function createConnection(record: DynamoDBRecord): Connection {
 
 function createRecord(
     eventName?: "INSERT" | "MODIFY" | "REMOVE",
+    sequenceNumber?: string,
     connectionID?: string,
     baseURL?: string,
     callbackURL?: URL | string
@@ -73,6 +76,7 @@ function createRecord(
                     },
                 }),
             },
+            SequenceNumber: sequenceNumber,
         };
     }
 
@@ -97,31 +101,73 @@ describe.each([
     [
         "a record with a modify event type",
         createEvent([
-            createRecord("MODIFY", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+            createRecord(
+                "MODIFY",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                CALLBACK_URL
+            ),
         ]),
     ],
     [
         "a record with a remove event type",
         createEvent([
-            createRecord("REMOVE", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+            createRecord(
+                "REMOVE",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                CALLBACK_URL
+            ),
+        ]),
+    ],
+    [
+        "a record with a missing sequence number",
+        createEvent([
+            createRecord(
+                "INSERT",
+                undefined,
+                CONNECTION_ID,
+                BASE_URL,
+                CALLBACK_URL
+            ),
         ]),
     ],
     [
         "a record with a missing connection ID",
         createEvent([
-            createRecord("INSERT", undefined, BASE_URL, CALLBACK_URL),
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                undefined,
+                BASE_URL,
+                CALLBACK_URL
+            ),
         ]),
     ],
     [
         "a record with a missing base URL",
         createEvent([
-            createRecord("INSERT", CONNECTION_ID, undefined, CALLBACK_URL),
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                undefined,
+                CALLBACK_URL
+            ),
         ]),
     ],
     [
         "a record with a missing callback URL",
         createEvent([
-            createRecord("INSERT", CONNECTION_ID, BASE_URL, undefined),
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                undefined
+            ),
         ]),
     ],
     [
@@ -129,6 +175,7 @@ describe.each([
         createEvent([
             createRecord(
                 "INSERT",
+                SEQUENCE_NUMBER,
                 CONNECTION_ID,
                 BASE_URL,
                 "test www.example.com"
@@ -137,7 +184,15 @@ describe.each([
     ],
     [
         "a record with an invalid callback URL (numeric)",
-        createEvent([createRecord("INSERT", CONNECTION_ID, BASE_URL, "1")]),
+        createEvent([
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                "1"
+            ),
+        ]),
     ],
 ])(
     "given an invalid event with %s",
@@ -163,11 +218,18 @@ describe.each([
 
 describe("given a event with both valid and invalid new connection records", () => {
     const validRecords = [
-        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+        createRecord(
+            "INSERT",
+            SEQUENCE_NUMBER,
+            CONNECTION_ID,
+            BASE_URL,
+            CALLBACK_URL
+        ),
     ];
     const invalidRecords = [
         createRecord(
             "MODIFY",
+            SEQUENCE_NUMBER,
             OTHER_CONNECTION_ID,
             OTHER_BASE_URL,
             OTHER_CALLBACK_URL
@@ -205,15 +267,28 @@ describe.each([
     [
         "a single new connection record",
         createEvent([
-            createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                CALLBACK_URL
+            ),
         ]),
     ],
     [
-        "multiple new connectionr records",
+        "multiple new connection records",
         createEvent([
-            createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
             createRecord(
                 "INSERT",
+                SEQUENCE_NUMBER,
+                CONNECTION_ID,
+                BASE_URL,
+                CALLBACK_URL
+            ),
+            createRecord(
+                "INSERT",
+                OTHER_SEQUENCE_NUMBER,
                 OTHER_CONNECTION_ID,
                 OTHER_BASE_URL,
                 OTHER_CALLBACK_URL
@@ -256,9 +331,16 @@ test("returns failed connection IDs given a failure occurs during the sending of
 
     mockPort.provideCurrentKeyphrases.mockResolvedValue(expectedConnectionIDs);
     const event = createEvent([
-        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
         createRecord(
             "INSERT",
+            SEQUENCE_NUMBER,
+            CONNECTION_ID,
+            BASE_URL,
+            CALLBACK_URL
+        ),
+        createRecord(
+            "INSERT",
+            OTHER_SEQUENCE_NUMBER,
             OTHER_CONNECTION_ID,
             OTHER_BASE_URL,
             OTHER_CALLBACK_URL
@@ -279,9 +361,16 @@ test("returns all provided connection IDs if an error occurs during the sending 
     const expectedConnectionIDs = [CONNECTION_ID, OTHER_CONNECTION_ID];
     mockPort.provideCurrentKeyphrases.mockRejectedValue(new Error());
     const event = createEvent([
-        createRecord("INSERT", CONNECTION_ID, BASE_URL, CALLBACK_URL),
         createRecord(
             "INSERT",
+            SEQUENCE_NUMBER,
+            CONNECTION_ID,
+            BASE_URL,
+            CALLBACK_URL
+        ),
+        createRecord(
+            "INSERT",
+            OTHER_SEQUENCE_NUMBER,
             OTHER_CONNECTION_ID,
             OTHER_BASE_URL,
             OTHER_CALLBACK_URL

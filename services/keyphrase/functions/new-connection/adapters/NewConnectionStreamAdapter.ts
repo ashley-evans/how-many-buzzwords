@@ -25,6 +25,7 @@ type ValidNewConnectionRecord = {
             [ActiveConnectionsTableKeyFields.ListeningURLKey]: { S: string };
             [ActiveConnectionsTableNonKeyFields.CallbackURLKey]: { S: string };
         };
+        SequenceNumber: string;
     };
 };
 
@@ -75,8 +76,11 @@ const schema: JSONSchemaType<ValidNewConnectionRecord> = {
                         ActiveConnectionsTableNonKeyFields.CallbackURLKey,
                     ],
                 },
+                SequenceNumber: {
+                    type: "string",
+                },
             },
-            required: ["NewImage"],
+            required: ["NewImage", "SequenceNumber"],
         },
     },
     required: ["eventName"],
