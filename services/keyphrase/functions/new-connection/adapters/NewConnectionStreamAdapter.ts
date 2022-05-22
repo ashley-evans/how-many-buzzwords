@@ -1,7 +1,7 @@
 import {
     DynamoDBStreamEvent,
-    DynamoDBRecord,
     SQSBatchResponse,
+    SQSBatchItemFailure,
 } from "aws-lambda";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
@@ -98,10 +98,13 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
             return this.createResponse();
         }
 
+        const validatedRecords: ValidNewConnectionRecord[] = [];
         const connections: Connection[] = [];
         for (const record of event.Records) {
             try {
-                connections.push(this.validateConnection(record));
+                const validRecord = this.validator.validate(record);
+                connections.push(this.validateConnection(validRecord));
+                validatedRecords.push(validRecord);
             } catch (ex) {
                 console.log(
                     `An invalid new connection event was provided: ${JSON.stringify(
@@ -117,7 +120,7 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
                     connections
                 );
 
-                return this.createResponse(failureIDs);
+                return this.createResponse(failureIDs, validatedRecords);
             } catch (ex) {
                 console.error(
                     `An error occurred while sending keyphrase state: ${JSON.stringify(
@@ -126,7 +129,8 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
                 );
 
                 return this.createResponse(
-                    connections.map((connection) => connection.connectionID)
+                    connections.map((connection) => connection.connectionID),
+                    validatedRecords
                 );
             }
         }
@@ -134,11 +138,9 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
         return this.createResponse();
     }
 
-    private validateConnection(record: DynamoDBRecord): Connection {
-        const validatedRecord = this.validator.validate(record);
-
+    private validateConnection(record: ValidNewConnectionRecord): Connection {
         const callbackURL =
-            validatedRecord.dynamodb.NewImage[
+            record.dynamodb.NewImage[
                 ActiveConnectionsTableNonKeyFields.CallbackURLKey
             ].S;
         if (!isNaN(parseInt(callbackURL))) {
@@ -147,23 +149,38 @@ class NewConnectionStreamAdapter implements DynamoDBSteamAdapter {
 
         return {
             connectionID:
-                validatedRecord.dynamodb.NewImage[
+                record.dynamodb.NewImage[
                     ActiveConnectionsTableKeyFields.ConnectionIDKey
                 ].S,
             callbackURL: new URL(callbackURL),
             baseURL:
-                validatedRecord.dynamodb.NewImage[
+                record.dynamodb.NewImage[
                     ActiveConnectionsTableKeyFields.ListeningURLKey
                 ].S,
         };
     }
 
-    private createResponse(failureIDs?: string[]): SQSBatchResponse {
-        const batchItemFailures = failureIDs
-            ? failureIDs.map((id) => ({
-                  itemIdentifier: id,
-              }))
-            : [];
+    private createResponse(
+        failureIDs?: string[],
+        records?: ValidNewConnectionRecord[]
+    ): SQSBatchResponse {
+        const batchItemFailures: SQSBatchItemFailure[] = [];
+        if (failureIDs && records) {
+            for (const id of failureIDs) {
+                const failureSequenceNumbers: SQSBatchItemFailure[] = records
+                    .filter(
+                        (record) =>
+                            record.dynamodb.NewImage[
+                                ActiveConnectionsTableKeyFields.ConnectionIDKey
+                            ].S == id
+                    )
+                    .map((record) => ({
+                        itemIdentifier: record.dynamodb.SequenceNumber,
+                    }));
+
+                batchItemFailures.push(...failureSequenceNumbers);
+            }
+        }
 
         return { batchItemFailures };
     }

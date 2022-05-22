@@ -325,11 +325,13 @@ describe.each([
     }
 );
 
-test("returns failed connection IDs given a failure occurs during the sending of keyphrase state", async () => {
+test("returns corresponding sequence numbers for records if a failure occurs during the sending of keyphrase state", async () => {
     jest.resetAllMocks();
-    const expectedConnectionIDs = [CONNECTION_ID, OTHER_CONNECTION_ID];
-
-    mockPort.provideCurrentKeyphrases.mockResolvedValue(expectedConnectionIDs);
+    const expectedResponse = [SEQUENCE_NUMBER, OTHER_SEQUENCE_NUMBER];
+    mockPort.provideCurrentKeyphrases.mockResolvedValue([
+        CONNECTION_ID,
+        OTHER_CONNECTION_ID,
+    ]);
     const event = createEvent([
         createRecord(
             "INSERT",
@@ -349,16 +351,16 @@ test("returns failed connection IDs given a failure occurs during the sending of
 
     const result = await adapter.handleEvent(event);
 
-    expect(result.batchItemFailures).toHaveLength(expectedConnectionIDs.length);
+    expect(result.batchItemFailures).toHaveLength(expectedResponse.length);
     for (const failure of result.batchItemFailures) {
-        expect(expectedConnectionIDs).toContainEqual(failure.itemIdentifier);
+        expect(expectedResponse).toContainEqual(failure.itemIdentifier);
     }
 });
 
-test("returns all provided connection IDs if an error occurs during the sending of keyphrase state", async () => {
+test("returns corresponding sequence numbers for records if an error occurs during the sending of keyphrase state", async () => {
     jest.resetAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const expectedConnectionIDs = [CONNECTION_ID, OTHER_CONNECTION_ID];
+    const expectedResponse = [SEQUENCE_NUMBER, OTHER_SEQUENCE_NUMBER];
     mockPort.provideCurrentKeyphrases.mockRejectedValue(new Error());
     const event = createEvent([
         createRecord(
@@ -379,8 +381,8 @@ test("returns all provided connection IDs if an error occurs during the sending 
 
     const result = await adapter.handleEvent(event);
 
-    expect(result.batchItemFailures).toHaveLength(expectedConnectionIDs.length);
+    expect(result.batchItemFailures).toHaveLength(expectedResponse.length);
     for (const failure of result.batchItemFailures) {
-        expect(expectedConnectionIDs).toContainEqual(failure.itemIdentifier);
+        expect(expectedResponse).toContainEqual(failure.itemIdentifier);
     }
 });
