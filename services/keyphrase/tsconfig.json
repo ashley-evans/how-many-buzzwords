@@ -1,6 +1,17 @@
 {
-    "extends": "../tsconfig.json",
+    "extends": "./tsconfig.build.json",
     "compilerOptions": {
-        "rootDir": ""
-    }
+        "plugins": [
+            {
+                "transform": "ts-auto-mock/transformer",
+                "cacheBetweenTests": false
+            }
+        ]
+    },
+    "references": [
+        {
+            "path": "../../helpers"
+        }
+    ],
+    "exclude": []
 }

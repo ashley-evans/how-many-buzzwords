@@ -411,6 +411,7 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
+                                - dynamodb:DescribeTable
                                 - dynamodb:Query
                             Resource: !GetAtt KeyphrasesTable.Arn
                             Effect: Allow
@@ -425,8 +426,12 @@ Resources:
             Runtime: nodejs16.x
             CodeUri: ./functions/new-connection
             Description: Provides new connections with current database state
+            Timeout: 10
+            MemorySize: 256
             Layers:
-                - Ref: KeyphraseNodeDependencyLayer
+                - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: WebSocketClientLibraryLayer
+                - Ref: ActiveConnectionsRepositoryLibraryLayer
             Events:
                 ActiveConnectionsStreamEvent:
                     Type: DynamoDB
@@ -434,11 +439,10 @@ Resources:
                         Stream: !GetAtt ActiveConnectionsTable.StreamArn
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
+                        MaximumRetryAttempts: 5
             Environment:
                 Variables:
                     TABLE_NAME: !Ref KeyphrasesTable
-                    SEARCH_KEY: BaseUrl
-                    SEARCH_KEY_PATTERN: '^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$'
     UpdateConnectionsRole:
         Type: AWS::IAM::Role
         Properties:

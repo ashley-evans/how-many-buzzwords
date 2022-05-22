@@ -1,8 +1,7 @@
 {
-    "extends": "../tsconfig.json",
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "rootDir": "./",
         "declaration": true
     },
-    "exclude": ["**/__tests__"]
+    "exclude": ["**/__tests__/**/*", "**/jest.config.js"]
 }

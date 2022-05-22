@@ -47,6 +47,19 @@ describe.each([
             expect(clientCalls[0].args).toHaveLength(1);
         });
 
+        test("sends the data to the configured endpoint", async () => {
+            const configuredEndpoint =
+                await clientCalls[0].thisValue.config.endpoint();
+
+            expect(configuredEndpoint).toEqual(
+                expect.objectContaining({
+                    hostname: EXPECTED_ENDPOINT.hostname,
+                    protocol: EXPECTED_ENDPOINT.protocol,
+                    path: EXPECTED_ENDPOINT.pathname,
+                })
+            );
+        });
+
         test("sends the provided information to the endpoint", () => {
             const input = clientCalls[0].args[0].input;
             expect(Buffer.from(input.Data as Uint8Array).toString()).toEqual(
@@ -117,6 +130,21 @@ describe.each([
             }
         });
 
+        test("sends the data to the configured endpoint for each request", async () => {
+            for (const call of clientCalls) {
+                const configuredEndpoint =
+                    await call.thisValue.config.endpoint();
+
+                expect(configuredEndpoint).toEqual(
+                    expect.objectContaining({
+                        hostname: EXPECTED_ENDPOINT.hostname,
+                        protocol: EXPECTED_ENDPOINT.protocol,
+                        path: EXPECTED_ENDPOINT.pathname,
+                    })
+                );
+            }
+        });
+
         test("provides the given data to each connection ID", () => {
             const inputs = clientCalls.map((call) => call.args[0].input);
             for (const connectionID of connectionIDs) {
@@ -156,4 +184,13 @@ test("returns failed connection Ids if requests fail due to unknown error during
 
     expect(response).toHaveLength(expectedConnectionIDs.length);
     expect(response).toEqual(expect.arrayContaining(expectedConnectionIDs));
+});
+
+test("returns configured endpoint", () => {
+    const expectedEndpoint = new URL("https://www.example.com");
+    const client = new AWSWebSocketClient(expectedEndpoint);
+
+    const result = client.getConfiguredEndpoint();
+
+    expect(result).toEqual(expectedEndpoint);
 });

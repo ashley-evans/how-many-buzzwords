@@ -1,7 +1,7 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
-    preset: "ts-jest/presets/js-with-ts",
-    testEnvironment: "node",
-    modulePathIgnorePatterns: [".aws-sam", "__tests__/helpers", "dist"],
-    runner: "groups",
+    projects: [
+        "<rootDir>/packages/object-validator",
+        "<rootDir>/services/crawl",
+        "<rootDir>/services/keyphrase",
+    ],
 };
