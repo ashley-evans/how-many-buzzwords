@@ -8,7 +8,7 @@ type BaseURLOccurrences = {
 interface UpdateConnectionsPort {
     updateExistingConnections(
         occurrences: BaseURLOccurrences[]
-    ): Promise<BaseURLOccurrences>;
+    ): Promise<BaseURLOccurrences[]>;
 }
 
 export { BaseURLOccurrences, UpdateConnectionsPort };
