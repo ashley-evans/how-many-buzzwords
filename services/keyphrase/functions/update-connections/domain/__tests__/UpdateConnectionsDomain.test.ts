@@ -1,4 +1,5 @@
 import { mock } from "jest-mock-extended";
+import { when } from "jest-when";
 import {
     WebSocketClientFactory,
     WebSocketClient,
@@ -42,7 +43,7 @@ function createConnections(callbackURL: URL, amount: number): Connection[] {
     const connections: Connection[] = [];
     for (let i = 0; i < amount; i++) {
         connections.push({
-            connectionID: `test_connection_id_${i}`,
+            connectionID: `${callbackURL.toString()}_connection_id_${i}`,
             callbackURL,
         });
     }
@@ -180,7 +181,6 @@ describe.each([
         connections: Connection[]
     ) => {
         const occurrences = createOccurrences(BASE_URL, numberOfOccurrences);
-        const uniqueCallbackURLs = getUniqueCallbackURLs(connections);
 
         let response: BaseURLOccurrences[];
 
@@ -198,7 +198,7 @@ describe.each([
             response = await domain.updateExistingConnections(occurrences);
         });
 
-        test("calls the active connections repository for each unique base URL", () => {
+        test("calls the active connections repository to get listening clients", () => {
             expect(
                 mockRepository.getListeningConnections
             ).toHaveBeenCalledTimes(1);
@@ -208,6 +208,8 @@ describe.each([
         });
 
         test("creates a client for each unique callback URL", () => {
+            const uniqueCallbackURLs = getUniqueCallbackURLs(connections);
+
             expect(mockClientFactory.createClient).toHaveBeenCalledTimes(
                 uniqueCallbackURLs.length
             );
@@ -239,3 +241,86 @@ describe.each([
         });
     }
 );
+
+describe("given multiple new keyphrase occurrences for multiple base URLs with different listening clients", () => {
+    const connections = new Map([
+        [BASE_URL, createConnections(CALLBACK_URL, 1)],
+        [OTHER_BASE_URL, createConnections(OTHER_CALLBACK_URL, 1)],
+    ]);
+    const occurrences = [
+        ...createOccurrences(BASE_URL, 2),
+        ...createOccurrences(OTHER_BASE_URL, 2),
+    ];
+
+    let response: BaseURLOccurrences[];
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        mockClientFactory.createClient.mockReturnValue(mockClient);
+        for (const [baseURL, listeningConnections] of connections) {
+            when(mockRepository.getListeningConnections)
+                .calledWith(baseURL)
+                .mockResolvedValue(listeningConnections);
+        }
+        const domain = new UpdateConnectionsDomain(
+            mockClientFactory,
+            mockRepository
+        );
+
+        response = await domain.updateExistingConnections(occurrences);
+    });
+
+    test("calls the active connections repository for each unique base URL", () => {
+        const uniqueBaseURLs = getUniqueBaseURLs(occurrences);
+
+        expect(mockRepository.getListeningConnections).toHaveBeenCalledTimes(
+            uniqueBaseURLs.length
+        );
+        for (const baseURL of uniqueBaseURLs) {
+            expect(mockRepository.getListeningConnections).toHaveBeenCalledWith(
+                baseURL
+            );
+        }
+    });
+
+    test("creates a client for each unique callback URL", () => {
+        const uniqueCallbackURLs: URL[] = [];
+        for (const [, listeningConnections] of connections) {
+            uniqueCallbackURLs.push(
+                ...getUniqueCallbackURLs(listeningConnections)
+            );
+        }
+
+        expect(mockClientFactory.createClient).toHaveBeenCalledTimes(
+            uniqueCallbackURLs.length
+        );
+        for (const callbackURL of uniqueCallbackURLs) {
+            expect(mockClientFactory.createClient).toHaveBeenCalledWith(
+                callbackURL
+            );
+        }
+    });
+
+    test("sends all keyphrase occurrences to each listening client", () => {
+        let totalConnections = 0;
+        for (const [baseURL, listeningConnections] of connections) {
+            totalConnections += listeningConnections.length;
+            const expectedOccurences: PathnameOccurrences[] =
+                getPathnameOccurrences(baseURL, occurrences);
+
+            for (const connection of listeningConnections) {
+                expect(mockClient.sendData).toHaveBeenCalledWith(
+                    JSON.stringify(expectedOccurences),
+                    connection.connectionID
+                );
+            }
+        }
+
+        expect(mockClient.sendData).toHaveBeenCalledTimes(totalConnections);
+    });
+
+    test("returns no failures", () => {
+        expect(response).toBeDefined();
+        expect(response).toHaveLength(0);
+    });
+});
