@@ -324,3 +324,119 @@ describe("given multiple new keyphrase occurrences for multiple base URLs with d
         expect(response).toHaveLength(0);
     });
 });
+
+describe.each([
+    ["occurrences against a single base URL", [BASE_URL]],
+    ["occurrences for multiple base URLs", [BASE_URL, OTHER_BASE_URL]],
+])(
+    "given an error occurs creating obtaining the listening connections for %s",
+    (message: string, occurrencesBaseURLs: string[]) => {
+        const occurrences = occurrencesBaseURLs
+            .map((occurrencesBaseURL) =>
+                createOccurrences(occurrencesBaseURL, 2)
+            )
+            .flat();
+
+        let response: BaseURLOccurrences[];
+
+        beforeAll(async () => {
+            jest.resetAllMocks();
+            mockRepository.getListeningConnections.mockRejectedValue(
+                new Error()
+            );
+            const domain = new UpdateConnectionsDomain(
+                mockClientFactory,
+                mockRepository
+            );
+
+            response = await domain.updateExistingConnections(occurrences);
+        });
+
+        test("calls the repository to obtain the keyphrase state for each unique base URL", () => {
+            expect(
+                mockRepository.getListeningConnections
+            ).toHaveBeenCalledTimes(occurrencesBaseURLs.length);
+            for (const occurrenceBaseURL of occurrencesBaseURLs) {
+                expect(
+                    mockRepository.getListeningConnections
+                ).toHaveBeenCalledWith(occurrenceBaseURL);
+            }
+        });
+
+        test("does not create any clients to send the new occurrences to", () => {
+            expect(mockClientFactory.createClient).not.toHaveBeenCalled();
+        });
+
+        test("does not call any existing client", () => {
+            expect(mockClient.sendData).not.toHaveBeenCalled();
+        });
+
+        test("returns each occurrence as a failure", () => {
+            expect(response).toEqual(expect.arrayContaining(occurrences));
+        });
+    }
+);
+
+describe("given an error only occurs while obtaining the listening connections for one of the base URLs provided", () => {
+    const expectedSuccesses = createOccurrences(BASE_URL, 2);
+    const expectedFailures = createOccurrences(OTHER_BASE_URL, 2);
+    const expectedConnections = createConnections(CALLBACK_URL, 2);
+
+    let response: BaseURLOccurrences[];
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+        when(mockRepository.getListeningConnections)
+            .calledWith(BASE_URL)
+            .mockResolvedValue(expectedConnections);
+        when(mockRepository.getListeningConnections)
+            .calledWith(OTHER_BASE_URL)
+            .mockRejectedValue(new Error());
+        mockClientFactory.createClient.mockReturnValue(mockClient);
+        const domain = new UpdateConnectionsDomain(
+            mockClientFactory,
+            mockRepository
+        );
+
+        response = await domain.updateExistingConnections([
+            ...expectedSuccesses,
+            ...expectedFailures,
+        ]);
+    });
+
+    test("calls the repository to obtain the keyphrase state for each unique base URL", () => {
+        expect(mockRepository.getListeningConnections).toHaveBeenCalledTimes(2);
+        expect(mockRepository.getListeningConnections).toHaveBeenCalledWith(
+            BASE_URL
+        );
+        expect(mockRepository.getListeningConnections).toHaveBeenCalledWith(
+            OTHER_BASE_URL
+        );
+    });
+
+    test("only creates a client for unique callback URLs attributed listening to non-erroring base URLs", () => {
+        expect(mockClientFactory.createClient).toHaveBeenCalledTimes(1);
+        expect(mockClientFactory.createClient).toHaveBeenCalledWith(
+            CALLBACK_URL
+        );
+    });
+
+    test("sends all keyphrase occurrences to clients that are listening to non-erroring base URLs", () => {
+        const expectedOccurences: PathnameOccurrences[] =
+            getPathnameOccurrences(BASE_URL, expectedSuccesses);
+
+        expect(mockClient.sendData).toHaveBeenCalledTimes(
+            expectedConnections.length
+        );
+        for (const connection of expectedConnections) {
+            expect(mockClient.sendData).toHaveBeenCalledWith(
+                JSON.stringify(expectedOccurences),
+                connection.connectionID
+            );
+        }
+    });
+
+    test("returns only occurrences related to error", () => {
+        expect(response).toEqual(expect.arrayContaining(expectedFailures));
+    });
+});

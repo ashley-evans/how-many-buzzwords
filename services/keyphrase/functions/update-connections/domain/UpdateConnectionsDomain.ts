@@ -3,7 +3,10 @@ import {
     WebSocketClient,
     WebSocketClientFactory,
 } from "buzzword-aws-web-socket-client-library";
-import { ActiveConnectionsRepositoryPort } from "buzzword-aws-active-connections-repository-library";
+import {
+    ActiveConnectionsRepositoryPort,
+    Connection,
+} from "buzzword-aws-active-connections-repository-library";
 import { PathnameOccurrences } from "buzzword-aws-keyphrase-repository-library";
 
 import {
@@ -26,21 +29,33 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
     ): Promise<BaseURLOccurrences[]> {
         const groupedOccurrences = this.groupOccurrences(occurrences);
 
-        for (const occurrrenceGroup of groupedOccurrences) {
-            const connections = await this.repository.getListeningConnections(
-                occurrrenceGroup.baseURL
-            );
+        const failedOccurrences: BaseURLOccurrences[] = [];
+        for (const occurrenceGroup of groupedOccurrences) {
+            let connections: Connection[];
+            try {
+                connections = await this.repository.getListeningConnections(
+                    occurrenceGroup.baseURL
+                );
+            } catch {
+                failedOccurrences.push(
+                    ...this.mapOccurrencesToBaseURL(
+                        occurrenceGroup.baseURL,
+                        occurrenceGroup.occurrences
+                    )
+                );
+                continue;
+            }
 
             for (const connection of connections) {
                 const client = this.getClient(connection.callbackURL);
                 await client.sendData(
-                    JSON.stringify(occurrrenceGroup.occurrences),
+                    JSON.stringify(occurrenceGroup.occurrences),
                     connection.connectionID
                 );
             }
         }
 
-        return [];
+        return failedOccurrences;
     }
 
     private groupOccurrences(
@@ -61,6 +76,18 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
                 }),
             }))
             .value();
+    }
+
+    private mapOccurrencesToBaseURL(
+        baseURL: string,
+        occurrences: PathnameOccurrences[]
+    ): BaseURLOccurrences[] {
+        return occurrences.map((occurrence) => ({
+            baseURL,
+            pathname: occurrence.pathname,
+            keyphrase: occurrence.keyphrase,
+            occurrences: occurrence.occurrences,
+        }));
     }
 
     private getClient(callbackURL: URL): WebSocketClient {
