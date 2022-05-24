@@ -463,7 +463,7 @@ test("returns all occurrences as failures if an error occurs sending data to a l
     expect(response).toEqual(expect.arrayContaining(expectedOccurences));
 });
 
-test("only returns occurrences as failures related to the base URL which had an error occur during sending of data to a listening client", async () => {
+test("only returns occurrences related to the base URL as failures if an error occurs during sending of data to a listening client", async () => {
     jest.resetAllMocks();
     const failureOccurrences = createOccurrences(BASE_URL, 2);
     const successOccurrences = createOccurrences(OTHER_BASE_URL, 2);
@@ -481,6 +481,57 @@ test("only returns occurrences as failures related to the base URL which had an 
             expect.anything()
         )
         .mockRejectedValue(new Error());
+    const domain = new UpdateConnectionsDomain(
+        mockClientFactory,
+        mockRepository
+    );
+
+    const response = await domain.updateExistingConnections([
+        ...failureOccurrences,
+        ...successOccurrences,
+    ]);
+
+    expect(response).toEqual(expect.arrayContaining(failureOccurrences));
+});
+
+test("returns all occurrences as failures if an error occurs creating a client given a single base URL", async () => {
+    jest.resetAllMocks();
+    const expectedOccurences = createOccurrences(BASE_URL, 2);
+    const connections = createConnections(CALLBACK_URL, 2);
+    mockClientFactory.createClient.mockImplementation(() => {
+        throw new Error();
+    });
+    mockRepository.getListeningConnections.mockResolvedValue(connections);
+    const domain = new UpdateConnectionsDomain(
+        mockClientFactory,
+        mockRepository
+    );
+
+    const response = await domain.updateExistingConnections(expectedOccurences);
+
+    expect(response).toEqual(expect.arrayContaining(expectedOccurences));
+});
+
+test("only returns occurrences related to the base URL as failures if an error occurs creating a client", async () => {
+    jest.resetAllMocks();
+    const failureOccurrences = createOccurrences(BASE_URL, 2);
+    const successOccurrences = createOccurrences(OTHER_BASE_URL, 2);
+    const failureConnections = createConnections(CALLBACK_URL, 1);
+    const successConnections = createConnections(OTHER_CALLBACK_URL, 1);
+    when(mockRepository.getListeningConnections)
+        .calledWith(BASE_URL)
+        .mockResolvedValue(failureConnections);
+    when(mockRepository.getListeningConnections)
+        .calledWith(OTHER_BASE_URL)
+        .mockResolvedValue(successConnections);
+    when(mockClientFactory.createClient)
+        .calledWith(CALLBACK_URL)
+        .mockImplementation(() => {
+            throw new Error();
+        });
+    when(mockClientFactory.createClient)
+        .calledWith(OTHER_CALLBACK_URL)
+        .mockReturnValue(mockClient);
     const domain = new UpdateConnectionsDomain(
         mockClientFactory,
         mockRepository
