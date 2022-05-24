@@ -26,33 +26,37 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
     ): Promise<BaseURLOccurrences[]> {
         const groupedOccurrences = this.groupOccurrences(occurrences);
 
-        const failedOccurrences: BaseURLOccurrences[] = [];
-        for (const occurrenceGroup of groupedOccurrences) {
-            try {
-                const connections =
-                    await this.repository.getListeningConnections(
-                        occurrenceGroup.baseURL
+        const failureOccurrences: BaseURLOccurrences[][] = await Promise.all(
+            groupedOccurrences.map(async (group) => {
+                try {
+                    const connections =
+                        await this.repository.getListeningConnections(
+                            group.baseURL
+                        );
+
+                    await Promise.all(
+                        connections.map(async (connection) => {
+                            const client = this.getClient(
+                                connection.callbackURL
+                            );
+                            await client.sendData(
+                                JSON.stringify(group.occurrences),
+                                connection.connectionID
+                            );
+                        })
                     );
 
-                for (const connection of connections) {
-                    const client = this.getClient(connection.callbackURL);
-                    await client.sendData(
-                        JSON.stringify(occurrenceGroup.occurrences),
-                        connection.connectionID
+                    return [];
+                } catch {
+                    return this.mapOccurrencesToBaseURL(
+                        group.baseURL,
+                        group.occurrences
                     );
                 }
-            } catch {
-                failedOccurrences.push(
-                    ...this.mapOccurrencesToBaseURL(
-                        occurrenceGroup.baseURL,
-                        occurrenceGroup.occurrences
-                    )
-                );
-                continue;
-            }
-        }
+            })
+        );
 
-        return failedOccurrences;
+        return failureOccurrences.flat();
     }
 
     private groupOccurrences(
