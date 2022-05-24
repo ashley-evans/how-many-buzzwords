@@ -1,4 +1,6 @@
 import { mock } from "jest-mock-extended";
+import { createMock } from "ts-auto-mock";
+import { On, method } from "ts-auto-mock/extension";
 import { when } from "jest-when";
 import {
     WebSocketClientFactory,
@@ -14,7 +16,7 @@ import { BaseURLOccurrences } from "../../ports/UpdateConnectionsPort";
 import { PathnameOccurrences } from "buzzword-aws-keyphrase-repository-library";
 
 const mockClientFactory = mock<WebSocketClientFactory>();
-const mockClient = mock<WebSocketClient>();
+const mockClient = createMock<WebSocketClient>();
 const mockRepository = mock<ActiveConnectionsRepositoryPort>();
 
 const BASE_URL = "www.example.com";
@@ -439,4 +441,55 @@ describe("given an error only occurs while obtaining the listening connections f
     test("returns only occurrences related to error", () => {
         expect(response).toEqual(expect.arrayContaining(expectedFailures));
     });
+});
+
+test("returns all occurrences as failures if an error occurs sending data to a listening client given a single base URL", async () => {
+    jest.resetAllMocks();
+    const expectedOccurences = createOccurrences(BASE_URL, 2);
+    const connections = createConnections(CALLBACK_URL, 2);
+    mockClientFactory.createClient.mockReturnValue(mockClient);
+    mockRepository.getListeningConnections.mockResolvedValue(connections);
+    const mockSendData: jest.Mock = On(mockClient).get(
+        method((mock) => mock.sendData)
+    );
+    mockSendData.mockRejectedValue(new Error());
+    const domain = new UpdateConnectionsDomain(
+        mockClientFactory,
+        mockRepository
+    );
+
+    const response = await domain.updateExistingConnections(expectedOccurences);
+
+    expect(response).toEqual(expect.arrayContaining(expectedOccurences));
+});
+
+test("only returns occurrences as failures related to the base URL which had an error occur during sending of data to a listening client", async () => {
+    jest.resetAllMocks();
+    const failureOccurrences = createOccurrences(BASE_URL, 2);
+    const successOccurrences = createOccurrences(OTHER_BASE_URL, 2);
+    const connections = createConnections(CALLBACK_URL, 1);
+    mockClientFactory.createClient.mockReturnValue(mockClient);
+    mockRepository.getListeningConnections.mockResolvedValue(connections);
+    const mockSendData: jest.Mock = On(mockClient).get(
+        method((mock) => mock.sendData)
+    );
+    when(mockSendData)
+        .calledWith(
+            JSON.stringify(
+                getPathnameOccurrences(BASE_URL, failureOccurrences)
+            ),
+            expect.anything()
+        )
+        .mockRejectedValue(new Error());
+    const domain = new UpdateConnectionsDomain(
+        mockClientFactory,
+        mockRepository
+    );
+
+    const response = await domain.updateExistingConnections([
+        ...failureOccurrences,
+        ...successOccurrences,
+    ]);
+
+    expect(response).toEqual(expect.arrayContaining(failureOccurrences));
 });

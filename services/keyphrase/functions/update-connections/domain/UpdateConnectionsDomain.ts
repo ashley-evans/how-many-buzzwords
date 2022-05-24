@@ -3,10 +3,7 @@ import {
     WebSocketClient,
     WebSocketClientFactory,
 } from "buzzword-aws-web-socket-client-library";
-import {
-    ActiveConnectionsRepositoryPort,
-    Connection,
-} from "buzzword-aws-active-connections-repository-library";
+import { ActiveConnectionsRepositoryPort } from "buzzword-aws-active-connections-repository-library";
 import { PathnameOccurrences } from "buzzword-aws-keyphrase-repository-library";
 
 import {
@@ -31,11 +28,19 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
 
         const failedOccurrences: BaseURLOccurrences[] = [];
         for (const occurrenceGroup of groupedOccurrences) {
-            let connections: Connection[];
             try {
-                connections = await this.repository.getListeningConnections(
-                    occurrenceGroup.baseURL
-                );
+                const connections =
+                    await this.repository.getListeningConnections(
+                        occurrenceGroup.baseURL
+                    );
+
+                for (const connection of connections) {
+                    const client = this.getClient(connection.callbackURL);
+                    await client.sendData(
+                        JSON.stringify(occurrenceGroup.occurrences),
+                        connection.connectionID
+                    );
+                }
             } catch {
                 failedOccurrences.push(
                     ...this.mapOccurrencesToBaseURL(
@@ -44,14 +49,6 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
                     )
                 );
                 continue;
-            }
-
-            for (const connection of connections) {
-                const client = this.getClient(connection.callbackURL);
-                await client.sendData(
-                    JSON.stringify(occurrenceGroup.occurrences),
-                    connection.connectionID
-                );
             }
         }
 
