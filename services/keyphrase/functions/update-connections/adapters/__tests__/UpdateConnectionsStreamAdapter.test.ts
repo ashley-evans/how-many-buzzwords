@@ -23,6 +23,10 @@ const SEQUENCE_NUMBER = "test_sequence_number";
 const BASE_URL = new URL("https://www.example.com/test");
 const KEYPHRASE = "test_keyphrase";
 const OCCURRENCES = 15;
+const OTHER_SEQUENCE_NUMBER = "other_sequence_number";
+const OTHER_BASE_URL = new URL("https://www.anotherexample.com/wibble");
+const OTHER_KEYPHRASE = "other_test_keyphrase";
+const OTHER_OCCURRENCES = 23;
 
 function createBaseURLOccurrence(record: DynamoDBRecord): BaseURLOccurrences {
     const newImage = record.dynamodb?.NewImage;
@@ -273,6 +277,56 @@ describe.each([
             ),
         ]),
     ],
+    [
+        "with multiple insert records",
+        createEvent([
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                OCCURRENCES
+            ),
+            createRecord(
+                "INSERT",
+                OTHER_SEQUENCE_NUMBER,
+                OTHER_BASE_URL.hostname,
+                `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`,
+                OTHER_OCCURRENCES
+            ),
+        ]),
+    ],
+    [
+        "with a single modify record",
+        createEvent([
+            createRecord(
+                "MODIFY",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                OCCURRENCES
+            ),
+        ]),
+    ],
+    [
+        "with multiple modify records",
+        createEvent([
+            createRecord(
+                "MODIFY",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                OCCURRENCES
+            ),
+            createRecord(
+                "MODIFY",
+                OTHER_SEQUENCE_NUMBER,
+                OTHER_BASE_URL.hostname,
+                `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`,
+                OTHER_OCCURRENCES
+            ),
+        ]),
+    ],
 ])(
     "given a valid event with %s",
     (message: string, event: DynamoDBStreamEvent) => {
@@ -289,9 +343,7 @@ describe.each([
                 createBaseURLOccurrence(record)
             );
 
-            expect(mockPort.updateExistingConnections).toHaveBeenCalledTimes(
-                event.Records.length
-            );
+            expect(mockPort.updateExistingConnections).toHaveBeenCalledTimes(1);
             expect(mockPort.updateExistingConnections).toHaveBeenCalledWith(
                 expect.arrayContaining(expectedUpdates)
             );

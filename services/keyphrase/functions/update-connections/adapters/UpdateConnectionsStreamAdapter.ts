@@ -14,6 +14,7 @@ import {
 
 enum ValidEventNames {
     Insert = "INSERT",
+    Modify = "MODIFY",
 }
 
 type ValidUpdateConnectionsRecord = {
@@ -35,7 +36,7 @@ const schema: JSONSchemaType<ValidUpdateConnectionsRecord> = {
     properties: {
         eventName: {
             type: "string",
-            enum: [ValidEventNames.Insert],
+            enum: [ValidEventNames.Insert, ValidEventNames.Modify],
         },
         dynamodb: {
             type: "object",
