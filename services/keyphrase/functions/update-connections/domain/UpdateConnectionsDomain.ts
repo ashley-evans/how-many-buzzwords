@@ -47,7 +47,15 @@ class UpdateConnectionsDomain implements UpdateConnectionsPort {
                     );
 
                     return [];
-                } catch {
+                } catch (ex) {
+                    const errorContent =
+                        ex instanceof Error ? ex.message : JSON.stringify(ex);
+                    console.error(
+                        `An error occurred while sending keyphrase updates: ${errorContent} for group: ${JSON.stringify(
+                            group
+                        )}`
+                    );
+
                     return this.mapOccurrencesToBaseURL(
                         group.baseURL,
                         group.occurrences
