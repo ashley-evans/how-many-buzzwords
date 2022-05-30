@@ -15,6 +15,7 @@ import {
 enum ValidEventNames {
     Insert = "INSERT",
     Modify = "MODIFY",
+    Remove = "REMOVE",
 }
 
 type ValidUpdateConnectionsRecord = {
@@ -24,9 +25,11 @@ type ValidUpdateConnectionsRecord = {
             [KeyphraseTableKeyFields.HashKey]: { S: string };
             [KeyphraseTableKeyFields.RangeKey]: { S: string };
         };
-        NewImage: {
-            [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
-        };
+        NewImage:
+            | {
+                  [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
+              }
+            | undefined;
         SequenceNumber: string;
     };
 };
@@ -36,7 +39,11 @@ const schema: JSONSchemaType<ValidUpdateConnectionsRecord> = {
     properties: {
         eventName: {
             type: "string",
-            enum: [ValidEventNames.Insert, ValidEventNames.Modify],
+            enum: [
+                ValidEventNames.Insert,
+                ValidEventNames.Modify,
+                ValidEventNames.Remove,
+            ],
         },
         dynamodb: {
             type: "object",
@@ -76,12 +83,13 @@ const schema: JSONSchemaType<ValidUpdateConnectionsRecord> = {
                         },
                     },
                     required: [KeyphraseTableNonKeyFields.Occurrences],
+                    nullable: true,
                 },
                 SequenceNumber: {
                     type: "string",
                 },
             },
-            required: ["Keys", "NewImage", "SequenceNumber"],
+            required: ["Keys", "SequenceNumber"],
         },
     },
     required: ["eventName", "dynamodb"],
@@ -107,6 +115,7 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
                     this.validateKeyphraseChange(validatedRecord)
                 );
             } catch (ex) {
+                console.log(ex);
                 console.log(
                     `An invalid update connections record was provided: ${JSON.stringify(
                         ex
@@ -125,11 +134,20 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
     private validateKeyphraseChange(
         record: ValidUpdateConnectionsRecord
     ): BaseURLOccurrences {
-        const occurrences = parseInt(
-            record.dynamodb.NewImage[KeyphraseTableNonKeyFields.Occurrences].N
-        );
-        if (isNaN(occurrences)) {
-            throw new Error("Occurrences provided is NaN");
+        const newImage = record.dynamodb.NewImage;
+        let occurrences: number | undefined;
+        if (newImage) {
+            occurrences = parseInt(
+                newImage[KeyphraseTableNonKeyFields.Occurrences].N
+            );
+        } else if (record.eventName == ValidEventNames.Remove) {
+            occurrences = 0;
+        }
+
+        if (occurrences == undefined || isNaN(occurrences)) {
+            throw new Error(
+                "Invalid occurrences provided with modify/insert record"
+            );
         }
 
         const splitSK =

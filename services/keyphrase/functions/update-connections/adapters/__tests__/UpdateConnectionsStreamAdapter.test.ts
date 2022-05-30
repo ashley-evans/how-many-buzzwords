@@ -28,13 +28,23 @@ const OTHER_BASE_URL = new URL("https://www.anotherexample.com/wibble");
 const OTHER_KEYPHRASE = "other_test_keyphrase";
 const OTHER_OCCURRENCES = 23;
 
-function createBaseURLOccurrence(record: DynamoDBRecord): BaseURLOccurrences {
+function createExpectedBaseURLOccurrence(
+    record: DynamoDBRecord
+): BaseURLOccurrences {
     const newImage = record.dynamodb?.NewImage;
     const keys = record.dynamodb?.Keys;
-    if (keys && newImage) {
+    if (keys) {
         const baseURL = keys[KeyphraseTableKeyFields.HashKey].S;
         const splitSK = keys[KeyphraseTableKeyFields.RangeKey].S?.split("#");
-        const occurrences = newImage[KeyphraseTableNonKeyFields.Occurrences].N;
+        let occurrences: string | undefined;
+        if (record.eventName == "REMOVE") {
+            occurrences = "0";
+        } else if (
+            newImage &&
+            newImage[KeyphraseTableNonKeyFields.Occurrences]
+        ) {
+            occurrences = newImage[KeyphraseTableNonKeyFields.Occurrences].N;
+        }
 
         if (baseURL && splitSK && occurrences) {
             return {
@@ -74,13 +84,13 @@ function createRecord(
                     },
                 }),
             },
-            NewImage: {
-                ...(occurrences && {
+            ...(occurrences && {
+                NewImage: {
                     [KeyphraseTableNonKeyFields.Occurrences]: {
                         N: occurrences.toString(),
                     },
-                }),
-            },
+                },
+            }),
             SequenceNumber: sequenceNumber,
         };
     }
@@ -152,7 +162,7 @@ describe.each([
         ]),
     ],
     [
-        "a record with missing number of occurrences",
+        "an insert record with missing number of occurrences",
         createEvent([
             createRecord(
                 "INSERT",
@@ -164,10 +174,34 @@ describe.each([
         ]),
     ],
     [
-        "a record with a non-numeric number of occurrences",
+        "an insert record with a non-numeric number of occurrences",
         createEvent([
             createRecord(
                 "INSERT",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                "not a number"
+            ),
+        ]),
+    ],
+    [
+        "a modify record with missing number of occurrences",
+        createEvent([
+            createRecord(
+                "MODIFY",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                undefined
+            ),
+        ]),
+    ],
+    [
+        "a modify record with a non-numeric number of occurrences",
+        createEvent([
+            createRecord(
+                "MODIFY",
                 SEQUENCE_NUMBER,
                 BASE_URL.hostname,
                 `${BASE_URL.pathname}#${KEYPHRASE}`,
@@ -247,7 +281,7 @@ describe("given an event with both valid and invalid new update connection recor
 
     test("calls port to update connections with each valid new keyphrase occurrence details", () => {
         const expectedUpdates = validRecords.map((record) =>
-            createBaseURLOccurrence(record)
+            createExpectedBaseURLOccurrence(record)
         );
 
         expect(mockPort.updateExistingConnections).toHaveBeenCalledTimes(
@@ -327,6 +361,34 @@ describe.each([
             ),
         ]),
     ],
+    [
+        "with a single remove record",
+        createEvent([
+            createRecord(
+                "REMOVE",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`
+            ),
+        ]),
+    ],
+    [
+        "with multiple remove records",
+        createEvent([
+            createRecord(
+                "REMOVE",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`
+            ),
+            createRecord(
+                "REMOVE",
+                OTHER_SEQUENCE_NUMBER,
+                OTHER_BASE_URL.hostname,
+                `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`
+            ),
+        ]),
+    ],
 ])(
     "given a valid event with %s",
     (message: string, event: DynamoDBStreamEvent) => {
@@ -340,7 +402,7 @@ describe.each([
 
         test("calls port to update connections with each new keyphrase occurrence details", () => {
             const expectedUpdates = event.Records.map((record) =>
-                createBaseURLOccurrence(record)
+                createExpectedBaseURLOccurrence(record)
             );
 
             expect(mockPort.updateExistingConnections).toHaveBeenCalledTimes(1);
