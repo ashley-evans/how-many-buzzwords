@@ -115,11 +115,12 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
                     this.validateKeyphraseChange(validatedRecord)
                 );
             } catch (ex) {
-                console.log(ex);
+                const errorContent =
+                    ex instanceof Error ? ex.message : JSON.stringify(ex);
                 console.log(
-                    `An invalid update connections record was provided: ${JSON.stringify(
-                        ex
-                    )}. Record: ${JSON.stringify(record)}`
+                    `An invalid update connections record was provided: ${errorContent}. Record: ${JSON.stringify(
+                        record
+                    )}`
                 );
             }
         }
