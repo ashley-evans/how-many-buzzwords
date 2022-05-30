@@ -462,11 +462,12 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
+                                - dynamodb:DescribeTable
                                 - dynamodb:Query
                                 - dynamodb:DeleteItem
                             Resource:
                                 - !GetAtt ActiveConnectionsTable.Arn
-                                - !Sub "${ActiveConnectionsTable.Arn}/index/SearchKeyIndex"
+                                - !Sub "${ActiveConnectionsTable.Arn}/index/ListeningConnectionsIndex"
                             Effect: Allow
                 - PolicyName: SearchTableReadStreamPolicy
                   PolicyDocument:
@@ -490,8 +491,12 @@ Resources:
             Runtime: nodejs16.x
             CodeUri: ./functions/update-connections
             Description: Provides existing connections with relevant database updates
+            Timeout: 10
+            MemorySize: 256
             Layers:
-                - Ref: KeyphraseNodeDependencyLayer
+                - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: WebSocketClientLibraryLayer
+                - Ref: ActiveConnectionsRepositoryLibraryLayer
             Events:
                 UpdatesStreamEvent:
                     Type: DynamoDB
@@ -499,8 +504,7 @@ Resources:
                         Stream: !GetAtt KeyphrasesTable.StreamArn
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
+                        MaximumRetryAttempts: 5
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
-                    INDEX_NAME: SearchKeyIndex
-                    SEARCH_KEY: BaseUrl
