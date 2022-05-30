@@ -343,6 +343,7 @@ describe.each([
 
         beforeAll(async () => {
             jest.resetAllMocks();
+            jest.spyOn(console, "error").mockImplementation(() => undefined);
             mockRepository.getListeningConnections.mockRejectedValue(
                 new Error()
             );
@@ -388,6 +389,7 @@ describe("given an error only occurs while obtaining the listening connections f
 
     beforeAll(async () => {
         jest.resetAllMocks();
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
         when(mockRepository.getListeningConnections)
             .calledWith(BASE_URL)
             .mockResolvedValue(expectedConnections);
@@ -445,6 +447,7 @@ describe("given an error only occurs while obtaining the listening connections f
 
 test("returns all occurrences as failures if an error occurs sending data to a listening client given a single base URL", async () => {
     jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     const expectedOccurences = createOccurrences(BASE_URL, 2);
     const connections = createConnections(CALLBACK_URL, 2);
     mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -465,6 +468,7 @@ test("returns all occurrences as failures if an error occurs sending data to a l
 
 test("only returns occurrences related to the base URL as failures if an error occurs during sending of data to a listening client", async () => {
     jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     const failureOccurrences = createOccurrences(BASE_URL, 2);
     const successOccurrences = createOccurrences(OTHER_BASE_URL, 2);
     const connections = createConnections(CALLBACK_URL, 1);
@@ -496,6 +500,7 @@ test("only returns occurrences related to the base URL as failures if an error o
 
 test("returns all occurrences as failures if an error occurs creating a client given a single base URL", async () => {
     jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     const expectedOccurences = createOccurrences(BASE_URL, 2);
     const connections = createConnections(CALLBACK_URL, 2);
     mockClientFactory.createClient.mockImplementation(() => {
@@ -514,6 +519,7 @@ test("returns all occurrences as failures if an error occurs creating a client g
 
 test("only returns occurrences related to the base URL as failures if an error occurs creating a client", async () => {
     jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     const failureOccurrences = createOccurrences(BASE_URL, 2);
     const successOccurrences = createOccurrences(OTHER_BASE_URL, 2);
     const failureConnections = createConnections(CALLBACK_URL, 1);
