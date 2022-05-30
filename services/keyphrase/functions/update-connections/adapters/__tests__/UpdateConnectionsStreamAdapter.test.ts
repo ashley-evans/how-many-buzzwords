@@ -417,3 +417,71 @@ describe.each([
         });
     }
 );
+
+test.each([
+    [
+        "sequence numbers for records if all updates fail to send",
+        [
+            createRecord(
+                "REMOVE",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`
+            ),
+            createRecord(
+                "REMOVE",
+                OTHER_SEQUENCE_NUMBER,
+                OTHER_BASE_URL.hostname,
+                `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`
+            ),
+        ],
+        [],
+    ],
+    [
+        "relevant sequence numbers when some records failed to send",
+        [
+            createRecord(
+                "REMOVE",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`
+            ),
+        ],
+        [
+            createRecord(
+                "REMOVE",
+                OTHER_SEQUENCE_NUMBER,
+                OTHER_BASE_URL.hostname,
+                `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`
+            ),
+        ],
+    ],
+])(
+    "returns all %s",
+    async (
+        message: string,
+        expectedFailureRecords: DynamoDBRecord[],
+        expectedSuccessRecords: DynamoDBRecord[]
+    ) => {
+        jest.resetAllMocks();
+        const failedUpdates = expectedFailureRecords.map((record) =>
+            createExpectedBaseURLOccurrence(record)
+        );
+        mockPort.updateExistingConnections.mockResolvedValue(failedUpdates);
+        const event = createEvent([
+            ...expectedFailureRecords,
+            ...expectedSuccessRecords,
+        ]);
+
+        const result = await adapter.handleEvent(event);
+
+        expect(result.batchItemFailures).toHaveLength(
+            expectedFailureRecords.length
+        );
+        for (const expectedFailureRecord of expectedFailureRecords) {
+            expect(result.batchItemFailures).toContainEqual({
+                itemIdentifier: expectedFailureRecord.dynamodb?.SequenceNumber,
+            });
+        }
+    }
+);

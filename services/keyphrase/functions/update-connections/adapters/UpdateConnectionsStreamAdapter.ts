@@ -1,4 +1,8 @@
-import { DynamoDBStreamEvent, SQSBatchResponse } from "aws-lambda";
+import {
+    DynamoDBStreamEvent,
+    SQSBatchItemFailure,
+    SQSBatchResponse,
+} from "aws-lambda";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import { JSONSchemaType } from "ajv";
 import {
@@ -104,16 +108,18 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
 
     async handleEvent(event: DynamoDBStreamEvent): Promise<SQSBatchResponse> {
         if (!Array.isArray(event.Records)) {
-            return { batchItemFailures: [] };
+            return this.createReponse();
         }
 
         const validOccurrences: BaseURLOccurrences[] = [];
+        const validRecords: ValidUpdateConnectionsRecord[] = [];
         for (const record of event.Records) {
             try {
                 const validatedRecord = this.validator.validate(record);
                 validOccurrences.push(
                     this.validateKeyphraseChange(validatedRecord)
                 );
+                validRecords.push(validatedRecord);
             } catch (ex) {
                 const errorContent =
                     ex instanceof Error ? ex.message : JSON.stringify(ex);
@@ -126,10 +132,14 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
         }
 
         if (validOccurrences.length > 0) {
-            await this.port.updateExistingConnections(validOccurrences);
+            const failures = await this.port.updateExistingConnections(
+                validOccurrences
+            );
+
+            return this.createReponse(failures, validRecords);
         }
 
-        return { batchItemFailures: [] };
+        return this.createReponse();
     }
 
     private validateKeyphraseChange(
@@ -164,6 +174,34 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
         }
 
         throw new Error("An invalid SK was provided");
+    }
+
+    private createReponse(
+        failures?: BaseURLOccurrences[],
+        records?: ValidUpdateConnectionsRecord[]
+    ): SQSBatchResponse {
+        const batchItemFailures: SQSBatchItemFailure[] = [];
+        if (failures && records) {
+            for (const failure of failures) {
+                const failureSequenceNumbers: SQSBatchItemFailure[] = records
+                    .filter((record) => {
+                        const keys = record.dynamodb.Keys;
+                        return (
+                            keys[KeyphraseTableKeyFields.HashKey].S ==
+                                failure.baseURL &&
+                            keys[KeyphraseTableKeyFields.RangeKey].S ==
+                                `${failure.pathname}#${failure.keyphrase}`
+                        );
+                    })
+                    .map((record) => ({
+                        itemIdentifier: record.dynamodb.SequenceNumber,
+                    }));
+
+                batchItemFailures.push(...failureSequenceNumbers);
+            }
+        }
+
+        return { batchItemFailures };
     }
 }
 
