@@ -98,21 +98,25 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
             return { batchItemFailures: [] };
         }
 
-        let occurrenceUpdates: BaseURLOccurrences;
-        try {
-            const validatedRecord = this.validator.validate(event.Records[0]);
-            occurrenceUpdates = this.validateKeyphraseChange(validatedRecord);
-        } catch (ex) {
-            console.log(
-                `An invalid update connections record was provided: ${JSON.stringify(
-                    ex
-                )}. Record: ${JSON.stringify(event.Records[0])}`
-            );
-
-            return { batchItemFailures: [] };
+        const validOccurrences: BaseURLOccurrences[] = [];
+        for (const record of event.Records) {
+            try {
+                const validatedRecord = this.validator.validate(record);
+                validOccurrences.push(
+                    this.validateKeyphraseChange(validatedRecord)
+                );
+            } catch (ex) {
+                console.log(
+                    `An invalid update connections record was provided: ${JSON.stringify(
+                        ex
+                    )}. Record: ${JSON.stringify(record)}`
+                );
+            }
         }
 
-        await this.port.updateExistingConnections([occurrenceUpdates]);
+        if (validOccurrences.length > 0) {
+            await this.port.updateExistingConnections(validOccurrences);
+        }
 
         return { batchItemFailures: [] };
     }

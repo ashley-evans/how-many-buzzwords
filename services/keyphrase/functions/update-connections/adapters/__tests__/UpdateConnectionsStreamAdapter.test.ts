@@ -93,6 +93,10 @@ function createEvent(records?: DynamoDBRecord[]) {
     return event;
 }
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 describe.each([
     ["missing records", createEvent()],
     [
@@ -167,6 +171,25 @@ describe.each([
             ),
         ]),
     ],
+    [
+        "multiple records with invalid properties",
+        createEvent([
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                BASE_URL.hostname,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                "not a number"
+            ),
+            createRecord(
+                "INSERT",
+                SEQUENCE_NUMBER,
+                undefined,
+                `${BASE_URL.pathname}#${KEYPHRASE}`,
+                OCCURRENCES
+            ),
+        ]),
+    ],
 ])(
     "given an invalid event with %s",
     (message: string, event: DynamoDBStreamEvent) => {
@@ -188,6 +211,54 @@ describe.each([
         });
     }
 );
+
+describe("given an event with both valid and invalid new update connection records", () => {
+    const validRecords = [
+        createRecord(
+            "INSERT",
+            SEQUENCE_NUMBER,
+            BASE_URL.hostname,
+            `${BASE_URL.pathname}#${KEYPHRASE}`,
+            OCCURRENCES
+        ),
+    ];
+    const invalidRecords = [
+        createRecord(
+            "INSERT",
+            SEQUENCE_NUMBER,
+            BASE_URL.hostname,
+            `${BASE_URL.pathname}#${KEYPHRASE}`,
+            undefined
+        ),
+    ];
+    const event = createEvent([...invalidRecords, ...validRecords]);
+
+    let response: SQSBatchResponse;
+
+    beforeAll(async () => {
+        jest.resetAllMocks();
+
+        response = await adapter.handleEvent(event);
+    });
+
+    test("calls port to update connections with each valid new keyphrase occurrence details", () => {
+        const expectedUpdates = validRecords.map((record) =>
+            createBaseURLOccurrence(record)
+        );
+
+        expect(mockPort.updateExistingConnections).toHaveBeenCalledTimes(
+            validRecords.length
+        );
+        expect(mockPort.updateExistingConnections).toHaveBeenCalledWith(
+            expect.arrayContaining(expectedUpdates)
+        );
+    });
+
+    test("returns no item failures", () => {
+        expect(response).toBeDefined();
+        expect(response.batchItemFailures).toHaveLength(0);
+    });
+});
 
 describe.each([
     [
