@@ -132,11 +132,26 @@ class UpdateConnectionsStreamAdapter implements DynamoDBStreamAdapter {
         }
 
         if (validOccurrences.length > 0) {
-            const failures = await this.port.updateExistingConnections(
-                validOccurrences
-            );
+            try {
+                const failures = await this.port.updateExistingConnections(
+                    validOccurrences
+                );
 
-            return this.createReponse(failures, validRecords);
+                return this.createReponse(failures, validRecords);
+            } catch (ex) {
+                const errorContent =
+                    ex instanceof Error ? ex.message : JSON.stringify(ex);
+                console.error(
+                    `An error occurred while sending keyphrase updates: ${errorContent}. Records: ${JSON.stringify(
+                        validRecords
+                    )}`
+                );
+
+                const failureSequenceNumbers = validRecords.map((record) => ({
+                    itemIdentifier: record.dynamodb.SequenceNumber,
+                }));
+                return { batchItemFailures: failureSequenceNumbers };
+            }
         }
 
         return this.createReponse();

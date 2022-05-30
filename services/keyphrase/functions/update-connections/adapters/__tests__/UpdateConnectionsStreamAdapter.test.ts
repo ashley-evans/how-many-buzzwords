@@ -485,3 +485,33 @@ test.each([
         }
     }
 );
+
+test("returns all sequence numbers for records if an error occurs during the sending of keyphrase updates", async () => {
+    jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const records = [
+        createRecord(
+            "REMOVE",
+            SEQUENCE_NUMBER,
+            BASE_URL.hostname,
+            `${BASE_URL.pathname}#${KEYPHRASE}`
+        ),
+        createRecord(
+            "REMOVE",
+            OTHER_SEQUENCE_NUMBER,
+            OTHER_BASE_URL.hostname,
+            `${OTHER_BASE_URL.pathname}#${OTHER_KEYPHRASE}`
+        ),
+    ];
+    const event = createEvent(records);
+    mockPort.updateExistingConnections.mockRejectedValue(new Error());
+
+    const result = await adapter.handleEvent(event);
+
+    expect(result.batchItemFailures).toHaveLength(records.length);
+    for (const record of records) {
+        expect(result.batchItemFailures).toContainEqual({
+            itemIdentifier: record.dynamodb?.SequenceNumber,
+        });
+    }
+});
