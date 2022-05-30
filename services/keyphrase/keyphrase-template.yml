@@ -462,6 +462,7 @@ Resources:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
+                                - dynamodb:DescribeTable
                                 - dynamodb:Query
                                 - dynamodb:DeleteItem
                             Resource:
@@ -499,8 +500,7 @@ Resources:
                         Stream: !GetAtt KeyphrasesTable.StreamArn
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
+                        MaximumRetryAttempts: 5
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
-                    INDEX_NAME: SearchKeyIndex
-                    SEARCH_KEY: BaseUrl
