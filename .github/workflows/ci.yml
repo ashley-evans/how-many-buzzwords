@@ -55,6 +55,7 @@ jobs:
             - name: Install Dependencies
               run: |
                   npm ci
+                  npm --prefix ./ui/ ci
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
