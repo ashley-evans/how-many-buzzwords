@@ -42,7 +42,7 @@ jobs:
                   node-version: "16"
             - name: Run formatters
               run: |
-                  npx prettier --check . '!services/**' '!packages/**'
+                  npx prettier --check . '!services/**' '!packages/**' '!ui/**'
     lint:
         runs-on: ubuntu-latest
         steps:
@@ -55,12 +55,11 @@ jobs:
             - name: Install Dependencies
               run: |
                   npm ci
-                  npm --prefix ./ui/ ci
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
               run: |
-                  ./node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx --ignore-pattern 'services/**' --ignore-pattern 'packages/**'
+                  ./node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx --ignore-pattern 'services/**' --ignore-pattern 'packages/**' --ignore-pattern 'ui/**'
                   ./node_modules/.bin/npmPkgJsonLint ./package.json
     audit:
         runs-on: ubuntu-latest
