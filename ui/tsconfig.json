@@ -16,6 +16,6 @@
         "noEmit": false,
         "jsx": "react-jsx"
     },
-    "include": ["src"],
+    "include": ["src", "config/jest-setup.ts"],
     "exclude": ["nodes_modules", "dist"]
 }
