@@ -4,6 +4,14 @@
 
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
+## Running the UI locally
+
+Run tnhe following script to run the UI locally:
+
+```
+npm --prefix ./ui/ start
+```
+
 ## General script usage
 
 Each of the scripts used within this project have usage instructions, these can be found by providing the `-h` flag to each script.
