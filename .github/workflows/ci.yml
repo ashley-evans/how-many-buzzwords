@@ -25,6 +25,11 @@ jobs:
             deploy_script_path: ./scripts/deploy-keyphrase-service.sh
         secrets:
             deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
+    build-deploy-ui:
+        name: UI
+        uses: ./.github/workflows/ui.yml
+        with:
+            path: ./ui
     validate:
         runs-on: ubuntu-latest
         steps:
