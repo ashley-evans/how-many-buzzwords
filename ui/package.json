@@ -25,5 +25,9 @@
         "webpack": "^5.72.1",
         "webpack-cli": "^4.9.2",
         "webpack-dev-server": "^4.9.0"
+    },
+    "scripts": {
+        "build": "./node_modules/.bin/webpack --mode=production --config webpack.config.js",
+        "start": "./node_modules/.bin/webpack serve --mode=development --config webpack.config.js"
     }
 }
