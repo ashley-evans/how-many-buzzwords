@@ -1,0 +1,56 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Keyphrase Service
+Parameters:
+    EnvironmentNameSuffix:
+        Type: String
+        Description: Environment name suffixed to service resources
+        Default: dev
+Resources:
+    UIDeploymentBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: !Sub buzzword-ui-deployment-bucket-${EnvironmentNameSuffix}
+            AccessControl: Private
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
+    DeploymentFilesAccessIdentity:
+        Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+        Properties:
+            CloudFrontOriginAccessIdentityConfig:
+                Comment: !Sub buzzword-ui-oai-deployment-bucket-${EnvironmentNameSuffix}
+    UIDeploymentBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket: !Ref UIDeploymentBucket
+            PolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Action: s3:GetObject*
+                      Resource: !Join
+                          - ""
+                          - - "arn:aws:s3:::"
+                            - !Ref UIDeploymentBucket
+                            - /*
+                      Principal:
+                          CanonicalUser: !GetAtt DeploymentFilesAccessIdentity.S3CanonicalUserId
+                      Effect: Allow
+    UIDistribution:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                Enabled: true
+                Origins:
+                    - DomainName: !GetAtt UIDeploymentBucket.RegionalDomainName
+                      Id: UIAssetOrigin
+                      S3OriginConfig:
+                          OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${DeploymentFilesAccessIdentity}"
+                DefaultRootObject: index.html
+                DefaultCacheBehavior:
+                    TargetOriginId: UIAssetOrigin
+                    ViewerProtocolPolicy: redirect-to-https
+                    CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Caching Optimised Managed Policy
+                    OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin Managed Policy
+                PriceClass: PriceClass_100

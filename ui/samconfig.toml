@@ -1,0 +1,16 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "buzzword-ui-dev"
+s3_bucket = "buzzword-bucket"
+s3_prefix = "buzzword-ui-dev"
+region = "eu-west-2"
+confirm_changeset = true
+parameter_overrides = "EnvironmentNameSuffix=dev"
+
+[production.deploy.parameters]
+stack_name = "buzzword-ui-prod"
+s3_bucket = "buzzword-bucket"
+s3_prefix = "buzzword-ui-prod"
+region = "eu-west-2"
+confirm_changeset = true
+parameter_overrides = "EnvironmentNameSuffix=prod"
