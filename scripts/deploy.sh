@@ -44,3 +44,7 @@ fi
 echo "Deploying Keyphrase Service"
 
 $script_dir/deploy-keyphrase-service.sh -e $environment
+
+echo "Deploying UI"
+
+$script_dir/deploy-ui.sh -e $environment -f -c
