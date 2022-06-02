@@ -2,7 +2,9 @@
 
 usage() {
     echo "Usage:
-    -e [Environment to deploy]" 1>&2;
+    -e [Environment to deploy]
+    -f [Force deployment flag]
+    -c [Cache build flag]" 1>&2;
     exit 1;
 }
 
