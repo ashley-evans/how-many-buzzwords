@@ -1,0 +1,29 @@
+Description: Host and certificate configuration for how many buzzwords site
+Resources:
+    BuzzwordCOMHostedZone:
+        Type: AWS::Route53::HostedZone
+        Properties:
+            Name: howmanybuzzwords.com
+    BuzzwordUKHostedZone:
+        Type: AWS::Route53::HostedZone
+        Properties:
+            Name: howmanybuzzwords.co.uk
+    BuzzwordCertificate:
+        Type: AWS::CertificateManager::Certificate
+        Properties:
+            DomainName: howmanybuzzwords.com
+            DomainValidationOptions:
+                - DomainName: howmanybuzzwords.com
+                  HostedZoneId: !Ref BuzzwordCOMHostedZone
+                - DomainName: howmanybuzzwords.co.uk
+                  HostedZoneId: !Ref BuzzwordUKHostedZone
+            ValidationMethod: DNS
+            SubjectAlternativeNames:
+                - howmanybuzzwords.co.uk
+Outputs:
+    BuzzwordCOMHostedZoneID:
+        Value: !Ref BuzzwordCOMHostedZone
+    BuzzwordUKHostedZoneID:
+        Value: !Ref BuzzwordUKHostedZone
+    BuzzwordCertificateARN:
+        Value: !Ref BuzzwordCertificate
