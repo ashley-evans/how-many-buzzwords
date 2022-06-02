@@ -2,14 +2,18 @@
 
 usage() {
     echo "Usage:
-    -s [Name of stack to obtain outputs from]" 1>&2;
+    -s [Name of stack to obtain outputs from]
+    -r [The region the stack resides in]" 1>&2;
     exit 1; 
 }
 
-while getopts "s:h" opt; do
+while getopts "s:r:h" opt; do
     case $opt in
         s)
             stack=$OPTARG
+            ;;
+        r)
+            region=$OPTARG
             ;;
         h)
             usage
@@ -24,7 +28,11 @@ if [ -z $stack ]; then
     usage 
 fi
 
-details=$(aws cloudformation describe-stacks --stack-name $stack)
+if [ -z $region ]; then
+    details=$(aws cloudformation describe-stacks --stack-name $stack)
+else
+    details=$(aws --region $region cloudformation describe-stacks --stack-name $stack)
+fi
 
 if [ $? -ne 0 ]; then
     exit 1
