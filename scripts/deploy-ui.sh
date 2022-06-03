@@ -68,11 +68,23 @@ if [ $force ]; then
     deploy_optional_params+=(-f)
 fi
 
+host_stack_outputs=$($script_dir/helpers/fetch-stack-outputs.sh -s buzzword-hosts -r us-east-1)
+com_zone_id=$(echo $host_stack_outputs | jq -r 'select ( .OutputKey == "BuzzwordCOMHostedZoneID" ) | .OutputValue')
+uk_zone_id=$(echo $host_stack_outputs | jq -r 'select ( .OutputKey == "BuzzwordUKHostedZoneID" ) | .OutputValue')
+certificate_arn=$(echo $host_stack_outputs | jq -r 'select ( .OutputKey == "BuzzwordCertificateARN" ) | .OutputValue')
+
+config_parameters=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v parameter_overrides)
+
 echo "Deploying UI stack..."
 $script_dir/helpers/deploy-stack.sh \
     -c $config_path \
     -e $environment \
+    -o "BuzzwordCOMHostedZoneID=$com_zone_id BuzzwordUKHostedZoneID=$uk_zone_id BuzzwordCertificateARN=$certificate_arn $config_parameters" \
     "${deploy_optional_params[@]}"
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v stack_name)
 deployment_bucket=$(aws cloudformation list-stack-resources --stack-name $stack_name \

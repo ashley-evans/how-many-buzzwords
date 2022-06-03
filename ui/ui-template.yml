@@ -1,6 +1,15 @@
 Transform: AWS::Serverless-2016-10-31
-Description: Keyphrase Service
+Description: How many buzzwords UI stack for code storage and distribution
 Parameters:
+    BuzzwordCOMHostedZoneID:
+        Type: String
+        Description: The hosted zone ID for the com domain
+    BuzzwordUKHostedZoneID:
+        Type: String
+        Description: The hosted zone ID for the uk domain
+    BuzzwordCertificateARN:
+        Type: String
+        Description: The ARN of the certificate attributed to each domain
     EnvironmentNameSuffix:
         Type: String
         Description: Environment name suffixed to service resources
@@ -10,21 +19,11 @@ Conditions:
         - !Ref EnvironmentNameSuffix
         - prod
 Resources:
-    BuzzwordCOMHostedZone:
-        Type: AWS::Route53::HostedZone
-        Condition: CreateProdResources
-        Properties:
-            Name: howmanybuzzwords.com
-    BuzzwordUKHostedZone:
-        Type: AWS::Route53::HostedZone
-        Condition: CreateProdResources
-        Properties:
-            Name: howmanybuzzwords.co.uk
     BuzzwordCOMDistributionRecordSet:
         Type: AWS::Route53::RecordSetGroup
         Condition: CreateProdResources
         Properties:
-            HostedZoneId: !Ref BuzzwordCOMHostedZone
+            HostedZoneId: !Ref BuzzwordCOMHostedZoneID
             RecordSets:
                 - Name: howmanybuzzwords.com.
                   Type: A
@@ -35,21 +34,13 @@ Resources:
         Type: AWS::Route53::RecordSetGroup
         Condition: CreateProdResources
         Properties:
-            HostedZoneId: !Ref BuzzwordUKHostedZone
+            HostedZoneId: !Ref BuzzwordUKHostedZoneID
             RecordSets:
                 - Name: howmanybuzzwords.co.uk.
                   Type: A
                   AliasTarget:
                       DNSName: !GetAtt UIDistribution.DomainName
                       HostedZoneId: Z2FDTNDATAQYW2
-    BuzzwordCertificate:
-        Type: AWS::CertificateManager::Certificate
-        Condition: CreateProdResources
-        Properties:
-            DomainName: howmanybuzzwords.com
-            ValidationMethod: DNS
-            SubjectAlternativeNames:
-                - howmanybuzzwords.co.uk
     UIDeploymentBucket:
         Type: AWS::S3::Bucket
         Properties:
@@ -98,15 +89,14 @@ Resources:
                     CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Caching Optimised Managed Policy
                     OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin Managed Policy
                 PriceClass: PriceClass_100
-                Aliases:
-                    - !If
-                      - CreateProdResources
-                      - howmanybuzzwords.com
-                        howmanybuzzwords.co.uk
-                      - !Ref AWS::NoValue
+                Aliases: !If
+                    - CreateProdResources
+                    - - howmanybuzzwords.com
+                      - howmanybuzzwords.co.uk
+                    - - !Ref AWS::NoValue
                 ViewerCertificate: !If
                     - CreateProdResources
-                    - AcmCertificateArn: !Ref BuzzwordCertificate
+                    - AcmCertificateArn: !Ref BuzzwordCertificateARN
                       SslSupportMethod: sni-only
                       MinimumProtocolVersion: TLSv1.2_2018
                     - !Ref AWS::NoValue
