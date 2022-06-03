@@ -30,6 +30,8 @@ jobs:
         uses: ./.github/workflows/ui.yml
         with:
             path: ./ui
+        secrets:
+            deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
     validate:
         runs-on: ubuntu-latest
         steps:
