@@ -22,6 +22,7 @@ jobs:
                   filters: |
                       ui:
                         - ${{ inputs.path }}/**
+                        - ./.github/workflows/ui.yml
     audit:
         runs-on: ubuntu-latest
         steps:
@@ -99,6 +100,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/master' }}
         permissions:
             id-token: write
+            contents: read
         steps:
             - uses: actions/checkout@v2
             - uses: actions/setup-python@v2
