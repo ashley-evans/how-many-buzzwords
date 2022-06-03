@@ -35,6 +35,10 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
+echo "Installing dependencies..."
+npm --prefix $root_dir ci
+npm --prefix "$root_dir/ui/" ci
+
 echo "Removing existing build artefacts..."
 rm -rf "$root_dir/ui/dist"
 
