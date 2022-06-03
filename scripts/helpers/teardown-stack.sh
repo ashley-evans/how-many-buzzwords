@@ -29,6 +29,14 @@ if ! aws cloudformation describe-stacks --stack-name $stack &>/dev/null ; then
     exit 1
 fi
 
+echo "Emptying S3 buckets related to stack: \"$stack\""
+stack_s3_bucket_ids=$(aws cloudformation list-stack-resources --stack-name $stack \
+    | jq -r '.StackResourceSummaries[] | select( .ResourceType == "AWS::S3::Bucket" ) | .PhysicalResourceId')
+
+for physical_id in $stack_s3_bucket_ids; do
+    aws s3 rm "s3://$physical_id/" --recursive
+done
+
 stack_lambda_layers=$(aws cloudformation list-stack-resources --stack-name $stack \
     | jq -r '.StackResourceSummaries[] | select( .ResourceType == "AWS::Lambda::LayerVersion") | .PhysicalResourceId')
 

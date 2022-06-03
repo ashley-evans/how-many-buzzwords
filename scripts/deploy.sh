@@ -33,6 +33,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if [ "$environment" -eq "production" ]; then
+    $script_dir/deploy-host-stack.sh
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+fi
+
 echo "Deploying Crawl Service"
 
 $script_dir/deploy-crawl-service.sh -e $environment
@@ -44,3 +52,11 @@ fi
 echo "Deploying Keyphrase Service"
 
 $script_dir/deploy-keyphrase-service.sh -e $environment
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+echo "Deploying UI"
+
+$script_dir/deploy-ui.sh -e $environment -f -c
