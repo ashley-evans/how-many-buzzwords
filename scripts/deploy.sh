@@ -33,10 +33,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-$script_dir/deploy-host-stack.sh
+if [ "$environment" -eq "production" ]; then
+    $script_dir/deploy-host-stack.sh
 
-if [ $? -ne 0 ]; then
-    exit 1
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
 fi
 
 echo "Deploying Crawl Service"
