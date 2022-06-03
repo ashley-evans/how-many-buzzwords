@@ -4,6 +4,9 @@ on:
             path:
                 required: true
                 type: string
+        secrets:
+            deploy_role:
+                required: true
 
 jobs:
     changed:
