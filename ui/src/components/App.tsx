@@ -12,7 +12,7 @@ class App extends Component<unknown, AppState> {
     };
 
     handleURLChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-        this.setState({ baseURL: event.target.value });
+        this.setState({ baseURL: event.target.value, validationError: "" });
     };
 
     handleCrawlSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
