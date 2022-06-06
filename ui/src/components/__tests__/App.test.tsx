@@ -71,4 +71,17 @@ describe("input validation", () => {
             expect(queryByRole("alert")).toBeNull();
         }
     );
+
+    test("clears error message after changing input text", () => {
+        const { getByRole, queryByRole } = render(<App />);
+        fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
+            target: { value: "" },
+        });
+        fireEvent.submit(getByRole("button", { name: searchButtonText }));
+        fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
+            target: { value: "https://www.example.com/" },
+        });
+
+        expect(queryByRole("alert")).toBeNull();
+    });
 });
