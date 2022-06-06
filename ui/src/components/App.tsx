@@ -1,14 +1,16 @@
-import React, { Component } from "react";
+import React, { Component, Fragment } from "react";
 
 type AppState = {
     baseURL: string;
     validationError: string;
+    crawling: boolean;
 };
 
 class App extends Component<unknown, AppState> {
     state: AppState = {
         baseURL: "",
         validationError: "",
+        crawling: false,
     };
 
     handleURLChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -32,16 +34,16 @@ class App extends Component<unknown, AppState> {
 
             try {
                 new URL(baseURL);
+                this.setState({ crawling: true });
             } catch {
                 this.setState({ validationError: "Please enter a valid URL." });
             }
         }
     };
 
-    render() {
+    renderForm() {
         return (
-            <div>
-                <h1>How many buzzwords</h1>
+            <Fragment>
                 <form onSubmit={this.handleCrawlSubmit}>
                     <label>
                         URL:
@@ -56,7 +58,17 @@ class App extends Component<unknown, AppState> {
                 {this.state.validationError && (
                     <div role="alert">{this.state.validationError}</div>
                 )}
-            </div>
+            </Fragment>
+        );
+    }
+
+    render() {
+        return (
+            <Fragment>
+                <h1>How many buzzwords</h1>
+                {!this.state.crawling && this.renderForm()}
+                {this.state.crawling && <p>Crawling...</p>}
+            </Fragment>
         );
     }
 }
