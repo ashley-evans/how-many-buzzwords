@@ -44,6 +44,16 @@ Resources:
                                 - events:*
                             Effect: Allow
                             Resource: arn:aws:events:*
+                - PolicyName: CloudFrontDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - cloudfront:*
+                                - acm:*
+                                - route53:*
+                            Effect: Allow
+                            Resource: "*"
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
                 - arn:aws:iam::aws:policy/AWSLambda_FullAccess
