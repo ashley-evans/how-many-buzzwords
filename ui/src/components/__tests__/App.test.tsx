@@ -39,15 +39,32 @@ describe("input validation", () => {
     const URLInputBoxLabel = "URL:";
     const searchButtonText = "Search!";
 
-    test("rejects empty input", async () => {
-        const expectedError = "Please enter a URL.";
+    test.each([
+        ["empty input", "", "Please enter a URL."],
+        ["a numeric value", "123", "Please enter a valid URL"],
+        ["invalid URL (space)", "test invalid.com", "Please enter a valid URL"],
+    ])(
+        "provides error message given %s",
+        (message: string, input: string, expectedError: string) => {
+            const { getByRole } = render(<App />);
+            fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
+                target: { value: input },
+            });
+            fireEvent.submit(getByRole("button", { name: searchButtonText }));
 
-        const { getByRole } = render(<App />);
+            expect(getByRole("alert")).toHaveTextContent(expectedError);
+        }
+    );
+
+    test("does not provide an error message given a valid URL", () => {
+        const input = "https://www.example.com/";
+
+        const { getByRole, queryByRole } = render(<App />);
         fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
-            target: { value: "" },
+            target: { value: input },
         });
         fireEvent.submit(getByRole("button", { name: searchButtonText }));
 
-        expect(getByRole("alert")).toHaveTextContent(expectedError);
+        expect(queryByRole("alert")).toBeNull();
     });
 });
