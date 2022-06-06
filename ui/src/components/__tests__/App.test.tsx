@@ -56,15 +56,19 @@ describe("input validation", () => {
         }
     );
 
-    test("does not provide an error message given a valid URL", () => {
-        const input = "https://www.example.com/";
+    test.each([
+        ["with a protocol", "https://www.example.com/"],
+        ["with no protocol", "www.example.com"],
+    ])(
+        "does not provide an error message given a valid URL %s",
+        (message: string, input: string) => {
+            const { getByRole, queryByRole } = render(<App />);
+            fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
+                target: { value: input },
+            });
+            fireEvent.submit(getByRole("button", { name: searchButtonText }));
 
-        const { getByRole, queryByRole } = render(<App />);
-        fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
-            target: { value: input },
-        });
-        fireEvent.submit(getByRole("button", { name: searchButtonText }));
-
-        expect(queryByRole("alert")).toBeNull();
-    });
+            expect(queryByRole("alert")).toBeNull();
+        }
+    );
 });
