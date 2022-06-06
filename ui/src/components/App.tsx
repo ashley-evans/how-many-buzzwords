@@ -17,12 +17,19 @@ class App extends Component<unknown, AppState> {
 
     handleCrawlSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
-        const baseURL = this.state.baseURL;
+        let baseURL = this.state.baseURL;
         if (baseURL == "") {
             this.setState({ validationError: "Please enter a URL." });
         } else if (!isNaN(parseInt(baseURL))) {
             this.setState({ validationError: "Please enter a valid URL." });
         } else {
+            if (
+                !baseURL.startsWith("https://") &&
+                !baseURL.startsWith("http://")
+            ) {
+                baseURL = `https://${baseURL}`;
+            }
+
             try {
                 new URL(baseURL);
             } catch {
