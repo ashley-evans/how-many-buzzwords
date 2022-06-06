@@ -2,11 +2,13 @@ import React, { Component } from "react";
 
 type AppState = {
     baseURL: string;
+    validationError: string;
 };
 
 class App extends Component<unknown, AppState> {
     state: AppState = {
         baseURL: "",
+        validationError: "",
     };
 
     handleURLChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -15,7 +17,9 @@ class App extends Component<unknown, AppState> {
 
     handleCrawlSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
-        alert("A URL was submitted: " + this.state.baseURL);
+        if (this.state.baseURL == "") {
+            this.setState({ validationError: "Please enter a URL." });
+        }
     };
 
     render() {
@@ -33,6 +37,9 @@ class App extends Component<unknown, AppState> {
                     </label>
                     <input type="submit" value="Search!" />
                 </form>
+                {this.state.validationError && (
+                    <div role="alert">{this.state.validationError}</div>
+                )}
             </div>
         );
     }

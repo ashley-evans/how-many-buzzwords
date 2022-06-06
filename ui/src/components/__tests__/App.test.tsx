@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 
 import App from "../App";
 
@@ -32,5 +32,22 @@ describe("field rendering", () => {
         expect(
             getByRole("button", { name: expectedButtonText })
         ).toBeInTheDocument();
+    });
+});
+
+describe("input validation", () => {
+    const URLInputBoxLabel = "URL:";
+    const searchButtonText = "Search!";
+
+    test("rejects empty input", async () => {
+        const expectedError = "Please enter a URL.";
+
+        const { getByRole } = render(<App />);
+        fireEvent.input(getByRole("textbox", { name: URLInputBoxLabel }), {
+            target: { value: "" },
+        });
+        fireEvent.submit(getByRole("button", { name: searchButtonText }));
+
+        expect(getByRole("alert")).toHaveTextContent(expectedError);
     });
 });
