@@ -1,4 +1,9 @@
 import React, { Component, Fragment } from "react";
+import axios from "axios";
+
+type AppProps = {
+    crawlServiceEndpoint: URL;
+};
 
 type AppState = {
     baseURL: string;
@@ -6,7 +11,7 @@ type AppState = {
     crawling: boolean;
 };
 
-class App extends Component<unknown, AppState> {
+class App extends Component<AppProps, AppState> {
     state: AppState = {
         baseURL: "",
         validationError: "",
@@ -17,7 +22,9 @@ class App extends Component<unknown, AppState> {
         this.setState({ baseURL: event.target.value, validationError: "" });
     };
 
-    handleCrawlSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    handleCrawlSubmit: React.FormEventHandler<HTMLFormElement> = async (
+        event
+    ) => {
         event.preventDefault();
         let baseURL = this.state.baseURL;
         if (baseURL == "") {
@@ -33,8 +40,21 @@ class App extends Component<unknown, AppState> {
             }
 
             try {
-                new URL(baseURL);
+                const validatedURL = new URL(baseURL);
                 this.setState({ crawling: true });
+                await axios.post(
+                    "/crawl",
+                    {
+                        MessageBody: { url: validatedURL.toString() },
+                    },
+                    {
+                        baseURL: this.props.crawlServiceEndpoint.toString(),
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+                this.setState({ crawling: false });
             } catch {
                 this.setState({ validationError: "Please enter a valid URL." });
             }
