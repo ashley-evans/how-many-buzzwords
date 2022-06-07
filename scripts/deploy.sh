@@ -33,7 +33,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "$environment" -eq "production" ]; then
+if [[ "$environment" == "production" ]]; then
     $script_dir/deploy-host-stack.sh
 
     if [ $? -ne 0 ]; then
