@@ -9,21 +9,6 @@ paths:
         post:
             x-amazon-apigateway-integration:
                 $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-        options:
-            responses:
-                200:
-                    description: Default response for CORS preflight requests
-                    headers:
-                        Access-Control-Allow-Origin:
-                            schema:
-                                type: string
-                        Access-Control-Allow-Methods:
-                            schema:
-                                type: string
-                        Access-Control-Allow-Headers:
-                            schema:
-                                type: string
-                    content: {}
     /url/{baseURL}:
         get:
             parameters:
