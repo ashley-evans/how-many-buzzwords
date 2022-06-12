@@ -51,7 +51,23 @@ class App extends Component<AppProps, AppState> {
         this.setState({ crawling: false });
         if (crawlStarted) {
             this.setState({ occurrences: [] });
-            this.props.keyphraseServiceClientFactory.createClient(validatedURL);
+            const client =
+                this.props.keyphraseServiceClientFactory.createClient(
+                    validatedURL
+                );
+            const observable = client.observeKeyphraseResults();
+            observable.subscribe({
+                next: (occurrence) => {
+                    this.setState((state) => {
+                        const currentOccurrences = state.occurrences
+                            ? state.occurrences
+                            : [];
+                        return {
+                            occurrences: [...currentOccurrences, occurrence],
+                        };
+                    });
+                },
+            });
         } else {
             this.setState({
                 errorMessage:

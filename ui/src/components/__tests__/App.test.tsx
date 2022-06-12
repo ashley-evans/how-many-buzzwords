@@ -4,13 +4,18 @@ import {
     render,
     waitFor,
     waitForElementToBeRemoved,
+    within,
 } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 
 import App from "../App";
 import CrawlServiceClient from "../../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
-import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
+import {
+    KeyphraseServiceClient,
+    PathnameOccurrences,
+} from "../../clients/interfaces/KeyphraseServiceClient";
+import { from } from "rxjs";
 
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL:";
@@ -246,6 +251,7 @@ describe("crawl error rendering", () => {
 describe("web socket connection initiation handling", () => {
     test("creates a client to listen to keyphrase occurrence results given valid URL submitted", async () => {
         mockCrawlClient.crawl.mockResolvedValue(true);
+        mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
         const { getByRole, queryByText } = render(
             <App
                 crawlServiceClient={mockCrawlClient}
@@ -327,9 +333,13 @@ describe("web socket connection initiation handling", () => {
 describe("keyphrase occurrence rendering", () => {
     const AWAITING_RESULTS_MESSAGE = "Awaiting results...";
 
+    beforeEach(() => {
+        mockCrawlClient.crawl.mockResolvedValue(true);
+        mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
+    });
+
     test("displays results header if crawl initiated successfully", async () => {
         const expectedHeader = `Results for: ${VALID_URL.toString()}`;
-        mockCrawlClient.crawl.mockResolvedValue(true);
 
         const { getByRole } = render(
             <App
@@ -350,8 +360,6 @@ describe("keyphrase occurrence rendering", () => {
     });
 
     test("displays awaiting results message if no keyphrases returned", async () => {
-        mockCrawlClient.crawl.mockResolvedValue(true);
-
         const { getByRole, getByText } = render(
             <App
                 crawlServiceClient={mockCrawlClient}
@@ -367,4 +375,80 @@ describe("keyphrase occurrence rendering", () => {
             expect(getByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument()
         );
     });
+
+    test.each([
+        [
+            "a single occurrence detail if a single occurrence",
+            [
+                {
+                    pathname: "/test",
+                    keyphrase: "wibble",
+                    occurrences: 15,
+                },
+            ],
+        ],
+        [
+            "multiple occurrence details if multiple occurrences",
+            [
+                {
+                    pathname: "/test",
+                    keyphrase: "wibble",
+                    occurrences: 15,
+                },
+                {
+                    pathname: "/example",
+                    keyphrase: "wobble",
+                    occurrences: 12,
+                },
+            ],
+        ],
+    ])(
+        "renders %s received",
+        async (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(expectedOccurrences)
+            );
+
+            const { getByRole, queryByText } = render(
+                <App
+                    crawlServiceClient={mockCrawlClient}
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />
+            );
+            fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+                target: { value: VALID_URL },
+            });
+            fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+            await waitFor(() =>
+                expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument()
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("grid");
+
+            for (const expectedOccurrence of expectedOccurrences) {
+                await waitFor(() =>
+                    expect(
+                        within(table).getByRole("cell", {
+                            name: expectedOccurrence.pathname,
+                        })
+                    ).toBeInTheDocument()
+                );
+                expect(
+                    within(table).getByRole("cell", {
+                        name: expectedOccurrence.keyphrase,
+                    })
+                ).toBeInTheDocument();
+                expect(
+                    within(table).getByRole("cell", {
+                        name: expectedOccurrence.occurrences.toString(),
+                    })
+                ).toBeInTheDocument();
+            }
+        },
+        2000000
+    );
 });
