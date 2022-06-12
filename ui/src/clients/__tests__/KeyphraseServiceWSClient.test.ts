@@ -1,4 +1,5 @@
 import WS from "jest-websocket-mock";
+import { PathnameOccurrences } from "../interfaces/KeyphraseServiceClient";
 
 import KeyphraseServiceWSClient from "../KeyphraseServiceWSClient";
 
@@ -21,4 +22,22 @@ test("client connects to provided web socket server on creation", async () => {
 
     expect(client).toBeDefined();
     expect(client.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
+});
+
+test("returns no occurrences if no messages are sent from server during connection", async () => {
+    const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+    const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
+    await server.connected;
+
+    const observable = client.observeKeyphraseResults();
+
+    expect.assertions(1);
+    const results: PathnameOccurrences[] = [];
+    observable.subscribe({
+        next: (value) => results.push(value),
+        complete: () => {
+            expect(results).toHaveLength(0);
+        },
+    });
+    server.close();
 });
