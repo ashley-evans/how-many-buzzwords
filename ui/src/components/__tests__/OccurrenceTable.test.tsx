@@ -38,97 +38,120 @@ describe("given no occurrences", () => {
     });
 });
 
-describe("given a single occurrence", () => {
-    const expectedOccurrences: PathnameOccurrences[] = [
-        {
-            pathname: "/test",
-            keyphrase: "wibble",
-            occurrences: 5,
-        },
-    ];
+describe.each([
+    [
+        "a single occurrence",
+        [
+            {
+                pathname: "/test",
+                keyphrase: "wibble",
+                occurrences: 5,
+            },
+        ],
+    ],
+    [
+        "multiple occurrences",
+        [
+            {
+                pathname: "/test",
+                keyphrase: "wibble",
+                occurrences: 5,
+            },
+            {
+                pathname: "/example",
+                keyphrase: "wobble",
+                occurrences: 16,
+            },
+        ],
+    ],
+])(
+    "given %s",
+    (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+        test("renders expected header for results", () => {
+            const expectedHeader = `Results for: ${VALID_URL.toString()}`;
 
-    test("renders expected header for results", () => {
-        const expectedHeader = `Results for: ${VALID_URL.toString()}`;
+            const { getByRole } = render(
+                <OccurrenceTable
+                    baseURL={VALID_URL}
+                    occurrences={expectedOccurrences}
+                />
+            );
 
-        const { getByRole } = render(
-            <OccurrenceTable
-                baseURL={VALID_URL}
-                occurrences={expectedOccurrences}
-            />
-        );
-
-        expect(
-            getByRole("heading", { name: expectedHeader })
-        ).toBeInTheDocument();
-    });
-
-    test("does not render the awaiting results message", () => {
-        const expectedText = "Awaiting results...";
-
-        const { queryByText } = render(
-            <OccurrenceTable
-                baseURL={VALID_URL}
-                occurrences={expectedOccurrences}
-            />
-        );
-
-        expect(queryByText(expectedText)).not.toBeInTheDocument();
-    });
-
-    test("renders a table to contain the results", () => {
-        const { getByRole } = render(
-            <OccurrenceTable
-                baseURL={VALID_URL}
-                occurrences={expectedOccurrences}
-            />
-        );
-
-        expect(getByRole("grid")).toBeInTheDocument();
-    });
-
-    test("renders required columns to contain results from crawl within table", () => {
-        const expectedColumns = ["Pathname", "Keyphrase", "Occurrences"];
-
-        const { getByRole } = render(
-            <OccurrenceTable
-                baseURL={VALID_URL}
-                occurrences={expectedOccurrences}
-            />
-        );
-        const table = getByRole("grid");
-
-        for (const expectedColumn of expectedColumns) {
             expect(
-                within(table).getByRole("columnheader", {
-                    name: expectedColumn,
-                })
+                getByRole("heading", { name: expectedHeader })
             ).toBeInTheDocument();
-        }
-    });
+        });
 
-    test("renders all pathname occurrence details within table contents", () => {
-        const { getByRole } = render(
-            <OccurrenceTable
-                baseURL={VALID_URL}
-                occurrences={expectedOccurrences}
-            />
-        );
-        const table = getByRole("grid");
+        test("does not render the awaiting results message", () => {
+            const expectedText = "Awaiting results...";
 
-        expect(
-            within(table).getByRole("cell", {
-                name: expectedOccurrences[0].pathname,
-            })
-        ).toBeInTheDocument();
-        expect(
-            within(table).getByRole("cell", {
-                name: expectedOccurrences[0].keyphrase,
-            })
-        ).toBeInTheDocument();
-        expect(
-            within(table).getByRole("cell", {
-                name: expectedOccurrences[0].occurrences.toString(),
-            })
-        ).toBeInTheDocument();
-    });
-});
+            const { queryByText } = render(
+                <OccurrenceTable
+                    baseURL={VALID_URL}
+                    occurrences={expectedOccurrences}
+                />
+            );
+
+            expect(queryByText(expectedText)).not.toBeInTheDocument();
+        });
+
+        test("renders a table to contain the results", () => {
+            const { getByRole } = render(
+                <OccurrenceTable
+                    baseURL={VALID_URL}
+                    occurrences={expectedOccurrences}
+                />
+            );
+
+            expect(getByRole("grid")).toBeInTheDocument();
+        });
+
+        test("renders required columns to contain results from crawl within table", () => {
+            const expectedColumns = ["Pathname", "Keyphrase", "Occurrences"];
+
+            const { getByRole } = render(
+                <OccurrenceTable
+                    baseURL={VALID_URL}
+                    occurrences={expectedOccurrences}
+                />
+            );
+            const table = getByRole("grid");
+
+            for (const expectedColumn of expectedColumns) {
+                expect(
+                    within(table).getByRole("columnheader", {
+                        name: expectedColumn,
+                    })
+                ).toBeInTheDocument();
+            }
+        });
+
+        test("renders all pathname occurrence details within table contents", () => {
+            const { getByRole } = render(
+                <OccurrenceTable
+                    baseURL={VALID_URL}
+                    occurrences={expectedOccurrences}
+                />
+            );
+            const table = getByRole("grid");
+
+            for (const expectedOccurrence of expectedOccurrences) {
+                expect(
+                    within(table).getByRole("cell", {
+                        name: expectedOccurrence.pathname,
+                    })
+                ).toBeInTheDocument();
+                expect(
+                    within(table).getByRole("cell", {
+                        name: expectedOccurrence.keyphrase,
+                    })
+                ).toBeInTheDocument();
+                expect(
+                    within(table).getByRole("cell", {
+                        name: expectedOccurrence.occurrences.toString(),
+                    })
+                ).toBeInTheDocument();
+            }
+        });
+    }
+);
