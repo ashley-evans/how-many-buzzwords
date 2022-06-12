@@ -10,6 +10,7 @@ import { mock } from "jest-mock-extended";
 import App from "../App";
 import CrawlServiceClient from "../../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
+import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
 
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL:";
@@ -21,9 +22,13 @@ const INVALID_URL = "not a valid URL";
 
 const mockCrawlClient = mock<CrawlServiceClient>();
 const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
+const mockKeyphraseClient = mock<KeyphraseServiceClient>();
 
 beforeEach(() => {
     jest.resetAllMocks();
+    mockKeyphraseClientFactory.createClient.mockReturnValue(
+        mockKeyphraseClient
+    );
 });
 
 describe("field rendering", () => {
@@ -315,6 +320,51 @@ describe("web socket connection initiation handling", () => {
 
         expect(mockKeyphraseClientFactory.createClient).toHaveBeenCalledTimes(
             0
+        );
+    });
+});
+
+describe("keyphrase occurrence rendering", () => {
+    const AWAITING_RESULTS_MESSAGE = "Awaiting results...";
+
+    test("displays results header if crawl initiated successfully", async () => {
+        const expectedHeader = `Results for: ${VALID_URL.toString()}`;
+        mockCrawlClient.crawl.mockResolvedValue(true);
+
+        const { getByRole } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+
+        await waitFor(() =>
+            expect(
+                getByRole("heading", { name: expectedHeader })
+            ).toBeInTheDocument()
+        );
+    });
+
+    test("displays awaiting results message if no keyphrases returned", async () => {
+        mockCrawlClient.crawl.mockResolvedValue(true);
+
+        const { getByRole, getByText } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+
+        await waitFor(() =>
+            expect(getByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument()
         );
     });
 });
