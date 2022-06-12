@@ -105,4 +105,30 @@ describe("given a single occurrence", () => {
             ).toBeInTheDocument();
         }
     });
+
+    test("renders all pathname occurrence details within table contents", () => {
+        const { getByRole } = render(
+            <OccurrenceTable
+                baseURL={VALID_URL}
+                occurrences={expectedOccurrences}
+            />
+        );
+        const table = getByRole("grid");
+
+        expect(
+            within(table).getByRole("cell", {
+                name: expectedOccurrences[0].pathname,
+            })
+        ).toBeInTheDocument();
+        expect(
+            within(table).getByRole("cell", {
+                name: expectedOccurrences[0].keyphrase,
+            })
+        ).toBeInTheDocument();
+        expect(
+            within(table).getByRole("cell", {
+                name: expectedOccurrences[0].occurrences.toString(),
+            })
+        ).toBeInTheDocument();
+    });
 });

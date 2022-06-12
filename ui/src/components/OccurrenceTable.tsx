@@ -28,6 +28,11 @@ class OccurrenceTable extends Component<OccurrenceTableProps, unknown> {
                                     Occurrences
                                 </th>
                             </tr>
+                            <tr role="row">
+                                <td>{this.props.occurrences[0].pathname}</td>
+                                <td>{this.props.occurrences[0].keyphrase}</td>
+                                <td>{this.props.occurrences[0].occurrences}</td>
+                            </tr>
                         </thead>
                     </table>
                 )}
