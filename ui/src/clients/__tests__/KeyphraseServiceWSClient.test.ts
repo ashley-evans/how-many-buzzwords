@@ -112,7 +112,33 @@ test.each([
     }
 );
 
+test.each([
+    ["a non-JSON response", "not json"],
+    ["an invalid single occurrence", JSON.stringify({ pathname: "test" })],
+    ["an invalid array of occurrences", JSON.stringify([{ pathname: "test" }])],
+])(
+    "throws an error event if the server returns %s",
+    async (message: string, errorContent: string) => {
+        const expectedErrorMessage = "Invalid response returned.";
+        const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+        const client = new KeyphraseServiceWSClient(
+            KEYPHRASE_ENDPOINT,
+            BASE_URL
+        );
+        await server.connected;
+
+        const observable = client.observeKeyphraseResults();
+        const resultsPromise = receiveObservableOutput(observable);
+        server.send(errorContent);
+
+        await expect(() => resultsPromise).rejects.toThrow(
+            expectedErrorMessage
+        );
+    }
+);
+
 test("throws an error event if the web socket connection is closed due to error", async () => {
+    const expectedErrorMessage = "Websocket connection closed due to an error.";
     const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
     const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
     await server.connected;
@@ -121,7 +147,7 @@ test("throws an error event if the web socket connection is closed due to error"
     const resultsPromise = receiveObservableOutput(observable);
     server.error();
 
-    await expect(() => resultsPromise).rejects.toThrow();
+    await expect(() => resultsPromise).rejects.toThrow(expectedErrorMessage);
 });
 
 test("reconnects to server on subsequent observations if the previous connection closed", async () => {

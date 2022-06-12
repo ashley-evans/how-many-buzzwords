@@ -41,18 +41,24 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
         this.socket.addEventListener("close", () => {
             this.occurrences.complete();
         });
+
         this.socket.addEventListener("message", (event) => {
-            const parsedEventData = JSON.parse(event.data);
-            if (Array.isArray(parsedEventData)) {
-                for (const data of parsedEventData) {
-                    const newOccurrence = this.validator.validate(data);
+            try {
+                const parsedEventData = JSON.parse(event.data);
+                if (Array.isArray(parsedEventData)) {
+                    for (const data of parsedEventData) {
+                        const newOccurrence = this.validator.validate(data);
+                        this.occurrences.next(newOccurrence);
+                    }
+                } else {
+                    const newOccurrence = this.validator.validate(event.data);
                     this.occurrences.next(newOccurrence);
                 }
-            } else {
-                const newOccurrence = this.validator.validate(event.data);
-                this.occurrences.next(newOccurrence);
+            } catch {
+                this.occurrences.error(new Error("Invalid response returned."));
             }
         });
+
         this.socket.addEventListener("error", () => {
             this.occurrences.error(
                 new Error("Websocket connection closed due to an error.")
