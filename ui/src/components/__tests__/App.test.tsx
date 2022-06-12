@@ -1,10 +1,5 @@
 import React from "react";
-import {
-    fireEvent,
-    render,
-    waitForElementToBeRemoved,
-} from "@testing-library/react";
-import nock from "nock";
+import { fireEvent, render } from "@testing-library/react";
 
 import App from "../App";
 
@@ -48,60 +43,6 @@ describe("field rendering", () => {
     });
 });
 
-describe("input validation", () => {
-    test.each([
-        ["empty input", "", "Please enter a URL."],
-        ["a numeric value", "123", "Please enter a valid URL"],
-        ["invalid URL (space)", "test invalid.com", "Please enter a valid URL"],
-    ])(
-        "provides error message given %s",
-        (message: string, input: string, expectedError: string) => {
-            const { getByRole } = render(
-                <App crawlServiceEndpoint={SERVICE_ENDPOINT} />
-            );
-            fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-                target: { value: input },
-            });
-            fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-
-            expect(getByRole("alert")).toHaveTextContent(expectedError);
-        }
-    );
-
-    test.each([
-        ["with a protocol", VALID_URL],
-        ["with no protocol", "www.example.com"],
-    ])(
-        "does not provide an error message given a valid URL %s",
-        (message: string, input: string) => {
-            const { getByRole, queryByRole } = render(
-                <App crawlServiceEndpoint={SERVICE_ENDPOINT} />
-            );
-            fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-                target: { value: input },
-            });
-            fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-
-            expect(queryByRole("alert")).toBeNull();
-        }
-    );
-
-    test("clears error message after changing input text", () => {
-        const { getByRole, queryByRole } = render(
-            <App crawlServiceEndpoint={SERVICE_ENDPOINT} />
-        );
-        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-            target: { value: "" },
-        });
-        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-            target: { value: VALID_URL },
-        });
-
-        expect(queryByRole("alert")).toBeNull();
-    });
-});
-
 describe("process screen rendering", () => {
     test("renders the title of the site while crawling", () => {
         const { getByRole } = render(
@@ -141,28 +82,4 @@ describe("process screen rendering", () => {
 
         expect(getByText(CRAWLING_MESSAGE)).toBeInTheDocument();
     });
-});
-
-test("initiates crawl when valid URL is entered", async () => {
-    const scope = nock(SERVICE_ENDPOINT.toString(), {
-        reqheaders: {
-            "Content-Type": "application/json",
-        },
-    })
-        .post("/crawl", {
-            MessageBody: { url: VALID_URL },
-        })
-        .reply(200, "", { "Access-Control-Allow-Origin": "*" });
-
-    const { getByRole, getByText } = render(
-        <App crawlServiceEndpoint={SERVICE_ENDPOINT} />
-    );
-    fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-        target: { value: VALID_URL },
-    });
-    fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-    await waitForElementToBeRemoved(getByText(CRAWLING_MESSAGE));
-
-    expect(scope.isDone()).toBe(true);
-    nock.cleanAll();
 });
