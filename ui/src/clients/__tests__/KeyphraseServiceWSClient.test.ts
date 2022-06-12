@@ -30,11 +30,11 @@ test("client connects to provided web socket server on creation", async () => {
     const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
 
     new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
-
     const client = await server.connected;
 
     expect(client).toBeDefined();
     expect(client.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
+    expect(client.readyState).toEqual(WebSocket.OPEN);
 });
 
 test("returns no occurrences if no messages are sent from server during connection", async () => {
@@ -122,4 +122,19 @@ test("throws an error event if the web socket connection is closed due to error"
     server.error();
 
     await expect(() => resultsPromise).rejects.toThrow();
+});
+
+test("reconnects to server on subsequent observations if the previous connection closed", async () => {
+    const first = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+    const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
+    await first.connected;
+    WS.clean();
+    const second = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+
+    client.observeKeyphraseResults();
+    const result = await second.connected;
+
+    expect(result).toBeDefined();
+    expect(result.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
+    expect(result.readyState).toEqual(WebSocket.OPEN);
 });

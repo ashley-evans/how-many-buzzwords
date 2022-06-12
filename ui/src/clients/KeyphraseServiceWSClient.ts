@@ -24,18 +24,20 @@ const schema: JSONSchemaType<PathnameOccurrences> = {
 };
 
 class KeyphraseServiceWSClient implements KeyphraseServiceClient {
+    private connectionURL: string;
     private socket: WebSocket;
     private validator: AjvValidator<PathnameOccurrences>;
     private occurrences: Subject<PathnameOccurrences>;
 
     constructor(keyphraseServiceEndpoint: URL, baseURL: URL) {
-        const connectionURL = `${keyphraseServiceEndpoint.toString()}?baseURL=${baseURL.toString()}`;
-        this.socket = new WebSocket(connectionURL);
+        this.connectionURL = `${keyphraseServiceEndpoint.toString()}?baseURL=${baseURL.toString()}`;
+        this.socket = new WebSocket(this.connectionURL);
         this.validator = new AjvValidator(schema);
         this.occurrences = new Subject();
     }
 
     observeKeyphraseResults(): Observable<PathnameOccurrences> {
+        this.reconnectIfRequired();
         this.socket.addEventListener("close", () => {
             this.occurrences.complete();
         });
@@ -58,6 +60,16 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
         });
 
         return this.occurrences.asObservable();
+    }
+
+    private reconnectIfRequired(): void {
+        if (
+            !this.socket ||
+            this.socket.readyState == WebSocket.CLOSING ||
+            this.socket.readyState == WebSocket.CLOSED
+        ) {
+            this.socket = new WebSocket(this.connectionURL);
+        }
     }
 }
 
