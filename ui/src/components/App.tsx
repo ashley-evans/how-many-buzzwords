@@ -1,8 +1,9 @@
 import React, { Component, Fragment } from "react";
+import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import { URLInput } from "./URLInput";
 
 type AppProps = {
-    crawlServiceEndpoint: URL;
+    crawlServiceClient: CrawlServiceClient;
 };
 
 type AppState = {
@@ -23,6 +24,7 @@ class App extends Component<AppProps, AppState> {
 
     handleURLSubmit = async (validatedURL: URL) => {
         this.setState({ baseURL: validatedURL, crawling: true });
+        this.props.crawlServiceClient.crawl(validatedURL);
     };
 
     render() {
