@@ -376,6 +376,25 @@ describe("keyphrase occurrence rendering", () => {
         );
     });
 
+    test("does not render the URL input form while showing results", async () => {
+        const { getByRole, queryByRole, getByText } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+        await waitFor(() =>
+            expect(getByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument()
+        );
+
+        expect(queryByRole("textbox", { name: URL_INPUT_LABEL })).toBeNull();
+        expect(queryByRole("button", { name: SEARCH_BUTTON_TEXT })).toBeNull();
+    });
+
     test.each([
         [
             "a single occurrence detail if a single occurrence",

@@ -80,7 +80,7 @@ class App extends Component<AppProps, AppState> {
         return (
             <Fragment>
                 <h1>How many buzzwords</h1>
-                {!this.state.crawling && (
+                {!this.state.crawling && !this.state.occurrences && (
                     <URLInput onURLSubmit={this.handleURLSubmit} />
                 )}
                 {this.state.crawling && <p>Crawling...</p>}
