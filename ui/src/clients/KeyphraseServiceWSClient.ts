@@ -40,9 +40,18 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
             this.occurrences.complete();
         });
         this.socket.addEventListener("message", (event) => {
-            const newOccurrence = this.validator.validate(event.data);
-            this.occurrences.next(newOccurrence);
+            const parsedEventData = JSON.parse(event.data);
+            if (Array.isArray(parsedEventData)) {
+                for (const data of parsedEventData) {
+                    const newOccurrence = this.validator.validate(data);
+                    this.occurrences.next(newOccurrence);
+                }
+            } else {
+                const newOccurrence = this.validator.validate(event.data);
+                this.occurrences.next(newOccurrence);
+            }
         });
+
         return this.occurrences.asObservable();
     }
 }

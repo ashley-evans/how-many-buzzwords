@@ -69,3 +69,45 @@ test("returns a single occurrence if a single valid message is sent from the ser
     expect(results).toHaveLength(1);
     expect(results[0]).toEqual(expectedOccurrence);
 });
+
+test.each([
+    [
+        "a single occurrence if a single valid message with an array containing a single occurrence",
+        [
+            {
+                pathname: "/test",
+                keyphrase: "wibble",
+                occurrences: 5,
+            },
+        ],
+    ],
+    [
+        "multiple occurrences if a single valid message with an array containing multiple occurrences",
+        [
+            {
+                pathname: "/example",
+                keyphrase: "wobble",
+                occurrences: 16,
+            },
+        ],
+    ],
+])(
+    "returns %s sent from the server during connection",
+    async (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+        const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+        const client = new KeyphraseServiceWSClient(
+            KEYPHRASE_ENDPOINT,
+            BASE_URL
+        );
+        await server.connected;
+
+        const observable = client.observeKeyphraseResults();
+        const resultsPromise = receiveObservableOutput(observable);
+        server.send(JSON.stringify(expectedOccurrences));
+        server.close();
+
+        const results = await resultsPromise;
+        expect(results).toHaveLength(expectedOccurrences.length);
+        expect(results).toEqual(expect.arrayContaining(expectedOccurrences));
+    }
+);
