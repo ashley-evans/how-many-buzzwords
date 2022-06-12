@@ -51,6 +51,11 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
                 this.occurrences.next(newOccurrence);
             }
         });
+        this.socket.addEventListener("error", () => {
+            this.occurrences.error(
+                new Error("Websocket connection closed due to an error.")
+            );
+        });
 
         return this.occurrences.asObservable();
     }

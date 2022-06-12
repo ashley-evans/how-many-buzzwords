@@ -111,3 +111,15 @@ test.each([
         expect(results).toEqual(expect.arrayContaining(expectedOccurrences));
     }
 );
+
+test("throws an error event if the web socket connection is closed due to error", async () => {
+    const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+    const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
+    await server.connected;
+
+    const observable = client.observeKeyphraseResults();
+    const resultsPromise = receiveObservableOutput(observable);
+    server.error();
+
+    await expect(() => resultsPromise).rejects.toThrow();
+});
