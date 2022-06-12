@@ -68,6 +68,10 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
         return this.occurrences.asObservable();
     }
 
+    disconnect(): void {
+        this.socket.close();
+    }
+
     private reconnectIfRequired(): void {
         if (
             !this.socket ||

@@ -164,3 +164,16 @@ test("reconnects to server on subsequent observations if the previous connection
     expect(result.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
     expect(result.readyState).toEqual(WebSocket.OPEN);
 });
+
+test("disconnects connection given open connection", async () => {
+    const server = new WS(EXPECTED_CONNECTION_ENDPOINT.toString());
+    const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
+    const connection = await server.connected;
+
+    client.disconnect();
+    await server.closed;
+
+    expect(connection).toBeDefined();
+    expect(connection.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
+    expect(connection.readyState).toEqual(WebSocket.CLOSED);
+});
