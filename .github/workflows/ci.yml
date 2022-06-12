@@ -32,6 +32,8 @@ jobs:
             path: ./ui
         secrets:
             deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
+            crawl_service_endpoint: ${{ secrets.CRAWL_SERVICE_ENDPOINT }}
+            keyphrase_service_ws_endpoint: ${{ secrets.KEYPHRASE_WS_SERVICE_ENDPOINT }}
     validate:
         runs-on: ubuntu-latest
         steps:

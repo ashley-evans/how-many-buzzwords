@@ -6,7 +6,14 @@ Some buzzwords are incredibly overused, a simple tool tool to find the biggest c
 
 ## Running the UI locally
 
-Run tnhe following script to run the UI locally:
+Requires a `.env` file in the `./ui/` folder with the following values configured to the environment at test:
+
+| Environment Variable          | Description                                                  |
+| ----------------------------- | ------------------------------------------------------------ |
+| CRAWL_SERVICE_ENDPOINT        | The HTTP API Gateway endpoint for the crawl service          |
+| KEYPHRASE_WS_SERVICE_ENDPOINT | The WebSocket API Gateway endpoint for the keyphrase service |
+
+Run the following script to run the UI locally:
 
 ```
 npm --prefix ./ui/ start
