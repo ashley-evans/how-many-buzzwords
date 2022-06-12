@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, within } from "@testing-library/react";
 
 import OccurrenceTable from "../OccurrenceTable";
 import { PathnameOccurrences } from "../../clients/interfaces/KeyphraseServiceClient";
@@ -28,6 +28,14 @@ describe("given no occurrences", () => {
 
         expect(getByText(expectedText)).toBeInTheDocument();
     });
+
+    test("does not render a table to contain the results", () => {
+        const { queryByRole } = render(
+            <OccurrenceTable baseURL={VALID_URL} occurrences={[]} />
+        );
+
+        expect(queryByRole("grid")).not.toBeInTheDocument();
+    });
 });
 
 describe("given a single occurrence", () => {
@@ -43,7 +51,10 @@ describe("given a single occurrence", () => {
         const expectedHeader = `Results for: ${VALID_URL.toString()}`;
 
         const { getByRole } = render(
-            <OccurrenceTable baseURL={VALID_URL} occurrences={[]} />
+            <OccurrenceTable
+                baseURL={VALID_URL}
+                occurrences={expectedOccurrences}
+            />
         );
 
         expect(
@@ -62,5 +73,36 @@ describe("given a single occurrence", () => {
         );
 
         expect(queryByText(expectedText)).not.toBeInTheDocument();
+    });
+
+    test("renders a table to contain the results", () => {
+        const { getByRole } = render(
+            <OccurrenceTable
+                baseURL={VALID_URL}
+                occurrences={expectedOccurrences}
+            />
+        );
+
+        expect(getByRole("grid")).toBeInTheDocument();
+    });
+
+    test("renders required columns to contain results from crawl within table", () => {
+        const expectedColumns = ["Pathname", "Keyphrase", "Occurrences"];
+
+        const { getByRole } = render(
+            <OccurrenceTable
+                baseURL={VALID_URL}
+                occurrences={expectedOccurrences}
+            />
+        );
+        const table = getByRole("grid");
+
+        for (const expectedColumn of expectedColumns) {
+            expect(
+                within(table).getByRole("columnheader", {
+                    name: expectedColumn,
+                })
+            ).toBeInTheDocument();
+        }
     });
 });
