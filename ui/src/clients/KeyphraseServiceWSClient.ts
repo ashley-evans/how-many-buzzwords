@@ -72,6 +72,10 @@ class KeyphraseServiceWSClient implements KeyphraseServiceClient {
         this.socket.close();
     }
 
+    getConfiguredEndpoint(): URL {
+        return new URL(this.socket.url);
+    }
+
     private reconnectIfRequired(): void {
         if (
             !this.socket ||

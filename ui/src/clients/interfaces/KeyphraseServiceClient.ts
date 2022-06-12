@@ -9,6 +9,7 @@ type PathnameOccurrences = {
 interface KeyphraseServiceClient {
     observeKeyphraseResults(): Observable<PathnameOccurrences>;
     disconnect(): void;
+    getConfiguredEndpoint(): URL;
 }
 
 export type { PathnameOccurrences, KeyphraseServiceClient };

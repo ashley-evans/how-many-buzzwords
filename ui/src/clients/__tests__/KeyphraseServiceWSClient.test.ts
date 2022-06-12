@@ -177,3 +177,11 @@ test("disconnects connection given open connection", async () => {
     expect(connection.url).toEqual(EXPECTED_CONNECTION_ENDPOINT.toString());
     expect(connection.readyState).toEqual(WebSocket.CLOSED);
 });
+
+test("returns configured web socket URL given valid URL", () => {
+    const client = new KeyphraseServiceWSClient(KEYPHRASE_ENDPOINT, BASE_URL);
+
+    const result = client.getConfiguredEndpoint();
+
+    expect(EXPECTED_CONNECTION_ENDPOINT).toEqual(result);
+});
