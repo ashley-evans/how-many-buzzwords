@@ -12,7 +12,7 @@ const BASE_URL = new URL("https://www.test.com/");
 
 const client = new CrawlServiceAxiosClient(CRAWL_SERVICE_ENDPOINT);
 
-function createCrawlPathMock(): nock.Scope {
+function createCrawlPathMock(responseCode: number): nock.Scope {
     const expectedHeaders = {
         "Content-Type": "application/json",
     };
@@ -22,15 +22,15 @@ function createCrawlPathMock(): nock.Scope {
         .post(EXPECTED_CRAWL_PATHNAME, {
             MessageBody: { url: BASE_URL.toString() },
         })
-        .reply(200);
+        .reply(responseCode);
 }
 
 beforeEach(() => {
     nock.cleanAll();
 });
 
-test("returns 200 if request was successful", async () => {
-    createCrawlPathMock();
+test("returns successful if response is 200", async () => {
+    createCrawlPathMock(200);
 
     const result = await client.crawl(BASE_URL);
 
@@ -38,9 +38,17 @@ test("returns 200 if request was successful", async () => {
 });
 
 test("calls the crawl path with the provided URL when given a URL to crawl", async () => {
-    const scope = createCrawlPathMock();
+    const scope = createCrawlPathMock(200);
 
     await client.crawl(BASE_URL);
 
     expect(scope.isDone()).toEqual(true);
+});
+
+test("returns failure if response is not 200", async () => {
+    createCrawlPathMock(500);
+
+    const result = await client.crawl(BASE_URL);
+
+    expect(result).toEqual(false);
 });

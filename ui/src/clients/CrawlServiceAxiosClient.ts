@@ -19,7 +19,12 @@ class CrawlServiceAxiosClient implements CrawlServiceClient {
         const headers = {
             "Content-Type": "application/json",
         };
-        await this.client.post("/crawl", data, { headers });
+
+        try {
+            await this.client.post("/crawl", data, { headers });
+        } catch {
+            return false;
+        }
 
         return true;
     }
