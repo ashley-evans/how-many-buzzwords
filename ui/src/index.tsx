@@ -5,13 +5,21 @@ import KeyphraseServiceWSClientFactory from "./clients/factories/KeyphraseServic
 
 import App from "./components/App";
 
-const crawlServiceEndpoint = new URL(
-    "https://vcv01m9s3b.execute-api.eu-west-2.amazonaws.com/"
-);
+if (!process.env.CRAWL_SERVICE_ENDPOINT) {
+    throw new Error(
+        "Application misconfigured: Missing crawl service endpoint"
+    );
+}
+const crawlServiceEndpoint = new URL(process.env.CRAWL_SERVICE_ENDPOINT);
 const crawlServiceClient = new CrawlServiceAxiosClient(crawlServiceEndpoint);
 
+if (!process.env.KEYPHRASE_WS_SERVICE_ENDPOINT) {
+    throw new Error(
+        "Application misconfigured: Missing keyphrase service endpoint"
+    );
+}
 const keyphraseServiceEndpoint = new URL(
-    "wss://peeam3kix4.execute-api.eu-west-2.amazonaws.com/$default/"
+    process.env.KEYPHRASE_WS_SERVICE_ENDPOINT
 );
 const keyphraseServiceClientFactory = new KeyphraseServiceWSClientFactory(
     keyphraseServiceEndpoint

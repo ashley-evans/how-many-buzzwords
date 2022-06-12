@@ -31,3 +31,7 @@ dist/
 .env.test.local
 .env.production.local
 npm-debug.log*
+
+# Environment Variables
+
+.env

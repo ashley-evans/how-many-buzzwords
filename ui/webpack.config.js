@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const DotEnv = require("dotenv-webpack");
 
 module.exports = () => {
     return {
@@ -37,6 +38,7 @@ module.exports = () => {
             new HtmlWebpackPlugin({
                 template: path.join(__dirname, "public", "index.html"),
             }),
+            new DotEnv(),
         ],
         devServer: {
             static: path.join(__dirname, "public"),
