@@ -145,10 +145,11 @@ test("removes loading message after crawl completes", async () => {
 });
 
 describe("crawl error rendering", () => {
+    const expectedErrorMessage =
+        "An error occurred when searching for buzzwords, please try again.";
     test("renders an error message if an unhandled exception is thrown by the crawl client", async () => {
-        const expectedErrorMessage =
-            "An error occurred when searching for buzzwords, please try again.";
         mockCrawlClient.crawl.mockRejectedValue(new Error());
+
         const { getByRole, queryByText } = render(
             <Search crawlServiceClient={mockCrawlClient} />
         );
@@ -163,9 +164,8 @@ describe("crawl error rendering", () => {
     });
 
     test("renders an error message if the crawl service returns an error", async () => {
-        const expectedErrorMessage =
-            "An error occurred when searching for buzzwords, please try again.";
         mockCrawlClient.crawl.mockResolvedValue(false);
+
         const { getByRole, queryByText } = render(
             <Search crawlServiceClient={mockCrawlClient} />
         );
@@ -180,9 +180,8 @@ describe("crawl error rendering", () => {
     });
 
     test("clears error message following re-crawl", async () => {
-        const expectedErrorMessage =
-            "An error occurred when searching for buzzwords, please try again.";
         mockCrawlClient.crawl.mockRejectedValueOnce(new Error());
+
         const { getByRole, queryByText } = render(
             <Search crawlServiceClient={mockCrawlClient} />
         );
