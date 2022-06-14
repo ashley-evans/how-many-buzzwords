@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 
 import Search from "../Search";
@@ -10,6 +10,9 @@ const mockCrawlClient = mock<CrawlServiceClient>();
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL:";
 const SEARCH_BUTTON_TEXT = "Search!";
+const CRAWLING_MESSAGE = "Initiating crawl...";
+
+const VALID_URL = "http://www.example.com/";
 
 describe("field rendering", () => {
     test("displays the title of the site in a header", () => {
@@ -40,5 +43,53 @@ describe("field rendering", () => {
         expect(
             getByRole("button", { name: SEARCH_BUTTON_TEXT })
         ).toBeInTheDocument();
+    });
+});
+
+describe("process screen rendering", () => {
+    test("renders the title of the site while crawling", async () => {
+        const { getByRole, getByText } = render(
+            <Search crawlServiceClient={mockCrawlClient} />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+        await waitFor(() => {
+            expect(getByText(CRAWLING_MESSAGE)).toBeInTheDocument();
+        });
+
+        expect(
+            getByRole("heading", { name: APPLICATION_TITLE })
+        ).toBeInTheDocument();
+    });
+
+    test("does not render the URL input form while crawling", async () => {
+        const { getByRole, queryByRole } = render(
+            <Search crawlServiceClient={mockCrawlClient} />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+
+        await waitFor(() =>
+            expect(queryByRole("textbox", { name: URL_INPUT_LABEL })).toBeNull()
+        );
+        expect(queryByRole("button", { name: SEARCH_BUTTON_TEXT })).toBeNull();
+    });
+
+    test("renders loading message while initiating crawl", async () => {
+        const { getByRole, getByText } = render(
+            <Search crawlServiceClient={mockCrawlClient} />
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+
+        await waitFor(() => {
+            expect(getByText(CRAWLING_MESSAGE)).toBeInTheDocument();
+        });
     });
 });

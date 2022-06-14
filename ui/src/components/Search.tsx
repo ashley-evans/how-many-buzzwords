@@ -7,27 +7,33 @@ type SearchProps = {
 };
 
 type SearchState = {
+    initiatingCrawl: boolean;
     errorMessage: string;
 };
 
 class Search extends Component<SearchProps, SearchState> {
     state: SearchState = {
+        initiatingCrawl: false,
         errorMessage: "",
     };
 
     constructor(props: SearchProps) {
         super(props);
+        this.handleURLSubmit = this.handleURLSubmit.bind(this);
     }
 
-    async handleURLSubmit(validatedURL: URL) {
-        throw new Error(validatedURL.toString());
+    async handleURLSubmit() {
+        this.setState({ initiatingCrawl: true });
     }
 
     render(): React.ReactNode {
         return (
             <Fragment>
                 <h1>How many buzzwords</h1>
-                <URLInput onURLSubmit={this.handleURLSubmit} />
+                {!this.state.initiatingCrawl && (
+                    <URLInput onURLSubmit={this.handleURLSubmit} />
+                )}
+                {this.state.initiatingCrawl && <p>Initiating crawl...</p>}
             </Fragment>
         );
     }
