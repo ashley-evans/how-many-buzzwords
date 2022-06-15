@@ -37,6 +37,7 @@ module.exports = () => {
         plugins: [
             new HtmlWebpackPlugin({
                 template: path.join(__dirname, "public", "index.html"),
+                publicPath: "/",
             }),
             new DotEnv(),
         ],
@@ -46,6 +47,9 @@ module.exports = () => {
             hot: "only",
             compress: true,
             open: true,
+            historyApiFallback: {
+                disableDotRule: true,
+            },
         },
     };
 };
