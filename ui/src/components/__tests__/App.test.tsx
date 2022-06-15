@@ -156,3 +156,33 @@ test("navigates to results page if crawl successfully initiates", async () => {
         ).toBeInTheDocument()
     );
 });
+
+test("navigates to search page if return button pressed on results page", async () => {
+    const expectedReturnLinkText = "Return to search";
+    mockKeyphraseClientFactory.createClient.mockReturnValue(
+        mockKeyphraseClient
+    );
+    mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
+    window.history.pushState(
+        {},
+        "",
+        `/results/${encodeURIComponent(VALID_URL)}`
+    );
+
+    const { getByRole } = render(
+        <App
+            crawlServiceClient={mockCrawlClient}
+            keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+        />
+    );
+    fireEvent.click(getByRole("link", { name: expectedReturnLinkText }));
+
+    await waitFor(() =>
+        expect(
+            getByRole("textbox", { name: URL_INPUT_LABEL })
+        ).toBeInTheDocument()
+    );
+    expect(
+        getByRole("button", { name: SEARCH_BUTTON_TEXT })
+    ).toBeInTheDocument();
+});

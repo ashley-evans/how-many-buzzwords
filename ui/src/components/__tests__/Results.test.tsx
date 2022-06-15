@@ -109,6 +109,21 @@ describe("given valid encoded url", () => {
         ).toBeInTheDocument();
     });
 
+    test("renders return link", () => {
+        const expectedLinkText = "Return to search";
+
+        const { getByRole } = renderWithRouter(
+            <Results
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />,
+            encodeURIComponent(VALID_URL)
+        );
+
+        expect(
+            getByRole("link", { name: expectedLinkText })
+        ).toBeInTheDocument();
+    });
+
     test("displays awaiting results message if no keyphrases returned", async () => {
         const { getByText } = renderWithRouter(
             <Results

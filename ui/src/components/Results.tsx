@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
@@ -38,6 +38,7 @@ function Results(props: ResultsProps) {
         return (
             <Fragment>
                 <h1>How many buzzwords</h1>
+                <Link to="/">Return to search</Link>
                 <h2>{`Results for: ${validatedURL}`}</h2>
                 <OccurrenceTable occurrences={occurrences} />
             </Fragment>
