@@ -186,3 +186,56 @@ test("navigates to search page if return button pressed on results page", async 
         getByRole("button", { name: SEARCH_BUTTON_TEXT })
     ).toBeInTheDocument();
 });
+
+describe("navigating to an unknown page", () => {
+    const RETURN_LINK_TEXT = "Return to search";
+
+    beforeEach(() => {
+        window.history.pushState({}, "", `/unknown`);
+    });
+
+    test("renders a unknown page message", () => {
+        const expectedUnknownPageText = "Oh no! You've gotten lost!";
+
+        const { getByText } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+
+        expect(getByText(expectedUnknownPageText)).toBeInTheDocument();
+    });
+
+    test("renders a return to search page link", () => {
+        const { getByRole } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+
+        expect(
+            getByRole("link", { name: RETURN_LINK_TEXT })
+        ).toBeInTheDocument();
+    });
+
+    test("navigates to search page if return to search link is pressed", async () => {
+        const { getByRole } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+        fireEvent.click(getByRole("link", { name: RETURN_LINK_TEXT }));
+
+        await waitFor(() =>
+            expect(
+                getByRole("textbox", { name: URL_INPUT_LABEL })
+            ).toBeInTheDocument()
+        );
+        expect(
+            getByRole("button", { name: SEARCH_BUTTON_TEXT })
+        ).toBeInTheDocument();
+    });
+});

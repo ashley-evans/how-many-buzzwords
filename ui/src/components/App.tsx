@@ -1,5 +1,6 @@
-import React from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import React, { Fragment } from "react";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+
 import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import Results from "./Results";
@@ -41,6 +42,15 @@ function App(props: AppProps) {
                         }
                     />
                 </Route>
+                <Route
+                    path="*"
+                    element={
+                        <Fragment>
+                            <p>Oh no! You&apos;ve gotten lost!</p>
+                            <Link to="/">Return to search</Link>
+                        </Fragment>
+                    }
+                />
             </Routes>
         </BrowserRouter>
     );
