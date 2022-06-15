@@ -4,35 +4,17 @@ import { render, within } from "@testing-library/react";
 import OccurrenceTable from "../OccurrenceTable";
 import { PathnameOccurrences } from "../../clients/interfaces/KeyphraseServiceClient";
 
-const VALID_URL = new URL("https://www.example.com/");
+const AWAITING_RESULTS_MESSAGE = "Awaiting results...";
 
 describe("given no occurrences", () => {
-    test("renders expected header for results", () => {
-        const expectedHeader = `Results for: ${VALID_URL.toString()}`;
-
-        const { getByRole } = render(
-            <OccurrenceTable baseURL={VALID_URL} occurrences={[]} />
-        );
-
-        expect(
-            getByRole("heading", { name: expectedHeader })
-        ).toBeInTheDocument();
-    });
-
     test("renders awaiting results message", () => {
-        const expectedText = "Awaiting results...";
+        const { getByText } = render(<OccurrenceTable occurrences={[]} />);
 
-        const { getByText } = render(
-            <OccurrenceTable baseURL={VALID_URL} occurrences={[]} />
-        );
-
-        expect(getByText(expectedText)).toBeInTheDocument();
+        expect(getByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument();
     });
 
     test("does not render a table to contain the results", () => {
-        const { queryByRole } = render(
-            <OccurrenceTable baseURL={VALID_URL} occurrences={[]} />
-        );
+        const { queryByRole } = render(<OccurrenceTable occurrences={[]} />);
 
         expect(queryByRole("grid")).not.toBeInTheDocument();
     });
@@ -67,40 +49,19 @@ describe.each([
 ])(
     "given %s",
     (message: string, expectedOccurrences: PathnameOccurrences[]) => {
-        test("renders expected header for results", () => {
-            const expectedHeader = `Results for: ${VALID_URL.toString()}`;
-
-            const { getByRole } = render(
-                <OccurrenceTable
-                    baseURL={VALID_URL}
-                    occurrences={expectedOccurrences}
-                />
+        test("does not render the awaiting results message", () => {
+            const { queryByText } = render(
+                <OccurrenceTable occurrences={expectedOccurrences} />
             );
 
             expect(
-                getByRole("heading", { name: expectedHeader })
-            ).toBeInTheDocument();
-        });
-
-        test("does not render the awaiting results message", () => {
-            const expectedText = "Awaiting results...";
-
-            const { queryByText } = render(
-                <OccurrenceTable
-                    baseURL={VALID_URL}
-                    occurrences={expectedOccurrences}
-                />
-            );
-
-            expect(queryByText(expectedText)).not.toBeInTheDocument();
+                queryByText(AWAITING_RESULTS_MESSAGE)
+            ).not.toBeInTheDocument();
         });
 
         test("renders a table to contain the results", () => {
             const { getByRole } = render(
-                <OccurrenceTable
-                    baseURL={VALID_URL}
-                    occurrences={expectedOccurrences}
-                />
+                <OccurrenceTable occurrences={expectedOccurrences} />
             );
 
             expect(getByRole("grid")).toBeInTheDocument();
@@ -110,10 +71,7 @@ describe.each([
             const expectedColumns = ["Pathname", "Keyphrase", "Occurrences"];
 
             const { getByRole } = render(
-                <OccurrenceTable
-                    baseURL={VALID_URL}
-                    occurrences={expectedOccurrences}
-                />
+                <OccurrenceTable occurrences={expectedOccurrences} />
             );
             const table = getByRole("grid");
 
@@ -128,10 +86,7 @@ describe.each([
 
         test("renders all pathname occurrence details within table contents", () => {
             const { getByRole } = render(
-                <OccurrenceTable
-                    baseURL={VALID_URL}
-                    occurrences={expectedOccurrences}
-                />
+                <OccurrenceTable occurrences={expectedOccurrences} />
             );
             const table = getByRole("grid");
 
