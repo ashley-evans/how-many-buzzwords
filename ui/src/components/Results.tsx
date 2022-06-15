@@ -33,6 +33,10 @@ function Results(props: ResultsProps) {
                     setOccurrences((previous) => [...previous, occurrence]);
                 },
             });
+
+            return () => {
+                client.disconnect();
+            };
         }, []);
 
         return (

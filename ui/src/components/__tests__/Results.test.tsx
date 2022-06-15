@@ -205,3 +205,15 @@ describe("given valid encoded url", () => {
         }
     );
 });
+
+test("disconnects keyphrase connection when component is unmounted", () => {
+    mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
+
+    const { unmount } = renderWithRouter(
+        <Results keyphraseServiceClientFactory={mockKeyphraseClientFactory} />,
+        encodeURIComponent(VALID_URL)
+    );
+    unmount();
+
+    expect(mockKeyphraseClient.disconnect).toHaveBeenCalledTimes(1);
+});
