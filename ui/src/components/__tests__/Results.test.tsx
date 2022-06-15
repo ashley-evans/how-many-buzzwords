@@ -27,6 +27,7 @@ function renderWithRouter(component: React.ReactNode, url?: string) {
     return render(
         <MemoryRouter initialEntries={[`/results/${url}`]}>
             <Routes>
+                <Route index element={<p />} />
                 <Route path="results" element={component}>
                     <Route path=":url" element={component} />
                 </Route>

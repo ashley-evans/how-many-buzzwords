@@ -21,7 +21,7 @@ function App(props: AppProps) {
                     }
                 />
                 <Route
-                    path="results/:url"
+                    path="results"
                     element={
                         <Results
                             keyphraseServiceClientFactory={
@@ -29,7 +29,18 @@ function App(props: AppProps) {
                             }
                         />
                     }
-                />
+                >
+                    <Route
+                        path=":url"
+                        element={
+                            <Results
+                                keyphraseServiceClientFactory={
+                                    props.keyphraseServiceClientFactory
+                                }
+                            />
+                        }
+                    />
+                </Route>
             </Routes>
         </BrowserRouter>
     );

@@ -9,6 +9,8 @@ import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseSer
 import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
 
 const APPLICATION_TITLE = "How many buzzwords";
+const URL_INPUT_LABEL = "URL:";
+const SEARCH_BUTTON_TEXT = "Search!";
 
 const mockCrawlClient = mock<CrawlServiceClient>();
 const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
@@ -33,8 +35,6 @@ describe("navigating to root", () => {
     });
 
     test("displays a URL textbox with an appropriate label", () => {
-        const expectedURLInputLabel = "URL:";
-
         const { getByRole } = render(
             <App
                 crawlServiceClient={mockCrawlClient}
@@ -43,13 +43,11 @@ describe("navigating to root", () => {
         );
 
         expect(
-            getByRole("textbox", { name: expectedURLInputLabel })
+            getByRole("textbox", { name: URL_INPUT_LABEL })
         ).toBeInTheDocument();
     });
 
     test("displays a search button", () => {
-        const expectedSearchButtonText = "Search!";
-
         const { getByRole } = render(
             <App
                 crawlServiceClient={mockCrawlClient}
@@ -58,7 +56,7 @@ describe("navigating to root", () => {
         );
 
         expect(
-            getByRole("button", { name: expectedSearchButtonText })
+            getByRole("button", { name: SEARCH_BUTTON_TEXT })
         ).toBeInTheDocument();
     });
 });
@@ -107,3 +105,28 @@ describe("navigating to results with valid encoded URL", () => {
         ).toBeInTheDocument();
     });
 });
+
+test.each([
+    ["a missing url", undefined],
+    ["an invalid encoded url", encodeURIComponent("not a valid URL")],
+    ["an invalid encoded url (IP)", encodeURIComponent(0)],
+])(
+    "navigating to the results page with %s redirects to search page",
+    (message: string, url?: string) => {
+        window.history.pushState({}, "", `/results/${url}`);
+
+        const { getByRole } = render(
+            <App
+                crawlServiceClient={mockCrawlClient}
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />
+        );
+
+        expect(
+            getByRole("textbox", { name: URL_INPUT_LABEL })
+        ).toBeInTheDocument();
+        expect(
+            getByRole("button", { name: SEARCH_BUTTON_TEXT })
+        ).toBeInTheDocument();
+    }
+);

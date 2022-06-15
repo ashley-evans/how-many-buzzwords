@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
@@ -43,7 +43,7 @@ function Results(props: ResultsProps) {
             </Fragment>
         );
     } catch {
-        return <></>;
+        return <Navigate to="/" />;
     }
 }
 
