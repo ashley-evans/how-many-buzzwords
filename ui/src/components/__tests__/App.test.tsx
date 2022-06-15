@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 import { from } from "rxjs";
 
@@ -11,6 +11,8 @@ import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServic
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL:";
 const SEARCH_BUTTON_TEXT = "Search!";
+
+const VALID_URL = "https://www.example.com/";
 
 const mockCrawlClient = mock<CrawlServiceClient>();
 const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
@@ -62,8 +64,6 @@ describe("navigating to root", () => {
 });
 
 describe("navigating to results with valid encoded URL", () => {
-    const expectedURL = "https://www.example.com/";
-
     beforeEach(() => {
         mockKeyphraseClientFactory.createClient.mockReturnValue(
             mockKeyphraseClient
@@ -73,7 +73,7 @@ describe("navigating to results with valid encoded URL", () => {
         window.history.pushState(
             {},
             "",
-            `/results/${encodeURIComponent(expectedURL)}`
+            `/results/${encodeURIComponent(VALID_URL)}`
         );
     });
 
@@ -91,7 +91,7 @@ describe("navigating to results with valid encoded URL", () => {
     });
 
     test("renders results header", () => {
-        const expectedHeader = `Results for: ${expectedURL}`;
+        const expectedHeader = `Results for: ${VALID_URL}`;
 
         const { getByRole } = render(
             <App
@@ -130,3 +130,29 @@ test.each([
         ).toBeInTheDocument();
     }
 );
+
+test("navigates to results page if crawl successfully initiates", async () => {
+    const expectedHeader = `Results for: ${VALID_URL}`;
+    mockCrawlClient.crawl.mockResolvedValue(true);
+    mockKeyphraseClientFactory.createClient.mockReturnValue(
+        mockKeyphraseClient
+    );
+    mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
+
+    const { getByRole } = render(
+        <App
+            crawlServiceClient={mockCrawlClient}
+            keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+        />
+    );
+    fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+        target: { value: VALID_URL },
+    });
+    fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+
+    await waitFor(() =>
+        expect(
+            getByRole("heading", { name: expectedHeader })
+        ).toBeInTheDocument()
+    );
+});

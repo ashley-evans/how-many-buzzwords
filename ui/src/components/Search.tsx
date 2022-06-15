@@ -1,4 +1,5 @@
 import React, { Component, Fragment } from "react";
+import { Navigate } from "react-router-dom";
 
 import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import { URLInput } from "./URLInput";
@@ -13,12 +14,14 @@ type SearchProps = {
 type SearchState = {
     initiatingCrawl: boolean;
     errorMessage: string;
+    crawledURL: URL | undefined;
 };
 
 class Search extends Component<SearchProps, SearchState> {
     state: SearchState = {
         initiatingCrawl: false,
         errorMessage: "",
+        crawledURL: undefined,
     };
 
     constructor(props: SearchProps) {
@@ -41,7 +44,9 @@ class Search extends Component<SearchProps, SearchState> {
         }
 
         this.setState({ initiatingCrawl: false });
-        if (!crawlInitiated) {
+        if (crawlInitiated) {
+            this.setState({ crawledURL: validatedURL });
+        } else {
             this.setState({
                 errorMessage: ERROR_MESSAGE,
             });
@@ -49,6 +54,15 @@ class Search extends Component<SearchProps, SearchState> {
     }
 
     render(): React.ReactNode {
+        const crawledURL = this.state.crawledURL;
+        if (crawledURL) {
+            return (
+                <Navigate
+                    to={`/results/${encodeURIComponent(crawledURL.toString())}`}
+                />
+            );
+        }
+
         return (
             <Fragment>
                 <h1>How many buzzwords</h1>
