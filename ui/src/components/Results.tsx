@@ -1,0 +1,49 @@
+import React, { Fragment, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
+import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
+import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
+import OccurrenceTable from "./OccurrenceTable";
+
+type ResultsProps = {
+    keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
+};
+
+function parseURL(url?: string): URL {
+    if (!url) {
+        throw new Error("Invalid URL.");
+    }
+
+    return new URL(url);
+}
+
+function Results(props: ResultsProps) {
+    const { url } = useParams();
+    const [occurrences, setOccurrences] = useState<PathnameOccurrences[]>([]);
+
+    try {
+        const validatedURL = parseURL(url);
+
+        useEffect(() => {
+            const client =
+                props.keyphraseServiceClientFactory.createClient(validatedURL);
+            const observable = client.observeKeyphraseResults();
+            observable.subscribe({
+                next: (occurrence) => {
+                    setOccurrences((previous) => [...previous, occurrence]);
+                },
+            });
+        }, []);
+
+        return (
+            <Fragment>
+                <h1>{`Results for: ${validatedURL}`}</h1>
+                <OccurrenceTable occurrences={occurrences} />
+            </Fragment>
+        );
+    } catch {
+        return <></>;
+    }
+}
+
+export default Results;
