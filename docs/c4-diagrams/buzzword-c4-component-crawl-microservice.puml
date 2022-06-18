@@ -26,8 +26,8 @@ System_Ext(websites, "Websites", "Any website on the internet")
 Rel(single_page_application, api_gateway, "Initiates website crawling via API calls to", "REST")
 
 Rel(api_gateway, step_function, "Starts state machine execution for new crawl initiations")
-Rel(api_gateway, get_urls_lambda, "Routes requests to get current related URLs to")
-Rel(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
+Rel_L(api_gateway, get_urls_lambda, "Routes requests to get current related URLs to")
+Rel_R(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
 
 Rel(step_function, recent_crawl_lambda, "Uses")
 Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
@@ -36,15 +36,15 @@ Rel(step_function, event_bus, "Sends crawl complete event containing all crawled
 Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
 
 Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose and TypeScript")
-Rel(crawl_urls_lambda, content_db, "Writes to", "S3 Client and TypeScript")
-Rel(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
+Rel_R(crawl_urls_lambda, content_db, "Writes to", "S3 Client and TypeScript")
+Rel_D(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
 
 Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
 
 Rel(get_content_lambda, content_db, "Reads from", "S3 Client and TypeScript")
 
-Rel(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
-Rel(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to")
+Rel_U(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
+Rel_R(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to")
 
 Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
 
