@@ -1,0 +1,46 @@
+@startuml Buzzword C4 Container Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram for the How many Buzzwords System
+
+Person(user, "User", "A user of the how many buzzwords website, that wants to see buzzword statistics for a given website")
+System_Boundary(buzzword_system, "How many Buzzwords System") {
+    Container(content_delivery_network, "Content Delivery Network", "CloudFront, Route 53, and S3", $descr="Delivers static content including the How many Buzzwords Single-Page Application")
+    Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate a crawl of a website and view related buzzword statistics via user's web browser")
+
+    System_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
+        Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl a website and gather related HTML content via a REST API. Notifies subscribing services via events on a bus")
+        ContainerDb(crawl_url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the user's provided URL")
+        ContainerDb(crawl_content_db, "Content Database", "S3", $descr="Stores page content for crawled URLs")
+    }
+
+    System_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
+        Container(keyphrase_microservice, "Keyphrase Microservice", "Lambda, TypeScript, Step Functions", "Provides keyphrase analysis and occurrence counting functionality via events on event bus. Enables listening to keyphrase results related to a given URL via WebSocket API")
+        ContainerDb(keyphrase_db, "Keyphrase and Occurrence Database", "DynamoDB", "Stores keyphrases found on a given URL and corresponding occurrence counts")
+        ContainerDb(active_connections_db, "Active Connections Database", "DynamoDB", "Stores listening WebSocket client details and corresponding URLs")
+    }
+}
+
+System_Ext(websites, "Websites", "Any website on the internet")
+
+Rel(user, content_delivery_network, "Visits howmanybuzzwords.com using", "HTTP")
+Rel(user, single_page_application, "Views buzzwords and statistics related to a given website using", "HTTP")
+
+Rel_R(content_delivery_network, single_page_application, "Delivers to the user's web browser")
+
+Rel(single_page_application, crawl_microservice, "Initiates website crawling via API calls to", "REST")
+Rel(single_page_application, keyphrase_microservice, "Listens to results via connection to", "WebSocket")
+
+Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
+Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client")
+Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
+
+Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose")
+Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose")
+Rel_L(keyphrase_microservice, crawl_microservice, "Subscribes to crawl complete events", "Event Bridge")
+Rel(keyphrase_microservice, websites, "Gets content for analysis using", "HTTP")
+
+SHOW_LEGEND()
+
+@enduml
