@@ -2,6 +2,8 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
+title System Context Diagram for the How many Buzzwords System
+
 Person(user, "User", "A user of the how many buzzwords website, that wants to see buzzword statistics for a given website")
 System(buzzword, "How many Buzzwords System", "Allows customers to view what buzzwords are used on any given domain on the internet")
 System_Ext(websites, "Websites", "Any website on the internet")
