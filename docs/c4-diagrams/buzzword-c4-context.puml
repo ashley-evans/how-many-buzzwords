@@ -11,4 +11,6 @@ System_Ext(websites, "Websites", "Any website on the internet")
 Rel(user, buzzword, "Views buzzwords and statistics related to a given website using")
 Rel_R(buzzword, websites, "Crawls content and generates buzzword statistics using")
 
+SHOW_LEGEND()
+
 @enduml

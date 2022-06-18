@@ -27,18 +27,20 @@ System_Ext(websites, "Websites", "Any website on the internet")
 Rel(user, content_delivery_network, "Visits howmanybuzzwords.com using", "HTTP")
 Rel(user, single_page_application, "Views buzzwords and statistics related to a given website using", "HTTP")
 
-Rel(content_delivery_network, single_page_application, "Delivers to the user's web browser")
+Rel_R(content_delivery_network, single_page_application, "Delivers to the user's web browser")
 
 Rel(single_page_application, crawl_microservice, "Initiates website crawling via API calls to", "REST")
 Rel(single_page_application, keyphrase_microservice, "Listens to results via connection to", "WebSocket")
 
-Rel(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose and TypeScript")
-Rel(crawl_microservice, crawl_content_db, "Writes to", "S3 Client and TypeScript")
-Rel(crawl_microservice, keyphrase_microservice, "Sends crawl complete events to", "Event Bridge")
+Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client and TypeScript")
+Rel_R(crawl_microservice, keyphrase_microservice, "Sends crawl complete events to", "Event Bridge")
 Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
 
-Rel(keyphrase_microservice, occurrence_db, "Reads from and writes to", "Dynamoose and TypeScript")
-Rel(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_R(keyphrase_microservice, occurrence_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose and TypeScript")
 Rel(keyphrase_microservice, websites, "Finds keyphrases and occurrences using", "HTTP")
+
+SHOW_LEGEND()
 
 @enduml
