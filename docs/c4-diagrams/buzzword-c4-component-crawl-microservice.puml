@@ -14,7 +14,7 @@ Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
     Component(crawl_urls_lambda, "Crawl URLs Lambda", "Lambda and TypeScript", "Crawls all pages linked from a given URL if on same domain")
     Component(get_content_lambda, "Get Content Lambda", "Lambda and TypeScript", "Retrieves content of recently crawled pages")
     Component(get_urls_lambda, "Get URLs Lambda", "Lambda and TypeScript", "Gets all URLs crawled from a given URL")
-    Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and TypeScript", "Publishes newly crawled URLs as event to event bus")
+    Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and JavaScript", "Publishes newly crawled URLs as event to event bus")
     Component(event_bus, "Event Bus", "Event Bridge", "Event bus service that provides subscribers relevant events")
 }
 
@@ -36,15 +36,15 @@ Rel(step_function, event_bus, "Sends crawl complete event containing all crawled
 Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose")
-Rel_R(crawl_urls_lambda, content_db, "Writes to", "S3 Client and TypeScript")
+Rel_R(crawl_urls_lambda, content_db, "Writes to", "S3 Client")
 Rel_D(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
 
 Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose")
 
-Rel(get_content_lambda, content_db, "Reads from", "S3 Client and TypeScript")
+Rel(get_content_lambda, content_db, "Reads from", "S3 Client")
 
 Rel_U(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
-Rel_R(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to")
+Rel_R(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
 
 Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
 

@@ -10,7 +10,7 @@ Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Fu
 Container_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
     Component(http_api_gateway, "HTTP API Gateway", "API Gateway", "Routes requests from clients to relevant components")
     Component(ws_api_gateway, "WebSocket API Gateway", "API Gateway", "Enables bi-directional communication with user via a WebSocket connection, allowing the service to push updates automatically to subscribed users")
-    Component(step_function, "Keyphrase Finding Step Function", "Step Functions", "Orchestrates the process of performing keyphrase analysis and occurrence counting on a set of URLs")
+    Component(step_function, "Keyphrase Finding Step Function", "Step Functions", "Orchestrates keyphrase analysis and occurrence counting on a set of URLs")
     Component(find_keyphrases_lambda, "Find Keyphrases Lambda", "Lambda and TypeScript", "Retrieves content for a single URL then performs keyphrase analysis and occurrence counting")
     Component(crud_lambda, "Keyphrases CRUD Lambda", "Lambda and TypeScript", "Provides CRUD functionality for the keyphrase and occurrence data")
     Component(update_connections_lambda, "Update Connections Lambda", "Lambda and TypeScript", "Updates listening clients with relevant changes to the keyphrase and occurrence data")

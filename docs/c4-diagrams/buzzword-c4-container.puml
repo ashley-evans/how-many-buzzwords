@@ -7,11 +7,11 @@ title Container Diagram for the How many Buzzwords System
 Person(user, "User", "A user of the how many buzzwords website, that wants to see buzzword statistics for a given website")
 System_Boundary(buzzword_system, "How many Buzzwords System") {
     Container(content_delivery_network, "Content Delivery Network", "CloudFront, Route 53, and S3", $descr="Delivers static content including the How many Buzzwords Single-Page Application")
-    Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate crawls of websites and view buzzword statistics for provided website via user's web browser")
+    Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate a crawl of a website and view related buzzword statistics via user's web browser")
 
     System_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
-        Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl website and gather website HTML content via a REST API. Notifies subscribing services via events on a bus")
-        ContainerDb(crawl_url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the initial URL provided")
+        Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl a website and gather related HTML content via a REST API. Notifies subscribing services via events on a bus")
+        ContainerDb(crawl_url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the user's provided URL")
         ContainerDb(crawl_content_db, "Content Database", "S3", $descr="Stores page content for crawled URLs")
     }
 
@@ -32,12 +32,12 @@ Rel_R(content_delivery_network, single_page_application, "Delivers to the user's
 Rel(single_page_application, crawl_microservice, "Initiates website crawling via API calls to", "REST")
 Rel(single_page_application, keyphrase_microservice, "Listens to results via connection to", "WebSocket")
 
-Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose and TypeScript")
-Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client and TypeScript")
+Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
+Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client")
 Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
 
-Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose and TypeScript")
-Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose")
+Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose")
 Rel_L(keyphrase_microservice, crawl_microservice, "Subscribes to crawl complete events", "Event Bridge")
 Rel(keyphrase_microservice, websites, "Gets content for analysis using", "HTTP")
 
