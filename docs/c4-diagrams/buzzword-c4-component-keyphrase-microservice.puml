@@ -28,7 +28,7 @@ Rel(http_api_gateway, crud_lambda, "Routes requests to get current keyphrase and
 
 Rel(crud_lambda, keyphrase_db, "Retrieves relevant current keyphrase and occurrence state from", "DynamoDB Client")
 
-Rel(single_page_application, ws_api_gateway, "Listens to results via connection to", "WebSocket")
+Rel_D(single_page_application, ws_api_gateway, "Listens to results via connection to", "WebSocket")
 
 Rel(ws_api_gateway, connection_manager_lambda, "Sends connection and disconnection requests to")
 
@@ -36,9 +36,9 @@ Rel(connection_manager_lambda, active_connections_db, "Writes or deletes from")
 
 Rel(new_connection_lambda, active_connections_db, "Listens to new connections from", "DynamoDB Stream")
 Rel(new_connection_lambda, keyphrase_db, "Retrieves current relevant keyphrase and occurrence state from", "Dynamoose")
-Rel(new_connection_lambda, ws_api_gateway, "Sends current relevant keyphrase and occurrence state to",  "API Gateway Management Client")
+Rel_U(new_connection_lambda, ws_api_gateway, "Sends current relevant keyphrase and occurrence state to",  "API Gateway Management Client")
 
-Rel(crawl_complete_subscription, crawl_microservice, "Matches crawl complete events from")
+Rel_U(crawl_complete_subscription, crawl_microservice, "Matches crawl complete events from")
 Rel(crawl_complete_subscription, step_function, "Starts execution")
 
 Rel(step_function, find_keyphrases_lambda, "Uses")
@@ -48,7 +48,7 @@ Rel(find_keyphrases_lambda, websites, "Gets content for analysis using", "HTTP")
 
 Rel(update_connections_lambda, keyphrase_db, "Listens to new keyphrases and occurrences from", "DynamoDB Stream")
 Rel(update_connections_lambda, new_connection_lambda, "Retrieves relevant listening client details from", "Dynamoose")
-Rel(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
+Rel_U(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
 
 SHOW_LEGEND()
 
