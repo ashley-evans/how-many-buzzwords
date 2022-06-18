@@ -1,0 +1,53 @@
+@startuml Buzzword C4 Component Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for the How many Buzzwords System - Crawl Microservice
+
+Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate crawls of websites and view buzzword statistics for provided website via user's web browser")
+Container(keyphrase_microservice, "Keyphrase Microservice", "Lambda, TypeScript, Step Functions", "Provides keyphrase analysis and occurrence counting functionality via events on event bus. Enables listening to keyphrase results related to a given URL via WebSocket API")
+
+Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
+    Component(api_gateway, "HTTP API Gateway", "API Gateway", "Routes requests from clients to relevant components")
+    Component(step_function, "Crawl Step Function", "Step Functions", "Orchestrates the process of checking recent crawls, crawling new URLs, and sending crawl complete events")
+    Component(recent_crawl_lambda, "Recent Crawl Lambda", "Lambda and TypeScript", "Checks if a URL has been recently crawled")
+    Component(crawl_urls_lambda, "Crawl URLs Lambda", "Lambda and TypeScript", "Crawls all pages linked from a given URL if on same domain")
+    Component(get_content_lambda, "Get Content Lambda", "Lambda and TypeScript", "Retrieves content of recently crawled pages")
+    Component(get_urls_lambda, "Get URLs Lambda", "Lambda and TypeScript", "Gets all URLs crawled from a given URL")
+    Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and TypeScript", "Publishes newly crawled URLs as event to event bus")
+    Component(event_bus, "Event Bus", "Event Bridge", "Event bus service that provides subscribers relevant events")
+}
+
+ContainerDb(url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the initial URL provided")
+ContainerDb(content_db, "Content Database", "S3", $descr="Stores page content for crawled URLs")
+
+System_Ext(websites, "Websites", "Any website on the internet")
+
+Rel(single_page_application, api_gateway, "Initiates website crawling via API calls to", "REST")
+
+Rel(api_gateway, step_function, "Starts state machine execution for new crawl initiations")
+Rel(api_gateway, get_urls_lambda, "Routes requests to get current related URLs to")
+Rel(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
+
+Rel(step_function, recent_crawl_lambda, "Uses")
+Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
+Rel(step_function, event_bus, "Sends crawl complete event containing all crawled URLs to")
+
+Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
+
+Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose and TypeScript")
+Rel(crawl_urls_lambda, content_db, "Writes to", "S3 Client and TypeScript")
+Rel(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
+
+Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
+
+Rel(get_content_lambda, content_db, "Reads from", "S3 Client and TypeScript")
+
+Rel(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
+Rel(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to")
+
+Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
+
+SHOW_LEGEND()
+
+@enduml
