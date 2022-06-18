@@ -10,15 +10,15 @@ System_Boundary(buzzword_system, "How many Buzzwords System") {
     Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate crawls of websites and view buzzword statistics for provided website via user's web browser")
 
     System_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
-        Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl website and gather website HTML content via a REST API. Notifies subscribing services via events on a bus", "")
+        Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl website and gather website HTML content via a REST API. Notifies subscribing services via events on a bus")
         ContainerDb(crawl_url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the initial URL provided")
         ContainerDb(crawl_content_db, "Content Database", "S3", $descr="Stores page content for crawled URLs")
     }
 
     System_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
         Container(keyphrase_microservice, "Keyphrase Microservice", "Lambda, TypeScript, Step Functions", "Provides keyphrase analysis and occurrence counting functionality via events on event bus. Enables listening to keyphrase results related to a given URL via WebSocket API")
-        ContainerDb(occurrence_db, "Occurrence Database", "DynamoDB", "Stores keyphrases found on a given URL and occurrence counts")
-        ContainerDb(active_connections_db, "Active Connections Database", "Stores listening WebSocket client details and corresponding URLs")
+        ContainerDb(keyphrase_db, "Keyphrase and Occurrence Database", "DynamoDB", "Stores keyphrases found on a given URL and corresponding occurrence counts")
+        ContainerDb(active_connections_db, "Active Connections Database", "DynamoDB", "Stores listening WebSocket client details and corresponding URLs")
     }
 }
 
@@ -36,10 +36,10 @@ Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose a
 Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client and TypeScript")
 Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
 
-Rel_R(keyphrase_microservice, occurrence_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose and TypeScript")
 Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose and TypeScript")
 Rel_L(keyphrase_microservice, crawl_microservice, "Subscribes to crawl complete events", "Event Bridge")
-Rel(keyphrase_microservice, websites, "Finds keyphrases and occurrences using", "HTTP")
+Rel(keyphrase_microservice, websites, "Gets content for analysis using", "HTTP")
 
 SHOW_LEGEND()
 

@@ -25,7 +25,7 @@ System_Ext(websites, "Websites", "Any website on the internet")
 
 Rel(single_page_application, api_gateway, "Initiates website crawling via API calls to", "REST")
 
-Rel(api_gateway, step_function, "Starts state machine execution for new crawl initiations")
+Rel(api_gateway, step_function, "Starts execution")
 Rel_L(api_gateway, get_urls_lambda, "Routes requests to get current related URLs to")
 Rel_R(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
 
@@ -33,13 +33,13 @@ Rel(step_function, recent_crawl_lambda, "Uses")
 Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
 Rel(step_function, event_bus, "Sends crawl complete event containing all crawled URLs to")
 
-Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
+Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose")
 
-Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose and TypeScript")
+Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose")
 Rel_R(crawl_urls_lambda, content_db, "Writes to", "S3 Client and TypeScript")
 Rel_D(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
 
-Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose and TypeScript")
+Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(get_content_lambda, content_db, "Reads from", "S3 Client and TypeScript")
 
