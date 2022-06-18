@@ -35,3 +35,7 @@ npm-debug.log*
 # Environment Variables
 
 .env
+
+# Built Diagrams
+
+out/
