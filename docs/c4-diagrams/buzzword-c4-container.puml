@@ -34,11 +34,11 @@ Rel(single_page_application, keyphrase_microservice, "Listens to results via con
 
 Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose and TypeScript")
 Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client and TypeScript")
-Rel_R(crawl_microservice, keyphrase_microservice, "Sends crawl complete events to", "Event Bridge")
 Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
 
 Rel_R(keyphrase_microservice, occurrence_db, "Reads from and writes to", "Dynamoose and TypeScript")
 Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose and TypeScript")
+Rel_L(keyphrase_microservice, crawl_microservice, "Subscribes to crawl complete events", "Event Bridge")
 Rel(keyphrase_microservice, websites, "Finds keyphrases and occurrences using", "HTTP")
 
 SHOW_LEGEND()
