@@ -4,6 +4,11 @@
 
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
+**The currently released version of this project can be used here:**
+
+-   https://howmanybuzzwords.com
+-   https://howmanybuzzwords.co.uk
+
 ## Requirements
 
 The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
