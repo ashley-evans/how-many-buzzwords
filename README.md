@@ -4,31 +4,6 @@
 
 Some buzzwords are incredibly overused, a simple tool tool to find the biggest culprits
 
-## Running the UI locally
-
-Requires a `.env` file in the `./ui/` folder with the following values configured to the environment at test:
-
-| Environment Variable          | Description                                                  |
-| ----------------------------- | ------------------------------------------------------------ |
-| CRAWL_SERVICE_ENDPOINT        | The HTTP API Gateway endpoint for the crawl service          |
-| KEYPHRASE_WS_SERVICE_ENDPOINT | The WebSocket API Gateway endpoint for the keyphrase service |
-
-Run the following script to run the UI locally:
-
-```
-npm --prefix ./ui/ start
-```
-
-## General script usage
-
-Each of the scripts used within this project have usage instructions, these can be found by providing the `-h` flag to each script.
-
-You may need to give the scripts permissions to run on your system, this can be done by running the following command:
-
-```shell
-chmod u+x $(find ./scripts/ -type f)
-```
-
 ## Requirements
 
 The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
@@ -43,7 +18,19 @@ Many of the scripts used within the project require `jq` to function, this can b
 sudo apt-get install jq
 ```
 
-## Install Dependencies
+### General script usage
+
+Each of the scripts used within this project have usage instructions, these can be found by providing the `-h` flag to each script.
+
+You may need to give the scripts permissions to run on your system, this can be done by running the following command:
+
+```shell
+chmod u+x $(find ./scripts/ -type f)
+```
+
+## Usage
+
+### Install Dependencies
 
 Run the following command to install all of the dependencies for the buzzword project:
 
@@ -57,15 +44,38 @@ Dependencies can also be installed in parallel by running:
 npm run ci:parallel
 ```
 
-## Cloudformation Template Validation
+### Deploying the backend services
 
-Run the following command to validate the stack template definition:
+Run the following commands to deploy all buzzword services:
 
 ```shell
-xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
+./scripts/deploy.sh
 ```
 
-## Running tests
+### Tearing down the backend services
+
+Run the following commands to teardown all deployed services, along with their related resources:
+
+```shell
+./scripts/teardown.sh
+```
+
+### Running the UI locally
+
+Requires a `.env` file in the `./ui/` folder with the following values configured to the environment at test:
+
+| Environment Variable          | Description                                                  |
+| ----------------------------- | ------------------------------------------------------------ |
+| CRAWL_SERVICE_ENDPOINT        | The HTTP API Gateway endpoint for the crawl service          |
+| KEYPHRASE_WS_SERVICE_ENDPOINT | The WebSocket API Gateway endpoint for the keyphrase service |
+
+Run the following script to run the UI locally:
+
+```
+npm --prefix ./ui/ start
+```
+
+### Running tests
 
 Unit tests can be ran simply by running the following command:
 
@@ -87,27 +97,17 @@ Once started, the integration tests can be ran using the following command:
 npm run test:integration
 ```
 
-## Deploy
+### Cloudformation Template Validation
 
-Run the following commands to deploy all buzzword services:
-
-```shell
-./scripts/deploy.sh
-```
-
-## Teardown
-
-Run the following commands to delete the created services, along with their related resources:
+Run the following command to validate the stack template definition:
 
 ```shell
-./scripts/teardown.sh
+xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
-## Manually invoking the APIs
+### Crawl/Find Buzzwords
 
-## Crawl/Find Buzzwords
-
-To trigger a crawl of a particular URL to get it's buzzwords use the `test-crawl.sh` script.
+The `test-crawl.sh` script can be used to trigger a crawl without running the UI:
 
 Example usage:
 
@@ -115,9 +115,9 @@ Example usage:
 ./scripts/testing/test-crawl.sh -s dev -u https://www.example.com
 ```
 
-## Listen to results
+### Listen to results
 
-To listen to the results of a crawl in real time use the `test-connect.sh` script.
+The `test-connect.sh` script can be used to listen to the results of a crawl in real time without running the UI:
 
 Example usage:
 
@@ -125,7 +125,7 @@ Example usage:
 ./scripts/testing/test-connect.sh -s dev -u https://www.example.com
 ```
 
-## Local Testing of Lambda functions
+### Local Testing of Lambda functions
 
 Run the following commands to invoke lambda functions locally:
 
