@@ -9,13 +9,13 @@ System_Boundary(buzzword_system, "How many Buzzwords System") {
     Container(content_delivery_network, "Content Delivery Network", "CloudFront, Route 53, and S3", $descr="Delivers static content including the How many Buzzwords Single-Page Application")
     Container(single_page_application, "Single-Page Application", "React and Typescript", $descr="Provides ability to initiate a crawl of a website and view related buzzword statistics via user's web browser")
 
-    System_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
+    Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
         Container(crawl_microservice, "Crawl Microservice", "Lambda, TypeScript, Step Functions, and Event Bridge", $descr="Provides ability to crawl a website and gather related HTML content via a REST API. Notifies subscribing services via events on a bus")
         ContainerDb(crawl_url_db, "URL Database", "DynamoDB", $descr="Stores crawled URLs linked to the user's provided URL")
         ContainerDb(crawl_content_db, "Content Database", "S3", $descr="Stores page content for crawled URLs")
     }
 
-    System_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
+    Container_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
         Container(keyphrase_microservice, "Keyphrase Microservice", "Lambda, TypeScript, Step Functions", "Provides keyphrase analysis and occurrence counting functionality via events on event bus. Enables listening to keyphrase results related to a given URL via WebSocket API")
         ContainerDb(keyphrase_db, "Keyphrase and Occurrence Database", "DynamoDB", "Stores keyphrases found on a given URL and corresponding occurrence counts")
         ContainerDb(active_connections_db, "Active Connections Database", "DynamoDB", "Stores listening WebSocket client details and corresponding URLs")
