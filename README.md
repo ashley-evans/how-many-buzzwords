@@ -19,7 +19,7 @@ A larger set of C4 model diagrams can be found in the `docs` folder.
 
 ## Requirements
 
-The following CLI tools must be installed to validate, build, and test the buzzword stack resources:
+The following CLI tools must be installed to validate, build, and test the how many buzzword components:
 
 -   AWS CLI - More information can be found here: https://aws.amazon.com/cli/
 -   SAM CLI - More information can be found here: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
@@ -45,7 +45,7 @@ chmod u+x $(find ./scripts/ -type f)
 
 ### Install Dependencies
 
-Run the following command to install all of the dependencies for the buzzword project:
+Run the following command to install all of the dependencies for the project:
 
 ```shell
 npm run ci:sequential
@@ -57,23 +57,23 @@ Dependencies can also be installed in parallel by running:
 npm run ci:parallel
 ```
 
-### Deploying the backend services
+### Deploying components to AWS
 
-Run the following commands to deploy all buzzword services:
+Run the following commands to deploy all components:
 
 ```shell
 ./scripts/deploy.sh
 ```
 
-### Tearing down the backend services
+### Tearing down deployed components
 
-Run the following commands to teardown all deployed services, along with their related resources:
+Run the following commands to teardown all deployed components, along with their related resources:
 
 ```shell
 ./scripts/teardown.sh
 ```
 
-### Running the UI locally
+### Running the SPA component locally
 
 Requires a `.env` file in the `./ui/` folder with the following values configured to the environment at test:
 
@@ -112,13 +112,13 @@ npm run test:integration
 
 ### Cloudformation Template Validation
 
-Run the following command to validate the stack template definition:
+Run the following command to validate all template definitions within the project:
 
 ```shell
 xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
 ```
 
-### Crawl/Find Buzzwords
+### Programatically starting a crawl
 
 The `test-crawl.sh` script can be used to trigger a crawl without running the UI:
 
@@ -128,7 +128,7 @@ Example usage:
 ./scripts/testing/test-crawl.sh -s dev -u https://www.example.com
 ```
 
-### Listen to results
+### Programatically listening to results
 
 The `test-connect.sh` script can be used to listen to the results of a crawl in real time without running the UI:
 
