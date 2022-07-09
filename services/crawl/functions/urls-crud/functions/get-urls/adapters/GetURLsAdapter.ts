@@ -16,7 +16,13 @@ class GetURLsAdapter implements GraphQLAdapter<QueryUrlsArgs, Url | undefined> {
         try {
             const crawledPaths = await this.port.getPathnames(url);
             return this.createResponse(url, crawledPaths);
-        } catch {
+        } catch (ex: unknown) {
+            console.error(
+                `Error occurred during crawl result retrieval: ${JSON.stringify(
+                    ex
+                )}`
+            );
+
             throw new Error("An error occurred while obtaining crawled paths");
         }
     }
