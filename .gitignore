@@ -39,3 +39,7 @@ npm-debug.log*
 # Built Diagrams
 
 out/
+
+# Auto-generated files
+
+schema.d.ts

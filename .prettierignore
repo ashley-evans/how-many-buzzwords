@@ -15,3 +15,7 @@ apify_storage/
 # TSC Output
 
 dist/
+
+# Auto-generated files
+
+schema.d.ts

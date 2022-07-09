@@ -1,0 +1,9 @@
+schema:
+    - schemas/schema.graphql
+generates:
+    schemas/schema.d.ts:
+        plugins:
+            - typescript
+config:
+    scalars:
+        AWSDateTime: string
