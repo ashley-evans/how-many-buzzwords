@@ -45,9 +45,19 @@ if [ ! -f $config_path ]; then
     exit 1
 fi
 
+config_parameters=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v parameter_overrides)
+
+if [ $? -ne 0 ]; then
+    echo "Error: An error occured while obtaining the crawl service config parameter overrides."
+    exit 1
+fi
+
+api_key_expiry="$(date -d "+365 days" "+%s")"
+
 $script_dir/helpers/deploy-service.sh \
     -t $template_path \
     -c $config_path \
     -e $environment \
     -f \
+    -o "APIKeyExpiryTime=$api_key_expiry $config_parameters" \
     --cache

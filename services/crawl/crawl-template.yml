@@ -5,6 +5,9 @@ Parameters:
         Type: String
         Description: Environment name suffixed to service resources
         Default: dev
+    APIKeyExpiryTime:
+        Type: Number
+        Description: The time at which the API Key for GraphQL will expire, in seconds since epoch
 Resources:
     CrawlNodeDependencyLayer:
         Type: AWS::Serverless::LayerVersion
@@ -467,6 +470,7 @@ Resources:
         Type: AWS::AppSync::ApiKey
         Properties:
             ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Expires: !Ref APIKeyExpiryTime
     CrawlGraphQLAPISchema:
         Type: AWS::AppSync::GraphQLSchema
         Properties:
