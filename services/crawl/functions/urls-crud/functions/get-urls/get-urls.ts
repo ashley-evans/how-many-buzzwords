@@ -16,14 +16,13 @@ function createRepository(): Repository {
     return new URLsTableRepository(process.env.TABLE_NAME);
 }
 
+const repository = createRepository();
+const port = new GetURLsDomain(repository);
+const adapter = new GetURLsAdapter(port);
+
 async function handler(
     event: AppSyncResolverEvent<QueryUrlsArgs>
 ): Promise<Url | undefined> {
-    const repository = createRepository();
-    const port = new GetURLsDomain(repository);
-
-    const adapter = new GetURLsAdapter(port);
-
     return adapter.handleQuery(event);
 }
 
