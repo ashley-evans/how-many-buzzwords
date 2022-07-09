@@ -408,19 +408,6 @@ Resources:
                         post:
                             x-amazon-apigateway-integration:
                                 $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-                    /url/{baseURL}:
-                        get:
-                            parameters:
-                                [
-                                    {
-                                        name: "baseURL",
-                                        in: "path",
-                                        required: true,
-                                        schema: { type: "string" },
-                                    },
-                                ]
-                            x-amazon-apigateway-integration:
-                                $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
                     /content:
                         get:
                             parameters:
@@ -447,18 +434,6 @@ Resources:
                                 StateMachineArn:
                                     Ref: "CrawlStateMachine"
                                 Input: "$request.body.MessageBody"
-                            payloadFormatVersion: "1.0"
-                        get-urls-integration:
-                            type: "aws_proxy"
-                            httpMethod: "POST"
-                            uri:
-                                Fn::GetAtt:
-                                    - "GetURLs"
-                                    - "Arn"
-                            credentials:
-                                Fn::GetAtt:
-                                    - "GetURLsAccessRole"
-                                    - "Arn"
                             payloadFormatVersion: "1.0"
                         get-content-integration:
                             type: "aws_proxy"
