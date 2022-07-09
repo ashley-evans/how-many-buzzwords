@@ -1,99 +1,67 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
-import { StatusCodes } from "http-status-codes";
+import { AppSyncResolverEvent } from "aws-lambda";
 
-import APIGatewayAdapter from "../../../interfaces/APIGatewayAdapter";
-import { GetURLsPort } from "../ports/GetURLsPort";
+import GraphQLAdapter from "../../../interfaces/GraphQLAdapter";
+import { QueryUrlsArgs, Url } from "../../../../../schemas/schema";
+import { GetURLsPort, PathnameResponse } from "../ports/GetURLsPort";
 
-type ValidParameters = {
-    baseURL: string;
-};
+class GetURLsAdapter implements GraphQLAdapter<QueryUrlsArgs, Url | undefined> {
+    private static INVALID_URL_ERROR = "Invalid ID provided, not a URL.";
 
-class GetURLsAdapter implements APIGatewayAdapter {
-    constructor(
-        private port: GetURLsPort,
-        private validator: ObjectValidator<ValidParameters>
-    ) {}
+    constructor(private port: GetURLsPort) {}
 
-    async handleRequest(
-        event: APIGatewayProxyEvent
-    ): Promise<APIGatewayProxyResult> {
-        let validatedURL: URL;
+    async handleQuery(
+        event: AppSyncResolverEvent<QueryUrlsArgs>
+    ): Promise<Url | undefined> {
+        const url = this.parseURLArgument(event.arguments);
         try {
-            const validatedParameters = this.validator.validate(
-                event.pathParameters
-            );
-            validatedURL = this.parseURL(validatedParameters.baseURL);
-        } catch (ex) {
-            const message = "Invalid event";
+            const crawledPaths = await this.port.getPathnames(url);
+            return this.createResponse(url, crawledPaths);
+        } catch (ex: unknown) {
             console.error(
-                message +
-                    `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
+                `Error occurred during crawl result retrieval: ${JSON.stringify(
+                    ex
+                )}`
             );
-            return this.createResponse(
-                StatusCodes.BAD_REQUEST,
-                "text/plain",
-                message
-            );
-        }
 
-        try {
-            const response = await this.port.getPathnames(validatedURL);
-            if (response.length > 0) {
-                return this.createResponse(
-                    StatusCodes.OK,
-                    "application/json",
-                    JSON.stringify({
-                        baseURL: validatedURL.hostname,
-                        pathnames: response,
-                    })
-                );
-            }
-
-            return this.createResponse(
-                StatusCodes.NOT_FOUND,
-                "text/plain",
-                "URL provided has not been crawled recently."
-            );
-        } catch (ex) {
-            const message = "Error occurred during GET";
-            console.error(
-                message +
-                    `: ${ex instanceof Error ? ex.message : JSON.stringify(ex)}`
-            );
-            return this.createResponse(
-                StatusCodes.INTERNAL_SERVER_ERROR,
-                "text/plain",
-                message
-            );
+            throw new Error("An error occurred while obtaining crawled paths");
         }
     }
 
-    private parseURL(url: string): URL {
+    private parseURLArgument(eventArguments: QueryUrlsArgs) {
+        let url = eventArguments.id;
         if (!isNaN(parseInt(url))) {
-            throw "Number provided when expecting URL";
+            throw new Error(GetURLsAdapter.INVALID_URL_ERROR);
         }
 
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
             url = `http://${url}`;
         }
 
-        return new URL(url);
+        try {
+            return new URL(url);
+        } catch {
+            throw new Error(GetURLsAdapter.INVALID_URL_ERROR);
+        }
     }
 
     private createResponse(
-        code: StatusCodes,
-        contentType: string,
-        body: string
-    ): APIGatewayProxyResult {
+        queryURL: URL,
+        crawledPaths: PathnameResponse[]
+    ): Url | undefined {
+        if (crawledPaths.length == 0) {
+            return undefined;
+        }
+
         return {
-            statusCode: code,
-            headers: {
-                "Content-Type": contentType,
-            },
-            body,
+            id: queryURL.hostname,
+            pathnames: crawledPaths.map((path) => {
+                return {
+                    name: path.pathname,
+                    crawledAt: path.crawledAt.toISOString(),
+                };
+            }),
         };
     }
 }
 
-export { GetURLsAdapter, ValidParameters };
+export default GetURLsAdapter;

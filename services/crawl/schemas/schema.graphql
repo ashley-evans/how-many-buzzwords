@@ -1,0 +1,23 @@
+scalar AWSDateTime
+
+schema {
+    query: Query
+}
+
+type Query {
+    urls(id: ID!): URL
+}
+
+interface Node {
+    id: ID!
+}
+
+type URL implements Node {
+    id: ID!
+    pathnames: [Pathname]!
+}
+
+type Pathname {
+    name: String!
+    crawledAt: AWSDateTime!
+}

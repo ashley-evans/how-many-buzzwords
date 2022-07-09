@@ -5,6 +5,9 @@ Parameters:
         Type: String
         Description: Environment name suffixed to service resources
         Default: dev
+    APIKeyExpiryTime:
+        Type: Number
+        Description: The time at which the API Key for GraphQL will expire, in seconds since epoch
 Resources:
     CrawlNodeDependencyLayer:
         Type: AWS::Serverless::LayerVersion
@@ -198,7 +201,6 @@ Resources:
             Description: GETs the pathnames crawled from a given URL
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
-                - Ref: CrawlNodeDependencyLayer
             Timeout: 6
             Policies:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -222,7 +224,7 @@ Resources:
                     - Effect: Allow
                       Principal:
                           Service:
-                              - apigateway.amazonaws.com
+                              - appsync.amazonaws.com
                       Action:
                           - sts:AssumeRole
             Policies:
@@ -408,19 +410,6 @@ Resources:
                         post:
                             x-amazon-apigateway-integration:
                                 $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
-                    /url/{baseURL}:
-                        get:
-                            parameters:
-                                [
-                                    {
-                                        name: "baseURL",
-                                        in: "path",
-                                        required: true,
-                                        schema: { type: "string" },
-                                    },
-                                ]
-                            x-amazon-apigateway-integration:
-                                $ref: "#/components/x-amazon-apigateway-integrations/get-urls-integration"
                     /content:
                         get:
                             parameters:
@@ -448,18 +437,6 @@ Resources:
                                     Ref: "CrawlStateMachine"
                                 Input: "$request.body.MessageBody"
                             payloadFormatVersion: "1.0"
-                        get-urls-integration:
-                            type: "aws_proxy"
-                            httpMethod: "POST"
-                            uri:
-                                Fn::GetAtt:
-                                    - "GetURLs"
-                                    - "Arn"
-                            credentials:
-                                Fn::GetAtt:
-                                    - "GetURLsAccessRole"
-                                    - "Arn"
-                            payloadFormatVersion: "1.0"
                         get-content-integration:
                             type: "aws_proxy"
                             httpMethod: "POST"
@@ -484,7 +461,51 @@ Resources:
                 AllowMethods:
                     - POST
                     - GET
+    CrawlGraphQLAPI:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+            Name: !Sub buzzword-crawl-service-graphql-api-${EnvironmentNameSuffix}
+            AuthenticationType: API_KEY
+    CrawlGraphQLAPIKey:
+        Type: AWS::AppSync::ApiKey
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Expires: !Ref APIKeyExpiryTime
+    CrawlGraphQLAPISchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            DefinitionS3Location: ./schemas/schema.graphql
+    URLsDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: AWS_LAMBDA
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_urls_data_source_${EnvironmentNameSuffix}
+            LambdaConfig:
+                LambdaFunctionArn: !GetAtt GetURLs.Arn
+            ServiceRoleArn: !GetAtt GetURLsAccessRole.Arn
+    URLResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Query
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            FieldName: urls
+            DataSourceName: !GetAtt URLsDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2017-02-28",
+                    "operation": "Invoke",
+                    "payload": {
+                        "field": "urls",
+                        "arguments":  $utils.toJson($context.arguments)
+                    }
+                }
+            ResponseMappingTemplate: "$utils.toJson($context.result)"
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
         Value: !GetAtt CrawlServiceEventBus.Arn
+    GraphQLAPIKey:
+        Description: API Key to access GraphQL API
+        Value: !GetAtt CrawlGraphQLAPIKey.ApiKey
