@@ -15,7 +15,6 @@ interface Node {
 type URL implements Node {
     id: ID!
     pathnames: [Pathname]!
-    crawledAt: AWSDateTime!
 }
 
 type Pathname {
