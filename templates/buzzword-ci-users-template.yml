@@ -54,6 +54,14 @@ Resources:
                                 - route53:*
                             Effect: Allow
                             Resource: "*"
+                - PolicyName: AppSyncDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - appsync:*
+                            Effect: Allow
+                            Resource: arn:aws:appsync:*
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
                 - arn:aws:iam::aws:policy/AWSLambda_FullAccess
