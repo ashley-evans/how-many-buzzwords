@@ -24,7 +24,7 @@ ContainerDb(content_db, "Content Database", "S3", $descr="Stores page content fo
 
 System_Ext(websites, "Websites", "Any website on the internet")
 
-Rel(single_page_application, graphql_api, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSockets")
+Rel(single_page_application, graphql_api, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSocket")
 
 Rel(graphql_api, step_function, "Starts execution")
 Rel_L(graphql_api, get_urls_lambda, "Routes queries against the urls field to")

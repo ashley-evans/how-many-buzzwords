@@ -29,7 +29,7 @@ Rel(user, single_page_application, "Views buzzwords and statistics related to a 
 
 Rel_R(content_delivery_network, single_page_application, "Delivers to the user's web browser")
 
-Rel(single_page_application, crawl_microservice, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSockets")
+Rel(single_page_application, crawl_microservice, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSocket")
 Rel(single_page_application, keyphrase_microservice, "Listens to results via connection to", "WebSocket")
 
 Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
