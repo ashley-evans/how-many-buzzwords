@@ -58,7 +58,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-crawl_event_bus_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r .OutputValue)
+crawl_event_bus_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r 'select ( .OutputKey == "EventBusARN" ) | .OutputValue')
 
 if [ -z $crawl_event_bus_arn ]; then
     echo "Error: No Crawl Event Bus ARN found."
