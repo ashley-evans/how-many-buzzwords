@@ -2,19 +2,17 @@
  * @group integration
  */
 
-import dynamoose from "dynamoose";
+process.env.AWS_ACCESS_KEY_ID = "x";
+process.env.AWS_SECRET_ACCESS_KEY = "x";
+process.env.AWS_REGION = "eu-west-2";
 
-dynamoose.aws.sdk.config.update({
-    region: "eu-west-2",
-    credentials: {
-        accessKeyId: "x",
-        secretAccessKey: "x",
-    },
-});
-dynamoose.aws.ddb.local();
+import dynamoose from "dynamoose";
+import CrawlStatus from "../../enums/CrawlStatus";
 
 import { Pathname } from "../../ports/Repository";
 import URLsTableRepository from "../URLsTableRepository";
+
+dynamoose.aws.ddb.local("http://localhost:8000");
 
 const VALID_HOSTNAME = "www.example.com";
 const OTHER_HOSTNAME = "www.test.com";
@@ -24,13 +22,22 @@ const TABLE_NAME = "urls-table";
 
 const repository = new URLsTableRepository(TABLE_NAME, true);
 
+function createPaths(total: number) {
+    const paths: string[] = [];
+    for (let i = 0; i < total; i++) {
+        paths.push(`/random-${i}`);
+    }
+
+    return paths;
+}
+
 beforeAll(async () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
 });
 
 test.each([
-    ["one stored", [VALID_PATHNAME]],
-    ["multiple stored", [VALID_PATHNAME, `${VALID_PATHNAME}1`]],
+    ["one stored", createPaths(1)],
+    ["multiple stored", createPaths(2)],
 ])(
     "returns pathnames given %s",
     async (message: string, pathnames: string[]) => {
@@ -183,8 +190,9 @@ describe("overwrites existing pathname", () => {
 });
 
 describe.each([
-    ["a single pathname stored", [VALID_PATHNAME]],
-    ["multiple pathnames stored", [VALID_PATHNAME, `${VALID_PATHNAME}1`]],
+    ["a single pathname stored", createPaths(1)],
+    ["less than 25 pathnames stored", createPaths(24)],
+    ["more than 26 pathnames stored", createPaths(26)],
 ])("deletes given %s", (message: string, pathnames: string[]) => {
     let response: boolean;
 
@@ -242,12 +250,10 @@ describe("only deletes pathnames attributed to given base URL", () => {
     });
 });
 
-test("returns failure if no pathnames exist upon deletion", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
-
+test("returns success if no pathnames exist upon deletion", async () => {
     const response = await repository.deletePathnames("invalid");
 
-    expect(response).toEqual(false);
+    expect(response).toEqual(true);
 });
 
 test("given no pathnames then empty array returned upon GET", async () => {
@@ -255,4 +261,89 @@ test("given no pathnames then empty array returned upon GET", async () => {
 
     expect(response).toBeDefined();
     expect(response).toHaveLength(0);
+});
+
+describe("Crawl Status operations", () => {
+    test("returns success if no crawl status is stored for a base URL upon deletion", async () => {
+        const response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
+
+        expect(response).toEqual(true);
+    });
+
+    describe("deletes status if crawl status is set", () => {
+        let response: boolean;
+
+        beforeAll(async () => {
+            await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.RUNNING
+            );
+
+            response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
+        });
+
+        test("crawl status is successfully deleted", async () => {
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+            expect(actual).toBeUndefined();
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    });
+
+    test("returns undefined if no crawl status is stored for a base URL", async () => {
+        await repository.deleteCrawlStatus(VALID_HOSTNAME);
+
+        const response = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(response).toBeUndefined();
+    });
+
+    test("returns success if crawl status update succeeds", async () => {
+        const response = await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.SUCCESS
+        );
+
+        expect(response).toEqual(true);
+    });
+
+    describe("overwrites status if crawl status is already set", () => {
+        let response: boolean;
+
+        beforeAll(async () => {
+            await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.RUNNING
+            );
+
+            response = await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.SUCCESS
+            );
+        });
+
+        test("updates status of crawl successfully", async () => {
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+            expect(actual).toEqual(CrawlStatus.SUCCESS);
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    });
+
+    test.each(Object.values(CrawlStatus))(
+        "returns status if crawl status is stored for a base URL given status is %s",
+        async (expectedStatus) => {
+            await repository.updateCrawlStatus(VALID_HOSTNAME, expectedStatus);
+
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+            expect(actual).toEqual(expectedStatus);
+        }
+    );
 });

@@ -1,6 +1,6 @@
 import { Schema } from "dynamoose";
 
-import URLsTableKeyFields from "../enums/URLsTableKeyFields";
+import { URLsTableKeyFields } from "../enums/URLsTableFields";
 
 const schema = new Schema(
     {

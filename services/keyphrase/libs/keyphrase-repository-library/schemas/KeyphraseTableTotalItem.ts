@@ -6,10 +6,10 @@ import {
 } from "../enums/KeyphraseTableFields";
 
 class KeyphraseTableTotalItem extends Item {
-    [KeyphraseTableKeyFields.HashKey]: string;
-    [KeyphraseTableKeyFields.RangeKey]: string;
-    [KeyphraseTableNonKeyFields.Occurrences]: number;
-    [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: string;
+    [KeyphraseTableKeyFields.HashKey]!: string;
+    [KeyphraseTableKeyFields.RangeKey]!: string;
+    [KeyphraseTableNonKeyFields.Occurrences]!: number;
+    [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]!: string;
 }
 
 export default KeyphraseTableTotalItem;

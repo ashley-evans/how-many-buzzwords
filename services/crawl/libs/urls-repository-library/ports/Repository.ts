@@ -1,3 +1,5 @@
+import CrawlStatus from "../enums/CrawlStatus";
+
 type Pathname = {
     pathname: string;
     createdAt: Date;
@@ -12,6 +14,9 @@ interface Repository {
         pathname: string
     ): Promise<Pathname | undefined>;
     storePathname(baseURL: string, pathname: string): Promise<boolean>;
+    getCrawlStatus(baseURL: string): Promise<CrawlStatus | undefined>;
+    updateCrawlStatus(baseURL: string, status: CrawlStatus): Promise<boolean>;
+    deleteCrawlStatus(baseURL: string): Promise<boolean>;
 }
 
 export { Pathname, Repository };
