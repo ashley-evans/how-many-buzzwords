@@ -1,6 +1,6 @@
 enum URLsTableKeyFields {
-    HashKey = "BaseUrl",
-    SortKey = "Pathname",
+    HashKey = "pk",
+    SortKey = "sk",
 }
 
 export default URLsTableKeyFields;

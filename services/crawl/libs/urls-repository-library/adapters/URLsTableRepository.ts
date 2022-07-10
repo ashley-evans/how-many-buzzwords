@@ -1,6 +1,7 @@
 import dynamoose from "dynamoose";
 
 import URLsTableKeyFields from "../enums/URLsTableKeyFields";
+import URLsTableConstants from "../enums/URLsTableConstants";
 import { Pathname, Repository } from "../ports/Repository";
 import URLsTablePathSchema from "../schemas/URLsTablePathSchema";
 import URLsTablePathItem from "../schemas/URLsTablePathItem";
@@ -32,8 +33,10 @@ class URLsTableRepository implements Repository {
         }
 
         const items: PathnameKeys[] = pathnames.map((pathname) => ({
-            [URLsTableKeyFields.HashKey]: baseURL,
-            [URLsTableKeyFields.SortKey]: pathname.pathname,
+            [URLsTableKeyFields.HashKey]: this.createURLPartitionKey(baseURL),
+            [URLsTableKeyFields.SortKey]: this.createPathnameSortKey(
+                pathname.pathname
+            ),
         }));
 
         const batches = this.createBatches(items);
@@ -55,11 +58,11 @@ class URLsTableRepository implements Repository {
     async getPathnames(baseURL: string): Promise<Pathname[]> {
         const documents = await this.pathModel
             .query(URLsTableKeyFields.HashKey)
-            .eq(baseURL)
+            .eq(this.createURLPartitionKey(baseURL))
             .exec();
 
         return documents.map((document) => ({
-            pathname: document.Pathname,
+            pathname: this.extractPathname(document.sk),
             createdAt: document.createdAt,
             updatedAt: document.updatedAt,
         }));
@@ -71,9 +74,9 @@ class URLsTableRepository implements Repository {
     ): Promise<Pathname | undefined> {
         const documents = await this.pathModel
             .query(URLsTableKeyFields.HashKey)
-            .eq(baseURL)
+            .eq(this.createURLPartitionKey(baseURL))
             .where(URLsTableKeyFields.SortKey)
-            .eq(pathname)
+            .eq(this.createPathnameSortKey(pathname))
             .exec();
 
         if (documents.count == 0) {
@@ -81,7 +84,7 @@ class URLsTableRepository implements Repository {
         }
 
         return {
-            pathname: documents[0].Pathname,
+            pathname: this.extractPathname(documents[0].sk),
             createdAt: documents[0].createdAt,
             updatedAt: documents[0].updatedAt,
         };
@@ -91,8 +94,8 @@ class URLsTableRepository implements Repository {
         try {
             await this.pathModel.create(
                 {
-                    BaseUrl: baseURL,
-                    Pathname: pathname,
+                    pk: this.createURLPartitionKey(baseURL),
+                    sk: this.createPathnameSortKey(pathname),
                 },
                 {
                     overwrite: true,
@@ -109,6 +112,18 @@ class URLsTableRepository implements Repository {
 
             return false;
         }
+    }
+
+    private createURLPartitionKey(baseURL: string): string {
+        return `${URLsTableConstants.URLPartitionKeyPrefix}#${baseURL}`;
+    }
+
+    private createPathnameSortKey(pathname: string): string {
+        return `${URLsTableConstants.PathSortKeyPrefix}#${pathname}`;
+    }
+
+    private extractPathname(sortKey: string): string {
+        return sortKey.split("#")[1];
     }
 
     private async deletePathnameBatch(batch: PathnameKeys[]): Promise<boolean> {
