@@ -1,6 +1,10 @@
 import { Schema } from "dynamoose";
 
-import { URLsTableKeyFields } from "../enums/URLsTableFields";
+import {
+    URLsTableKeyFields,
+    URLsTableNonKeyFields,
+} from "../enums/URLsTableFields";
+import CrawlStatus from "../enums/CrawlStatus";
 
 const schema = new Schema(
     {
@@ -11,6 +15,11 @@ const schema = new Schema(
         [URLsTableKeyFields.SortKey]: {
             type: String,
             rangeKey: true,
+        },
+        [URLsTableNonKeyFields.Status]: {
+            type: String,
+            enum: Object.values(CrawlStatus),
+            required: true,
         },
     },
     {

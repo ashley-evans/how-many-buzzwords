@@ -1,10 +1,13 @@
 import dynamoose from "dynamoose";
 
-import URLsTableKeyFields from "../enums/URLsTableKeyFields";
+import { URLsTableKeyFields } from "../enums/URLsTableFields";
 import URLsTableConstants from "../enums/URLsTableConstants";
+import CrawlStatus from "../enums/CrawlStatus";
 import { Pathname, Repository } from "../ports/Repository";
 import URLsTablePathSchema from "../schemas/URLsTablePathSchema";
 import URLsTablePathItem from "../schemas/URLsTablePathItem";
+import URLsTableStatusItem from "../schemas/URLsTableStatusItem";
+import URLsTableStatusSchema from "../schemas/URLsTableStatusSchema";
 
 type PathnameKeys = {
     [URLsTableKeyFields.HashKey]: string;
@@ -14,6 +17,7 @@ type PathnameKeys = {
 class URLsTableRepository implements Repository {
     private static BATCH_SIZE = 25;
     private pathModel;
+    private statusModel;
 
     constructor(tableName: string, createTable?: boolean) {
         this.pathModel = dynamoose.model<URLsTablePathItem>(
@@ -21,9 +25,60 @@ class URLsTableRepository implements Repository {
             URLsTablePathSchema
         );
 
-        new dynamoose.Table(tableName, [this.pathModel], {
+        this.statusModel = dynamoose.model<URLsTableStatusItem>(
+            tableName,
+            URLsTableStatusSchema
+        );
+
+        new dynamoose.Table(tableName, [this.pathModel, this.statusModel], {
             create: createTable || false,
         });
+    }
+
+    async getCrawlStatus(baseURL: string): Promise<CrawlStatus | undefined> {
+        const documents = await this.statusModel
+            .query(URLsTableKeyFields.HashKey)
+            .eq(this.createURLPartitionKey(baseURL))
+            .where(URLsTableKeyFields.SortKey)
+            .eq(URLsTableConstants.StatusSortKey)
+            .exec();
+
+        if (documents.length == 0) {
+            return undefined;
+        }
+
+        return documents[0].status;
+    }
+
+    async updateCrawlStatus(
+        baseURL: string,
+        status: CrawlStatus
+    ): Promise<boolean> {
+        try {
+            await this.statusModel.create(
+                {
+                    pk: this.createURLPartitionKey(baseURL),
+                    sk: URLsTableConstants.StatusSortKey,
+                    status,
+                },
+                {
+                    overwrite: true,
+                }
+            );
+
+            console.log(
+                `Successfully updated crawl status to: ${status} for ${baseURL}`
+            );
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An occurred during status update for ${baseURL}:` +
+                    JSON.stringify(ex)
+            );
+
+            return false;
+        }
     }
 
     async deletePathnames(baseURL: string): Promise<boolean> {
@@ -59,6 +114,8 @@ class URLsTableRepository implements Repository {
         const documents = await this.pathModel
             .query(URLsTableKeyFields.HashKey)
             .eq(this.createURLPartitionKey(baseURL))
+            .filter(URLsTableKeyFields.SortKey)
+            .beginsWith(URLsTableConstants.PathSortKeyPrefix)
             .exec();
 
         return documents.map((document) => ({

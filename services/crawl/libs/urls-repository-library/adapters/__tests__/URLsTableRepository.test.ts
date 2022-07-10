@@ -7,6 +7,7 @@ process.env.AWS_SECRET_ACCESS_KEY = "x";
 process.env.AWS_REGION = "eu-west-2";
 
 import dynamoose from "dynamoose";
+import CrawlStatus from "../../enums/CrawlStatus";
 
 import { Pathname } from "../../ports/Repository";
 import URLsTableRepository from "../URLsTableRepository";
@@ -263,3 +264,52 @@ test("given no pathnames then empty array returned upon GET", async () => {
     expect(response).toBeDefined();
     expect(response).toHaveLength(0);
 });
+
+test("returns undefined if no crawl status is stored for a base URL", async () => {
+    const response = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+    expect(response).toBeUndefined();
+});
+
+test("returns success if crawl status update succeeds", async () => {
+    const response = await repository.updateCrawlStatus(
+        VALID_HOSTNAME,
+        CrawlStatus.SUCCESS
+    );
+
+    expect(response).toEqual(true);
+});
+
+describe("overwrites status if crawl status is already set", () => {
+    let response: boolean;
+
+    beforeAll(async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.RUNNING);
+
+        response = await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.SUCCESS
+        );
+    });
+
+    test("updates status of crawl successfully", async () => {
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(actual).toEqual(CrawlStatus.SUCCESS);
+    });
+
+    test("returns success", () => {
+        expect(response).toEqual(true);
+    });
+});
+
+test.each(Object.values(CrawlStatus))(
+    "returns status if crawl status is stored for a base URL given status is %s",
+    async (expectedStatus) => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, expectedStatus);
+
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(actual).toEqual(expectedStatus);
+    }
+);
