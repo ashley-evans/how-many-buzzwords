@@ -250,12 +250,10 @@ describe("only deletes pathnames attributed to given base URL", () => {
     });
 });
 
-test("returns failure if no pathnames exist upon deletion", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
-
+test("returns success if no pathnames exist upon deletion", async () => {
     const response = await repository.deletePathnames("invalid");
 
-    expect(response).toEqual(false);
+    expect(response).toEqual(true);
 });
 
 test("given no pathnames then empty array returned upon GET", async () => {

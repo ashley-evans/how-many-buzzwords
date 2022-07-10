@@ -101,10 +101,6 @@ class URLsTableRepository implements Repository {
 
     async deletePathnames(baseURL: string): Promise<boolean> {
         const pathnames = await this.getPathnames(baseURL);
-        if (pathnames.length == 0) {
-            return false;
-        }
-
         const items: PathnameKeys[] = pathnames.map((pathname) => ({
             [URLsTableKeyFields.HashKey]: this.createURLPartitionKey(baseURL),
             [URLsTableKeyFields.SortKey]: this.createPathnameSortKey(
