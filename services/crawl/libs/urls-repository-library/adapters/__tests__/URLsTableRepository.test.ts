@@ -2,19 +2,16 @@
  * @group integration
  */
 
-import dynamoose from "dynamoose";
+process.env.AWS_ACCESS_KEY_ID = "x";
+process.env.AWS_SECRET_ACCESS_KEY = "x";
+process.env.AWS_REGION = "eu-west-2";
 
-dynamoose.aws.sdk.config.update({
-    region: "eu-west-2",
-    credentials: {
-        accessKeyId: "x",
-        secretAccessKey: "x",
-    },
-});
-dynamoose.aws.ddb.local();
+import dynamoose from "dynamoose";
 
 import { Pathname } from "../../ports/Repository";
 import URLsTableRepository from "../URLsTableRepository";
+
+dynamoose.aws.ddb.local("http://localhost:8000");
 
 const VALID_HOSTNAME = "www.example.com";
 const OTHER_HOSTNAME = "www.test.com";

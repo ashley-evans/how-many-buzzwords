@@ -2,20 +2,21 @@ import dynamoose from "dynamoose";
 
 import URLsTableKeyFields from "../enums/URLsTableKeyFields";
 import { Pathname, Repository } from "../ports/Repository";
-import URLsTableSchema from "../schemas/URLsTableSchema";
-import URLsTableDocument from "../schemas/URLsTableDocument";
+import URLsTablePathSchema from "../schemas/URLsTablePathSchema";
+import URLsTablePathItem from "../schemas/URLsTablePathItem";
 
 class URLsTableRepository implements Repository {
-    private model;
+    private pathModel;
 
     constructor(tableName: string, createTable?: boolean) {
-        this.model = dynamoose.model<URLsTableDocument>(
+        this.pathModel = dynamoose.model<URLsTablePathItem>(
             tableName,
-            URLsTableSchema,
-            {
-                create: createTable || false,
-            }
+            URLsTablePathSchema
         );
+
+        new dynamoose.Table(tableName, [this.pathModel], {
+            create: createTable || false,
+        });
     }
 
     async deletePathnames(baseURL: string): Promise<boolean> {
@@ -26,7 +27,7 @@ class URLsTableRepository implements Repository {
         }));
 
         try {
-            await this.model.batchDelete(items);
+            await this.pathModel.batchDelete(items);
             return true;
         } catch (ex) {
             console.error(`An error occured during deletion: ${ex}`);
@@ -35,7 +36,7 @@ class URLsTableRepository implements Repository {
     }
 
     async getPathnames(baseURL: string): Promise<Pathname[]> {
-        const documents = await this.model
+        const documents = await this.pathModel
             .query(URLsTableKeyFields.HashKey)
             .eq(baseURL)
             .exec();
@@ -51,7 +52,7 @@ class URLsTableRepository implements Repository {
         baseURL: string,
         pathname: string
     ): Promise<Pathname | undefined> {
-        const documents = await this.model
+        const documents = await this.pathModel
             .query(URLsTableKeyFields.HashKey)
             .eq(baseURL)
             .where(URLsTableKeyFields.SortKey)
@@ -71,7 +72,7 @@ class URLsTableRepository implements Repository {
 
     async storePathname(baseURL: string, pathname: string): Promise<boolean> {
         try {
-            await this.model.create(
+            await this.pathModel.create(
                 {
                     BaseUrl: baseURL,
                     Pathname: pathname,
