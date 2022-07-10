@@ -81,6 +81,24 @@ class URLsTableRepository implements Repository {
         }
     }
 
+    async deleteCrawlStatus(baseURL: string): Promise<boolean> {
+        try {
+            await this.statusModel.delete({
+                pk: this.createURLPartitionKey(baseURL),
+                sk: URLsTableConstants.StatusSortKey,
+            });
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An occurred during crawl status deletion for ${baseURL}:` +
+                    JSON.stringify(ex)
+            );
+
+            return false;
+        }
+    }
+
     async deletePathnames(baseURL: string): Promise<boolean> {
         const pathnames = await this.getPathnames(baseURL);
         if (pathnames.length == 0) {

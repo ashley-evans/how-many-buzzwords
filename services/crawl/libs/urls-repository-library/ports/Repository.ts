@@ -16,6 +16,7 @@ interface Repository {
     storePathname(baseURL: string, pathname: string): Promise<boolean>;
     getCrawlStatus(baseURL: string): Promise<CrawlStatus | undefined>;
     updateCrawlStatus(baseURL: string, status: CrawlStatus): Promise<boolean>;
+    deleteCrawlStatus(baseURL: string): Promise<boolean>;
 }
 
 export { Pathname, Repository };

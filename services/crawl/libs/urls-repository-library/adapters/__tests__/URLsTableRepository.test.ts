@@ -265,51 +265,87 @@ test("given no pathnames then empty array returned upon GET", async () => {
     expect(response).toHaveLength(0);
 });
 
-test("returns undefined if no crawl status is stored for a base URL", async () => {
-    const response = await repository.getCrawlStatus(VALID_HOSTNAME);
+describe("Crawl Status operations", () => {
+    test("returns success if no crawl status is stored for a base URL upon deletion", async () => {
+        const response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
 
-    expect(response).toBeUndefined();
-});
+        expect(response).toEqual(true);
+    });
 
-test("returns success if crawl status update succeeds", async () => {
-    const response = await repository.updateCrawlStatus(
-        VALID_HOSTNAME,
-        CrawlStatus.SUCCESS
-    );
+    describe("deletes status if crawl status is set", () => {
+        let response: boolean;
 
-    expect(response).toEqual(true);
-});
+        beforeAll(async () => {
+            await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.RUNNING
+            );
 
-describe("overwrites status if crawl status is already set", () => {
-    let response: boolean;
+            response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
+        });
 
-    beforeAll(async () => {
-        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.RUNNING);
+        test("crawl status is successfully deleted", async () => {
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
-        response = await repository.updateCrawlStatus(
+            expect(actual).toBeUndefined();
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    });
+
+    test("returns undefined if no crawl status is stored for a base URL", async () => {
+        await repository.deleteCrawlStatus(VALID_HOSTNAME);
+
+        const response = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(response).toBeUndefined();
+    });
+
+    test("returns success if crawl status update succeeds", async () => {
+        const response = await repository.updateCrawlStatus(
             VALID_HOSTNAME,
             CrawlStatus.SUCCESS
         );
-    });
 
-    test("updates status of crawl successfully", async () => {
-        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
-
-        expect(actual).toEqual(CrawlStatus.SUCCESS);
-    });
-
-    test("returns success", () => {
         expect(response).toEqual(true);
     });
+
+    describe("overwrites status if crawl status is already set", () => {
+        let response: boolean;
+
+        beforeAll(async () => {
+            await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.RUNNING
+            );
+
+            response = await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.SUCCESS
+            );
+        });
+
+        test("updates status of crawl successfully", async () => {
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+            expect(actual).toEqual(CrawlStatus.SUCCESS);
+        });
+
+        test("returns success", () => {
+            expect(response).toEqual(true);
+        });
+    });
+
+    test.each(Object.values(CrawlStatus))(
+        "returns status if crawl status is stored for a base URL given status is %s",
+        async (expectedStatus) => {
+            await repository.updateCrawlStatus(VALID_HOSTNAME, expectedStatus);
+
+            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+            expect(actual).toEqual(expectedStatus);
+        }
+    );
 });
-
-test.each(Object.values(CrawlStatus))(
-    "returns status if crawl status is stored for a base URL given status is %s",
-    async (expectedStatus) => {
-        await repository.updateCrawlStatus(VALID_HOSTNAME, expectedStatus);
-
-        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
-
-        expect(actual).toEqual(expectedStatus);
-    }
-);
