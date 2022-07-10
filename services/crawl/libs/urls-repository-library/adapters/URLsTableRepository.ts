@@ -5,7 +5,13 @@ import { Pathname, Repository } from "../ports/Repository";
 import URLsTablePathSchema from "../schemas/URLsTablePathSchema";
 import URLsTablePathItem from "../schemas/URLsTablePathItem";
 
+type PathnameKeys = {
+    [URLsTableKeyFields.HashKey]: string;
+    [URLsTableKeyFields.SortKey]: string;
+};
+
 class URLsTableRepository implements Repository {
+    private static BATCH_SIZE = 25;
     private pathModel;
 
     constructor(tableName: string, createTable?: boolean) {
@@ -21,16 +27,27 @@ class URLsTableRepository implements Repository {
 
     async deletePathnames(baseURL: string): Promise<boolean> {
         const pathnames = await this.getPathnames(baseURL);
-        const items = pathnames.map((pathname) => ({
+        if (pathnames.length == 0) {
+            return false;
+        }
+
+        const items: PathnameKeys[] = pathnames.map((pathname) => ({
             [URLsTableKeyFields.HashKey]: baseURL,
             [URLsTableKeyFields.SortKey]: pathname.pathname,
         }));
 
+        const batches = this.createBatches(items);
+        const batchDeleteOutcomes = batches.map((batch) => {
+            return this.deletePathnameBatch(batch);
+        });
+
         try {
-            await this.pathModel.batchDelete(items);
-            return true;
+            return (await Promise.all(batchDeleteOutcomes)).every(Boolean);
         } catch (ex) {
-            console.error(`An error occured during deletion: ${ex}`);
+            console.error(
+                `An error occured during pathname deletion for URL: ${baseURL}. Error: ${ex}`
+            );
+
             return false;
         }
     }
@@ -92,6 +109,25 @@ class URLsTableRepository implements Repository {
 
             return false;
         }
+    }
+
+    private async deletePathnameBatch(batch: PathnameKeys[]): Promise<boolean> {
+        const result = await this.pathModel.batchDelete(batch);
+        return result.unprocessedItems.length == 0;
+    }
+
+    private createBatches<Type>(inputArray: Type[]): Type[][] {
+        return inputArray.reduce((result: Type[][], item, index) => {
+            const batchIndex = Math.floor(
+                index / URLsTableRepository.BATCH_SIZE
+            );
+            if (!result[batchIndex]) {
+                result[batchIndex] = [];
+            }
+
+            result[batchIndex].push(item);
+            return result;
+        }, []);
     }
 }
 

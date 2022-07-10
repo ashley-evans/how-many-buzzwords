@@ -21,13 +21,22 @@ const TABLE_NAME = "urls-table";
 
 const repository = new URLsTableRepository(TABLE_NAME, true);
 
+function createPaths(total: number) {
+    const paths: string[] = [];
+    for (let i = 0; i < total; i++) {
+        paths.push(`/random-${i}`);
+    }
+
+    return paths;
+}
+
 beforeAll(async () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
 });
 
 test.each([
-    ["one stored", [VALID_PATHNAME]],
-    ["multiple stored", [VALID_PATHNAME, `${VALID_PATHNAME}1`]],
+    ["one stored", createPaths(1)],
+    ["multiple stored", createPaths(2)],
 ])(
     "returns pathnames given %s",
     async (message: string, pathnames: string[]) => {
@@ -180,8 +189,9 @@ describe("overwrites existing pathname", () => {
 });
 
 describe.each([
-    ["a single pathname stored", [VALID_PATHNAME]],
-    ["multiple pathnames stored", [VALID_PATHNAME, `${VALID_PATHNAME}1`]],
+    ["a single pathname stored", createPaths(1)],
+    ["less than 25 pathnames stored", createPaths(24)],
+    ["more than 26 pathnames stored", createPaths(26)],
 ])("deletes given %s", (message: string, pathnames: string[]) => {
     let response: boolean;
 
