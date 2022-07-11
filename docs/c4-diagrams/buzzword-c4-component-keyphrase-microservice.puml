@@ -30,7 +30,7 @@ Rel(crud_lambda, keyphrase_db, "Retrieves relevant current keyphrase and occurre
 
 Rel_D(single_page_application, ws_api_gateway, "Listens to results via connection to", "WebSocket")
 
-Rel(ws_api_gateway, connection_manager_lambda, "Sends connection and disconnection requests to")
+Rel_R(ws_api_gateway, connection_manager_lambda, "Sends connection and disconnection requests to")
 
 Rel(connection_manager_lambda, active_connections_db, "Writes or deletes from")
 
@@ -47,7 +47,7 @@ Rel(find_keyphrases_lambda, keyphrase_db, "Writes to", "Dynamoose")
 Rel(find_keyphrases_lambda, websites, "Gets content for analysis using", "HTTP")
 
 Rel(update_connections_lambda, keyphrase_db, "Listens to new keyphrases and occurrences from", "DynamoDB Stream")
-Rel(update_connections_lambda, new_connection_lambda, "Retrieves relevant listening client details from", "Dynamoose")
+Rel(update_connections_lambda, active_connections_db, "Retrieves relevant listening client details from", "Dynamoose")
 Rel_U(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
 
 SHOW_LEGEND()
