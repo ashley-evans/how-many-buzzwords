@@ -2,6 +2,7 @@ scalar AWSDateTime
 
 schema {
     query: Query
+    mutation: Mutation
 }
 
 type Query {
@@ -20,4 +21,17 @@ type URL implements Node {
 type Pathname {
     name: String!
     crawledAt: AWSDateTime!
+}
+
+type Mutation {
+    startCrawl(input: StartCrawlInput!): StartCrawlOutput!
+}
+
+input StartCrawlInput {
+    url: String!
+    depth: Int
+}
+
+type StartCrawlOutput {
+    started: Boolean!
 }

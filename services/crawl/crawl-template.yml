@@ -54,14 +54,14 @@ Resources:
         Properties:
             BillingMode: PAY_PER_REQUEST
             AttributeDefinitions:
-                - AttributeName: BaseUrl
+                - AttributeName: pk
                   AttributeType: S
-                - AttributeName: Pathname
+                - AttributeName: sk
                   AttributeType: S
             KeySchema:
-                - AttributeName: BaseUrl
+                - AttributeName: pk
                   KeyType: HASH
-                - AttributeName: Pathname
+                - AttributeName: sk
                   KeyType: RANGE
             StreamSpecification:
                 StreamViewType: NEW_IMAGE
@@ -378,7 +378,7 @@ Resources:
                     - Effect: Allow
                       Principal:
                           Service:
-                              - apigateway.amazonaws.com
+                              - appsync.amazonaws.com
                       Action:
                           - sts:AssumeRole
             Policies:
@@ -406,10 +406,6 @@ Resources:
                     description: "Crawl Service API Gateway"
                     version: "1.0"
                 paths:
-                    /crawl:
-                        post:
-                            x-amazon-apigateway-integration:
-                                $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
                     /content:
                         get:
                             parameters:
@@ -425,18 +421,6 @@ Resources:
                                 $ref: "#/components/x-amazon-apigateway-integrations/get-content-integration"
                 components:
                     x-amazon-apigateway-integrations:
-                        invoke-crawl-state-machine:
-                            type: "aws_proxy"
-                            integrationSubtype: "StepFunctions-StartExecution"
-                            credentials:
-                                Fn::GetAtt:
-                                    - "InvokeCrawlStateMachineRole"
-                                    - "Arn"
-                            requestParameters:
-                                StateMachineArn:
-                                    Ref: "CrawlStateMachine"
-                                Input: "$request.body.MessageBody"
-                            payloadFormatVersion: "1.0"
                         get-content-integration:
                             type: "aws_proxy"
                             httpMethod: "POST"
@@ -498,10 +482,59 @@ Resources:
                     "operation": "Invoke",
                     "payload": {
                         "field": "urls",
-                        "arguments":  $utils.toJson($context.arguments)
+                        "arguments": $utils.toJson($context.arguments)
                     }
                 }
             ResponseMappingTemplate: "$utils.toJson($context.result)"
+    CrawlStepFunctionDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: HTTP
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_crawl_step_function_data_source_${EnvironmentNameSuffix}
+            HttpConfig:
+                Endpoint: !Sub https://states.${AWS::Region}.amazonaws.com
+                AuthorizationConfig:
+                    AuthorizationType: AWS_IAM
+                    AwsIamConfig:
+                        SigningRegion: !Ref AWS::Region
+                        SigningServiceName: states
+            ServiceRoleArn: !GetAtt InvokeCrawlStateMachineRole.Arn
+    CrawlResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Mutation
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            FieldName: startCrawl
+            DataSourceName: !GetAtt CrawlStepFunctionDataSource.Name
+            RequestMappingTemplate: !Sub |
+                {
+                    "version": "2018-05-29",
+                    "method": "POST",
+                    "resourcePath": "/",
+                    "params": {
+                        "headers": {
+                            "content-type": "application/x-amz-json-1.0",
+                            "x-amz-target":"AWSStepFunctions.StartExecution"
+                        },
+                        "body": {
+                            "stateMachineArn": "${CrawlStateMachine}",
+                            "input": "$utils.escapeJavaScript($utils.toJson($context.arguments.input))"
+                        }
+                    }
+                }
+            ResponseMappingTemplate: |
+                #if($context.result.statusCode == 200)
+                    #set($resultMap = {
+                        "started": true
+                    })
+                    $utils.toJson($resultMap)
+                #else
+                    #set($resultMap = {
+                        "started": false
+                    })
+                    $utils.toJson($resultMap)
+                #end
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
