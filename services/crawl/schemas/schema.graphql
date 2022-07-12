@@ -25,6 +25,7 @@ type Pathname {
 
 type Mutation {
     startCrawl(input: StartCrawlInput!): StartCrawlOutput!
+    updateCrawlStatus(id: ID!, status: CrawlStatus): Boolean!
 }
 
 input StartCrawlInput {
@@ -34,4 +35,14 @@ input StartCrawlInput {
 
 type StartCrawlOutput {
     started: Boolean!
+}
+
+type Subscription {
+    crawlStatusUpdated(url: ID!): CrawlStatus
+        @aws_subscribe(mutations: ["updateCrawlStatus"])
+}
+
+enum CrawlStatus {
+    STARTED
+    COMPLETE
 }
