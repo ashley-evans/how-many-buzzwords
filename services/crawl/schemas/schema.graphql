@@ -3,6 +3,7 @@ scalar AWSDateTime
 schema {
     query: Query
     mutation: Mutation
+    subscription: Subscription
 }
 
 type Query {
@@ -25,7 +26,7 @@ type Pathname {
 
 type Mutation {
     startCrawl(input: StartCrawlInput!): StartCrawlOutput!
-    updateCrawlStatus(id: ID!, status: CrawlStatus): Boolean!
+    updateCrawlStatus(id: ID!, status: CrawlStatus): CrawlStatusUpdate @aws_iam
 }
 
 input StartCrawlInput {
@@ -37,8 +38,13 @@ type StartCrawlOutput {
     started: Boolean!
 }
 
+type CrawlStatusUpdate {
+    id: ID!
+    status: CrawlStatus!
+}
+
 type Subscription {
-    crawlStatusUpdated(url: ID!): CrawlStatus
+    crawlStatusUpdated(url: ID!): CrawlStatusUpdate
         @aws_subscribe(mutations: ["updateCrawlStatus"])
 }
 
