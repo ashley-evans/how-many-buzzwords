@@ -26,7 +26,8 @@ type Pathname {
 
 type Mutation {
     startCrawl(input: StartCrawlInput!): StartCrawlOutput!
-    updateCrawlStatus(id: ID!, status: CrawlStatus): CrawlStatusUpdate @aws_iam
+    updateCrawlStatus(id: ID!, status: CrawlStatus): CrawlStatusUpdate
+        @aws_api_key
 }
 
 input StartCrawlInput {

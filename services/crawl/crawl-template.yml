@@ -449,7 +449,7 @@ Resources:
         Type: AWS::AppSync::GraphQLApi
         Properties:
             Name: !Sub buzzword-crawl-service-graphql-api-${EnvironmentNameSuffix}
-            AuthenticationType: API_KEY
+            AuthenticationType: AWS_IAM
     CrawlGraphQLAPIKey:
         Type: AWS::AppSync::ApiKey
         Properties:
@@ -535,6 +535,45 @@ Resources:
                     })
                     $utils.toJson($resultMap)
                 #end
+    CrawlIdentityPool:
+        Type: AWS::Cognito::IdentityPool
+        Properties:
+            AllowUnauthenticatedIdentities: true
+    UnauthenticatedAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Federated:
+                              - cognito-identity.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+                      Condition:
+                          StringEquals:
+                              cognito-identity.amazonaws.com:aud:
+                                  - !Ref CrawlIdentityPool
+                          ForAnyValue:StringLike:
+                              cognito-identity.amazonaws.com:amr:
+                                  - unauthenticated
+            Path: /
+            Policies:
+                - PolicyName: AppSyncAccessPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - appsync:GraphQL
+                            Resource: !GetAtt CrawlGraphQLAPI.Arn
+                            Effect: Allow
+    CrawlIdentityPoolRoles:
+        Type: AWS::Cognito::IdentityPoolRoleAttachment
+        Properties:
+            IdentityPoolId: !Ref CrawlIdentityPool
+            Roles:
+                unauthenticated: !GetAtt UnauthenticatedAccessRole.Arn
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
