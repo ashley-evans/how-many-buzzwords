@@ -36,14 +36,14 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         const response = await this.port.hasCrawledRecently(url);
         if (response) {
             return {
-                baseURL: url.toString(),
+                baseURL: url.hostname,
                 recentlyCrawled: response.recentlyCrawled,
                 crawlTime: response.crawlTime,
             };
         }
 
         return {
-            baseURL: url.toString(),
+            baseURL: url.hostname,
             recentlyCrawled: false,
         };
     }
@@ -52,7 +52,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         try {
             const validated = this.validator.validate(event);
 
-            return new URL(validated.url);
+            return this.parseURL(validated.url);
         } catch (ex) {
             const errorContent =
                 ex instanceof Error ? ex.message : JSON.stringify(ex);
@@ -61,6 +61,18 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
                 `Exception occurred during event validation: ${errorContent}`
             );
         }
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw "Number provided when expecting URL.";
+        }
+
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${url}`;
+        }
+
+        return new URL(url);
     }
 }
 
