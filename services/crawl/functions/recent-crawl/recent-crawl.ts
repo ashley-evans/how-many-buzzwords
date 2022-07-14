@@ -1,12 +1,7 @@
-import { JSONSchemaType } from "ajv";
 import {
     Repository,
     URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
-import {
-    ObjectValidator,
-    AjvValidator,
-} from "@ashley-evans/buzzword-object-validator";
 
 import {
     RecentCrawlEvent,
@@ -14,10 +9,7 @@ import {
 } from "./ports/RecentCrawlAdapter";
 import { RecentCrawlPort } from "./ports/RecentCrawlPort";
 import RecentCrawlDomain from "./domain/RecentCrawlDomain";
-import {
-    RecentCrawlEventAdapter,
-    ValidRecentCrawlEvent,
-} from "./adapters/RecentCrawlEventAdapter";
+import { RecentCrawlEventAdapter } from "./adapters/RecentCrawlEventAdapter";
 
 function createRepository(): Repository {
     if (!process.env.TABLE_NAME) {
@@ -36,28 +28,13 @@ function createRecentCrawlPort(repository: Repository): RecentCrawlPort {
     return new RecentCrawlDomain(repository, maxAgeHours);
 }
 
-function createValidator(): ObjectValidator<ValidRecentCrawlEvent> {
-    const schema: JSONSchemaType<ValidRecentCrawlEvent> = {
-        type: "object",
-        properties: {
-            url: {
-                type: "string",
-            },
-        },
-        required: ["url"],
-    };
-
-    return new AjvValidator<ValidRecentCrawlEvent>(schema);
-}
-
 async function handler(
     event: RecentCrawlEvent
 ): Promise<RecentCrawlAdapterResponse> {
     const repository = createRepository();
     const port = createRecentCrawlPort(repository);
-    const validator = createValidator();
 
-    const adapter = new RecentCrawlEventAdapter(port, validator);
+    const adapter = new RecentCrawlEventAdapter(port);
 
     return adapter.hasCrawledRecently(event);
 }

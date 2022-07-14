@@ -1,5 +1,5 @@
-import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
-
+import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
+import { JSONSchemaType } from "ajv";
 import {
     RecentCrawlAdapter,
     RecentCrawlAdapterResponse,
@@ -11,11 +11,22 @@ type ValidRecentCrawlEvent = {
     url: string;
 };
 
+const schema: JSONSchemaType<ValidRecentCrawlEvent> = {
+    type: "object",
+    properties: {
+        url: {
+            type: "string",
+        },
+    },
+    required: ["url"],
+};
+
 class RecentCrawlEventAdapter implements RecentCrawlAdapter {
-    constructor(
-        private port: RecentCrawlPort,
-        private validator: ObjectValidator<ValidRecentCrawlEvent>
-    ) {}
+    private validator: AjvValidator<ValidRecentCrawlEvent>;
+
+    constructor(private port: RecentCrawlPort) {
+        this.validator = new AjvValidator(schema);
+    }
 
     async hasCrawledRecently(
         event: RecentCrawlEvent
