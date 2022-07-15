@@ -1,41 +1,42 @@
 import React, { Fragment, useState } from "react";
+import { gql, useMutation } from "@apollo/client";
 import { Navigate } from "react-router-dom";
 
-import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import { URLInput } from "./URLInput";
 
-const ERROR_MESSAGE =
-    "An error occurred when searching for buzzwords, please try again.";
+const START_CRAWL_MUTATION = gql`
+    mutation StartCrawl($input: StartCrawlInput!) {
+        startCrawl(input: $input) {
+            started
+        }
+    }
+`;
 
-type SearchProps = {
-    crawlServiceClient: CrawlServiceClient;
+type StartCrawlInput = {
+    url: string;
 };
 
-function Search(props: SearchProps) {
-    const [initiatingCrawl, setInititatingCrawl] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string>("");
+type StartCrawlResult = {
+    started: boolean;
+};
+
+function Search() {
+    const [startCrawl, { data, loading, error }] = useMutation<
+        StartCrawlResult,
+        StartCrawlInput
+    >(START_CRAWL_MUTATION);
     const [crawledURL, setCrawledURL] = useState<URL | undefined>();
 
     const handleURLSubmit = async (validatedURL: URL) => {
-        setInititatingCrawl(true);
-        setErrorMessage("");
-
-        let crawlInitiated = false;
+        setCrawledURL(validatedURL);
         try {
-            crawlInitiated = await props.crawlServiceClient.crawl(validatedURL);
+            await startCrawl({ variables: { url: validatedURL.hostname } });
         } catch {
-            setErrorMessage(ERROR_MESSAGE);
-        }
-
-        setInititatingCrawl(false);
-        if (crawlInitiated) {
-            setCrawledURL(validatedURL);
-        } else {
-            setErrorMessage(ERROR_MESSAGE);
+            // Prevent promise rejection
         }
     };
 
-    if (crawledURL) {
+    if (data?.started && crawledURL) {
         return (
             <Navigate
                 to={`/results/${encodeURIComponent(crawledURL.toString())}`}
@@ -46,11 +47,16 @@ function Search(props: SearchProps) {
     return (
         <Fragment>
             <h1>How many buzzwords</h1>
-            {!initiatingCrawl && <URLInput onURLSubmit={handleURLSubmit} />}
-            {initiatingCrawl && <p>Initiating crawl...</p>}
-            {errorMessage != "" && <p>{errorMessage}</p>}
+            {!loading && <URLInput onURLSubmit={handleURLSubmit} />}
+            {loading && <p>Initiating crawl...</p>}
+            {error ? (
+                <p>
+                    An error occurred when searching for buzzwords, please try
+                    again.
+                </p>
+            ) : null}
         </Fragment>
     );
 }
 
-export default Search;
+export { Search, START_CRAWL_MUTATION };
