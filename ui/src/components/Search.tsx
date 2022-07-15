@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import { Navigate } from "react-router-dom";
 
 import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
@@ -11,71 +11,46 @@ type SearchProps = {
     crawlServiceClient: CrawlServiceClient;
 };
 
-type SearchState = {
-    initiatingCrawl: boolean;
-    errorMessage: string;
-    crawledURL: URL | undefined;
-};
+function Search(props: SearchProps) {
+    const [initiatingCrawl, setInititatingCrawl] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>("");
+    const [crawledURL, setCrawledURL] = useState<URL | undefined>();
 
-class Search extends Component<SearchProps, SearchState> {
-    state: SearchState = {
-        initiatingCrawl: false,
-        errorMessage: "",
-        crawledURL: undefined,
-    };
-
-    constructor(props: SearchProps) {
-        super(props);
-        this.handleURLSubmit = this.handleURLSubmit.bind(this);
-    }
-
-    async handleURLSubmit(validatedURL: URL) {
-        this.setState({ initiatingCrawl: true, errorMessage: "" });
+    const handleURLSubmit = async (validatedURL: URL) => {
+        setInititatingCrawl(true);
+        setErrorMessage("");
 
         let crawlInitiated = false;
         try {
-            crawlInitiated = await this.props.crawlServiceClient.crawl(
-                validatedURL
-            );
+            crawlInitiated = await props.crawlServiceClient.crawl(validatedURL);
         } catch {
-            this.setState({
-                errorMessage: ERROR_MESSAGE,
-            });
+            setErrorMessage(ERROR_MESSAGE);
         }
 
-        this.setState({ initiatingCrawl: false });
+        setInititatingCrawl(false);
         if (crawlInitiated) {
-            this.setState({ crawledURL: validatedURL });
+            setCrawledURL(validatedURL);
         } else {
-            this.setState({
-                errorMessage: ERROR_MESSAGE,
-            });
+            setErrorMessage(ERROR_MESSAGE);
         }
-    }
+    };
 
-    render(): React.ReactNode {
-        const crawledURL = this.state.crawledURL;
-        if (crawledURL) {
-            return (
-                <Navigate
-                    to={`/results/${encodeURIComponent(crawledURL.toString())}`}
-                />
-            );
-        }
-
+    if (crawledURL) {
         return (
-            <Fragment>
-                <h1>How many buzzwords</h1>
-                {!this.state.initiatingCrawl && (
-                    <URLInput onURLSubmit={this.handleURLSubmit} />
-                )}
-                {this.state.initiatingCrawl && <p>Initiating crawl...</p>}
-                {this.state.errorMessage != "" && (
-                    <p>{this.state.errorMessage}</p>
-                )}
-            </Fragment>
+            <Navigate
+                to={`/results/${encodeURIComponent(crawledURL.toString())}`}
+            />
         );
     }
+
+    return (
+        <Fragment>
+            <h1>How many buzzwords</h1>
+            {!initiatingCrawl && <URLInput onURLSubmit={handleURLSubmit} />}
+            {initiatingCrawl && <p>Initiating crawl...</p>}
+            {errorMessage != "" && <p>{errorMessage}</p>}
+        </Fragment>
+    );
 }
 
 export default Search;
