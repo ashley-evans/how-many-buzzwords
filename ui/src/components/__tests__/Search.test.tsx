@@ -28,7 +28,7 @@ const HOSTNAME_MOCK = {
     },
     result: jest.fn(() => ({
         data: {
-            started: true,
+            startCrawl: { started: true },
         },
     })),
 };

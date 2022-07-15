@@ -22,7 +22,7 @@ type StartCrawlResult = {
 
 function Search() {
     const [startCrawl, { data, loading, error }] = useMutation<
-        StartCrawlResult,
+        { startCrawl: StartCrawlResult },
         StartCrawlInput
     >(START_CRAWL_MUTATION);
     const [crawledURL, setCrawledURL] = useState<URL | undefined>();
@@ -36,7 +36,7 @@ function Search() {
         }
     };
 
-    if (data?.started && crawledURL) {
+    if (data?.startCrawl.started && crawledURL) {
         return (
             <Navigate
                 to={`/results/${encodeURIComponent(crawledURL.toString())}`}
