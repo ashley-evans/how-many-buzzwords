@@ -49,12 +49,12 @@ function Search() {
             <h1>How many buzzwords</h1>
             {!loading && <URLInput onURLSubmit={handleURLSubmit} />}
             {loading && <p>Initiating crawl...</p>}
-            {error ? (
+            {error && (
                 <p>
                     An error occurred when searching for buzzwords, please try
                     again.
                 </p>
-            ) : null}
+            )}
         </Fragment>
     );
 }
