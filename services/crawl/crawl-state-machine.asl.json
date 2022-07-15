@@ -31,12 +31,28 @@
                 {
                     "Variable": "$.recentlyCrawled",
                     "BooleanEquals": false,
-                    "Next": "Crawl"
+                    "Next": "Send crawl started event"
                 }
             ]
         },
-        "Recently crawled": {
-            "Type": "Succeed"
+        "Send crawl started event": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::events:putEvents",
+            "ResultPath": null,
+            "Parameters": {
+                "Entries": [
+                    {
+                        "EventBusName": "${CrawlServiceEventBusARN}",
+                        "DetailType": "Crawl Status Update",
+                        "Detail": {
+                            "baseURL.$": "$.baseURL",
+                            "status": "STARTED"
+                        },
+                        "Source": "crawl.aws.buzzword"
+                    }
+                ]
+            },
+            "Next": "Crawl"
         },
         "Crawl": {
             "Type": "Task",
@@ -96,6 +112,9 @@
         },
         "Crawl Failed": {
             "Type": "Fail"
+        },
+        "Recently crawled": {
+            "Type": "Succeed"
         }
     }
 }
