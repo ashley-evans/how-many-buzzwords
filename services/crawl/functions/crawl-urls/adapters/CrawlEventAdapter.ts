@@ -41,7 +41,7 @@ class CrawlEventAdapter implements PrimaryAdapter {
         try {
             validatedEvent = this.validator.validate(event);
 
-            url = new URL(validatedEvent.url);
+            url = this.parseURL(validatedEvent.url);
         } catch (ex) {
             const errorContent =
                 ex instanceof Error ? ex.message : JSON.stringify(ex);
@@ -81,6 +81,18 @@ class CrawlEventAdapter implements PrimaryAdapter {
                 `Error occured during crawl: ${JSON.stringify(ex)}`
             );
         }
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw "Number provided when expecting URL.";
+        }
+
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${url}`;
+        }
+
+        return new URL(url);
     }
 }
 

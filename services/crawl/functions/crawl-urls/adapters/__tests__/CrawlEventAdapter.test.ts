@@ -8,7 +8,7 @@ const mockCrawlPort = mock<CrawlPort>();
 
 const adapter = new CrawlEventAdapter(mockCrawlPort);
 
-const EXPECTED_VALID_URL = new URL("http://www.example.com");
+const VALID_URL = new URL("https://www.example.com");
 const EXPECTED_PATHNAMES = ["/", "/test"];
 
 function createEvent(url?: URL | string, depth?: number): CrawlEvent {
@@ -30,7 +30,7 @@ beforeAll(() => {
 
 describe.each([
     ["invalid url (numeric)", "1"],
-    ["invalid url", `test ${EXPECTED_VALID_URL}`],
+    ["invalid url", `test ${VALID_URL}`],
 ])("handles invalid event with %s", (text: string, eventURL: string) => {
     const event = createEvent(eventURL);
     let response: CrawlResponse;
@@ -62,12 +62,14 @@ describe.each([
 });
 
 describe.each([
-    ["no depth provided", EXPECTED_VALID_URL],
-    ["a max depth provided", EXPECTED_VALID_URL, 10],
+    ["(including protocol) with no depth provided", VALID_URL],
+    ["(including protocol) with a max depth provided", VALID_URL, 10],
+    ["(excluding protocol) with no depth provided", VALID_URL.hostname],
+    ["(excluding protocol) with a max depth provided", VALID_URL.hostname, 10],
 ])(
-    "handles a single valid URL with %s",
-    (message: string, expectedURL: URL, expectedDepth?: number) => {
-        const event = createEvent(expectedURL, expectedDepth);
+    "handles a valid URL %s",
+    (message: string, inputURL: URL | string, expectedDepth?: number) => {
+        const event = createEvent(inputURL, expectedDepth);
         let response: CrawlResponse;
 
         beforeAll(async () => {
@@ -84,14 +86,14 @@ describe.each([
         test("calls crawl port with URL and depth from event", () => {
             expect(mockCrawlPort.crawl).toHaveBeenCalledTimes(1);
             expect(mockCrawlPort.crawl).toHaveBeenCalledWith(
-                expectedURL,
+                VALID_URL,
                 expectedDepth
             );
         });
 
-        test("returns base URL in response given crawl succeeds", () => {
+        test("returns base URL in response", () => {
             expect(response).toBeDefined();
-            expect(response.baseURL).toEqual(EXPECTED_VALID_URL.hostname);
+            expect(response.baseURL).toEqual(VALID_URL.hostname);
         });
 
         test("returns success given crawl succeeds", () => {
@@ -107,7 +109,7 @@ describe.each([
 );
 
 describe("error handling", () => {
-    const event = createEvent(EXPECTED_VALID_URL);
+    const event = createEvent(VALID_URL);
 
     beforeEach(() => {
         jest.resetAllMocks();
