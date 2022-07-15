@@ -83,7 +83,7 @@
                 {
                     "Variable": "$.success",
                     "BooleanEquals": true,
-                    "Next": "Send Crawl Success Message to Event Bus"
+                    "Next": "Send Crawl complete messages to Event Bus"
                 },
                 {
                     "Variable": "$.success",
@@ -92,7 +92,7 @@
                 }
             ]
         },
-        "Send Crawl Success Message to Event Bus": {
+        "Send Crawl complete messages to Event Bus": {
             "Type": "Task",
             "Resource": "arn:aws:states:::events:putEvents",
             "Parameters": {
@@ -103,6 +103,15 @@
                         "Detail": {
                             "baseURL.$": "$.baseURL",
                             "pathnames.$": "$.pathnames"
+                        },
+                        "Source": "crawl.aws.buzzword"
+                    },
+                    {
+                        "EventBusName": "${CrawlServiceEventBusARN}",
+                        "DetailType": "Crawl Status Update",
+                        "Detail": {
+                            "baseURL.$": "$.baseURL",
+                            "status": "COMPLETE"
                         },
                         "Source": "crawl.aws.buzzword"
                     }
