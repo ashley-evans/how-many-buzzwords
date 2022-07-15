@@ -450,6 +450,8 @@ Resources:
         Properties:
             Name: !Sub buzzword-crawl-service-graphql-api-${EnvironmentNameSuffix}
             AuthenticationType: AWS_IAM
+            AdditionalAuthenticationProviders:
+                - AuthenticationType: API_KEY
     CrawlGraphQLAPIKey:
         Type: AWS::AppSync::ApiKey
         Properties:
@@ -574,6 +576,90 @@ Resources:
             IdentityPoolId: !Ref CrawlIdentityPool
             Roles:
                 unauthenticated: !GetAtt UnauthenticatedAccessRole.Arn
+    CrawlGraphQLAPINoneDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_none_data_source_${EnvironmentNameSuffix}
+            Type: NONE
+    UpdateCrawlStatusResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            TypeName: Mutation
+            FieldName: updateCrawlStatus
+            DataSourceName: !GetAtt CrawlGraphQLAPINoneDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2018-05-29",
+                    "payload": $util.toJson($context.arguments)
+                }
+            ResponseMappingTemplate: |
+                $util.toJson($context.result)
+    CrawlGraphQLAPIConnection:
+        Type: AWS::Events::Connection
+        Properties:
+            AuthorizationType: API_KEY
+            AuthParameters:
+                ApiKeyAuthParameters:
+                    ApiKeyName: x-api-key
+                    ApiKeyValue: !GetAtt CrawlGraphQLAPIKey.ApiKey
+    CrawlGraphQLAPIDestination:
+        Type: AWS::Events::ApiDestination
+        Properties:
+            ConnectionArn: !GetAtt CrawlGraphQLAPIConnection.Arn
+            InvocationEndpoint: !GetAtt CrawlGraphQLAPI.GraphQLUrl
+            HttpMethod: POST
+    UpdateCrawlStatusEventRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - events.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: InvokeGraphQLAPIDestination
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:InvokeApiDestination
+                            Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:api-destination/${CrawlGraphQLAPIDestination}/*
+                            Effect: Allow
+    UpdateCrawlStatusEventRule:
+        Type: AWS::Events::Rule
+        Properties:
+            Description: Updates subscribed GraphQL clients with crawl status updates
+            State: ENABLED
+            EventBusName: !GetAtt CrawlServiceEventBus.Arn
+            EventPattern:
+                source:
+                    - crawl.aws.buzzword
+                detail-type:
+                    - Crawl Status Update
+            Targets:
+                - Arn: !GetAtt CrawlGraphQLAPIDestination.Arn
+                  Id: update-crawl-status-subscribers
+                  RoleArn: !GetAtt UpdateCrawlStatusEventRole.Arn
+                  InputTransformer:
+                      InputPathsMap:
+                          id: "$.detail.baseURL"
+                          status: "$.detail.status"
+                      InputTemplate: |
+                          {
+                              "query": "mutation UpdateCrawlStatus($id: ID!, $status: CrawlStatus!) { updateCrawlStatus(id: $id, status: $status) { id status } }",
+                              "operationName": "UpdateCrawlStatus",
+                              "variables": {
+                                  "id": "<id>",
+                                  "status": "<status>"
+                              }
+                          }
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
