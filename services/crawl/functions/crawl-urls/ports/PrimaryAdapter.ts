@@ -1,6 +1,6 @@
 type CrawlEvent = {
     url?: string;
-    depth?: string;
+    depth?: number;
 };
 
 type CrawlResponse = {

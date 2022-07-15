@@ -1,4 +1,5 @@
-import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
+import { JSONSchemaType } from "ajv";
+import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 
 import { CrawlPort } from "../ports/CrawlPort";
 import {
@@ -8,16 +9,31 @@ import {
 } from "../ports/PrimaryAdapter";
 import CrawlError from "../errors/CrawlError";
 
-interface ValidCrawlEvent {
+type ValidCrawlEvent = {
     url: string;
     depth?: number;
-}
+};
+
+const schema: JSONSchemaType<ValidCrawlEvent> = {
+    type: "object",
+    properties: {
+        url: {
+            type: "string",
+        },
+        depth: {
+            type: "integer",
+            nullable: true,
+        },
+    },
+    required: ["url"],
+};
 
 class CrawlEventAdapter implements PrimaryAdapter {
-    constructor(
-        private crawler: CrawlPort,
-        private validator: ObjectValidator<ValidCrawlEvent>
-    ) {}
+    private validator: AjvValidator<ValidCrawlEvent>;
+
+    constructor(private crawler: CrawlPort) {
+        this.validator = new AjvValidator(schema);
+    }
 
     async crawl(event: CrawlEvent): Promise<CrawlResponse> {
         let validatedEvent: ValidCrawlEvent;
