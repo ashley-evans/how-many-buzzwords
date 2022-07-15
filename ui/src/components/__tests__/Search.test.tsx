@@ -1,13 +1,12 @@
 import React from "react";
 import {
-    render,
     fireEvent,
     waitFor,
     waitForElementToBeRemoved,
 } from "@testing-library/react";
-import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import { GraphQLError } from "graphql";
 
+import { renderWithMockProvider } from "./helpers/utils";
 import { Search, START_CRAWL_MUTATION } from "../Search";
 
 const APPLICATION_TITLE = "How many buzzwords";
@@ -17,17 +16,6 @@ const CRAWLING_MESSAGE = "Initiating crawl...";
 
 const VALID_URL = new URL("http://www.example.com/");
 const INVALID_URL = "not a valid URL";
-
-function renderWithMockProvider(
-    component: React.ReactNode,
-    mocks?: MockedResponse<Record<string, unknown>>[]
-) {
-    return render(
-        <MockedProvider mocks={mocks} addTypename={false}>
-            {component}
-        </MockedProvider>
-    );
-}
 
 beforeEach(() => {
     jest.resetAllMocks();
