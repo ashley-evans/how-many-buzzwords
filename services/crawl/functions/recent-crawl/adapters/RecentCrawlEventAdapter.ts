@@ -1,5 +1,6 @@
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import { JSONSchemaType } from "ajv";
+
 import {
     RecentCrawlAdapter,
     RecentCrawlAdapterResponse,
