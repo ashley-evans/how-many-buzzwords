@@ -664,6 +664,3 @@ Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
         Value: !GetAtt CrawlServiceEventBus.Arn
-    GraphQLAPIKey:
-        Description: API Key to access GraphQL API
-        Value: !GetAtt CrawlGraphQLAPIKey.ApiKey
