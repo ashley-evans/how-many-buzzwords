@@ -2,9 +2,12 @@
     "name": "how-many-buzzwords-ui",
     "version": "1.0.0",
     "dependencies": {
+        "@apollo/client": "3.6.9",
         "@ashley-evans/buzzword-object-validator": "1.0.0",
         "ajv": "8.8.2",
+        "aws-appsync-auth-link": "3.0.7",
         "axios": "0.27.2",
+        "graphql": "16.5.0",
         "react": "18.1.0",
         "react-dom": "18.1.0",
         "react-router-dom": "6.3.0",
