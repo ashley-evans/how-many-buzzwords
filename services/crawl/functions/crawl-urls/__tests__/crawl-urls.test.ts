@@ -12,6 +12,10 @@ const VALID_MAX_REQUESTS_PER_CRAWL = "1";
 const VALID_TABLE_NAME = "test";
 const VALID_BUCKET_NAME = "test_bucket";
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 beforeEach(() => {
     process.env.MAX_CRAWL_DEPTH = VALID_MAX_CRAWL_DEPTH;
     process.env.MAX_REQUESTS_PER_CRAWL = VALID_MAX_REQUESTS_PER_CRAWL;
