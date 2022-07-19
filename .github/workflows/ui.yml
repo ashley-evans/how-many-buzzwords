@@ -42,7 +42,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
-                  npm audit --prefix ${{ inputs.path }}
+                  npm audit --audit-level=high --prefix ${{ inputs.path }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     build:
