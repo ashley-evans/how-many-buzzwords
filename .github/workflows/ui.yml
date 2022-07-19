@@ -7,7 +7,11 @@ on:
         secrets:
             deploy_role:
                 required: true
-            crawl_service_endpoint:
+            region:
+                required: true
+            crawl_service_graphql_endpoint:
+                required: true
+            crawl_identity_pool_id:
                 required: true
             keyphrase_service_ws_endpoint:
                 required: true
@@ -140,7 +144,9 @@ jobs:
             - name: Create production envfile
               uses: SpicyPizza/create-envfile@v1.3
               with:
-                  envkey_CRAWL_SERVICE_ENDPOINT: ${{ secrets.crawl_service_endpoint }}
+                  envkey_REGION: ${{ secrets.region }}
+                  envkey_CRAWL_SERVICE_GRAPHQL_ENDPOINT: ${{ secrets.crawl_service_graphql_endpoint }}
+                  envkey_CRAWL_IDENTITY_POOL_ID: ${{ secrets.crawl_identity_pool_id }}
                   envkey_KEYPHRASE_WS_SERVICE_ENDPOINT: ${{ secrets.keyphrase_service_ws_endpoint }}
                   directory: ${{ inputs.path }}
                   file_name: .env
