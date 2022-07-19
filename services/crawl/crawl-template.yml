@@ -552,7 +552,7 @@ Resources:
                           Federated:
                               - cognito-identity.amazonaws.com
                       Action:
-                          - sts:AssumeRole
+                          - sts:AssumeRoleWithWebIdentity
                       Condition:
                           StringEquals:
                               cognito-identity.amazonaws.com:aud:
@@ -562,13 +562,19 @@ Resources:
                                   - unauthenticated
             Path: /
             Policies:
-                - PolicyName: AppSyncAccessPolicy
+                - PolicyName: AppSyncCognitoPolicy
                   PolicyDocument:
                       Version: "2012-10-17"
                       Statement:
                           - Action:
+                                - mobileanalytics:PutEvents
+                                - cognito-sync:*
+                                - cognito-identity:*
+                            Resource: "*"
+                            Effect: Allow
+                          - Action:
                                 - appsync:GraphQL
-                            Resource: !GetAtt CrawlGraphQLAPI.Arn
+                            Resource: !Sub ${CrawlGraphQLAPI.Arn}/*
                             Effect: Allow
     CrawlIdentityPoolRoles:
         Type: AWS::Cognito::IdentityPoolRoleAttachment
@@ -664,3 +670,6 @@ Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
         Value: !GetAtt CrawlServiceEventBus.Arn
+    CrawlIdentityPoolID:
+        Description: The identity pool that provides auth access to GraphQL API
+        Value: !Ref CrawlIdentityPool
