@@ -24,7 +24,7 @@ beforeEach(() => {
 const HOSTNAME_MOCK = {
     request: {
         query: START_CRAWL_MUTATION,
-        variables: { url: VALID_URL.hostname },
+        variables: { input: { url: VALID_URL.hostname } },
     },
     result: jest.fn(() => ({
         data: {

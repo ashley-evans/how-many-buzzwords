@@ -23,14 +23,16 @@ type StartCrawlResult = {
 function Search() {
     const [startCrawl, { data, loading, error }] = useMutation<
         { startCrawl: StartCrawlResult },
-        StartCrawlInput
+        { input: StartCrawlInput }
     >(START_CRAWL_MUTATION);
     const [crawledURL, setCrawledURL] = useState<URL | undefined>();
 
     const handleURLSubmit = async (validatedURL: URL) => {
         setCrawledURL(validatedURL);
         try {
-            await startCrawl({ variables: { url: validatedURL.hostname } });
+            await startCrawl({
+                variables: { input: { url: validatedURL.hostname } },
+            });
         } catch {
             // Prevent promise rejection
         }
