@@ -54,14 +54,14 @@ Resources:
         Properties:
             BillingMode: PAY_PER_REQUEST
             AttributeDefinitions:
-                - AttributeName: BaseUrl
+                - AttributeName: pk
                   AttributeType: S
-                - AttributeName: Pathname
+                - AttributeName: sk
                   AttributeType: S
             KeySchema:
-                - AttributeName: BaseUrl
+                - AttributeName: pk
                   KeyType: HASH
-                - AttributeName: Pathname
+                - AttributeName: sk
                   KeyType: RANGE
             StreamSpecification:
                 StreamViewType: NEW_IMAGE
@@ -378,7 +378,7 @@ Resources:
                     - Effect: Allow
                       Principal:
                           Service:
-                              - apigateway.amazonaws.com
+                              - appsync.amazonaws.com
                       Action:
                           - sts:AssumeRole
             Policies:
@@ -406,10 +406,6 @@ Resources:
                     description: "Crawl Service API Gateway"
                     version: "1.0"
                 paths:
-                    /crawl:
-                        post:
-                            x-amazon-apigateway-integration:
-                                $ref: "#/components/x-amazon-apigateway-integrations/invoke-crawl-state-machine"
                     /content:
                         get:
                             parameters:
@@ -425,18 +421,6 @@ Resources:
                                 $ref: "#/components/x-amazon-apigateway-integrations/get-content-integration"
                 components:
                     x-amazon-apigateway-integrations:
-                        invoke-crawl-state-machine:
-                            type: "aws_proxy"
-                            integrationSubtype: "StepFunctions-StartExecution"
-                            credentials:
-                                Fn::GetAtt:
-                                    - "InvokeCrawlStateMachineRole"
-                                    - "Arn"
-                            requestParameters:
-                                StateMachineArn:
-                                    Ref: "CrawlStateMachine"
-                                Input: "$request.body.MessageBody"
-                            payloadFormatVersion: "1.0"
                         get-content-integration:
                             type: "aws_proxy"
                             httpMethod: "POST"
@@ -465,7 +449,9 @@ Resources:
         Type: AWS::AppSync::GraphQLApi
         Properties:
             Name: !Sub buzzword-crawl-service-graphql-api-${EnvironmentNameSuffix}
-            AuthenticationType: API_KEY
+            AuthenticationType: AWS_IAM
+            AdditionalAuthenticationProviders:
+                - AuthenticationType: API_KEY
     CrawlGraphQLAPIKey:
         Type: AWS::AppSync::ApiKey
         Properties:
@@ -498,14 +484,192 @@ Resources:
                     "operation": "Invoke",
                     "payload": {
                         "field": "urls",
-                        "arguments":  $utils.toJson($context.arguments)
+                        "arguments": $utils.toJson($context.arguments)
                     }
                 }
             ResponseMappingTemplate: "$utils.toJson($context.result)"
+    CrawlStepFunctionDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: HTTP
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_crawl_step_function_data_source_${EnvironmentNameSuffix}
+            HttpConfig:
+                Endpoint: !Sub https://states.${AWS::Region}.amazonaws.com
+                AuthorizationConfig:
+                    AuthorizationType: AWS_IAM
+                    AwsIamConfig:
+                        SigningRegion: !Ref AWS::Region
+                        SigningServiceName: states
+            ServiceRoleArn: !GetAtt InvokeCrawlStateMachineRole.Arn
+    CrawlResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Mutation
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            FieldName: startCrawl
+            DataSourceName: !GetAtt CrawlStepFunctionDataSource.Name
+            RequestMappingTemplate: !Sub |
+                {
+                    "version": "2018-05-29",
+                    "method": "POST",
+                    "resourcePath": "/",
+                    "params": {
+                        "headers": {
+                            "content-type": "application/x-amz-json-1.0",
+                            "x-amz-target":"AWSStepFunctions.StartExecution"
+                        },
+                        "body": {
+                            "stateMachineArn": "${CrawlStateMachine}",
+                            "input": "$utils.escapeJavaScript($utils.toJson($context.arguments.input))"
+                        }
+                    }
+                }
+            ResponseMappingTemplate: |
+                #if($context.result.statusCode == 200)
+                    #set($resultMap = {
+                        "started": true
+                    })
+                    $utils.toJson($resultMap)
+                #else
+                    #set($resultMap = {
+                        "started": false
+                    })
+                    $utils.toJson($resultMap)
+                #end
+    CrawlIdentityPool:
+        Type: AWS::Cognito::IdentityPool
+        Properties:
+            AllowUnauthenticatedIdentities: true
+    UnauthenticatedAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Federated:
+                              - cognito-identity.amazonaws.com
+                      Action:
+                          - sts:AssumeRoleWithWebIdentity
+                      Condition:
+                          StringEquals:
+                              cognito-identity.amazonaws.com:aud:
+                                  - !Ref CrawlIdentityPool
+                          ForAnyValue:StringLike:
+                              cognito-identity.amazonaws.com:amr:
+                                  - unauthenticated
+            Path: /
+            Policies:
+                - PolicyName: AppSyncCognitoPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - mobileanalytics:PutEvents
+                                - cognito-sync:*
+                                - cognito-identity:*
+                            Resource: "*"
+                            Effect: Allow
+                          - Action:
+                                - appsync:GraphQL
+                            Resource: !Sub ${CrawlGraphQLAPI.Arn}/*
+                            Effect: Allow
+    CrawlIdentityPoolRoles:
+        Type: AWS::Cognito::IdentityPoolRoleAttachment
+        Properties:
+            IdentityPoolId: !Ref CrawlIdentityPool
+            Roles:
+                unauthenticated: !GetAtt UnauthenticatedAccessRole.Arn
+    CrawlGraphQLAPINoneDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_none_data_source_${EnvironmentNameSuffix}
+            Type: NONE
+    UpdateCrawlStatusResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            TypeName: Mutation
+            FieldName: updateCrawlStatus
+            DataSourceName: !GetAtt CrawlGraphQLAPINoneDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2018-05-29",
+                    "payload": $util.toJson($context.arguments)
+                }
+            ResponseMappingTemplate: |
+                $util.toJson($context.result)
+    CrawlGraphQLAPIConnection:
+        Type: AWS::Events::Connection
+        Properties:
+            AuthorizationType: API_KEY
+            AuthParameters:
+                ApiKeyAuthParameters:
+                    ApiKeyName: x-api-key
+                    ApiKeyValue: !GetAtt CrawlGraphQLAPIKey.ApiKey
+    CrawlGraphQLAPIDestination:
+        Type: AWS::Events::ApiDestination
+        Properties:
+            ConnectionArn: !GetAtt CrawlGraphQLAPIConnection.Arn
+            InvocationEndpoint: !GetAtt CrawlGraphQLAPI.GraphQLUrl
+            HttpMethod: POST
+    UpdateCrawlStatusEventRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - events.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: InvokeGraphQLAPIDestination
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:InvokeApiDestination
+                            Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:api-destination/${CrawlGraphQLAPIDestination}/*
+                            Effect: Allow
+    UpdateCrawlStatusEventRule:
+        Type: AWS::Events::Rule
+        Properties:
+            Description: Updates subscribed GraphQL clients with crawl status updates
+            State: ENABLED
+            EventBusName: !GetAtt CrawlServiceEventBus.Arn
+            EventPattern:
+                source:
+                    - crawl.aws.buzzword
+                detail-type:
+                    - Crawl Status Update
+            Targets:
+                - Arn: !GetAtt CrawlGraphQLAPIDestination.Arn
+                  Id: update-crawl-status-subscribers
+                  RoleArn: !GetAtt UpdateCrawlStatusEventRole.Arn
+                  InputTransformer:
+                      InputPathsMap:
+                          id: "$.detail.baseURL"
+                          status: "$.detail.status"
+                      InputTemplate: |
+                          {
+                              "query": "mutation UpdateCrawlStatus($id: ID!, $status: CrawlStatus!) { updateCrawlStatus(id: $id, status: $status) { id status } }",
+                              "operationName": "UpdateCrawlStatus",
+                              "variables": {
+                                  "id": "<id>",
+                                  "status": "<status>"
+                              }
+                          }
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
         Value: !GetAtt CrawlServiceEventBus.Arn
-    GraphQLAPIKey:
-        Description: API Key to access GraphQL API
-        Value: !GetAtt CrawlGraphQLAPIKey.ApiKey
+    CrawlIdentityPoolID:
+        Description: The identity pool that provides auth access to GraphQL API
+        Value: !Ref CrawlIdentityPool

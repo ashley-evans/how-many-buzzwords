@@ -2,6 +2,8 @@ scalar AWSDateTime
 
 schema {
     query: Query
+    mutation: Mutation
+    subscription: Subscription
 }
 
 type Query {
@@ -20,4 +22,34 @@ type URL implements Node {
 type Pathname {
     name: String!
     crawledAt: AWSDateTime!
+}
+
+type Mutation {
+    startCrawl(input: StartCrawlInput!): StartCrawlOutput!
+    updateCrawlStatus(id: ID!, status: CrawlStatus!): CrawlStatusUpdate
+        @aws_api_key
+}
+
+input StartCrawlInput {
+    url: String!
+    depth: Int
+}
+
+type StartCrawlOutput {
+    started: Boolean!
+}
+
+type CrawlStatusUpdate @aws_api_key @aws_iam {
+    id: ID!
+    status: CrawlStatus!
+}
+
+type Subscription {
+    crawlStatusUpdated(id: ID!): CrawlStatusUpdate
+        @aws_subscribe(mutations: ["updateCrawlStatus"])
+}
+
+enum CrawlStatus {
+    STARTED
+    COMPLETE
 }

@@ -1,20 +1,20 @@
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 import { from } from "rxjs";
 
+import { renderWithMockProvider } from "./helpers/utils";
 import App from "../App";
-import CrawlServiceClient from "../../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
 import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
+import { START_CRAWL_MUTATION } from "../Search";
 
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL:";
 const SEARCH_BUTTON_TEXT = "Search!";
 
-const VALID_URL = "https://www.example.com/";
+const VALID_URL = new URL("https://www.example.com/");
 
-const mockCrawlClient = mock<CrawlServiceClient>();
 const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
 const mockKeyphraseClient = mock<KeyphraseServiceClient>();
 
@@ -24,11 +24,8 @@ beforeEach(() => {
 
 describe("navigating to root", () => {
     test("displays the title of the site in a header", () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -37,11 +34,8 @@ describe("navigating to root", () => {
     });
 
     test("displays a URL textbox with an appropriate label", () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -50,11 +44,8 @@ describe("navigating to root", () => {
     });
 
     test("displays a search button", () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -73,16 +64,13 @@ describe("navigating to results with valid encoded URL", () => {
         window.history.pushState(
             {},
             "",
-            `/results/${encodeURIComponent(VALID_URL)}`
+            `/results/${encodeURIComponent(VALID_URL.toString())}`
         );
     });
 
     test("displays the title of the site in a header", () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -93,11 +81,8 @@ describe("navigating to results with valid encoded URL", () => {
     test("renders results header", () => {
         const expectedHeader = `Results for: ${VALID_URL}`;
 
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -115,11 +100,8 @@ test.each([
     (message: string, url?: string) => {
         window.history.pushState({}, "", `/results/${url}`);
 
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -133,17 +115,26 @@ test.each([
 
 test("navigates to results page if crawl successfully initiates", async () => {
     const expectedHeader = `Results for: ${VALID_URL}`;
-    mockCrawlClient.crawl.mockResolvedValue(true);
+    const hostnameMutationMock = {
+        request: {
+            query: START_CRAWL_MUTATION,
+            variables: { input: { url: VALID_URL.hostname } },
+        },
+        result: jest.fn(() => ({
+            data: {
+                startCrawl: { started: true },
+            },
+        })),
+    };
+
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
     );
     mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
 
-    const { getByRole } = render(
-        <App
-            crawlServiceClient={mockCrawlClient}
-            keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-        />
+    const { getByRole } = renderWithMockProvider(
+        <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />,
+        [hostnameMutationMock]
     );
     fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
         target: { value: VALID_URL },
@@ -166,14 +157,11 @@ test("navigates to search page if return button pressed on results page", async 
     window.history.pushState(
         {},
         "",
-        `/results/${encodeURIComponent(VALID_URL)}`
+        `/results/${encodeURIComponent(VALID_URL.toString())}`
     );
 
-    const { getByRole } = render(
-        <App
-            crawlServiceClient={mockCrawlClient}
-            keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-        />
+    const { getByRole } = renderWithMockProvider(
+        <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
     );
     fireEvent.click(getByRole("link", { name: expectedReturnLinkText }));
 
@@ -197,22 +185,16 @@ describe("navigating to an unknown page", () => {
     test("renders a unknown page message", () => {
         const expectedUnknownPageText = "Oh no! You've gotten lost!";
 
-        const { getByText } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByText } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(getByText(expectedUnknownPageText)).toBeInTheDocument();
     });
 
     test("renders a return to search page link", () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
         expect(
@@ -221,11 +203,8 @@ describe("navigating to an unknown page", () => {
     });
 
     test("navigates to search page if return to search link is pressed", async () => {
-        const { getByRole } = render(
-            <App
-                crawlServiceClient={mockCrawlClient}
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
         fireEvent.click(getByRole("link", { name: RETURN_LINK_TEXT }));
 

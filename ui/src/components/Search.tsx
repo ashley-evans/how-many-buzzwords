@@ -1,81 +1,64 @@
-import React, { Component, Fragment } from "react";
+import React, { Fragment, useState } from "react";
+import { gql, useMutation } from "@apollo/client";
 import { Navigate } from "react-router-dom";
 
-import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import { URLInput } from "./URLInput";
 
-const ERROR_MESSAGE =
-    "An error occurred when searching for buzzwords, please try again.";
+const START_CRAWL_MUTATION = gql`
+    mutation StartCrawl($input: StartCrawlInput!) {
+        startCrawl(input: $input) {
+            started
+        }
+    }
+`;
 
-type SearchProps = {
-    crawlServiceClient: CrawlServiceClient;
+type StartCrawlInput = {
+    url: string;
 };
 
-type SearchState = {
-    initiatingCrawl: boolean;
-    errorMessage: string;
-    crawledURL: URL | undefined;
+type StartCrawlResult = {
+    started: boolean;
 };
 
-class Search extends Component<SearchProps, SearchState> {
-    state: SearchState = {
-        initiatingCrawl: false,
-        errorMessage: "",
-        crawledURL: undefined,
+function Search() {
+    const [startCrawl, { data, loading, error }] = useMutation<
+        { startCrawl: StartCrawlResult },
+        { input: StartCrawlInput }
+    >(START_CRAWL_MUTATION);
+    const [crawledURL, setCrawledURL] = useState<URL | undefined>();
+
+    const handleURLSubmit = async (validatedURL: URL) => {
+        setCrawledURL(validatedURL);
+        try {
+            await startCrawl({
+                variables: { input: { url: validatedURL.hostname } },
+            });
+        } catch {
+            // Prevent promise rejection
+        }
     };
 
-    constructor(props: SearchProps) {
-        super(props);
-        this.handleURLSubmit = this.handleURLSubmit.bind(this);
-    }
-
-    async handleURLSubmit(validatedURL: URL) {
-        this.setState({ initiatingCrawl: true, errorMessage: "" });
-
-        let crawlInitiated = false;
-        try {
-            crawlInitiated = await this.props.crawlServiceClient.crawl(
-                validatedURL
-            );
-        } catch {
-            this.setState({
-                errorMessage: ERROR_MESSAGE,
-            });
-        }
-
-        this.setState({ initiatingCrawl: false });
-        if (crawlInitiated) {
-            this.setState({ crawledURL: validatedURL });
-        } else {
-            this.setState({
-                errorMessage: ERROR_MESSAGE,
-            });
-        }
-    }
-
-    render(): React.ReactNode {
-        const crawledURL = this.state.crawledURL;
-        if (crawledURL) {
-            return (
-                <Navigate
-                    to={`/results/${encodeURIComponent(crawledURL.toString())}`}
-                />
-            );
-        }
-
+    if (data?.startCrawl.started && crawledURL) {
         return (
-            <Fragment>
-                <h1>How many buzzwords</h1>
-                {!this.state.initiatingCrawl && (
-                    <URLInput onURLSubmit={this.handleURLSubmit} />
-                )}
-                {this.state.initiatingCrawl && <p>Initiating crawl...</p>}
-                {this.state.errorMessage != "" && (
-                    <p>{this.state.errorMessage}</p>
-                )}
-            </Fragment>
+            <Navigate
+                to={`/results/${encodeURIComponent(crawledURL.toString())}`}
+            />
         );
     }
+
+    return (
+        <Fragment>
+            <h1>How many buzzwords</h1>
+            {!loading && <URLInput onURLSubmit={handleURLSubmit} />}
+            {loading && <p>Initiating crawl...</p>}
+            {error && (
+                <p>
+                    An error occurred when searching for buzzwords, please try
+                    again.
+                </p>
+            )}
+        </Fragment>
+    );
 }
 
-export default Search;
+export { Search, START_CRAWL_MUTATION };

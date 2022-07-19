@@ -55,7 +55,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
               run: |
-                  ./scripts/helpers/npm-all.sh -c audit -r ${{ inputs.path }}
+                  ./scripts/helpers/npm-all.sh -c "audit --audit-level=high" -r ${{ inputs.path }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     format:

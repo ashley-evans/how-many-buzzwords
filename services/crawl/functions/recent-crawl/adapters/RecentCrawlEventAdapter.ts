@@ -1,4 +1,5 @@
-import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
+import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
+import { JSONSchemaType } from "ajv";
 
 import {
     RecentCrawlAdapter,
@@ -11,11 +12,22 @@ type ValidRecentCrawlEvent = {
     url: string;
 };
 
+const schema: JSONSchemaType<ValidRecentCrawlEvent> = {
+    type: "object",
+    properties: {
+        url: {
+            type: "string",
+        },
+    },
+    required: ["url"],
+};
+
 class RecentCrawlEventAdapter implements RecentCrawlAdapter {
-    constructor(
-        private port: RecentCrawlPort,
-        private validator: ObjectValidator<ValidRecentCrawlEvent>
-    ) {}
+    private validator: AjvValidator<ValidRecentCrawlEvent>;
+
+    constructor(private port: RecentCrawlPort) {
+        this.validator = new AjvValidator(schema);
+    }
 
     async hasCrawledRecently(
         event: RecentCrawlEvent
@@ -25,14 +37,14 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         const response = await this.port.hasCrawledRecently(url);
         if (response) {
             return {
-                baseURL: url.toString(),
+                baseURL: url.hostname,
                 recentlyCrawled: response.recentlyCrawled,
                 crawlTime: response.crawlTime,
             };
         }
 
         return {
-            baseURL: url.toString(),
+            baseURL: url.hostname,
             recentlyCrawled: false,
         };
     }
@@ -41,7 +53,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         try {
             const validated = this.validator.validate(event);
 
-            return new URL(validated.url);
+            return this.parseURL(validated.url);
         } catch (ex) {
             const errorContent =
                 ex instanceof Error ? ex.message : JSON.stringify(ex);
@@ -50,6 +62,18 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
                 `Exception occurred during event validation: ${errorContent}`
             );
         }
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw "Number provided when expecting URL.";
+        }
+
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${url}`;
+        }
+
+        return new URL(url);
     }
 }
 

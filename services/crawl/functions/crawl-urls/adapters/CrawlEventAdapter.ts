@@ -1,4 +1,5 @@
-import { ObjectValidator } from "@ashley-evans/buzzword-object-validator";
+import { JSONSchemaType } from "ajv";
+import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 
 import { CrawlPort } from "../ports/CrawlPort";
 import {
@@ -8,16 +9,31 @@ import {
 } from "../ports/PrimaryAdapter";
 import CrawlError from "../errors/CrawlError";
 
-interface ValidCrawlEvent {
+type ValidCrawlEvent = {
     url: string;
     depth?: number;
-}
+};
+
+const schema: JSONSchemaType<ValidCrawlEvent> = {
+    type: "object",
+    properties: {
+        url: {
+            type: "string",
+        },
+        depth: {
+            type: "integer",
+            nullable: true,
+        },
+    },
+    required: ["url"],
+};
 
 class CrawlEventAdapter implements PrimaryAdapter {
-    constructor(
-        private crawler: CrawlPort,
-        private validator: ObjectValidator<ValidCrawlEvent>
-    ) {}
+    private validator: AjvValidator<ValidCrawlEvent>;
+
+    constructor(private crawler: CrawlPort) {
+        this.validator = new AjvValidator(schema);
+    }
 
     async crawl(event: CrawlEvent): Promise<CrawlResponse> {
         let validatedEvent: ValidCrawlEvent;
@@ -25,7 +41,7 @@ class CrawlEventAdapter implements PrimaryAdapter {
         try {
             validatedEvent = this.validator.validate(event);
 
-            url = new URL(validatedEvent.url);
+            url = this.parseURL(validatedEvent.url);
         } catch (ex) {
             const errorContent =
                 ex instanceof Error ? ex.message : JSON.stringify(ex);
@@ -65,6 +81,18 @@ class CrawlEventAdapter implements PrimaryAdapter {
                 `Error occured during crawl: ${JSON.stringify(ex)}`
             );
         }
+    }
+
+    private parseURL(url: string): URL {
+        if (!isNaN(parseInt(url))) {
+            throw "Number provided when expecting URL.";
+        }
+
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${url}`;
+        }
+
+        return new URL(url);
     }
 }
 
