@@ -4,7 +4,7 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import Results from "./Results";
-import Search from "./Search";
+import { Search } from "./Search";
 
 type AppProps = {
     crawlServiceClient: CrawlServiceClient;
@@ -15,12 +15,7 @@ function App(props: AppProps) {
     return (
         <BrowserRouter>
             <Routes>
-                <Route
-                    index
-                    element={
-                        <Search crawlServiceClient={props.crawlServiceClient} />
-                    }
-                />
+                <Route index element={<Search />} />
                 <Route
                     path="results"
                     element={
