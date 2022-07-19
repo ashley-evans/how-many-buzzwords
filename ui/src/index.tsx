@@ -21,7 +21,6 @@ if (!process.env.CRAWL_IDENTITY_POOL_ID) {
 Auth.configure({
     region: process.env.REGION,
     identityPoolId: process.env.CRAWL_IDENTITY_POOL_ID,
-    mandatorySignIn: false,
 });
 
 if (!process.env.KEYPHRASE_WS_SERVICE_ENDPOINT) {
