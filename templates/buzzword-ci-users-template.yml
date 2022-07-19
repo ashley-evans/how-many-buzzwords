@@ -62,6 +62,22 @@ Resources:
                                 - appsync:*
                             Effect: Allow
                             Resource: arn:aws:appsync:*
+                - PolicyName: CognitoDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - cognito-identity:*
+                            Effect: Allow
+                            Resource: arn:aws:cognito-identity:*
+                - PolicyName: SecretsManagerDeployPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - secretsmanager:*
+                            Effect: Allow
+                            Resource: arn:aws:secretsmanager:*
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
                 - arn:aws:iam::aws:policy/AWSLambda_FullAccess

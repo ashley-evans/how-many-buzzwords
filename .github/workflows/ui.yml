@@ -5,15 +5,15 @@ on:
                 required: true
                 type: string
         secrets:
-            deploy_role:
+            DEPLOY_ROLE:
                 required: true
-            region:
+            REGION:
                 required: true
-            crawl_service_graphql_endpoint:
+            CRAWL_SERVICE_GRAPHQL_ENDPOINT:
                 required: true
-            crawl_identity_pool_id:
+            CRAWL_IDENTITY_POOL_ID:
                 required: true
-            keyphrase_service_ws_endpoint:
+            KEYPHRASE_SERVICE_WS_ENDPOINT:
                 required: true
 
 jobs:
@@ -140,14 +140,14 @@ jobs:
             - uses: aws-actions/configure-aws-credentials@v1
               with:
                   aws-region: eu-west-2
-                  role-to-assume: ${{ secrets.deploy_role }}
+                  role-to-assume: ${{ secrets.DEPLOY_ROLE }}
             - name: Create production envfile
               uses: SpicyPizza/create-envfile@v1.3
               with:
-                  envkey_REGION: ${{ secrets.region }}
-                  envkey_CRAWL_SERVICE_GRAPHQL_ENDPOINT: ${{ secrets.crawl_service_graphql_endpoint }}
-                  envkey_CRAWL_IDENTITY_POOL_ID: ${{ secrets.crawl_identity_pool_id }}
-                  envkey_KEYPHRASE_WS_SERVICE_ENDPOINT: ${{ secrets.keyphrase_service_ws_endpoint }}
+                  envkey_REGION: ${{ secrets.REGION }}
+                  envkey_CRAWL_SERVICE_GRAPHQL_ENDPOINT: ${{ secrets.CRAWL_SERVICE_GRAPHQL_ENDPOINT }}
+                  envkey_CRAWL_IDENTITY_POOL_ID: ${{ secrets.CRAWL_IDENTITY_POOL_ID }}
+                  envkey_KEYPHRASE_WS_SERVICE_ENDPOINT: ${{ secrets.KEYPHRASE_SERVICE_WS_ENDPOINT }}
                   directory: ${{ inputs.path }}
                   file_name: .env
                   fail_on_empty: true
