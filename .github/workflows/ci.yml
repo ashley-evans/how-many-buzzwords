@@ -31,11 +31,11 @@ jobs:
         with:
             path: ./ui
         secrets:
-            deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
-            region: ${{ secrets.CRAWL_SERVICE_ENDPOINT }}
-            crawl_service_graphql_endpoint: ${{ secrets.CRAWL_SERVICE_ENDPOINT }}
-            crawl_identity_pool_id: ${{ secrets.CRAWL_IDENTITY_POOL_ID }}
-            keyphrase_service_ws_endpoint: ${{ secrets.KEYPHRASE_WS_SERVICE_ENDPOINT }}
+            DEPLOY_ROLE: ${{ secrets.AWS_DEPLOY_ROLE }}
+            REGION: ${{ secrets.REGION }}
+            CRAWL_SERVICE_GRAPHQL_ENDPOINT: ${{ secrets.CRAWL_SERVICE_GRAPHQL_ENDPOINT }}
+            CRAWL_IDENTITY_POOL_ID: ${{ secrets.CRAWL_IDENTITY_POOL_ID }}
+            KEYPHRASE_SERVICE_WS_ENDPOINT: ${{ secrets.KEYPHRASE_SERVICE_WS_ENDPOINT }}
     validate:
         runs-on: ubuntu-latest
         steps:
