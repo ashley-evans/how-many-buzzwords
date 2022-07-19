@@ -3,6 +3,11 @@ import { ApolloProvider } from "@apollo/client";
 import { Auth } from "@aws-amplify/auth";
 import { createRoot } from "react-dom/client";
 
+import CrawlGraphQLClientFactory from "./clients/factories/CrawlGraphQLClientFactory";
+import KeyphraseServiceWSClientFactory from "./clients/factories/KeyphraseServiceWSClientFactory";
+
+import App from "./components/App";
+
 if (!process.env.REGION) {
     throw new Error("Application misconfigured: Missing AWS region");
 }
@@ -18,20 +23,6 @@ Auth.configure({
     identityPoolId: process.env.CRAWL_IDENTITY_POOL_ID,
     mandatorySignIn: false,
 });
-
-import CrawlServiceAxiosClient from "./clients/CrawlServiceAxiosClient";
-import CrawlGraphQLClientFactory from "./clients/factories/CrawlGraphQLClientFactory";
-import KeyphraseServiceWSClientFactory from "./clients/factories/KeyphraseServiceWSClientFactory";
-
-import App from "./components/App";
-
-if (!process.env.CRAWL_SERVICE_ENDPOINT) {
-    throw new Error(
-        "Application misconfigured: Missing crawl service endpoint"
-    );
-}
-const crawlServiceEndpoint = new URL(process.env.CRAWL_SERVICE_ENDPOINT);
-const crawlServiceClient = new CrawlServiceAxiosClient(crawlServiceEndpoint);
 
 if (!process.env.KEYPHRASE_WS_SERVICE_ENDPOINT) {
     throw new Error(
@@ -64,9 +55,6 @@ if (!container) {
 const root = createRoot(container);
 root.render(
     <ApolloProvider client={factory.createClient()}>
-        <App
-            crawlServiceClient={crawlServiceClient}
-            keyphraseServiceClientFactory={keyphraseServiceClientFactory}
-        />
+        <App keyphraseServiceClientFactory={keyphraseServiceClientFactory} />
     </ApolloProvider>
 );

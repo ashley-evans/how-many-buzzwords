@@ -1,13 +1,11 @@
 import React, { Fragment } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 
-import CrawlServiceClient from "../clients/interfaces/CrawlServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import Results from "./Results";
 import { Search } from "./Search";
 
 type AppProps = {
-    crawlServiceClient: CrawlServiceClient;
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
 
