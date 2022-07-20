@@ -5,6 +5,8 @@ import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServic
 import Results from "./Results";
 import { Search } from "./Search";
 
+import "../css/App.css";
+
 type AppProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };

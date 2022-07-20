@@ -6,6 +6,7 @@
         "@ashley-evans/buzzword-object-validator": "1.0.0",
         "@aws-amplify/auth": "4.5.9",
         "ajv": "8.8.2",
+        "antd": "4.21.7",
         "aws-appsync-auth-link": "3.0.7",
         "aws-appsync-subscription-link": "3.1.0",
         "graphql": "16.5.0",
