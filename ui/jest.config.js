@@ -9,4 +9,7 @@ module.exports = {
     ],
     runner: "groups",
     setupFilesAfterEnv: ["<rootDir>/config/jest-setup.ts"],
+    moduleNameMapper: {
+        "\\.(css|less)$": "identity-obj-proxy",
+    },
 };
