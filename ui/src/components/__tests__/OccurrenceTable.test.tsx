@@ -16,7 +16,7 @@ describe("given no occurrences", () => {
     test("does not render a table to contain the results", () => {
         const { queryByRole } = render(<OccurrenceTable occurrences={[]} />);
 
-        expect(queryByRole("grid")).not.toBeInTheDocument();
+        expect(queryByRole("table")).not.toBeInTheDocument();
     });
 });
 
@@ -64,7 +64,7 @@ describe.each([
                 <OccurrenceTable occurrences={expectedOccurrences} />
             );
 
-            expect(getByRole("grid")).toBeInTheDocument();
+            expect(getByRole("table")).toBeInTheDocument();
         });
 
         test("renders required columns to contain results from crawl within table", () => {
@@ -73,7 +73,7 @@ describe.each([
             const { getByRole } = render(
                 <OccurrenceTable occurrences={expectedOccurrences} />
             );
-            const table = getByRole("grid");
+            const table = getByRole("table");
 
             for (const expectedColumn of expectedColumns) {
                 expect(
@@ -88,7 +88,7 @@ describe.each([
             const { getByRole } = render(
                 <OccurrenceTable occurrences={expectedOccurrences} />
             );
-            const table = getByRole("grid");
+            const table = getByRole("table");
 
             for (const expectedOccurrence of expectedOccurrences) {
                 expect(

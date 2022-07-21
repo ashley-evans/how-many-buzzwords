@@ -1,40 +1,43 @@
 import React, { Fragment } from "react";
+import { Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
+
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 
 type OccurrenceTableProps = {
     occurrences: PathnameOccurrences[];
 };
 
+const columns: ColumnsType<PathnameOccurrences> = [
+    {
+        title: "Pathname",
+        dataIndex: "pathname",
+        key: "pathname",
+    },
+    {
+        title: "Keyphrase",
+        dataIndex: "keyphrase",
+        key: "keyphrase",
+    },
+    {
+        title: "Occurrences",
+        dataIndex: "occurrences",
+        key: "occurrences",
+    },
+];
+
 function OccurrenceTable(props: OccurrenceTableProps) {
     return (
         <Fragment>
             {props.occurrences.length == 0 && <p>Awaiting results...</p>}
             {props.occurrences.length != 0 && (
-                <table role="grid">
-                    <thead>
-                        <tr role="row">
-                            <th role="columnheader" scope="col">
-                                Pathname
-                            </th>
-                            <th role="columnheader" scope="col">
-                                Keyphrase
-                            </th>
-                            <th role="columnheader" scope="col">
-                                Occurrences
-                            </th>
-                        </tr>
-                        {props.occurrences.map((occurrence) => (
-                            <tr
-                                role="row"
-                                key={`${occurrence.pathname}#${occurrence.keyphrase}`}
-                            >
-                                <td>{occurrence.pathname}</td>
-                                <td>{occurrence.keyphrase}</td>
-                                <td>{occurrence.occurrences}</td>
-                            </tr>
-                        ))}
-                    </thead>
-                </table>
+                <Table
+                    columns={columns}
+                    dataSource={props.occurrences}
+                    rowKey={(record) =>
+                        `${record.pathname}#${record.keyphrase}`
+                    }
+                />
             )}
         </Fragment>
     );

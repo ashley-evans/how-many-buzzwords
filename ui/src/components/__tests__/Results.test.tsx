@@ -17,7 +17,11 @@ const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
 const mockKeyphraseClient = mock<KeyphraseServiceClient>();
 
 beforeEach(() => {
-    jest.resetAllMocks();
+    mockKeyphraseClient.disconnect.mockClear();
+    mockKeyphraseClient.getConfiguredEndpoint.mockClear();
+    mockKeyphraseClient.observeKeyphraseResults.mockClear();
+    mockKeyphraseClientFactory.createClient.mockClear();
+
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
     );
@@ -181,7 +185,7 @@ describe("given valid encoded url", () => {
                     queryByText(AWAITING_RESULTS_MESSAGE)
                 ).not.toBeInTheDocument()
             );
-            const table = getByRole("grid");
+            const table = getByRole("table");
 
             for (const expectedOccurrence of expectedOccurrences) {
                 await waitFor(() =>
