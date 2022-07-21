@@ -10,7 +10,7 @@ import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServic
 import { START_CRAWL_MUTATION } from "../Search";
 
 const APPLICATION_TITLE = "How many buzzwords";
-const URL_INPUT_LABEL = "URL:";
+const URL_INPUT_LABEL = "URL";
 const SEARCH_BUTTON_TEXT = "Search!";
 
 const VALID_URL = new URL("https://www.example.com/");
@@ -19,7 +19,10 @@ const mockKeyphraseClientFactory = mock<KeyphraseServiceClientFactory>();
 const mockKeyphraseClient = mock<KeyphraseServiceClient>();
 
 beforeEach(() => {
-    jest.resetAllMocks();
+    mockKeyphraseClient.disconnect.mockClear();
+    mockKeyphraseClient.getConfiguredEndpoint.mockClear();
+    mockKeyphraseClient.observeKeyphraseResults.mockClear();
+    mockKeyphraseClientFactory.createClient.mockClear();
 });
 
 describe("navigating to root", () => {
