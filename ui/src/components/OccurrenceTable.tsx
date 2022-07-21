@@ -37,6 +37,7 @@ function OccurrenceTable(props: OccurrenceTableProps) {
                     rowKey={(record) =>
                         `${record.pathname}#${record.keyphrase}`
                     }
+                    pagination={false}
                 />
             )}
         </Fragment>
