@@ -6,7 +6,6 @@ import { renderWithMockProvider } from "./helpers/utils";
 import { Search, START_CRAWL_MUTATION } from "../Search";
 import { MemoryRouter } from "react-router-dom";
 
-const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL";
 const SEARCH_BUTTON_TEXT = "Search!";
 const CRAWLING_MESSAGE = "Initiating crawl...";
@@ -31,14 +30,6 @@ beforeEach(() => {
 });
 
 describe("field rendering", () => {
-    test("displays the title of the site in a header", () => {
-        const { getByRole } = renderWithMockProvider(<Search />);
-
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
-    });
-
     test("displays a URL textbox with an appropriate label", () => {
         const { getByRole } = renderWithMockProvider(<Search />);
 
@@ -57,23 +48,6 @@ describe("field rendering", () => {
 });
 
 describe("process screen rendering", () => {
-    test("renders the title of the site while crawling", async () => {
-        const { getByRole, getByText } = renderWithMockProvider(<Search />, [
-            HOSTNAME_MOCK,
-        ]);
-        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-            target: { value: VALID_URL },
-        });
-        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-        await waitFor(() => {
-            expect(getByText(CRAWLING_MESSAGE)).toBeInTheDocument();
-        });
-
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
-    });
-
     test("does not render the URL input form while crawling", async () => {
         const { getByRole, queryByRole } = renderWithMockProvider(<Search />, [
             HOSTNAME_MOCK,

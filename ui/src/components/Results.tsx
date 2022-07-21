@@ -41,7 +41,6 @@ function Results(props: ResultsProps) {
 
         return (
             <Fragment>
-                <h1>How many buzzwords</h1>
                 <Link to="/">Return to search</Link>
                 <h2>{`Results for: ${validatedURL}`}</h2>
                 <OccurrenceTable occurrences={occurrences} />

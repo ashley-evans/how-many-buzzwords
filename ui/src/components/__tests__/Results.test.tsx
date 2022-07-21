@@ -83,21 +83,6 @@ describe("given valid encoded url", () => {
         );
     });
 
-    test("renders the title of the site in a header", () => {
-        const expectedTitle = "How many buzzwords";
-
-        const { getByRole } = renderWithRouter(
-            <Results
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />,
-            encodeURIComponent(VALID_URL)
-        );
-
-        expect(
-            getByRole("heading", { name: expectedTitle })
-        ).toBeInTheDocument();
-    });
-
     test("renders results header", () => {
         const expectedHeader = `Results for: ${VALID_URL}`;
 

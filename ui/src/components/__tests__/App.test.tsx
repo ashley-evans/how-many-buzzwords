@@ -185,6 +185,16 @@ describe("navigating to an unknown page", () => {
         window.history.pushState({}, "", `/unknown`);
     });
 
+    test("displays the title of the site in a header", () => {
+        const { getByRole } = renderWithMockProvider(
+            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
+        );
+
+        expect(
+            getByRole("heading", { name: APPLICATION_TITLE })
+        ).toBeInTheDocument();
+    });
+
     test("renders a unknown page message", () => {
         const expectedUnknownPageText = "Oh no! You've gotten lost!";
 
