@@ -1,25 +1,17 @@
 import React from "react";
-import {
-    fireEvent,
-    waitFor,
-    waitForElementToBeRemoved,
-} from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { GraphQLError } from "graphql";
 
 import { renderWithMockProvider } from "./helpers/utils";
 import { Search, START_CRAWL_MUTATION } from "../Search";
+import { MemoryRouter } from "react-router-dom";
 
-const APPLICATION_TITLE = "How many buzzwords";
-const URL_INPUT_LABEL = "URL:";
+const URL_INPUT_LABEL = "URL";
 const SEARCH_BUTTON_TEXT = "Search!";
 const CRAWLING_MESSAGE = "Initiating crawl...";
 
 const VALID_URL = new URL("http://www.example.com/");
 const INVALID_URL = "not a valid URL";
-
-beforeEach(() => {
-    jest.resetAllMocks();
-});
 
 const HOSTNAME_MOCK = {
     request: {
@@ -33,15 +25,11 @@ const HOSTNAME_MOCK = {
     })),
 };
 
+beforeEach(() => {
+    HOSTNAME_MOCK.result.mockClear();
+});
+
 describe("field rendering", () => {
-    test("displays the title of the site in a header", () => {
-        const { getByRole } = renderWithMockProvider(<Search />);
-
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
-    });
-
     test("displays a URL textbox with an appropriate label", () => {
         const { getByRole } = renderWithMockProvider(<Search />);
 
@@ -60,23 +48,6 @@ describe("field rendering", () => {
 });
 
 describe("process screen rendering", () => {
-    test("renders the title of the site while crawling", async () => {
-        const { getByRole, getByText } = renderWithMockProvider(<Search />, [
-            HOSTNAME_MOCK,
-        ]);
-        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-            target: { value: VALID_URL },
-        });
-        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-        await waitFor(() => {
-            expect(getByText(CRAWLING_MESSAGE)).toBeInTheDocument();
-        });
-
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
-    });
-
     test("does not render the URL input form while crawling", async () => {
         const { getByRole, queryByRole } = renderWithMockProvider(<Search />, [
             HOSTNAME_MOCK,
@@ -107,39 +78,38 @@ describe("process screen rendering", () => {
     });
 });
 
-test("calls crawl service to initiate call given a valid URL", async () => {
-    const { getByRole, queryByText } = renderWithMockProvider(<Search />, [
-        HOSTNAME_MOCK,
-    ]);
+test("calls crawl service to initiate call given a valid URL and removes crawl message", async () => {
+    const { getByRole, queryByText } = renderWithMockProvider(
+        <MemoryRouter>
+            <Search />
+        </MemoryRouter>,
+        [HOSTNAME_MOCK]
+    );
     fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
         target: { value: VALID_URL },
     });
     fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-    await waitForElementToBeRemoved(() => queryByText(CRAWLING_MESSAGE));
 
-    expect(HOSTNAME_MOCK.result).toHaveBeenCalled();
+    await waitFor(() => expect(HOSTNAME_MOCK.result).toHaveBeenCalled());
+    await waitFor(() => {
+        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
+    });
 });
 
-test("does not call crawl service to initiate crawl given an invalid URL", () => {
+test("does not call crawl service to initiate crawl given an invalid URL", async () => {
     const { getByRole } = renderWithMockProvider(<Search />);
+
     fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
         target: { value: INVALID_URL },
     });
     fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+    await waitFor(() => {
+        expect(getByRole("alert")).toHaveTextContent(
+            "Please enter a valid URL"
+        );
+    });
 
     expect(HOSTNAME_MOCK.result).toHaveBeenCalledTimes(0);
-});
-
-test("removes loading message after crawl completes", async () => {
-    const { getByRole, queryByText } = renderWithMockProvider(<Search />);
-    fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
-        target: { value: VALID_URL },
-    });
-    fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
-
-    await waitFor(() => {
-        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
-    });
 });
 
 describe("crawl error rendering", () => {

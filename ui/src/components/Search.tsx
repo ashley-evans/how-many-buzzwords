@@ -48,7 +48,6 @@ function Search() {
 
     return (
         <Fragment>
-            <h1>How many buzzwords</h1>
             {!loading && <URLInput onURLSubmit={handleURLSubmit} />}
             {loading && <p>Initiating crawl...</p>}
             {error && (

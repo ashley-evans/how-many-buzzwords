@@ -4,6 +4,9 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import Results from "./Results";
 import { Search } from "./Search";
+import SiteLayout from "./SiteLayout";
+
+import "../css/App.css";
 
 type AppProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
@@ -13,19 +16,10 @@ function App(props: AppProps) {
     return (
         <BrowserRouter>
             <Routes>
-                <Route index element={<Search />} />
-                <Route
-                    path="results"
-                    element={
-                        <Results
-                            keyphraseServiceClientFactory={
-                                props.keyphraseServiceClientFactory
-                            }
-                        />
-                    }
-                >
+                <Route path="/" element={<SiteLayout />}>
+                    <Route index element={<Search />} />
                     <Route
-                        path=":url"
+                        path="results"
                         element={
                             <Results
                                 keyphraseServiceClientFactory={
@@ -33,17 +27,28 @@ function App(props: AppProps) {
                                 }
                             />
                         }
+                    >
+                        <Route
+                            path=":url"
+                            element={
+                                <Results
+                                    keyphraseServiceClientFactory={
+                                        props.keyphraseServiceClientFactory
+                                    }
+                                />
+                            }
+                        />
+                    </Route>
+                    <Route
+                        path="*"
+                        element={
+                            <Fragment>
+                                <p>Oh no! You&apos;ve gotten lost!</p>
+                                <Link to="/">Return to search</Link>
+                            </Fragment>
+                        }
                     />
                 </Route>
-                <Route
-                    path="*"
-                    element={
-                        <Fragment>
-                            <p>Oh no! You&apos;ve gotten lost!</p>
-                            <Link to="/">Return to search</Link>
-                        </Fragment>
-                    }
-                />
             </Routes>
         </BrowserRouter>
     );

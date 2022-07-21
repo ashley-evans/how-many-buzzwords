@@ -1,47 +1,47 @@
-import React, { Component, Fragment } from "react";
+import React, { Fragment } from "react";
+import { Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
+
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 
 type OccurrenceTableProps = {
     occurrences: PathnameOccurrences[];
 };
 
-class OccurrenceTable extends Component<OccurrenceTableProps, unknown> {
-    render(): React.ReactNode {
-        return (
-            <Fragment>
-                {this.props.occurrences.length == 0 && (
-                    <p>Awaiting results...</p>
-                )}
-                {this.props.occurrences.length != 0 && (
-                    <table role="grid">
-                        <thead>
-                            <tr role="row">
-                                <th role="columnheader" scope="col">
-                                    Pathname
-                                </th>
-                                <th role="columnheader" scope="col">
-                                    Keyphrase
-                                </th>
-                                <th role="columnheader" scope="col">
-                                    Occurrences
-                                </th>
-                            </tr>
-                            {this.props.occurrences.map((occurrence) => (
-                                <tr
-                                    role="row"
-                                    key={`${occurrence.pathname}#${occurrence.keyphrase}`}
-                                >
-                                    <td>{occurrence.pathname}</td>
-                                    <td>{occurrence.keyphrase}</td>
-                                    <td>{occurrence.occurrences}</td>
-                                </tr>
-                            ))}
-                        </thead>
-                    </table>
-                )}
-            </Fragment>
-        );
-    }
+const columns: ColumnsType<PathnameOccurrences> = [
+    {
+        title: "Pathname",
+        dataIndex: "pathname",
+        key: "pathname",
+    },
+    {
+        title: "Keyphrase",
+        dataIndex: "keyphrase",
+        key: "keyphrase",
+    },
+    {
+        title: "Occurrences",
+        dataIndex: "occurrences",
+        key: "occurrences",
+    },
+];
+
+function OccurrenceTable(props: OccurrenceTableProps) {
+    return (
+        <Fragment>
+            {props.occurrences.length == 0 && <p>Awaiting results...</p>}
+            {props.occurrences.length != 0 && (
+                <Table
+                    columns={columns}
+                    dataSource={props.occurrences}
+                    rowKey={(record) =>
+                        `${record.pathname}#${record.keyphrase}`
+                    }
+                    pagination={false}
+                />
+            )}
+        </Fragment>
+    );
 }
 
 export default OccurrenceTable;
