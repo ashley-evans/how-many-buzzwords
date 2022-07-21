@@ -56,7 +56,9 @@ function URLInput(props: URLInputProps) {
                     <Input />
                 </Form.Item>
                 <Form.Item>
-                    <Button htmlType="submit">Search!</Button>
+                    <Button type="primary" htmlType="submit">
+                        Search!
+                    </Button>
                 </Form.Item>
             </Form>
         </Fragment>

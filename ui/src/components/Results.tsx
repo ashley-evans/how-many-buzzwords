@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { Button, Col, Row, Typography } from "antd";
 
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
@@ -41,9 +42,23 @@ function Results(props: ResultsProps) {
 
         return (
             <Fragment>
-                <Link to="/">Return to search</Link>
-                <h2>{`Results for: ${validatedURL}`}</h2>
-                <OccurrenceTable occurrences={occurrences} />
+                <Row>
+                    <Col flex={9}>
+                        <Typography.Title
+                            level={2}
+                        >{`Results for: ${validatedURL}`}</Typography.Title>
+                    </Col>
+                    <Col flex={1}>
+                        <Button>
+                            <Link to="/">Return to search</Link>
+                        </Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col span={24}>
+                        <OccurrenceTable occurrences={occurrences} />
+                    </Col>
+                </Row>
             </Fragment>
         );
     } catch {
