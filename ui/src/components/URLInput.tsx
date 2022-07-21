@@ -1,67 +1,66 @@
-import React, { Component, Fragment } from "react";
+import React, { Fragment } from "react";
+import { Form, Input, Button } from "antd";
 
 type URLInputProps = {
     onURLSubmit: (url: URL) => unknown;
 };
 
-type URLInputState = {
+type URLInputFormInputs = {
     url: string;
-    validationError: string;
 };
 
-class URLInput extends Component<URLInputProps, URLInputState> {
-    state: URLInputState = {
-        url: "",
-        validationError: "",
-    };
+const MISSING_URL_MESSAGE = "Please enter a URL.";
+const INVALID_URL_MESSAGE = "Please enter a valid URL.";
 
-    handleURLChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-        this.setState({ url: event.target.value, validationError: "" });
-    };
+function convertToURL(input: string): URL {
+    if (!input.startsWith("https://") && !input.startsWith("http://")) {
+        input = `https://${input}`;
+    }
 
-    handleURLSubmit: React.FormEventHandler<HTMLFormElement> = async (
-        event
-    ) => {
-        event.preventDefault();
-        let url = this.state.url;
-        if (url == "") {
-            this.setState({ validationError: "Please enter a URL." });
+    return new URL(input);
+}
+
+function URLInput(props: URLInputProps) {
+    const [form] = Form.useForm();
+
+    const validateURL = async (_: unknown, url: string) => {
+        if (!url) {
+            throw new Error(MISSING_URL_MESSAGE);
         } else if (!isNaN(parseInt(url))) {
-            this.setState({ validationError: "Please enter a valid URL." });
-        } else {
-            if (!url.startsWith("https://") && !url.startsWith("http://")) {
-                url = `https://${url}`;
-            }
+            throw new Error(INVALID_URL_MESSAGE);
+        }
 
-            try {
-                const validURL = new URL(url);
-                this.props.onURLSubmit(validURL);
-            } catch {
-                this.setState({ validationError: "Please enter a valid URL." });
-            }
+        try {
+            convertToURL(url);
+        } catch {
+            throw new Error(INVALID_URL_MESSAGE);
         }
     };
 
-    render(): React.ReactNode {
-        return (
-            <Fragment>
-                <form onSubmit={this.handleURLSubmit}>
-                    <label>
-                        URL:
-                        <input
-                            type="text"
-                            value={this.state.url}
-                            onChange={this.handleURLChange}
-                        />
-                    </label>
-                    <input type="submit" value="Search!" />
-                </form>
-                {this.state.validationError && (
-                    <div role="alert">{this.state.validationError}</div>
-                )}
-            </Fragment>
-        );
-    }
+    const onFinish = (inputs: URLInputFormInputs) => {
+        props.onURLSubmit(convertToURL(inputs.url));
+    };
+
+    return (
+        <Fragment>
+            <Form form={form} onFinish={onFinish}>
+                <Form.Item
+                    name="url"
+                    label="URL"
+                    rules={[
+                        {
+                            validator: validateURL,
+                        },
+                    ]}
+                >
+                    <Input />
+                </Form.Item>
+                <Form.Item>
+                    <Button htmlType="submit">Search!</Button>
+                </Form.Item>
+            </Form>
+        </Fragment>
+    );
 }
 
 export { URLInput };
