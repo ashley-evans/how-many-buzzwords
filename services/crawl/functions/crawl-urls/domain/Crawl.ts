@@ -23,11 +23,28 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
-        await this.urlRepository.updateCrawlStatus(
-            baseURL.hostname,
-            CrawlStatus.STARTED
-        );
+        try {
+            const statusUpdated = await this.urlRepository.updateCrawlStatus(
+                baseURL.hostname,
+                CrawlStatus.STARTED
+            );
 
+            if (statusUpdated) {
+                return this.handleCrawl(baseURL, maxCrawlDepth);
+            }
+        } catch {
+            //
+        }
+
+        return {
+            success: false,
+        };
+    }
+
+    private handleCrawl(
+        baseURL: URL,
+        maxCrawlDepth?: number
+    ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
             const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
