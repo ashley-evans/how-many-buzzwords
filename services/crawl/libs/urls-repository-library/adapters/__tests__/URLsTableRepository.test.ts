@@ -276,7 +276,7 @@ describe("Crawl Status operations", () => {
         beforeAll(async () => {
             await repository.updateCrawlStatus(
                 VALID_HOSTNAME,
-                CrawlStatus.RUNNING
+                CrawlStatus.STARTED
             );
 
             response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
@@ -304,7 +304,7 @@ describe("Crawl Status operations", () => {
     test("returns success if crawl status update succeeds", async () => {
         const response = await repository.updateCrawlStatus(
             VALID_HOSTNAME,
-            CrawlStatus.SUCCESS
+            CrawlStatus.COMPLETE
         );
 
         expect(response).toEqual(true);
@@ -316,19 +316,19 @@ describe("Crawl Status operations", () => {
         beforeAll(async () => {
             await repository.updateCrawlStatus(
                 VALID_HOSTNAME,
-                CrawlStatus.RUNNING
+                CrawlStatus.STARTED
             );
 
             response = await repository.updateCrawlStatus(
                 VALID_HOSTNAME,
-                CrawlStatus.SUCCESS
+                CrawlStatus.COMPLETE
             );
         });
 
         test("updates status of crawl successfully", async () => {
             const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
-            expect(actual).toEqual(CrawlStatus.SUCCESS);
+            expect(actual).toEqual(CrawlStatus.COMPLETE);
         });
 
         test("returns success", () => {
