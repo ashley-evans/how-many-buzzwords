@@ -1,4 +1,7 @@
-import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    CrawlStatus,
+    Repository,
+} from "buzzword-aws-crawl-urls-repository-library";
 import { ContentRepository } from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse, CrawlPort } from "../ports/CrawlPort";
@@ -20,6 +23,11 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
+        await this.urlRepository.updateCrawlStatus(
+            baseURL.hostname,
+            CrawlStatus.STARTED
+        );
+
         return new Promise((resolve) => {
             const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
@@ -35,6 +43,14 @@ class Crawl implements CrawlPort {
                         pathnames,
                         pathnameStorages.length
                     );
+
+                    if (success) {
+                        await this.urlRepository.updateCrawlStatus(
+                            baseURL.hostname,
+                            CrawlStatus.COMPLETE
+                        );
+                    }
+
                     resolve({
                         success,
                         pathnames,

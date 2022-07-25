@@ -1,6 +1,9 @@
 import { mock } from "jest-mock-extended";
 import { EMPTY, of, throwError, concat, Observable } from "rxjs";
-import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    CrawlStatus,
+    Repository,
+} from "buzzword-aws-crawl-urls-repository-library";
 import { ContentRepository } from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse } from "../../ports/CrawlPort";
@@ -17,7 +20,7 @@ const crawler = new Crawl(
 );
 
 const EXPECTED_BASE_URL_HOSTNAME = "www.example.com";
-const DEFAULT_BASE_URL = new URL(`http://${EXPECTED_BASE_URL_HOSTNAME}`);
+const DEFAULT_BASE_URL = new URL(`http://www.example.com`);
 const EXPECTED_PATHNAME = "example";
 const DEFAULT_CHILD_URL = new URL(
     `${DEFAULT_BASE_URL.toString()}${EXPECTED_PATHNAME}`
@@ -53,6 +56,22 @@ describe("crawl provides results", () => {
             expect(mockCrawlProvider.crawl).toHaveBeenCalledWith(
                 baseURL,
                 undefined
+            );
+        });
+
+        test("updates the crawl status related to the provided base URL to started and complete", () => {
+            expect(mockURLRepository.updateCrawlStatus).toHaveBeenCalledTimes(
+                2
+            );
+            expect(mockURLRepository.updateCrawlStatus).toHaveBeenNthCalledWith(
+                1,
+                EXPECTED_BASE_URL_HOSTNAME,
+                CrawlStatus.STARTED
+            );
+            expect(mockURLRepository.updateCrawlStatus).toHaveBeenNthCalledWith(
+                2,
+                EXPECTED_BASE_URL_HOSTNAME,
+                CrawlStatus.COMPLETE
             );
         });
 
@@ -115,12 +134,20 @@ describe("crawl returns no results", () => {
         response = await crawler.crawl(DEFAULT_BASE_URL);
     });
 
-    test("does not call url repository", () => {
+    test("does not store any crawled urls in the url repository", () => {
         expect(mockURLRepository.storePathname).not.toBeCalled();
     });
 
     test("does not call content repository", () => {
         expect(mockContentRepository.storePageContent).not.toBeCalled();
+    });
+
+    test("updates the crawl status to running but not complete", () => {
+        expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+        expect(mockURLRepository.updateCrawlStatus).toHaveBeenCalledWith(
+            EXPECTED_BASE_URL_HOSTNAME,
+            CrawlStatus.STARTED
+        );
     });
 
     test("returns failure", () => {
@@ -201,6 +228,16 @@ describe("Error handling", () => {
                 ).toHaveBeenCalledTimes(expectedPathnames.length);
             });
 
+            test("updates the crawl status to running but not complete", () => {
+                expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+                expect(
+                    mockURLRepository.updateCrawlStatus
+                ).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL_HOSTNAME,
+                    CrawlStatus.STARTED
+                );
+            });
+
             test("returns failure", () => {
                 expect(response.success).toBe(false);
             });
@@ -258,6 +295,16 @@ describe("Error handling", () => {
                 );
             });
 
+            test("updates the crawl status to running but not complete", () => {
+                expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+                expect(
+                    mockURLRepository.updateCrawlStatus
+                ).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL_HOSTNAME,
+                    CrawlStatus.STARTED
+                );
+            });
+
             test("returns failure", () => {
                 expect(response.success).toBe(false);
             });
@@ -307,6 +354,16 @@ describe("Error handling", () => {
                 }
 
                 response = await crawler.crawl(DEFAULT_BASE_URL);
+            });
+
+            test("updates the crawl status to running but not complete", () => {
+                expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+                expect(
+                    mockURLRepository.updateCrawlStatus
+                ).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL_HOSTNAME,
+                    CrawlStatus.STARTED
+                );
             });
 
             test("returns failure", () => {
@@ -376,6 +433,16 @@ describe("Error handling", () => {
                 );
             });
 
+            test("updates the crawl status to running but not complete", () => {
+                expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+                expect(
+                    mockURLRepository.updateCrawlStatus
+                ).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL_HOSTNAME,
+                    CrawlStatus.STARTED
+                );
+            });
+
             test("returns failure", () => {
                 expect(response.success).toBe(false);
             });
@@ -435,6 +502,16 @@ describe("Error handling", () => {
                 }
 
                 response = await crawler.crawl(DEFAULT_BASE_URL);
+            });
+
+            test("updates the crawl status to running but not complete", () => {
+                expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
+                expect(
+                    mockURLRepository.updateCrawlStatus
+                ).toHaveBeenCalledWith(
+                    EXPECTED_BASE_URL_HOSTNAME,
+                    CrawlStatus.STARTED
+                );
             });
 
             test("returns failure", () => {
