@@ -5,7 +5,6 @@ import {
 } from "buzzword-aws-crawl-urls-repository-library";
 
 import RecentCrawlDomain from "../RecentCrawlDomain";
-import { RecentCrawlResponse } from "../../ports/RecentCrawlPort";
 
 const MAX_AGE_HOURS = 1;
 const VALID_URL = new URL("https://www.example.com/");
@@ -27,6 +26,10 @@ function createPathnameEntry(pathname: string, date: Date): Pathname {
     };
 }
 
+beforeEach(() => {
+    mockRepository.getPathname.mockClear();
+});
+
 describe.each([
     [
         "before max age",
@@ -44,15 +47,13 @@ describe.each([
 ])(
     "given a pathname entry that is %s",
     (message: string, pathnameEntry: Pathname, expectedResult: boolean) => {
-        let response: RecentCrawlResponse | undefined;
-
-        beforeAll(async () => {
+        beforeEach(() => {
             mockRepository.getPathname.mockResolvedValue(pathnameEntry);
-
-            response = await domain.hasCrawledRecently(VALID_URL);
         });
 
-        test("calls repository with hostname and pathname from provided URL", () => {
+        test("calls repository with hostname and pathname from provided URL", async () => {
+            await domain.hasCrawledRecently(VALID_URL);
+
             expect(mockRepository.getPathname).toHaveBeenCalledTimes(1);
             expect(mockRepository.getPathname).toHaveBeenCalledWith(
                 VALID_URL.hostname,
@@ -60,34 +61,24 @@ describe.each([
             );
         });
 
-        test("returns not crawled recently", () => {
+        test("returns not crawled recently", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
+
             expect(response?.recentlyCrawled).toEqual(expectedResult);
         });
 
-        test("returns time of the last crawl", () => {
-            expect(response?.crawlTime).toEqual(pathnameEntry.createdAt);
-        });
+        test("returns time of the last crawl", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
 
-        afterAll(() => {
-            jest.resetAllMocks();
+            expect(response?.crawlTime).toEqual(pathnameEntry.createdAt);
         });
     }
 );
 
-describe("given no pathname entry exists", () => {
-    let response: RecentCrawlResponse | undefined;
+test("returns undefined if no crawl status exists for provided URL", async () => {
+    mockRepository.getPathname.mockResolvedValue(undefined);
 
-    beforeAll(async () => {
-        mockRepository.getPathname.mockResolvedValue(undefined);
+    const actual = await domain.hasCrawledRecently(VALID_URL);
 
-        response = await domain.hasCrawledRecently(VALID_URL);
-    });
-
-    test("returns undefined", () => {
-        expect(response).toBeUndefined();
-    });
-
-    afterAll(() => {
-        jest.resetAllMocks();
-    });
+    expect(actual).toBeUndefined();
 });
