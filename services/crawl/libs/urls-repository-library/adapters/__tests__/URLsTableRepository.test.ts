@@ -271,24 +271,24 @@ describe("Crawl Status operations", () => {
     });
 
     describe("deletes status if crawl status is set", () => {
-        let response: boolean;
-
-        beforeAll(async () => {
+        beforeEach(async () => {
             await repository.updateCrawlStatus(
                 VALID_HOSTNAME,
                 CrawlStatus.STARTED
             );
-
-            response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
         });
 
         test("crawl status is successfully deleted", async () => {
+            await repository.deleteCrawlStatus(VALID_HOSTNAME);
+
             const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
             expect(actual).toBeUndefined();
         });
 
-        test("returns success", () => {
+        test("returns success", async () => {
+            const response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
+
             expect(response).toEqual(true);
         });
     });
@@ -311,27 +311,29 @@ describe("Crawl Status operations", () => {
     });
 
     describe("overwrites status if crawl status is already set", () => {
-        let response: boolean;
-
         beforeAll(async () => {
             await repository.updateCrawlStatus(
                 VALID_HOSTNAME,
                 CrawlStatus.STARTED
             );
-
-            response = await repository.updateCrawlStatus(
-                VALID_HOSTNAME,
-                CrawlStatus.COMPLETE
-            );
         });
 
         test("updates status of crawl successfully", async () => {
+            await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.COMPLETE
+            );
+
             const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
             expect(actual).toEqual(CrawlStatus.COMPLETE);
         });
 
-        test("returns success", () => {
+        test("returns success", async () => {
+            const response = await repository.updateCrawlStatus(
+                VALID_HOSTNAME,
+                CrawlStatus.COMPLETE
+            );
             expect(response).toEqual(true);
         });
     });
