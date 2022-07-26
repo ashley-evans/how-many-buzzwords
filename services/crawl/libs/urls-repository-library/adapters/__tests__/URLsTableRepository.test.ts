@@ -270,27 +270,21 @@ describe("Crawl Status operations", () => {
         expect(response).toEqual(true);
     });
 
-    describe("deletes status if crawl status is set", () => {
-        beforeEach(async () => {
-            await repository.updateCrawlStatus(
-                VALID_HOSTNAME,
-                CrawlStatus.STARTED
-            );
-        });
+    test("returns success when deleting an existing crawl status", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
 
-        test("crawl status is successfully deleted", async () => {
-            await repository.deleteCrawlStatus(VALID_HOSTNAME);
+        const response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
 
-            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+        expect(response).toBe(true);
+    });
 
-            expect(actual).toBeUndefined();
-        });
+    test("succesfully deletes an existing crawl status", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+        await repository.deleteCrawlStatus(VALID_HOSTNAME);
 
-        test("returns success", async () => {
-            const response = await repository.deleteCrawlStatus(VALID_HOSTNAME);
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
-            expect(response).toEqual(true);
-        });
+        expect(actual).toBeUndefined();
     });
 
     test("returns undefined if no crawl status is stored for a base URL", async () => {
@@ -310,32 +304,27 @@ describe("Crawl Status operations", () => {
         expect(response).toEqual(true);
     });
 
-    describe("overwrites status if crawl status is already set", () => {
-        beforeAll(async () => {
-            await repository.updateCrawlStatus(
-                VALID_HOSTNAME,
-                CrawlStatus.STARTED
-            );
-        });
+    test("returns success when overwriting an existing crawl status", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
 
-        test("updates status of crawl successfully", async () => {
-            await repository.updateCrawlStatus(
-                VALID_HOSTNAME,
-                CrawlStatus.COMPLETE
-            );
+        const response = await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.COMPLETE
+        );
 
-            const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+        expect(response).toEqual(true);
+    });
 
-            expect(actual).toEqual(CrawlStatus.COMPLETE);
-        });
+    test("overwrites an existing crawl status with a new value", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+        await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.COMPLETE
+        );
 
-        test("returns success", async () => {
-            const response = await repository.updateCrawlStatus(
-                VALID_HOSTNAME,
-                CrawlStatus.COMPLETE
-            );
-            expect(response).toEqual(true);
-        });
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(actual).toEqual(CrawlStatus.COMPLETE);
     });
 
     test.each(Object.values(CrawlStatus))(
