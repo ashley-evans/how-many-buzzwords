@@ -324,7 +324,7 @@ describe("Crawl Status operations", () => {
 
         const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
-        expect(actual).toEqual(CrawlStatus.COMPLETE);
+        expect(actual?.status).toEqual(CrawlStatus.COMPLETE);
     });
 
     test.each(Object.values(CrawlStatus))(
@@ -334,7 +334,52 @@ describe("Crawl Status operations", () => {
 
             const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
 
-            expect(actual).toEqual(expectedStatus);
+            expect(actual?.status).toEqual(expectedStatus);
         }
     );
+
+    test("updates the create timestamp for the crawl status if provided a new value", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+        const before = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.COMPLETE
+        );
+        const after = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(after?.createdAt).toEqual(expect.any(Date));
+        expect(after?.createdAt).not.toEqual(before?.createdAt);
+    });
+
+    test("updates the update timestamp for the crawl status if provided a new value", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+        const before = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        await repository.updateCrawlStatus(
+            VALID_HOSTNAME,
+            CrawlStatus.COMPLETE
+        );
+        const after = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(after?.createdAt).toEqual(expect.any(Date));
+        expect(after?.createdAt).not.toEqual(before?.createdAt);
+    });
+
+    test("returns created time if crawl status is stored for a base URL", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(actual?.createdAt).toEqual(expect.any(Date));
+    });
+
+    test("returns updated time equivalent to created time if crawl status is newly stored", async () => {
+        await repository.updateCrawlStatus(VALID_HOSTNAME, CrawlStatus.STARTED);
+
+        const actual = await repository.getCrawlStatus(VALID_HOSTNAME);
+
+        expect(actual?.updatedAt).toEqual(expect.any(Date));
+        expect(actual?.updatedAt).toEqual(actual?.createdAt);
+    });
 });

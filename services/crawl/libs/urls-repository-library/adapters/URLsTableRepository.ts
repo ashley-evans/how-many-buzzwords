@@ -3,7 +3,7 @@ import dynamoose from "dynamoose";
 import { URLsTableKeyFields } from "../enums/URLsTableFields";
 import URLsTableConstants from "../enums/URLsTableConstants";
 import CrawlStatus from "../enums/CrawlStatus";
-import { Pathname, Repository } from "../ports/Repository";
+import { CrawlStatusRecord, Pathname, Repository } from "../ports/Repository";
 import URLsTablePathSchema from "../schemas/URLsTablePathSchema";
 import URLsTablePathItem from "../schemas/URLsTablePathItem";
 import URLsTableStatusItem from "../schemas/URLsTableStatusItem";
@@ -35,7 +35,9 @@ class URLsTableRepository implements Repository {
         });
     }
 
-    async getCrawlStatus(baseURL: string): Promise<CrawlStatus | undefined> {
+    async getCrawlStatus(
+        baseURL: string
+    ): Promise<CrawlStatusRecord | undefined> {
         const documents = await this.statusModel
             .query(URLsTableKeyFields.HashKey)
             .eq(this.createURLPartitionKey(baseURL))
@@ -47,7 +49,11 @@ class URLsTableRepository implements Repository {
             return undefined;
         }
 
-        return documents[0].status;
+        return {
+            status: documents[0].status,
+            createdAt: documents[0].createdAt,
+            updatedAt: documents[0].updatedAt,
+        };
     }
 
     async updateCrawlStatus(
