@@ -23,17 +23,30 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
-        try {
-            const statusUpdated = await this.urlRepository.updateCrawlStatus(
-                baseURL.hostname,
-                CrawlStatus.STARTED
-            );
+        const updatedStartedStatus = await this.updateCrawlStatus(
+            baseURL,
+            CrawlStatus.STARTED
+        );
+        if (updatedStartedStatus) {
+            const response = await this.handleCrawl(baseURL, maxCrawlDepth);
+            if (response.success) {
+                const updatedCompleteStatus = await this.updateCrawlStatus(
+                    baseURL,
+                    CrawlStatus.COMPLETE
+                );
 
-            if (statusUpdated) {
-                return this.handleCrawl(baseURL, maxCrawlDepth);
+                if (updatedCompleteStatus) {
+                    return {
+                        success: true,
+                        pathnames: response.pathnames,
+                    };
+                }
             }
-        } catch {
-            //
+
+            return {
+                success: false,
+                pathnames: response.pathnames,
+            };
         }
 
         return {
@@ -60,13 +73,6 @@ class Crawl implements CrawlPort {
                         pathnames,
                         pathnameStorages.length
                     );
-
-                    if (success) {
-                        await this.urlRepository.updateCrawlStatus(
-                            baseURL.hostname,
-                            CrawlStatus.COMPLETE
-                        );
-                    }
 
                     resolve({
                         success,
@@ -129,6 +135,20 @@ class Crawl implements CrawlPort {
         return (
             successPathnames.length == expected && successPathnames.length > 0
         );
+    }
+
+    private async updateCrawlStatus(
+        url: URL,
+        status: CrawlStatus
+    ): Promise<boolean> {
+        try {
+            return await this.urlRepository.updateCrawlStatus(
+                url.hostname,
+                status
+            );
+        } catch {
+            return false;
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 import { mock } from "jest-mock-extended";
+import { when } from "jest-when";
 import { EMPTY, of, throwError, concat, Observable } from "rxjs";
 import {
     CrawlStatus,
@@ -588,6 +589,78 @@ describe("Error handling", () => {
             const response = await crawler.crawl(DEFAULT_BASE_URL);
 
             expect(response.pathnames).toBeUndefined();
+        });
+    });
+
+    describe("given an unexpected error occurs setting the crawl status to completed when crawl was successful", () => {
+        beforeEach(() => {
+            mockCrawlProvider.crawl.mockClear();
+            mockURLRepository.storePathname.mockClear();
+            mockURLRepository.updateCrawlStatus.mockClear();
+            mockContentRepository.storePageContent.mockClear();
+
+            mockCrawlProvider.crawl.mockReturnValue(
+                of(createCrawlerResult(DEFAULT_BASE_URL))
+            );
+            mockURLRepository.storePathname.mockResolvedValue(true);
+            mockContentRepository.storePageContent.mockResolvedValue(true);
+            when(mockURLRepository.updateCrawlStatus)
+                .calledWith(DEFAULT_BASE_URL.hostname, CrawlStatus.STARTED)
+                .mockResolvedValue(true);
+            when(mockURLRepository.updateCrawlStatus)
+                .calledWith(DEFAULT_BASE_URL.hostname, CrawlStatus.COMPLETE)
+                .mockRejectedValue(new Error());
+        });
+
+        test("returns failure", async () => {
+            const result = await crawler.crawl(DEFAULT_BASE_URL);
+
+            expect(result.success).toBe(false);
+        });
+
+        test("returns paths crawled", async () => {
+            const result = await crawler.crawl(DEFAULT_BASE_URL);
+
+            expect(result.pathnames).toHaveLength(1);
+            expect(result.pathnames).toEqual(
+                expect.arrayContaining([DEFAULT_BASE_URL.pathname])
+            );
+        });
+    });
+
+    describe("given the complete status update fails to save when crawl was successful", () => {
+        beforeEach(() => {
+            mockCrawlProvider.crawl.mockClear();
+            mockURLRepository.storePathname.mockClear();
+            mockURLRepository.updateCrawlStatus.mockClear();
+            mockContentRepository.storePageContent.mockClear();
+
+            mockCrawlProvider.crawl.mockReturnValue(
+                of(createCrawlerResult(DEFAULT_BASE_URL))
+            );
+            mockURLRepository.storePathname.mockResolvedValue(true);
+            mockContentRepository.storePageContent.mockResolvedValue(true);
+            when(mockURLRepository.updateCrawlStatus)
+                .calledWith(DEFAULT_BASE_URL.hostname, CrawlStatus.STARTED)
+                .mockResolvedValue(true);
+            when(mockURLRepository.updateCrawlStatus)
+                .calledWith(DEFAULT_BASE_URL.hostname, CrawlStatus.COMPLETE)
+                .mockResolvedValue(false);
+        });
+
+        test("returns failure", async () => {
+            const result = await crawler.crawl(DEFAULT_BASE_URL);
+
+            expect(result.success).toBe(false);
+        });
+
+        test("returns paths crawled", async () => {
+            const result = await crawler.crawl(DEFAULT_BASE_URL);
+
+            expect(result.pathnames).toHaveLength(1);
+            expect(result.pathnames).toEqual(
+                expect.arrayContaining([DEFAULT_BASE_URL.pathname])
+            );
         });
     });
 });
