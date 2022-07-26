@@ -1,6 +1,6 @@
 enum CrawlStatus {
-    SUCCESS = "SUCCESS",
-    RUNNING = "RUNNING",
+    COMPLETE = "COMPLETE",
+    STARTED = "STARTED",
 }
 
 export default CrawlStatus;

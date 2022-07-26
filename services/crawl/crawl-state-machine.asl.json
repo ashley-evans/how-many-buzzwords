@@ -26,7 +26,7 @@
                 {
                     "Variable": "$.recentlyCrawled",
                     "BooleanEquals": true,
-                    "Next": "Send crawl complete event"
+                    "Next": "Send crawl status update event"
                 },
                 {
                     "Variable": "$.recentlyCrawled",
@@ -34,6 +34,24 @@
                     "Next": "Send crawl started event"
                 }
             ]
+        },
+        "Send crawl status update event": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::events:putEvents",
+            "Parameters": {
+                "Entries": [
+                    {
+                        "EventBusName": "${CrawlServiceEventBusARN}",
+                        "DetailType": "Crawl Status Update",
+                        "Detail": {
+                            "baseURL.$": "$.baseURL",
+                            "status.$": "$.status"
+                        },
+                        "Source": "crawl.aws.buzzword"
+                    }
+                ]
+            },
+            "End": true
         },
         "Send crawl started event": {
             "Type": "Task",
@@ -121,24 +139,6 @@
         },
         "Crawl Failed": {
             "Type": "Fail"
-        },
-        "Send crawl complete event": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::events:putEvents",
-            "Parameters": {
-                "Entries": [
-                    {
-                        "EventBusName": "${CrawlServiceEventBusARN}",
-                        "DetailType": "Crawl Status Update",
-                        "Detail": {
-                            "baseURL.$": "$.baseURL",
-                            "status": "COMPLETE"
-                        },
-                        "Source": "crawl.aws.buzzword"
-                    }
-                ]
-            },
-            "End": true
         }
     }
 }

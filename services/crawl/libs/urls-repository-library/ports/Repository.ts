@@ -6,6 +6,12 @@ type Pathname = {
     updatedAt: Date;
 };
 
+type CrawlStatusRecord = {
+    status: CrawlStatus;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
 interface Repository {
     deletePathnames(baseURL: string): Promise<boolean>;
     getPathnames(baseURL: string): Promise<Pathname[]>;
@@ -14,9 +20,9 @@ interface Repository {
         pathname: string
     ): Promise<Pathname | undefined>;
     storePathname(baseURL: string, pathname: string): Promise<boolean>;
-    getCrawlStatus(baseURL: string): Promise<CrawlStatus | undefined>;
+    getCrawlStatus(baseURL: string): Promise<CrawlStatusRecord | undefined>;
     updateCrawlStatus(baseURL: string, status: CrawlStatus): Promise<boolean>;
     deleteCrawlStatus(baseURL: string): Promise<boolean>;
 }
 
-export { Pathname, Repository };
+export { CrawlStatusRecord, Pathname, Repository };

@@ -1,4 +1,7 @@
-import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    CrawlStatus,
+    Repository,
+} from "buzzword-aws-crawl-urls-repository-library";
 import { ContentRepository } from "buzzword-aws-crawl-content-repository-library";
 
 import { CrawlerResponse, CrawlPort } from "../ports/CrawlPort";
@@ -20,6 +23,41 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         maxCrawlDepth?: number
     ): Promise<CrawlerResponse> {
+        const updatedStartedStatus = await this.updateCrawlStatus(
+            baseURL,
+            CrawlStatus.STARTED
+        );
+        if (updatedStartedStatus) {
+            const response = await this.handleCrawl(baseURL, maxCrawlDepth);
+            if (response.success) {
+                const updatedCompleteStatus = await this.updateCrawlStatus(
+                    baseURL,
+                    CrawlStatus.COMPLETE
+                );
+
+                if (updatedCompleteStatus) {
+                    return {
+                        success: true,
+                        pathnames: response.pathnames,
+                    };
+                }
+            }
+
+            return {
+                success: false,
+                pathnames: response.pathnames,
+            };
+        }
+
+        return {
+            success: false,
+        };
+    }
+
+    private handleCrawl(
+        baseURL: URL,
+        maxCrawlDepth?: number
+    ): Promise<CrawlerResponse> {
         return new Promise((resolve) => {
             const pathnameStorages: Promise<PathnameStored>[] = [];
             this.crawler.crawl(baseURL, maxCrawlDepth).subscribe({
@@ -35,6 +73,7 @@ class Crawl implements CrawlPort {
                         pathnames,
                         pathnameStorages.length
                     );
+
                     resolve({
                         success,
                         pathnames,
@@ -96,6 +135,20 @@ class Crawl implements CrawlPort {
         return (
             successPathnames.length == expected && successPathnames.length > 0
         );
+    }
+
+    private async updateCrawlStatus(
+        url: URL,
+        status: CrawlStatus
+    ): Promise<boolean> {
+        try {
+            return await this.urlRepository.updateCrawlStatus(
+                url.hostname,
+                status
+            );
+        } catch {
+            return false;
+        }
     }
 }
 
