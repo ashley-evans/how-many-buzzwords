@@ -12,9 +12,14 @@ class UpdateStatusDomain implements UpdateStatusPort {
         baseURL: URL,
         newStatus: CrawlStatus
     ): Promise<boolean> {
-        await this.repository.updateCrawlStatus(baseURL.hostname, newStatus);
-
-        return true;
+        try {
+            return await this.repository.updateCrawlStatus(
+                baseURL.hostname,
+                newStatus
+            );
+        } catch {
+            return false;
+        }
     }
 }
 

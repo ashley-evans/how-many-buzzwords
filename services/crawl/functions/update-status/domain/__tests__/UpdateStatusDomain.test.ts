@@ -39,3 +39,25 @@ test.each(Object.values(CrawlStatus))(
         );
     }
 );
+
+test("returns failure if an unhandled exception occurs while updating crawl status in repository", async () => {
+    mockRepository.updateCrawlStatus.mockRejectedValue(new Error());
+
+    const actual = await domain.updateCrawlStatus(
+        EXPECTED_URL,
+        CrawlStatus.COMPLETE
+    );
+
+    expect(actual).toEqual(false);
+});
+
+test("returns failure if the repository fails to update the crawl status for the given URL", async () => {
+    mockRepository.updateCrawlStatus.mockResolvedValue(false);
+
+    const actual = await domain.updateCrawlStatus(
+        EXPECTED_URL,
+        CrawlStatus.COMPLETE
+    );
+
+    expect(actual).toEqual(false);
+});
