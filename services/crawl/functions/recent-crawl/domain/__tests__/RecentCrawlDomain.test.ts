@@ -36,9 +36,9 @@ beforeEach(() => {
 
 describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
     "given a crawl status of %s that was created before max age",
-    (crawlStatus: CrawlStatus) => {
+    (expectedStatus: CrawlStatus) => {
         const crawlStatusRecord = createCrawlStatusRecord(
-            crawlStatus,
+            expectedStatus,
             createDate(MAX_AGE_HOURS * -1 - 1)
         );
 
@@ -61,6 +61,12 @@ describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
             expect(response?.recentlyCrawled).toEqual(false);
         });
 
+        test("returns the status of the crawl", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
+
+            expect(response?.status).toEqual(expectedStatus);
+        });
+
         test("returns time of the crawl status update", async () => {
             const response = await domain.hasCrawledRecently(VALID_URL);
 
@@ -71,9 +77,9 @@ describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
 
 describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
     "given a crawl status of %s that was created after max age",
-    (crawlStatus: CrawlStatus) => {
+    (expectedStatus: CrawlStatus) => {
         const crawlStatusRecord = createCrawlStatusRecord(
-            crawlStatus,
+            expectedStatus,
             createDate(MAX_AGE_HOURS)
         );
 
@@ -94,6 +100,12 @@ describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
             const response = await domain.hasCrawledRecently(VALID_URL);
 
             expect(response?.recentlyCrawled).toEqual(true);
+        });
+
+        test("returns the status of the crawl", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
+
+            expect(response?.status).toEqual(expectedStatus);
         });
 
         test("returns time of the crawl status update", async () => {

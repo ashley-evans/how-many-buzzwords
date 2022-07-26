@@ -1,4 +1,5 @@
 import { mock } from "jest-mock-extended";
+import { CrawlStatus } from "buzzword-aws-crawl-urls-repository-library";
 
 import { RecentCrawlEventAdapter } from "../RecentCrawlEventAdapter";
 import {
@@ -78,6 +79,7 @@ describe.each([
         const event = createEvent(inputURL);
         const successResponse: RecentCrawlResponse = {
             recentlyCrawled,
+            status: CrawlStatus.COMPLETE,
             crawlTime: new Date(),
         };
 
@@ -101,6 +103,10 @@ describe.each([
 
         test("returns whether recently crawled in response", () => {
             expect(response.recentlyCrawled).toEqual(recentlyCrawled);
+        });
+
+        test("returns crawl status in response", () => {
+            expect(response.status).toEqual(CrawlStatus.COMPLETE);
         });
 
         test("returns crawl date time in response", () => {
@@ -137,6 +143,10 @@ describe.each([
 
         test("returns not recently crawled in response", () => {
             expect(response.recentlyCrawled).toEqual(false);
+        });
+
+        test("returns no status in response", () => {
+            expect(response.status).toBeUndefined();
         });
 
         test("returns no crawl datetime in response", () => {

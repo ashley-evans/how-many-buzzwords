@@ -21,6 +21,7 @@ class RecentCrawlDomain implements RecentCrawlPort {
                 recentlyCrawled: this.isDateAfterMax(
                     crawlStatusRecord.createdAt
                 ),
+                status: crawlStatusRecord.status,
                 crawlTime: crawlStatusRecord.createdAt,
             };
         }
