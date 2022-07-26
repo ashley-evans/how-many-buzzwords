@@ -1,6 +1,7 @@
 import { mock } from "jest-mock-extended";
 import {
-    Pathname,
+    CrawlStatus,
+    CrawlStatusRecord,
     Repository,
 } from "buzzword-aws-crawl-urls-repository-library";
 
@@ -18,65 +19,93 @@ function createDate(hoursToAdd: number): Date {
     return date;
 }
 
-function createPathnameEntry(pathname: string, date: Date): Pathname {
+function createCrawlStatusRecord(
+    status: CrawlStatus,
+    date: Date
+): CrawlStatusRecord {
     return {
-        pathname,
+        status,
         createdAt: date,
         updatedAt: date,
     };
 }
 
 beforeEach(() => {
-    mockRepository.getPathname.mockClear();
+    mockRepository.getCrawlStatus.mockReset();
 });
 
-describe.each([
-    [
-        "before max age",
-        createPathnameEntry(
-            VALID_URL.pathname,
+describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
+    "given a crawl status of %s that was created before max age",
+    (crawlStatus: CrawlStatus) => {
+        const crawlStatusRecord = createCrawlStatusRecord(
+            crawlStatus,
             createDate(MAX_AGE_HOURS * -1 - 1)
-        ),
-        false,
-    ],
-    [
-        "after max age",
-        createPathnameEntry(VALID_URL.pathname, createDate(MAX_AGE_HOURS - 1)),
-        true,
-    ],
-])(
-    "given a pathname entry that is %s",
-    (message: string, pathnameEntry: Pathname, expectedResult: boolean) => {
+        );
+
         beforeEach(() => {
-            mockRepository.getPathname.mockResolvedValue(pathnameEntry);
+            mockRepository.getCrawlStatus.mockResolvedValue(crawlStatusRecord);
         });
 
         test("calls repository with hostname and pathname from provided URL", async () => {
             await domain.hasCrawledRecently(VALID_URL);
 
-            expect(mockRepository.getPathname).toHaveBeenCalledTimes(1);
-            expect(mockRepository.getPathname).toHaveBeenCalledWith(
-                VALID_URL.hostname,
-                VALID_URL.pathname
+            expect(mockRepository.getCrawlStatus).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getCrawlStatus).toHaveBeenCalledWith(
+                VALID_URL.hostname
             );
         });
 
         test("returns not crawled recently", async () => {
             const response = await domain.hasCrawledRecently(VALID_URL);
 
-            expect(response?.recentlyCrawled).toEqual(expectedResult);
+            expect(response?.recentlyCrawled).toEqual(false);
         });
 
-        test("returns time of the last crawl", async () => {
+        test("returns time of the crawl status update", async () => {
             const response = await domain.hasCrawledRecently(VALID_URL);
 
-            expect(response?.crawlTime).toEqual(pathnameEntry.createdAt);
+            expect(response?.crawlTime).toEqual(crawlStatusRecord.createdAt);
+        });
+    }
+);
+
+describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
+    "given a crawl status of %s that was created after max age",
+    (crawlStatus: CrawlStatus) => {
+        const crawlStatusRecord = createCrawlStatusRecord(
+            crawlStatus,
+            createDate(MAX_AGE_HOURS)
+        );
+
+        beforeEach(() => {
+            mockRepository.getCrawlStatus.mockResolvedValue(crawlStatusRecord);
+        });
+
+        test("calls repository with hostname and pathname from provided URL", async () => {
+            await domain.hasCrawledRecently(VALID_URL);
+
+            expect(mockRepository.getCrawlStatus).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getCrawlStatus).toHaveBeenCalledWith(
+                VALID_URL.hostname
+            );
+        });
+
+        test("returns crawled recently", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
+
+            expect(response?.recentlyCrawled).toEqual(true);
+        });
+
+        test("returns time of the crawl status update", async () => {
+            const response = await domain.hasCrawledRecently(VALID_URL);
+
+            expect(response?.crawlTime).toEqual(crawlStatusRecord.createdAt);
         });
     }
 );
 
 test("returns undefined if no crawl status exists for provided URL", async () => {
-    mockRepository.getPathname.mockResolvedValue(undefined);
+    mockRepository.getCrawlStatus.mockResolvedValue(undefined);
 
     const actual = await domain.hasCrawledRecently(VALID_URL);
 

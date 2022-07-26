@@ -12,15 +12,16 @@ class RecentCrawlDomain implements RecentCrawlPort {
     async hasCrawledRecently(
         baseURL: URL
     ): Promise<RecentCrawlResponse | undefined> {
-        const pathnameItem = await this.repository.getPathname(
-            baseURL.hostname,
-            baseURL.pathname
+        const crawlStatusRecord = await this.repository.getCrawlStatus(
+            baseURL.hostname
         );
 
-        if (pathnameItem) {
+        if (crawlStatusRecord) {
             return {
-                recentlyCrawled: this.isDateAfterMax(pathnameItem.createdAt),
-                crawlTime: pathnameItem.createdAt,
+                recentlyCrawled: this.isDateAfterMax(
+                    crawlStatusRecord.createdAt
+                ),
+                crawlTime: crawlStatusRecord.createdAt,
             };
         }
 

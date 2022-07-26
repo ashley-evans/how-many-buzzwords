@@ -1,5 +1,11 @@
 import CrawlStatus from "./enums/CrawlStatus";
-import { Pathname, Repository } from "./ports/Repository";
+import { CrawlStatusRecord, Pathname, Repository } from "./ports/Repository";
 import URLsTableRepository from "./adapters/URLsTableRepository";
 
-export { CrawlStatus, Pathname, Repository, URLsTableRepository };
+export {
+    CrawlStatus,
+    CrawlStatusRecord,
+    Pathname,
+    Repository,
+    URLsTableRepository,
+};
