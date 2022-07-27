@@ -52,4 +52,5 @@ type Subscription {
 enum CrawlStatus {
     STARTED
     COMPLETE
+    FAILED
 }

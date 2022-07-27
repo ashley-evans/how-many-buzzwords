@@ -16,6 +16,7 @@ Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
     Component(get_content_lambda, "Get Content Lambda", "Lambda and TypeScript", "Retrieves content of recently crawled pages")
     Component(get_urls_lambda, "Get URLs Lambda", "Lambda and TypeScript", "Gets all URLs crawled from a given URL")
     Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and JavaScript", "Publishes newly crawled URLs as event to event bus")
+    Component(update_status_lambda, "Update Status Lambda", "Lambda and TypeScript", "Updates the crawl status in DynamoDB and publishes crawl status update messages to subscribed clients")
     Component(event_bus, "Event Bus", "Event Bridge", "Event bus service that provides subscribers relevant events")
 }
 
@@ -34,19 +35,23 @@ Rel_R(api_gateway, get_content_lambda, "Routes requests to get crawled page cont
 Rel(step_function, recent_crawl_lambda, "Uses")
 Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
 Rel(step_function, event_bus, "Sends crawl complete events containing all crawled URLs and status updates to")
+Rel(step_function, update_status_lambda, "Updates crawl status to failure if an error occurs during crawl")
 
 Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose")
-Rel_R(crawl_urls_lambda, content_db, "Writes to", "S3 Client")
-Rel_D(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
+Rel(crawl_urls_lambda, content_db, "Writes to", "S3 Client")
+Rel(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
 
 Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(get_content_lambda, content_db, "Reads from", "S3 Client")
 
-Rel_U(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
-Rel_R(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
+Rel_R(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
+Rel_L(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
+
+Rel(update_status_lambda, url_db, "Writes to", "Dynamoose")
+Rel(update_status_lambda, event_bus, "Sends crawl status updates to")
 
 Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
 Rel(graphql_api, event_bus, "Subscribes to crawl status updates from")
