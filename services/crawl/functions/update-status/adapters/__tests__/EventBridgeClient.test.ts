@@ -49,7 +49,7 @@ test("sends the event bus name in the event entry", async () => {
 });
 
 test("sends the crawl status detail type in the event entry", async () => {
-    const expectedDetailType = "Crawl Complete via Crawl Service";
+    const expectedDetailType = "Crawl Status Update";
 
     await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
     const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);

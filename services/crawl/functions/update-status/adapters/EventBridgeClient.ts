@@ -7,7 +7,7 @@ import {
 
 import EventClient from "../ports/EventClient";
 
-const CRAWL_STATUS_UPDATE_DETAIL = "Crawl Complete via Crawl Service";
+const CRAWL_STATUS_UPDATE_DETAIL = "Crawl Status Update";
 const CRAWL_SERVICE_SOURCE = "crawl.aws.buzzword";
 
 type StatusUpdateEntryDetail = {
