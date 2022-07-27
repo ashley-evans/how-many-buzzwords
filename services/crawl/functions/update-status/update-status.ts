@@ -9,6 +9,8 @@ import {
 } from "./ports/UpdateStatusPrimaryAdapter";
 import UpdateStatusDomain from "./domain/UpdateStatusDomain";
 import UpdateStatusEventAdapter from "./adapters/UpdateStatusEventAdapter";
+import EventClient from "./ports/EventClient";
+import EventBridgeClient from "./adapters/EventBridgeClient";
 
 function createRepository(): Repository {
     if (!process.env.TABLE_NAME) {
@@ -18,8 +20,17 @@ function createRepository(): Repository {
     return new URLsTableRepository(process.env.TABLE_NAME);
 }
 
+function createEventClient(): EventClient {
+    if (!process.env.EVENT_BUS_NAME) {
+        throw new Error("Crawl event bus name has not been set.");
+    }
+
+    return new EventBridgeClient(process.env.EVENT_BUS_NAME);
+}
+
 const repository = createRepository();
-const domain = new UpdateStatusDomain(repository);
+const client = createEventClient();
+const domain = new UpdateStatusDomain(repository, client);
 const adapter = new UpdateStatusEventAdapter(domain);
 
 async function handler(
