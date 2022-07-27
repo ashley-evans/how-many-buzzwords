@@ -39,8 +39,15 @@ class EventBridgeClient implements EventClient {
 
         try {
             await this.client.send(command);
+            console.log(
+                `Successfully sent status update: ${status} for URL: ${url}`
+            );
+
             return true;
-        } catch {
+        } catch (ex) {
+            console.error(
+                `An error occurred sending status update for URL: ${url}. Error: ${ex}`
+            );
             return false;
         }
     }

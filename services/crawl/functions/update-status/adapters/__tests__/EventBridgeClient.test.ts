@@ -16,6 +16,10 @@ const mockEventBridgeClient = mockClient(EBClient);
 
 const client = new EventBridgeClient(EXPECTED_EVENT_BUS_NAME);
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 beforeEach(() => {
     mockEventBridgeClient.reset();
 });
@@ -108,6 +112,7 @@ test("returns success given event is succesfully sent", async () => {
 });
 
 test("returns failure if an unknown error occurs during sending of event", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
     const response = await client.sentStatusUpdate(
