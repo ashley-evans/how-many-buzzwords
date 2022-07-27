@@ -93,7 +93,7 @@ describe.each([
         test("returns provided URL's hostname in response", async () => {
             const response = await adapter.hasCrawledRecently(event);
 
-            expect(response.baseURL).toEqual(expectedURLOutput);
+            expect(response.url).toEqual(expectedURLOutput);
         });
 
         test("returns whether recently crawled in response", async () => {
@@ -139,7 +139,7 @@ describe.each([
         test("returns provided URL's hostname in response", async () => {
             const response = await adapter.hasCrawledRecently(event);
 
-            expect(response.baseURL).toEqual(expectedURLOutput);
+            expect(response.url).toEqual(expectedURLOutput);
         });
 
         test("returns not recently crawled in response", async () => {

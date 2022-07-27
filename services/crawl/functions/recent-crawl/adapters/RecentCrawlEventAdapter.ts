@@ -37,7 +37,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         const response = await this.port.hasCrawledRecently(url);
         if (response) {
             return {
-                baseURL: url.hostname,
+                url: url.hostname,
                 recentlyCrawled: response.recentlyCrawled,
                 status: response.status,
                 crawlTime: response.crawlTime,
@@ -45,7 +45,7 @@ class RecentCrawlEventAdapter implements RecentCrawlAdapter {
         }
 
         return {
-            baseURL: url.hostname,
+            url: url.hostname,
             recentlyCrawled: false,
         };
     }
