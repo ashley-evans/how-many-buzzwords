@@ -34,7 +34,7 @@ beforeEach(() => {
     mockRepository.getCrawlStatus.mockReset();
 });
 
-describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
+describe.each(Object.values(CrawlStatus))(
     "given a crawl status of %s that was created before max age",
     (expectedStatus: CrawlStatus) => {
         const crawlStatusRecord = createCrawlStatusRecord(
@@ -75,7 +75,7 @@ describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
     }
 );
 
-describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
+describe.each([CrawlStatus.STARTED, CrawlStatus.COMPLETE])(
     "given a crawl status of %s that was created after max age",
     (expectedStatus: CrawlStatus) => {
         const crawlStatusRecord = createCrawlStatusRecord(
@@ -115,6 +115,18 @@ describe.each([[CrawlStatus.STARTED], [CrawlStatus.COMPLETE]])(
         });
     }
 );
+
+test("returns not crawled recently given previous crawl failed after max age", async () => {
+    const crawlStatusRecord = createCrawlStatusRecord(
+        CrawlStatus.FAILED,
+        createDate(MAX_AGE_HOURS)
+    );
+    mockRepository.getCrawlStatus.mockResolvedValue(crawlStatusRecord);
+
+    const response = await domain.hasCrawledRecently(VALID_URL);
+
+    expect(response?.recentlyCrawled).toEqual(false);
+});
 
 test("returns undefined if no crawl status exists for provided URL", async () => {
     mockRepository.getCrawlStatus.mockResolvedValue(undefined);

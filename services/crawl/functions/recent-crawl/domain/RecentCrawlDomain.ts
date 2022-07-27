@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
-import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import {
+    CrawlStatus,
+    Repository,
+} from "buzzword-aws-crawl-urls-repository-library";
 
 import { RecentCrawlPort, RecentCrawlResponse } from "../ports/RecentCrawlPort";
 
@@ -17,10 +20,13 @@ class RecentCrawlDomain implements RecentCrawlPort {
         );
 
         if (crawlStatusRecord) {
+            const recentlyCrawled =
+                crawlStatusRecord.status == CrawlStatus.FAILED
+                    ? false
+                    : this.isDateAfterMax(crawlStatusRecord.createdAt);
+
             return {
-                recentlyCrawled: this.isDateAfterMax(
-                    crawlStatusRecord.createdAt
-                ),
+                recentlyCrawled,
                 status: crawlStatusRecord.status,
                 crawlTime: crawlStatusRecord.createdAt,
             };
