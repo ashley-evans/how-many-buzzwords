@@ -36,9 +36,13 @@ class EventBridgeClient implements EventClient {
         };
 
         const command = new PutEventsCommand({ Entries: [entry] });
-        this.client.send(command);
 
-        return true;
+        try {
+            await this.client.send(command);
+            return true;
+        } catch {
+            return false;
+        }
     }
 }
 

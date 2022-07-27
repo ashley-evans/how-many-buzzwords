@@ -106,3 +106,14 @@ test("returns success given event is succesfully sent", async () => {
 
     expect(response).toEqual(true);
 });
+
+test("returns failure if an unknown error occurs during sending of event", async () => {
+    mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
+
+    const response = await client.sentStatusUpdate(
+        VALID_HOSTNAME,
+        VALID_STATUS
+    );
+
+    expect(response).toEqual(false);
+});
