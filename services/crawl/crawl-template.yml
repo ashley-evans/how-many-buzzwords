@@ -349,6 +349,14 @@ Resources:
                                 - lambda:InvokeFunction
                             Resource: !GetAtt RecentCrawl.Arn
                             Effect: Allow
+                - PolicyName: InvokeUpdateStatus
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt UpdateStatus.Arn
+                            Effect: Allow
                 - PolicyName: PutEventsPolicy
                   PolicyDocument:
                       Version: "2012-10-17"
@@ -368,6 +376,7 @@ Resources:
                 RecentCrawlARN: !GetAtt RecentCrawl.Arn
                 CrawlURLsARN: !GetAtt CrawlURLs.Arn
                 CrawlServiceEventBusARN: !GetAtt CrawlServiceEventBus.Arn
+                UpdateStatusARN: !GetAtt UpdateStatus.Arn
             Role: !GetAtt CrawlStateMachineRole.Arn
     InvokeCrawlStateMachineRole:
         Type: AWS::IAM::Role
@@ -666,6 +675,46 @@ Resources:
                                   "status": "<status>"
                               }
                           }
+    UpdateStatusRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: URLsTableUpdatePolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:PutItem
+                            Resource: !GetAtt URLsTable.Arn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    UpdateStatus:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: update-status.handler
+            Role: !GetAtt UpdateStatusRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/update-status
+            Description: Updates the status of a crawl for a given URL to a specific status
+            Layers:
+                - Ref: URLsRepositoryLibraryLayer
+                - Ref: CrawlNodeDependencyLayer
+            Timeout: 6
+            Environment:
+                Variables:
+                    TABLE_NAME: !Ref URLsTable
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
