@@ -698,6 +698,14 @@ Resources:
                                 - dynamodb:PutItem
                             Resource: !GetAtt URLsTable.Arn
                             Effect: Allow
+                - PolicyName: PublishEventPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - events:PutEvents
+                            Resource: !GetAtt CrawlServiceEventBus.Arn
+                            Effect: Allow
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
     UpdateStatus:
@@ -715,6 +723,7 @@ Resources:
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
+                    EVENT_BUS_NAME: !GetAtt CrawlServiceEventBus.Arn
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
