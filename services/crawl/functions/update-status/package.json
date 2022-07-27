@@ -1,4 +1,7 @@
 {
     "name": "buzzword-aws-update-status-lambda",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "dependencies": {
+        "@aws-sdk/client-eventbridge": "3.55.0"
+    }
 }
