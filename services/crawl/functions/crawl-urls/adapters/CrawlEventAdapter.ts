@@ -49,7 +49,7 @@ class CrawlEventAdapter implements PrimaryAdapter {
                 `Error occurred in event validation: ${errorContent}`
             );
 
-            return { baseURL: event.url, success: false };
+            return { url: event.url, success: false };
         }
 
         try {
@@ -69,7 +69,7 @@ class CrawlEventAdapter implements PrimaryAdapter {
 
             return {
                 success: true,
-                baseURL: url.hostname,
+                url: url.hostname,
                 pathnames: response.pathnames,
             };
         } catch (ex) {

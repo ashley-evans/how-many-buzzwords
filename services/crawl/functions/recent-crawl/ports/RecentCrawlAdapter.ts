@@ -5,7 +5,7 @@ type RecentCrawlEvent = {
 };
 
 type RecentCrawlAdapterResponse = {
-    baseURL: string;
+    url: string;
     recentlyCrawled: boolean;
     status?: CrawlStatus;
     crawlTime?: Date;

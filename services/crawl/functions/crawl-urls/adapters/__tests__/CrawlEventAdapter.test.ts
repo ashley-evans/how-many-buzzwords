@@ -47,7 +47,7 @@ describe.each([
 
     test("returns provided URL in response", () => {
         expect(response).toBeDefined();
-        expect(response.baseURL).toEqual(eventURL);
+        expect(response.url).toEqual(eventURL);
     });
 
     test("returns failure", () => {
@@ -91,9 +91,9 @@ describe.each([
             );
         });
 
-        test("returns base URL in response", () => {
+        test("returns provided URL in response", () => {
             expect(response).toBeDefined();
-            expect(response.baseURL).toEqual(VALID_URL.hostname);
+            expect(response.url).toEqual(VALID_URL.hostname);
         });
 
         test("returns success given crawl succeeds", () => {

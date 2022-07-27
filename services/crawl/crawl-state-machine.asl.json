@@ -18,6 +18,13 @@
                     "MaxAttempts": 3
                 }
             ],
+            "Catch": [
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "Next": "Update crawl status to fail",
+                    "ResultPath": null
+                }
+            ],
             "Next": "Was URL recently crawled?"
         },
         "Was URL recently crawled?": {
@@ -44,7 +51,7 @@
                         "EventBusName": "${CrawlServiceEventBusARN}",
                         "DetailType": "Crawl Status Update",
                         "Detail": {
-                            "baseURL.$": "$.baseURL",
+                            "baseURL.$": "$.url",
                             "status.$": "$.status"
                         },
                         "Source": "crawl.aws.buzzword"
@@ -63,7 +70,7 @@
                         "EventBusName": "${CrawlServiceEventBusARN}",
                         "DetailType": "Crawl Status Update",
                         "Detail": {
-                            "baseURL.$": "$.baseURL",
+                            "baseURL.$": "$.url",
                             "status": "STARTED"
                         },
                         "Source": "crawl.aws.buzzword"
@@ -76,7 +83,7 @@
             "Type": "Task",
             "Resource": "${CrawlURLsARN}",
             "Parameters": {
-                "url.$": "$.baseURL"
+                "url.$": "$.url"
             },
             "Retry": [
                 {
@@ -93,6 +100,13 @@
                     "MaxAttempts": 3
                 }
             ],
+            "Catch": [
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "Next": "Update crawl status to fail",
+                    "ResultPath": null
+                }
+            ],
             "Next": "Did Crawl Succeed?"
         },
         "Did Crawl Succeed?": {
@@ -106,7 +120,7 @@
                 {
                     "Variable": "$.success",
                     "BooleanEquals": false,
-                    "Next": "Crawl Failed"
+                    "Next": "Update crawl status to fail"
                 }
             ]
         },
@@ -119,7 +133,7 @@
                         "EventBusName": "${CrawlServiceEventBusARN}",
                         "DetailType": "Crawl Complete via Crawl Service",
                         "Detail": {
-                            "baseURL.$": "$.baseURL",
+                            "baseURL.$": "$.url",
                             "pathnames.$": "$.pathnames"
                         },
                         "Source": "crawl.aws.buzzword"
@@ -128,14 +142,30 @@
                         "EventBusName": "${CrawlServiceEventBusARN}",
                         "DetailType": "Crawl Status Update",
                         "Detail": {
-                            "baseURL.$": "$.baseURL",
+                            "baseURL.$": "$.url",
                             "status": "COMPLETE"
                         },
                         "Source": "crawl.aws.buzzword"
                     }
                 ]
             },
+            "Catch": [
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "Next": "Update crawl status to fail",
+                    "ResultPath": null
+                }
+            ],
             "End": true
+        },
+        "Update crawl status to fail": {
+            "Type": "Task",
+            "Resource": "${UpdateStatusARN}",
+            "Parameters": {
+                "url.$": "$.url",
+                "status": "FAILED"
+            },
+            "Next": "Crawl Failed"
         },
         "Crawl Failed": {
             "Type": "Fail"
