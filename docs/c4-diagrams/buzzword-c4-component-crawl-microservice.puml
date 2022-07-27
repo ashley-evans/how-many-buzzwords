@@ -51,7 +51,7 @@ Rel_R(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
 Rel_L(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
 
 Rel(update_status_lambda, url_db, "Writes to", "Dynamoose")
-Rel(update_status_lambda, event_bus, "Sends crawl status updates to subscribing clients via")
+Rel(update_status_lambda, event_bus, "Sends crawl status updates to")
 
 Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
 Rel(graphql_api, event_bus, "Subscribes to crawl status updates from")
