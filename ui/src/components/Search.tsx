@@ -3,6 +3,8 @@ import { gql, useMutation } from "@apollo/client";
 import { Navigate } from "react-router-dom";
 
 import { URLInput } from "./URLInput";
+import { CrawlingSpinner } from "./CrawlingSpinner";
+import CrawlStatus from "../enums/CrawlStatus";
 
 const START_CRAWL_MUTATION = gql`
     mutation StartCrawl($input: StartCrawlInput!) {
@@ -21,11 +23,12 @@ type StartCrawlResult = {
 };
 
 function Search() {
-    const [startCrawl, { data, loading, error }] = useMutation<
+    const [startCrawl, { data, error }] = useMutation<
         { startCrawl: StartCrawlResult },
         { input: StartCrawlInput }
     >(START_CRAWL_MUTATION);
     const [crawledURL, setCrawledURL] = useState<URL | undefined>();
+    const [crawlComplete, setCrawlComplete] = useState<boolean>(false);
 
     const handleURLSubmit = async (validatedURL: URL) => {
         setCrawledURL(validatedURL);
@@ -38,7 +41,13 @@ function Search() {
         }
     };
 
-    if (data?.startCrawl.started && crawledURL) {
+    const handleCrawlStatusUpdate = (status: CrawlStatus) => {
+        if (status == CrawlStatus.COMPLETE) {
+            setCrawlComplete(true);
+        }
+    };
+
+    if (crawlComplete && crawledURL) {
         return (
             <Navigate
                 to={`/results/${encodeURIComponent(crawledURL.toString())}`}
@@ -48,8 +57,15 @@ function Search() {
 
     return (
         <Fragment>
-            {!loading && <URLInput onURLSubmit={handleURLSubmit} />}
-            {loading && <p>Initiating crawl...</p>}
+            {data?.startCrawl.started && crawledURL && (
+                <CrawlingSpinner
+                    onStatusUpdate={handleCrawlStatusUpdate}
+                    url={crawledURL.hostname}
+                />
+            )}
+            {!data?.startCrawl.started && (
+                <URLInput onURLSubmit={handleURLSubmit} />
+            )}
             {error && (
                 <p>
                     An error occurred when searching for buzzwords, please try
