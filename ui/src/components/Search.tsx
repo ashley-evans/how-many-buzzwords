@@ -22,16 +22,23 @@ type StartCrawlResult = {
     started: boolean;
 };
 
+type SearchState = {
+    crawledURL?: URL;
+    crawlStatus?: CrawlStatus;
+};
+
 function Search() {
-    const [startCrawl, { data, error }] = useMutation<
+    const [startCrawl, { data, loading, error }] = useMutation<
         { startCrawl: StartCrawlResult },
         { input: StartCrawlInput }
     >(START_CRAWL_MUTATION);
-    const [crawledURL, setCrawledURL] = useState<URL | undefined>();
-    const [crawlStatus, setCrawlStatus] = useState<CrawlStatus | undefined>();
+    const [state, setState] = useState<SearchState>();
 
     const handleURLSubmit = async (validatedURL: URL) => {
-        setCrawledURL(validatedURL);
+        setState({
+            crawledURL: validatedURL,
+        });
+
         try {
             await startCrawl({
                 variables: { input: { url: validatedURL.hostname } },
@@ -42,33 +49,37 @@ function Search() {
     };
 
     const handleCrawlStatusUpdate = (status: CrawlStatus) => {
-        setCrawlStatus(status);
-        if (status == CrawlStatus.FAILED) {
-            setCrawledURL(undefined);
-        }
+        setState({
+            ...state,
+            crawlStatus: status,
+        });
     };
 
-    if (crawlStatus == CrawlStatus.COMPLETE && crawledURL) {
+    if (state?.crawlStatus == CrawlStatus.COMPLETE && state.crawledURL) {
         return (
             <Navigate
-                to={`/results/${encodeURIComponent(crawledURL.toString())}`}
+                to={`/results/${encodeURIComponent(
+                    state.crawledURL.toString()
+                )}`}
             />
         );
     }
 
     return (
         <Fragment>
-            {data?.startCrawl.started && crawledURL && (
-                <CrawlingSpinner
-                    onStatusUpdate={handleCrawlStatusUpdate}
-                    url={crawledURL.hostname}
-                />
-            )}
-            {(!data?.startCrawl.started ||
-                crawlStatus == CrawlStatus.FAILED) && (
+            {(loading || data?.startCrawl.started) &&
+                state?.crawledURL &&
+                state.crawlStatus != CrawlStatus.FAILED && (
+                    <CrawlingSpinner
+                        onStatusUpdate={handleCrawlStatusUpdate}
+                        url={state.crawledURL.hostname}
+                    />
+                )}
+            {((!loading && !data?.startCrawl.started) ||
+                state?.crawlStatus == CrawlStatus.FAILED) && (
                 <URLInput onURLSubmit={handleURLSubmit} />
             )}
-            {(error || crawlStatus == CrawlStatus.FAILED) && (
+            {(error || state?.crawlStatus == CrawlStatus.FAILED) && (
                 <p>
                     An error occurred when searching for buzzwords, please try
                     again.
