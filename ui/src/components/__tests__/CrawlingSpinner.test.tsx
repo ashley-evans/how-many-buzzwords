@@ -10,26 +10,60 @@ import CrawlStatus from "../../enums/CrawlStatus";
 
 const VALID_URL = "www.example.com";
 
-const HOSTNAME_CRAWL_STARTED_STATUS_UPDATE_MOCK = {
-    request: {
-        query: CRAWL_STATUS_UPDATE_SUBSCRIPTION,
-        variables: { url: VALID_URL },
-    },
-    result: jest.fn(() => ({
-        data: {
-            crawlStatusUpdated: { status: CrawlStatus.STARTED },
+const MOCK_STATUS_UPDATE = jest.fn();
+
+function createStatusUpdateMock(mockStatus: CrawlStatus) {
+    return {
+        request: {
+            query: CRAWL_STATUS_UPDATE_SUBSCRIPTION,
+            variables: { url: VALID_URL },
         },
-    })),
-};
+        result: jest.fn(() => ({
+            data: {
+                crawlStatusUpdated: { status: mockStatus },
+            },
+        })),
+    };
+}
+
+beforeEach(() => {
+    MOCK_STATUS_UPDATE.mockClear();
+});
 
 test("subscribes to crawl status updates given a valid URL", async () => {
-    renderWithMockProvider(<CrawlingSpinner url={VALID_URL} />, [
-        HOSTNAME_CRAWL_STARTED_STATUS_UPDATE_MOCK,
-    ]);
+    const mock = createStatusUpdateMock(CrawlStatus.STARTED);
 
-    await waitFor(() =>
-        expect(
-            HOSTNAME_CRAWL_STARTED_STATUS_UPDATE_MOCK.result
-        ).toHaveBeenCalled()
+    renderWithMockProvider(
+        <CrawlingSpinner url={VALID_URL} onStatusUpdate={jest.fn()} />,
+        [mock]
     );
+
+    await waitFor(() => expect(mock.result).toHaveBeenCalled());
+});
+
+test.each(Object.values(CrawlStatus))(
+    "calls on status update with new status if crawl status is updated to %s",
+    async (status: CrawlStatus) => {
+        renderWithMockProvider(
+            <CrawlingSpinner
+                url={VALID_URL}
+                onStatusUpdate={MOCK_STATUS_UPDATE}
+            />,
+            [createStatusUpdateMock(status)]
+        );
+
+        await waitFor(() =>
+            expect(MOCK_STATUS_UPDATE).toHaveBeenCalledTimes(1)
+        );
+        expect(MOCK_STATUS_UPDATE).toHaveBeenCalledWith(status);
+    }
+);
+
+test("does not call on status update if no crawl status is given", async () => {
+    renderWithMockProvider(
+        <CrawlingSpinner url={VALID_URL} onStatusUpdate={MOCK_STATUS_UPDATE} />,
+        []
+    );
+
+    await waitFor(() => expect(MOCK_STATUS_UPDATE).not.toHaveBeenCalled());
 });

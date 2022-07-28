@@ -1,10 +1,12 @@
-import React, { Fragment } from "react";
+import React, { useEffect } from "react";
 import { gql, useSubscription } from "@apollo/client";
+import { Spin } from "antd";
 
 import CrawlStatus from "../enums/CrawlStatus";
 
 type CrawlingSpinnerProps = {
     url: string;
+    onStatusUpdate: (status: CrawlStatus) => unknown;
 };
 
 type CrawlStatusUpdate = {
@@ -20,12 +22,18 @@ const CRAWL_STATUS_UPDATE_SUBSCRIPTION = gql`
 `;
 
 function CrawlingSpinner(props: CrawlingSpinnerProps) {
-    useSubscription<{ crawlStatusUpdated: CrawlStatusUpdate }, { url: string }>(
-        CRAWL_STATUS_UPDATE_SUBSCRIPTION,
-        { variables: { url: props.url } }
-    );
+    const { data } = useSubscription<
+        { crawlStatusUpdated: CrawlStatusUpdate },
+        { url: string }
+    >(CRAWL_STATUS_UPDATE_SUBSCRIPTION, { variables: { url: props.url } });
 
-    return <Fragment />;
+    useEffect(() => {
+        if (data?.crawlStatusUpdated.status) {
+            props.onStatusUpdate(data.crawlStatusUpdated.status);
+        }
+    }, [data]);
+
+    return <Spin />;
 }
 
 export { CrawlingSpinner, CRAWL_STATUS_UPDATE_SUBSCRIPTION };
