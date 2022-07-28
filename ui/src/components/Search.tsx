@@ -28,7 +28,7 @@ function Search() {
         { input: StartCrawlInput }
     >(START_CRAWL_MUTATION);
     const [crawledURL, setCrawledURL] = useState<URL | undefined>();
-    const [crawlComplete, setCrawlComplete] = useState<boolean>(false);
+    const [crawlStatus, setCrawlStatus] = useState<CrawlStatus | undefined>();
 
     const handleURLSubmit = async (validatedURL: URL) => {
         setCrawledURL(validatedURL);
@@ -42,12 +42,10 @@ function Search() {
     };
 
     const handleCrawlStatusUpdate = (status: CrawlStatus) => {
-        if (status == CrawlStatus.COMPLETE) {
-            setCrawlComplete(true);
-        }
+        setCrawlStatus(status);
     };
 
-    if (crawlComplete && crawledURL) {
+    if (crawlStatus == CrawlStatus.COMPLETE && crawledURL) {
         return (
             <Navigate
                 to={`/results/${encodeURIComponent(crawledURL.toString())}`}
@@ -63,10 +61,11 @@ function Search() {
                     url={crawledURL.hostname}
                 />
             )}
-            {!data?.startCrawl.started && (
+            {(!data?.startCrawl.started ||
+                crawlStatus == CrawlStatus.FAILED) && (
                 <URLInput onURLSubmit={handleURLSubmit} />
             )}
-            {error && (
+            {(error || crawlStatus == CrawlStatus.FAILED) && (
                 <p>
                     An error occurred when searching for buzzwords, please try
                     again.
