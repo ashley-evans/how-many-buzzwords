@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import {
     renderWithMockProvider,
     createStatusUpdateMock,
+    createStartCrawlMock,
 } from "./helpers/utils";
 import { Search, START_CRAWL_MUTATION } from "../Search";
 import CrawlStatus from "../../enums/CrawlStatus";
@@ -16,20 +17,6 @@ const CRAWLING_MESSAGE = "Crawling...";
 
 const VALID_URL = new URL("http://www.example.com/");
 const INVALID_URL = "not a valid URL";
-
-function createStartCrawlMock(started: boolean, url: string) {
-    return {
-        request: {
-            query: START_CRAWL_MUTATION,
-            variables: { input: { url } },
-        },
-        result: jest.fn(() => ({
-            data: {
-                startCrawl: { started },
-            },
-        })),
-    };
-}
 
 const HOSTNAME_START_CRAWL_MOCK = createStartCrawlMock(
     true,

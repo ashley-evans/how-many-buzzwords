@@ -7,10 +7,10 @@ import App from "../App";
 import {
     renderWithMockProvider,
     createStatusUpdateMock,
+    createStartCrawlMock,
 } from "./helpers/utils";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
 import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
-import { START_CRAWL_MUTATION } from "../Search";
 import CrawlStatus from "../../enums/CrawlStatus";
 
 const APPLICATION_TITLE = "How many buzzwords";
@@ -126,17 +126,10 @@ test("navigates to results page if crawl successfully completes", async () => {
         VALID_URL.hostname
     );
     const expectedHeader = `Results for: ${VALID_URL}`;
-    const hostnameMutationMock = {
-        request: {
-            query: START_CRAWL_MUTATION,
-            variables: { input: { url: VALID_URL.hostname } },
-        },
-        result: jest.fn(() => ({
-            data: {
-                startCrawl: { started: true },
-            },
-        })),
-    };
+    const hostnameStartCrawlMock = createStartCrawlMock(
+        true,
+        VALID_URL.hostname
+    );
 
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
@@ -145,7 +138,7 @@ test("navigates to results page if crawl successfully completes", async () => {
 
     const { getByRole } = renderWithMockProvider(
         <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />,
-        [hostnameMutationMock, completedSubscriptionMock]
+        [hostnameStartCrawlMock, completedSubscriptionMock]
     );
     fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
         target: { value: VALID_URL },
