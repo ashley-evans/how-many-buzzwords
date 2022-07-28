@@ -33,7 +33,7 @@ function CrawlingSpinner(props: CrawlingSpinnerProps) {
         }
     }, [data]);
 
-    return <Spin />;
+    return <Spin tip="Crawling..." />;
 }
 
 export { CrawlingSpinner, CRAWL_STATUS_UPDATE_SUBSCRIPTION };

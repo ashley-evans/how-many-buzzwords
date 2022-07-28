@@ -67,3 +67,14 @@ test("does not call on status update if no crawl status is given", async () => {
 
     await waitFor(() => expect(MOCK_STATUS_UPDATE).not.toHaveBeenCalled());
 });
+
+test("displays crawling message", async () => {
+    const expectedMessage = "Crawling...";
+
+    const { getByText } = renderWithMockProvider(
+        <CrawlingSpinner url={VALID_URL} onStatusUpdate={MOCK_STATUS_UPDATE} />,
+        []
+    );
+
+    await waitFor(() => expect(getByText(expectedMessage)).toBeInTheDocument());
+});
