@@ -43,6 +43,12 @@ describe("field rendering", () => {
             getByRole("button", { name: SEARCH_BUTTON_TEXT })
         ).toBeInTheDocument();
     });
+
+    test("does not display the crawling message", () => {
+        const { queryByText } = renderWithMockProvider(<Search />);
+
+        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
+    });
 });
 
 test("calls crawl service to initiate call given a valid URL", async () => {
