@@ -321,6 +321,79 @@ describe("crawl error rendering", () => {
         ).toBeInTheDocument();
     });
 
+    test("does not render the crawling message if a network error occurs starting the crawl", async () => {
+        const networkErrorMock = {
+            request: {
+                query: START_CRAWL_MUTATION,
+                variables: { url: VALID_URL.hostname },
+            },
+            error: new Error("test"),
+        };
+
+        const { getByRole, getByText, queryByText } = renderWithMockProvider(
+            <Search />,
+            [networkErrorMock]
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+        await waitFor(() => {
+            expect(getByText(expectedErrorMessage)).toBeInTheDocument();
+        });
+
+        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
+    });
+
+    test("does not render the crawling message if the crawl service returns an error", async () => {
+        const graphQLErrorMock = {
+            request: {
+                query: START_CRAWL_MUTATION,
+                variables: { url: VALID_URL.hostname },
+            },
+            result: {
+                errors: [new GraphQLError("test")],
+            },
+        };
+
+        const { getByRole, getByText, queryByText } = renderWithMockProvider(
+            <Search />,
+            [graphQLErrorMock]
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+        await waitFor(() => {
+            expect(getByText(expectedErrorMessage)).toBeInTheDocument();
+        });
+
+        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
+    });
+
+    test("does not render the crawling message if the crawl status is updated to failed", async () => {
+        const failedSubscriptionMock = createStatusUpdateMock(
+            CrawlStatus.FAILED,
+            VALID_URL.hostname
+        );
+
+        const { getByRole, getByText, queryByText } = renderWithMockProvider(
+            <MemoryRouter>
+                <Search />
+            </MemoryRouter>,
+            [HOSTNAME_START_CRAWL_MOCK, failedSubscriptionMock]
+        );
+        fireEvent.input(getByRole("textbox", { name: URL_INPUT_LABEL }), {
+            target: { value: VALID_URL },
+        });
+        fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
+        await waitFor(() => {
+            expect(getByText(expectedErrorMessage)).toBeInTheDocument();
+        });
+
+        expect(queryByText(CRAWLING_MESSAGE)).not.toBeInTheDocument();
+    });
+
     test("clears error message following re-crawl after network error initiating crawl", async () => {
         const networkErrorMock = {
             request: {

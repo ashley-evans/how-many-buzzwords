@@ -43,6 +43,9 @@ function Search() {
 
     const handleCrawlStatusUpdate = (status: CrawlStatus) => {
         setCrawlStatus(status);
+        if (status == CrawlStatus.FAILED) {
+            setCrawledURL(undefined);
+        }
     };
 
     if (crawlStatus == CrawlStatus.COMPLETE && crawledURL) {
