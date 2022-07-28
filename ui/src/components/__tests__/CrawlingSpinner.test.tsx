@@ -1,37 +1,23 @@
 import React from "react";
 import { waitFor } from "@testing-library/react";
 
-import { renderWithMockProvider } from "./helpers/utils";
 import {
-    CrawlingSpinner,
-    CRAWL_STATUS_UPDATE_SUBSCRIPTION,
-} from "../CrawlingSpinner";
+    createStatusUpdateMock,
+    renderWithMockProvider,
+} from "./helpers/utils";
+import { CrawlingSpinner } from "../CrawlingSpinner";
 import CrawlStatus from "../../enums/CrawlStatus";
 
 const VALID_URL = "www.example.com";
 
 const MOCK_STATUS_UPDATE = jest.fn();
 
-function createStatusUpdateMock(mockStatus: CrawlStatus) {
-    return {
-        request: {
-            query: CRAWL_STATUS_UPDATE_SUBSCRIPTION,
-            variables: { url: VALID_URL },
-        },
-        result: jest.fn(() => ({
-            data: {
-                crawlStatusUpdated: { status: mockStatus },
-            },
-        })),
-    };
-}
-
 beforeEach(() => {
     MOCK_STATUS_UPDATE.mockClear();
 });
 
 test("subscribes to crawl status updates given a valid URL", async () => {
-    const mock = createStatusUpdateMock(CrawlStatus.STARTED);
+    const mock = createStatusUpdateMock(CrawlStatus.STARTED, VALID_URL);
 
     renderWithMockProvider(
         <CrawlingSpinner url={VALID_URL} onStatusUpdate={jest.fn()} />,
@@ -49,7 +35,7 @@ test.each(Object.values(CrawlStatus))(
                 url={VALID_URL}
                 onStatusUpdate={MOCK_STATUS_UPDATE}
             />,
-            [createStatusUpdateMock(status)]
+            [createStatusUpdateMock(status, VALID_URL)]
         );
 
         await waitFor(() =>
