@@ -9,9 +9,9 @@ node_modules/
 .aws-sam/
 local-lambda-output.txt
 
-# Apify Output
+# Crawlee Output
 
-apify_storage/
+storage/
 
 # Output
 

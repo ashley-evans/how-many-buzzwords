@@ -2,7 +2,6 @@ import { mock } from "jest-mock-extended";
 
 jest.mock("buzzword-aws-crawl-urls-repository-library");
 
-import { handler } from "../crawl-urls";
 import { CrawlEvent } from "../ports/PrimaryAdapter";
 
 const mockEvent = mock<CrawlEvent>();
@@ -23,6 +22,24 @@ beforeEach(() => {
     process.env.CONTENT_BUCKET_NAME = VALID_BUCKET_NAME;
 });
 
+test("throws error if urls table name is undefined", async () => {
+    delete process.env.TABLE_NAME;
+
+    expect.assertions(1);
+    await expect(async () => {
+        await import("../crawl-urls");
+    }).rejects.toThrow(new Error("URLs Table Name has not been set."));
+});
+
+test("throws error if content bucket name is undefined", async () => {
+    delete process.env.CONTENT_BUCKET_NAME;
+
+    expect.assertions(1);
+    await expect(async () => {
+        await import("../crawl-urls");
+    }).rejects.toThrow(new Error("Content Bucket Name has not been set."));
+});
+
 test.each([
     ["undefined", undefined],
     ["not a number", "wibble"],
@@ -35,9 +52,12 @@ test.each([
             delete process.env.MAX_CRAWL_DEPTH;
         }
 
-        await expect(handler(mockEvent)).rejects.toThrow(
-            new Error("Max Crawl Depth is not a number.")
-        );
+        expect.assertions(1);
+        await expect(async () => {
+            const { handler } = await import("../crawl-urls");
+
+            await handler(mockEvent);
+        }).rejects.toThrow(new Error("Max Crawl Depth is not a number."));
     }
 );
 
@@ -53,24 +73,13 @@ test.each([
             delete process.env.MAX_REQUESTS_PER_CRAWL;
         }
 
-        await expect(handler(mockEvent)).rejects.toThrow(
+        expect.assertions(1);
+        await expect(async () => {
+            const { handler } = await import("../crawl-urls");
+
+            await handler(mockEvent);
+        }).rejects.toThrow(
             new Error("Max requests per crawl is not a number.")
         );
     }
 );
-
-test("throws error if urls table name is undefined", async () => {
-    delete process.env.TABLE_NAME;
-
-    await expect(handler(mockEvent)).rejects.toThrow(
-        new Error("URLs Table Name has not been set.")
-    );
-});
-
-test("throws error if content bucket name is undefined", async () => {
-    delete process.env.CONTENT_BUCKET_NAME;
-
-    await expect(handler(mockEvent)).rejects.toThrow(
-        new Error("Content Bucket Name has not been set.")
-    );
-});

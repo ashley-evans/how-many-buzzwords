@@ -8,9 +8,9 @@ node_modules/
 
 .aws-sam/
 
-# Apify Output
+# Crawlee Output
 
-apify_storage/
+storage/
 
 # TSC Output
 

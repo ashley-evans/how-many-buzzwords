@@ -7,7 +7,7 @@ import {
     URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
 
-import { ApifyProvider } from "./adapters/ApifyProvider";
+import { CrawleeProvider } from "./adapters/CrawleeProvider";
 import { CrawlEventAdapter } from "./adapters/CrawlEventAdapter";
 import Crawl from "./domain/Crawl";
 import { CrawlProvider } from "./ports/CrawlProvider";
@@ -28,7 +28,7 @@ function createCrawlProvider(): CrawlProvider {
     const maxConcurrency = Number(process.env.MAX_CONCURRENCY);
     const autoscaleInterval = Number(process.env.AUTOSCALE_INTERVAL);
 
-    return new ApifyProvider({
+    return new CrawleeProvider({
         maxCrawlDepth,
         maxRequests,
         minConcurrency: isNaN(minConcurrency) ? undefined : minConcurrency,
@@ -55,20 +55,18 @@ function createContentRepository(): ContentRepository {
     return new S3Repository(process.env.CONTENT_BUCKET_NAME);
 }
 
-const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
-    const crawlProvider = createCrawlProvider();
-    const urlRepository = createRepostiory();
-    const contentRepository = createContentRepository();
+const urlRepository = createRepostiory();
+const contentRepository = createContentRepository();
 
+const handler = (event: CrawlEvent): Promise<CrawlResponse> => {
+    const crawlProvider = createCrawlProvider();
     const crawlDomain = new Crawl(
         crawlProvider,
         urlRepository,
         contentRepository
     );
-
     const primaryAdapter = new CrawlEventAdapter(crawlDomain);
-
-    return await primaryAdapter.crawl(event);
+    return primaryAdapter.crawl(event);
 };
 
 export { handler };
