@@ -4,15 +4,16 @@ import nock from "nock";
 import { Scope } from "nock/types";
 import { PathOrFileDescriptor, readFileSync } from "fs";
 
-import { init, clean, destroy } from "./helpers/local-storage-emulator";
 import { mockURLFromFile } from "../../../../../../helpers/http-mock";
 
 import { ApifyProvider, CrawlerSettings } from "../ApifyProvider";
 import { CrawlResult } from "../../ports/CrawlProvider";
 
+process.env.CRAWLEE_STORAGE_DIR = path.join(__dirname, "/storage");
+process.env.CRAWLEE_PURGE_ON_START = "true";
+
 const ENTRY_POINT_URL = new URL("http://www.example.com");
 
-const LOCAL_STORAGE_DIR = path.join(__dirname, "/apify_storage");
 const ASSET_FOLDER = path.join(__dirname, "/assets/");
 const DEPTH_FOLDER = path.join(ASSET_FOLDER, "/depth");
 const DEPTH_PATH_PREFIX = "/depth-";
@@ -62,11 +63,6 @@ function getPageContent(path: PathOrFileDescriptor): string {
 beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    init(LOCAL_STORAGE_DIR);
-});
-
-beforeEach(() => {
-    clean();
 });
 
 describe("crawler crawls to sub pages linked from start page", () => {
@@ -81,7 +77,6 @@ describe("crawler crawls to sub pages linked from start page", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         entryURLMock = mockURLFromFile(
             ENTRY_POINT_URL,
             ENTRY_POINT_URL.pathname,
@@ -150,7 +145,6 @@ describe("crawls to default depth given no depth specified", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
 
         const provider = new ApifyProvider(DEFAULT_SETTINGS);
@@ -196,7 +190,6 @@ describe("crawls to specified depth given less than default", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
 
         const provider = new ApifyProvider(DEFAULT_SETTINGS);
@@ -241,7 +234,6 @@ describe("crawls to default max depth given larger specified depth", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
 
         const provider = new ApifyProvider(DEFAULT_SETTINGS);
@@ -286,7 +278,6 @@ describe("crawls to max number of requests specified", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         mockSites = mockDepthURLs(BEYOND_MAX_DEPTH);
         const settings: CrawlerSettings = {
             maxCrawlDepth: MAX_CRAWL_DEPTH,
@@ -342,7 +333,6 @@ describe("crawls to pages only inside same domain name", () => {
     let response: CrawlResult[];
 
     beforeAll(async () => {
-        clean();
         mockURLFromFile(
             ENTRY_POINT_URL,
             ENTRY_POINT_URL.pathname,
@@ -377,8 +367,4 @@ describe("crawls to pages only inside same domain name", () => {
         expect(response).toHaveLength(1);
         expect(response[0].url).toEqual(ENTRY_POINT_URL);
     });
-});
-
-afterAll(() => {
-    destroy();
 });
