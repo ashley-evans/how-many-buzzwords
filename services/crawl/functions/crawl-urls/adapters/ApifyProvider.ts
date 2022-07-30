@@ -1,13 +1,11 @@
 import {
     RequestOptions,
-    CheerioHandlePageInputs,
-    utils,
     RequestQueue,
-    openRequestQueue,
     CheerioCrawler,
     CheerioCrawlerOptions,
-    PseudoUrl,
-} from "apify";
+    CheerioCrawlingContext,
+    EnqueueStrategy,
+} from "@crawlee/cheerio";
 import { Observable, Subject } from "rxjs";
 import { CrawlResult, CrawlProvider } from "../ports/CrawlProvider";
 
@@ -31,8 +29,7 @@ class ApifyProvider implements CrawlProvider {
     crawl(baseURL: URL, maxDepth?: number): Observable<CrawlResult> {
         this.createRequestQueue(baseURL, maxDepth).then(
             async (requestQueue) => {
-                const domainMatcher = this.createDomainMatcher(baseURL);
-                const crawler = this.createCrawler(requestQueue, domainMatcher);
+                const crawler = this.createCrawler(requestQueue);
 
                 await crawler.run();
 
@@ -58,43 +55,24 @@ class ApifyProvider implements CrawlProvider {
             };
         }
 
-        const requestQueue = await openRequestQueue();
+        const requestQueue = await RequestQueue.open();
         await requestQueue.addRequest(request);
 
         return requestQueue;
     }
 
-    private createDomainMatcher(url: URL): PseudoUrl {
-        const domainName = url.hostname.replace("www.", "");
-        const matcherRegExp = new RegExp(
-            `(^|\\s)https?://(www.)?${domainName}([-a-zA-Z0-9()@:%_+.~#?&//=]*)`
-        );
-
-        return new PseudoUrl(matcherRegExp);
-    }
-
-    private createCrawler(
-        requestQueue: RequestQueue,
-        crawlerPattern: PseudoUrl
-    ): CheerioCrawler {
-        const maxCrawlDepth = this.settings.maxCrawlDepth;
-        const crawledURLs = this.crawledURLs;
-        const crawlPage = this.crawlPage;
-
+    private createCrawler(requestQueue: RequestQueue): CheerioCrawler {
         const crawlerOptions: CheerioCrawlerOptions = {
-            handlePageFunction: async (context: CheerioHandlePageInputs) => {
-                crawlPage(
+            requestHandler: async (context) =>
+                this.crawlPage(
                     context,
-                    requestQueue,
-                    maxCrawlDepth,
-                    crawledURLs,
-                    crawlerPattern
-                );
-            },
+                    this.settings.maxCrawlDepth,
+                    this.crawledURLs
+                ),
             requestQueue,
             maxRequestsPerCrawl: this.settings.maxRequests,
-            minConcurrency: this.settings.minConcurrency ?? 1,
-            maxConcurrency: this.settings.maxConcurrency ?? 2,
+            minConcurrency: this.settings.minConcurrency ?? 10,
+            maxConcurrency: this.settings.maxConcurrency ?? 20,
             autoscaledPoolOptions: {
                 autoscaleIntervalSecs: this.settings.autoScaleInterval ?? 10,
             },
@@ -104,17 +82,14 @@ class ApifyProvider implements CrawlProvider {
     }
 
     private async crawlPage(
-        inputs: CheerioHandlePageInputs,
-        requestQueue: RequestQueue,
+        context: CheerioCrawlingContext,
         maxCrawlDepth: number,
-        crawledURLs: Subject<CrawlResult>,
-        crawlerPattern: PseudoUrl
+        crawledURLs: Subject<CrawlResult>
     ) {
-        const { request, $ } = inputs;
+        const { request, enqueueLinks, body } = context;
         console.log(`Crawled to ${request.url}`);
 
         const requestUserData = request.userData;
-
         const currentDepth = isNaN(requestUserData.currentDepth)
             ? 0
             : Number(requestUserData.currentDepth);
@@ -129,25 +104,18 @@ class ApifyProvider implements CrawlProvider {
         }
 
         if (currentDepth < maxDepthAllowed) {
-            await utils.enqueueLinks({
-                $,
-                requestQueue,
-                baseUrl: request.loadedUrl,
-                transformRequestFunction: (request) => {
-                    request.userData = {
-                        currentDepth: currentDepth + 1,
-                        maxCrawlDepth: maxDepthAllowed,
-                    };
-
-                    return request;
+            await enqueueLinks({
+                userData: {
+                    currentDepth: currentDepth + 1,
+                    maxCrawlDepth: maxDepthAllowed,
                 },
-                pseudoUrls: [crawlerPattern],
+                strategy: EnqueueStrategy.SameDomain,
             });
         }
 
         crawledURLs.next({
             url: new URL(request.url),
-            content: inputs.body.toString(),
+            content: body.toString(),
         });
     }
 }
