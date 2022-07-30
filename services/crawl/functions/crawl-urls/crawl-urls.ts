@@ -7,7 +7,7 @@ import {
     URLsTableRepository,
 } from "buzzword-aws-crawl-urls-repository-library";
 
-import { ApifyProvider } from "./adapters/ApifyProvider";
+import { CrawleeProvider } from "./adapters/CrawleeProvider";
 import { CrawlEventAdapter } from "./adapters/CrawlEventAdapter";
 import Crawl from "./domain/Crawl";
 import { CrawlProvider } from "./ports/CrawlProvider";
@@ -28,7 +28,7 @@ function createCrawlProvider(): CrawlProvider {
     const maxConcurrency = Number(process.env.MAX_CONCURRENCY);
     const autoscaleInterval = Number(process.env.AUTOSCALE_INTERVAL);
 
-    return new ApifyProvider({
+    return new CrawleeProvider({
         maxCrawlDepth,
         maxRequests,
         minConcurrency: isNaN(minConcurrency) ? undefined : minConcurrency,

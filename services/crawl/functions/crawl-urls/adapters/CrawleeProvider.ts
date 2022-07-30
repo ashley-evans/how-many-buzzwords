@@ -17,7 +17,7 @@ type CrawlerSettings = {
     autoScaleInterval?: number;
 };
 
-class ApifyProvider implements CrawlProvider {
+class CrawleeProvider implements CrawlProvider {
     private crawledURLs: Subject<CrawlResult>;
 
     constructor(private settings: CrawlerSettings) {
@@ -120,4 +120,4 @@ class ApifyProvider implements CrawlProvider {
     }
 }
 
-export { ApifyProvider, CrawlerSettings };
+export { CrawleeProvider, CrawlerSettings };
