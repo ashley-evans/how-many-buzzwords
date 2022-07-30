@@ -129,7 +129,7 @@ Resources:
                     CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
                     MAX_REQUESTS_PER_CRAWL: 50
                     MAX_CRAWL_DEPTH: 20
-                    APIFY_LOCAL_STORAGE_DIR: /tmp/apify_storage/
+                    CRAWLEE_STORAGE_DIR: /tmp/crawlee_storage/
                     APIFY_MEMORY_MBYTES: 1536
                     MIN_CONCURRENCY: 10
                     MAX_CONCURRENCY: 20
