@@ -1,11 +1,4 @@
-import { mock } from "jest-mock-extended";
-
 jest.mock("buzzword-aws-crawl-urls-repository-library");
-
-import { handler } from "../crawl-urls";
-import { CrawlEvent } from "../ports/PrimaryAdapter";
-
-const mockEvent = mock<CrawlEvent>();
 
 const VALID_MAX_CRAWL_DEPTH = "1";
 const VALID_MAX_REQUESTS_PER_CRAWL = "1";
@@ -35,9 +28,10 @@ test.each([
             delete process.env.MAX_CRAWL_DEPTH;
         }
 
-        await expect(handler(mockEvent)).rejects.toThrow(
-            new Error("Max Crawl Depth is not a number.")
-        );
+        expect.assertions(1);
+        await expect(async () => {
+            await import("../crawl-urls");
+        }).rejects.toThrow(new Error("Max Crawl Depth is not a number."));
     }
 );
 
@@ -53,7 +47,10 @@ test.each([
             delete process.env.MAX_REQUESTS_PER_CRAWL;
         }
 
-        await expect(handler(mockEvent)).rejects.toThrow(
+        expect.assertions(1);
+        await expect(async () => {
+            await import("../crawl-urls");
+        }).rejects.toThrow(
             new Error("Max requests per crawl is not a number.")
         );
     }
@@ -62,15 +59,17 @@ test.each([
 test("throws error if urls table name is undefined", async () => {
     delete process.env.TABLE_NAME;
 
-    await expect(handler(mockEvent)).rejects.toThrow(
-        new Error("URLs Table Name has not been set.")
-    );
+    expect.assertions(1);
+    await expect(async () => {
+        await import("../crawl-urls");
+    }).rejects.toThrow(new Error("URLs Table Name has not been set."));
 });
 
 test("throws error if content bucket name is undefined", async () => {
     delete process.env.CONTENT_BUCKET_NAME;
 
-    await expect(handler(mockEvent)).rejects.toThrow(
-        new Error("Content Bucket Name has not been set.")
-    );
+    expect.assertions(1);
+    await expect(async () => {
+        await import("../crawl-urls");
+    }).rejects.toThrow(new Error("Content Bucket Name has not been set."));
 });

@@ -55,20 +55,14 @@ function createContentRepository(): ContentRepository {
     return new S3Repository(process.env.CONTENT_BUCKET_NAME);
 }
 
-const handler = async (event: CrawlEvent): Promise<CrawlResponse> => {
-    const crawlProvider = createCrawlProvider();
-    const urlRepository = createRepostiory();
-    const contentRepository = createContentRepository();
+const crawlProvider = createCrawlProvider();
+const urlRepository = createRepostiory();
+const contentRepository = createContentRepository();
+const crawlDomain = new Crawl(crawlProvider, urlRepository, contentRepository);
+const primaryAdapter = new CrawlEventAdapter(crawlDomain);
 
-    const crawlDomain = new Crawl(
-        crawlProvider,
-        urlRepository,
-        contentRepository
-    );
-
-    const primaryAdapter = new CrawlEventAdapter(crawlDomain);
-
-    return await primaryAdapter.crawl(event);
+const handler = (event: CrawlEvent): Promise<CrawlResponse> => {
+    return primaryAdapter.crawl(event);
 };
 
 export { handler };
