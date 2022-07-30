@@ -130,7 +130,7 @@ Resources:
                     MAX_REQUESTS_PER_CRAWL: 50
                     MAX_CRAWL_DEPTH: 20
                     CRAWLEE_STORAGE_DIR: /tmp/crawlee_storage/
-                    APIFY_MEMORY_MBYTES: 1536
+                    CRAWLEE_MEMORY_MBYTES: 1536
                     MIN_CONCURRENCY: 10
                     MAX_CONCURRENCY: 20
                     AUTOSCALE_INTERVAL: 20
