@@ -1,0 +1,15 @@
+{
+    "name": "@ashley-evans/crawl-client",
+    "version": "1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ashley-evans/how-many-buzzwords.git"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "main": "./index.js",
+    "peerDependencies": {
+        "axios": "^0.27.2"
+    }
+}

@@ -5,6 +5,9 @@
             "path": "packages/object-validator"
         },
         {
+            "path": "packages/crawl-client"
+        },
+        {
             "path": "services/crawl"
         },
         {
