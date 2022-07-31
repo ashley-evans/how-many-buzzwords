@@ -8,7 +8,6 @@ function mockURLFromFile(
     pathname: string,
     filePath: PathOrFileDescriptor,
     persist: boolean,
-    statusCode = 200,
     queryParams?:
         | string
         | boolean
@@ -27,14 +26,11 @@ function mockURLFromFile(
         ? nock(matcher, options).get(pathname).query(queryParams)
         : nock(matcher, options).get(pathname);
 
-    const mockScope: nock.Scope =
-        statusCode == 200
-            ? mockInterceptor.reply(
-                  statusCode,
-                  readFileSync(filePath),
-                  replyHeaders
-              )
-            : mockInterceptor.reply(statusCode);
+    const mockScope: nock.Scope = mockInterceptor.reply(
+        200,
+        readFileSync(filePath),
+        replyHeaders
+    );
 
     if (persist) {
         mockScope.persist();

@@ -25,7 +25,6 @@ test("calls GET content on the crawl service with encoded url in query string", 
         EXPECTED_CONTENT_PATH,
         CONTENT_ASSET,
         false,
-        200,
         {
             [EXPECTED_CONTENT_URL_QUERY_STRING_PARAM]: encodeURIComponent(
                 VALID_CONTENT_URL.toString()
@@ -46,7 +45,6 @@ test("returns received HTML as string", async () => {
         EXPECTED_CONTENT_PATH,
         CONTENT_ASSET,
         false,
-        200,
         {
             [EXPECTED_CONTENT_URL_QUERY_STRING_PARAM]: encodeURIComponent(
                 VALID_CONTENT_URL.toString()
