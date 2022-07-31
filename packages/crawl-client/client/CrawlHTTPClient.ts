@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+
 import CrawlClient from "../interface/CrawlClient";
 
 class CrawlHTTPClient implements CrawlClient {
