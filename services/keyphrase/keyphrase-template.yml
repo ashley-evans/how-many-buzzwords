@@ -53,6 +53,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    TextRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub TextRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer containing S3 repository client for page parsed text
+            CompatibleRuntimes:
+                - nodejs16.x
+            ContentUri: ./libs/text-repository-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
