@@ -35,10 +35,13 @@ class ScrapeURLEventAdapter implements ScrapeURLPrimaryAdapter {
 
     async handleEvent(event: ScrapeURLEvent): Promise<ScrapeURLResponse> {
         const url = this.parseEvent(event);
-        await this.port.scrapeURL(url);
+        const success = await this.port.scrapeURL(url);
+        if (!success) {
+            throw new Error("URL scrape failed.");
+        }
 
         return {
-            success: true,
+            success,
         };
     }
 

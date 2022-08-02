@@ -62,6 +62,7 @@ test.each([
 ])(
     "calls domain with provided valid (base URL %s)",
     async (message: string, baseURL: string, expectedURL: URL) => {
+        mockPort.scrapeURL.mockResolvedValue(true);
         const event = createEvent(baseURL, VALID_PATHNAME);
 
         await adapter.handleEvent(event);
@@ -78,4 +79,25 @@ test("returns success if URL is successfully scraped", async () => {
     const actual = await adapter.handleEvent(event);
 
     expect(actual.success).toBe(true);
+});
+
+test("throws an error if the URL could not be scraped", async () => {
+    mockPort.scrapeURL.mockResolvedValue(false);
+    const event = createEvent(VALID_BASE_URL, VALID_PATHNAME);
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(
+        expect.objectContaining({
+            message: "URL scrape failed.",
+        })
+    );
+});
+
+test("throws exception if an unhandled exception is thrown scraping the URL", async () => {
+    const expectedError = new Error("test error");
+    mockPort.scrapeURL.mockRejectedValue(expectedError);
+    const event = createEvent(VALID_BASE_URL, VALID_PATHNAME);
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(expectedError);
 });
