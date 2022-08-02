@@ -45,7 +45,19 @@ class ScrapeURLEventAdapter implements ScrapeURLPrimaryAdapter {
     private parseEvent(event: ScrapeURLEvent): URL {
         try {
             const validEvent = this.validator.validate(event);
-            return new URL(`${validEvent.baseURL}${validEvent.pathname}`);
+            let baseURL: string = validEvent.baseURL;
+            if (!isNaN(parseInt(baseURL))) {
+                throw "Number provided when expecting valid base URL (hostname w/ or w/o protocol).";
+            }
+
+            if (
+                !baseURL.startsWith("https://") &&
+                !baseURL.startsWith("http://")
+            ) {
+                baseURL = `https://${baseURL}`;
+            }
+
+            return new URL(`${baseURL}${validEvent.pathname}`);
         } catch (ex) {
             const errorContent =
                 ex instanceof Error ? ex.message : JSON.stringify(ex);

@@ -24,9 +24,16 @@ beforeEach(() => {
 
 test.each([
     ["a missing base URL", createEvent(undefined, VALID_PATHNAME)],
-    ["an invalid base URL", createEvent("i am invalid", VALID_PATHNAME)],
+    [
+        "an invalid base URL (spaces)",
+        createEvent("i am invalid", VALID_PATHNAME),
+    ],
+    ["an invalid base URL (numeric)", createEvent("1", VALID_PATHNAME)],
     ["a missing pathname", createEvent(VALID_BASE_URL, undefined)],
-    ["an invalid pathname", createEvent(VALID_BASE_URL, "i am invalid")],
+    [
+        "an invalid pathname (missing leading forward slash)",
+        createEvent(VALID_BASE_URL, "no forward"),
+    ],
 ])(
     "throws an exception given an invalid event with %s",
     async (message: string, event: ScrapeURLEvent) => {
@@ -41,15 +48,28 @@ test.each([
     }
 );
 
-test("calls domain with provided valid (Base URL includes protocol)", async () => {
-    const expectedURL = new URL(`${VALID_BASE_URL}${VALID_PATHNAME}`);
-    const event = createEvent(VALID_BASE_URL, VALID_PATHNAME);
+test.each([
+    [
+        "includes protocol",
+        VALID_BASE_URL,
+        new URL(`${VALID_BASE_URL}${VALID_PATHNAME}`),
+    ],
+    [
+        "excludes protocol",
+        "www.example.com",
+        new URL(`https://www.example.com${VALID_PATHNAME}`),
+    ],
+])(
+    "calls domain with provided valid (base URL %s)",
+    async (message: string, baseURL: string, expectedURL: URL) => {
+        const event = createEvent(baseURL, VALID_PATHNAME);
 
-    await adapter.handleEvent(event);
+        await adapter.handleEvent(event);
 
-    expect(mockPort.scrapeURL).toHaveBeenCalledTimes(1);
-    expect(mockPort.scrapeURL).toHaveBeenCalledWith(expectedURL);
-});
+        expect(mockPort.scrapeURL).toHaveBeenCalledTimes(1);
+        expect(mockPort.scrapeURL).toHaveBeenCalledWith(expectedURL);
+    }
+);
 
 test("returns success if URL is successfully scraped", async () => {
     mockPort.scrapeURL.mockResolvedValue(true);
