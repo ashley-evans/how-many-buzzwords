@@ -58,10 +58,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-crawl_event_bus_arn=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name | jq -r 'select ( .OutputKey == "EventBusARN" ) | .OutputValue')
+stack_outputs=$($script_dir/helpers/fetch-stack-outputs.sh -s $crawl_stack_name)
+crawl_event_bus_arn=$(echo $stack_outputs | jq -r 'select ( .OutputKey == "EventBusARN" ) | .OutputValue')
 
 if [ -z $crawl_event_bus_arn ]; then
     echo "Error: No Crawl Event Bus ARN found."
+    exit 1
+fi
+
+crawl_rest_endpoint=$(echo $stack_outputs | jq -r 'select ( .OutputKey == "CrawlRESTAPIEndpoint" ) | .OutputValue')
+
+if [ -z $crawl_rest_endpoint ]; then
+    echo "Error: No Crawl REST Endpoint found."
     exit 1
 fi
 
@@ -77,5 +85,5 @@ $script_dir/helpers/deploy-service.sh \
     -c $config_path \
     -e $environment \
     -f \
-    -o "CrawlEventBusARN=$crawl_event_bus_arn $config_parameters" \
+    -o "CrawlEventBusARN=$crawl_event_bus_arn CrawlRESTEndpoint=$crawl_rest_endpoint $config_parameters" \
     --cache
