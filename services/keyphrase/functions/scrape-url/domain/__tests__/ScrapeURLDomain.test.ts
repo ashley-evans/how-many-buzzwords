@@ -63,3 +63,75 @@ test("returns success if the parsed content is stored successfully", async () =>
 
     expect(actual).toBe(true);
 });
+
+describe("retrieve content error handling", () => {
+    test("returns failure if an error occurs retrieving content", async () => {
+        mockCrawlClient.getContent.mockRejectedValue(new Error());
+
+        const actual = await domain.scrapeURL(VALID_URL);
+
+        expect(actual).toBe(false);
+    });
+
+    test("does not parse any HTML content if an error occurs retrieving content", async () => {
+        mockCrawlClient.getContent.mockRejectedValue(new Error());
+
+        await domain.scrapeURL(VALID_URL);
+
+        expect(mockHTMLParser.parseHTML).not.toHaveBeenCalled();
+    });
+
+    test("does not store any content if an error occurs retrieving content", async () => {
+        mockCrawlClient.getContent.mockRejectedValue(new Error());
+
+        await domain.scrapeURL(VALID_URL);
+
+        expect(mockRepository.storePageText).not.toHaveBeenCalled();
+    });
+});
+
+describe("parsing content error handling", () => {
+    test("returns failure if an error occurs parsing the page content", async () => {
+        mockCrawlClient.getContent.mockResolvedValue(VALID_HTML);
+        mockHTMLParser.parseHTML.mockImplementation(() => {
+            throw new Error();
+        });
+
+        const actual = await domain.scrapeURL(VALID_URL);
+
+        expect(actual).toBe(false);
+    });
+
+    test("does not store any content if an error occurs parsing the page content ", async () => {
+        mockCrawlClient.getContent.mockResolvedValue(VALID_HTML);
+        mockHTMLParser.parseHTML.mockImplementation(() => {
+            throw new Error();
+        });
+
+        await domain.scrapeURL(VALID_URL);
+
+        expect(mockRepository.storePageText).not.toHaveBeenCalled();
+    });
+});
+
+describe("parsed content storage error handling", () => {
+    test("returns failure if an error occurs storing the parsed page content", async () => {
+        mockCrawlClient.getContent.mockResolvedValue(VALID_HTML);
+        mockHTMLParser.parseHTML.mockReturnValue(PARSED_CONTENT);
+        mockRepository.storePageText.mockRejectedValue(new Error());
+
+        const actual = await domain.scrapeURL(VALID_URL);
+
+        expect(actual).toBe(false);
+    });
+
+    test("returns failure if the parsed page content is not stored", async () => {
+        mockCrawlClient.getContent.mockResolvedValue(VALID_HTML);
+        mockHTMLParser.parseHTML.mockReturnValue(PARSED_CONTENT);
+        mockRepository.storePageText.mockResolvedValue(false);
+
+        const actual = await domain.scrapeURL(VALID_URL);
+
+        expect(actual).toBe(false);
+    });
+});
