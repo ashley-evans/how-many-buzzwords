@@ -32,21 +32,20 @@ function createParsedContentRepository(): TextRepository {
     return new TextS3Repository(process.env.PARSED_CONTENT_S3_BUCKET_NAME);
 }
 
-const handler = async (event: KeyphrasesEvent): Promise<KeyphrasesResponse> => {
-    const repository = createRepository();
-    const parsedContentRepository = createParsedContentRepository();
-    const keyphraseProvider = new RetextProvider();
-    const occurrenceCounter = new RegexCounter();
-    const keyphraseFinder = new KeyphraseFinder(
-        parsedContentRepository,
-        keyphraseProvider,
-        occurrenceCounter,
-        repository
-    );
+const repository = createRepository();
+const parsedContentRepository = createParsedContentRepository();
+const keyphraseProvider = new RetextProvider();
+const occurrenceCounter = new RegexCounter();
+const keyphraseFinder = new KeyphraseFinder(
+    parsedContentRepository,
+    keyphraseProvider,
+    occurrenceCounter,
+    repository
+);
+const primaryAdapter = new EventAdapter(keyphraseFinder);
 
-    const primaryAdapter = new EventAdapter(keyphraseFinder);
-
-    return await primaryAdapter.findKeyphrases(event);
+const handler = (event: KeyphrasesEvent): Promise<KeyphrasesResponse> => {
+    return primaryAdapter.findKeyphrases(event);
 };
 
 export { handler };
