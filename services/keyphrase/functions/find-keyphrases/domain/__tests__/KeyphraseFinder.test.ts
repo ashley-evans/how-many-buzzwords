@@ -3,9 +3,8 @@ import {
     Repository,
     KeyphraseOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
+import { TextRepository } from "buzzword-aws-text-repository-library";
 
-import HTMLParsingProvider from "../../ports/HTMLParsingProvider";
-import HTTPRequestProvider from "../../ports/HTTPRequestProvider";
 import {
     KeyphraseProvider,
     KeyphraseResponse,
@@ -22,17 +21,14 @@ const PREVIOUS_KEYPHRASES = ["Wibble Wobble", "Wobble Wibble"];
 const PREVIOUS_PHRASES = [...PREVIOUS_KEYWORDS, ...PREVIOUS_KEYPHRASES];
 const ALL_PHRASES = [...NEW_PHRASES, ...PREVIOUS_PHRASES];
 const PARSED_BODY = KEYWORDS.join(" ");
-const VALID_BODY = `<body>${PARSED_BODY}</body>`;
 
-const mockRequestProvider = mock<HTTPRequestProvider>();
-const mockHTMLParser = mock<HTMLParsingProvider>();
+const mockParsedContentProvider = mock<TextRepository>();
 const mockKeyphraseProvider = mock<KeyphraseProvider>();
 const mockOccurrenceCounter = mock<OccurrenceCounter>();
 const mockRepository = mock<Repository>();
 
 const keyphraseFinder = new KeyphraseFinder(
-    mockRequestProvider,
-    mockHTMLParser,
+    mockParsedContentProvider,
     mockKeyphraseProvider,
     mockOccurrenceCounter,
     mockRepository
@@ -69,8 +65,7 @@ describe("happy path", () => {
     beforeAll(async () => {
         jest.resetAllMocks();
 
-        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
-        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockParsedContentProvider.getPageText.mockResolvedValue(PARSED_BODY);
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
@@ -81,14 +76,11 @@ describe("happy path", () => {
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
 
-    test("calls request provider with URL", () => {
-        expect(mockRequestProvider.getBody).toHaveBeenCalledTimes(1);
-        expect(mockRequestProvider.getBody).toHaveBeenCalledWith(VALID_URL);
-    });
-
-    test("calls HTML parser with response from request provider", () => {
-        expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(1);
-        expect(mockHTMLParser.parseHTML).toHaveBeenCalledWith(VALID_BODY);
+    test("calls the text repository to get the URLs parsed content with URL", () => {
+        expect(mockParsedContentProvider.getPageText).toHaveBeenCalledTimes(1);
+        expect(mockParsedContentProvider.getPageText).toHaveBeenCalledWith(
+            VALID_URL
+        );
     });
 
     test("calls keyphrase provider with parsed HTML text", () => {
@@ -146,13 +138,21 @@ describe("handles no page content", () => {
     beforeAll(async () => {
         jest.resetAllMocks();
 
-        mockRequestProvider.getBody.mockResolvedValue("");
+        mockParsedContentProvider.getPageText.mockResolvedValue("");
 
         response = await keyphraseFinder.findKeyphrases(VALID_URL);
     });
 
-    test("does not call HTML parser", () => {
-        expect(mockHTMLParser.parseHTML).toHaveBeenCalledTimes(0);
+    test("does not attempt to find keyphrases", () => {
+        expect(mockKeyphraseProvider.findKeyphrases).not.toHaveBeenCalled();
+    });
+
+    test("does not attempt to account occurrences", () => {
+        expect(mockOccurrenceCounter.countOccurrences).not.toHaveBeenCalled();
+    });
+
+    test("does not attempt to store any keyphrase occurrences", () => {
+        expect(mockRepository.storeKeyphrases).not.toHaveBeenCalled();
     });
 
     test("returns true", () => {
@@ -166,8 +166,7 @@ describe("handles no keywords found", () => {
     beforeAll(async () => {
         jest.resetAllMocks();
 
-        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
-        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockParsedContentProvider.getPageText.mockResolvedValue(PARSED_BODY);
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse([], [])
         );
@@ -195,8 +194,7 @@ describe("handles existing keyphrases", () => {
     beforeAll(async () => {
         jest.resetAllMocks();
 
-        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
-        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockParsedContentProvider.getPageText.mockResolvedValue(PARSED_BODY);
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
@@ -253,8 +251,7 @@ describe("error handling", () => {
     beforeEach(() => {
         jest.resetAllMocks();
 
-        mockRequestProvider.getBody.mockResolvedValue(VALID_BODY);
-        mockHTMLParser.parseHTML.mockReturnValue(PARSED_BODY);
+        mockParsedContentProvider.getPageText.mockResolvedValue(PARSED_BODY);
         mockKeyphraseProvider.findKeyphrases.mockResolvedValue(
             createKeyphraseResponse(KEYWORDS, KEYPHRASES)
         );
@@ -262,24 +259,12 @@ describe("error handling", () => {
         mockOccurrenceCounter.countOccurrences.mockReturnValue(1);
     });
 
-    test("returns failure if request provider throws an error", async () => {
-        mockRequestProvider.getBody.mockRejectedValue(new Error());
+    test("returns failure if an unexpected error occurs getting parsed content", async () => {
+        mockParsedContentProvider.getPageText.mockRejectedValue(new Error());
 
         const result = await keyphraseFinder.findKeyphrases(VALID_URL);
 
         expect(result).toBe(false);
-    });
-
-    test("throws an error if HTML parser throws an error", async () => {
-        const expectedError = new Error("test error");
-        mockHTMLParser.parseHTML.mockImplementation(() => {
-            throw expectedError;
-        });
-
-        expect.assertions(1);
-        await expect(keyphraseFinder.findKeyphrases(VALID_URL)).rejects.toEqual(
-            expectedError
-        );
     });
 
     test("throws an error if Keyphrase provider throws an error", async () => {
