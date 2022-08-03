@@ -127,6 +127,14 @@ Resources:
                                 - dynamodb:Query
                             Resource: !GetAtt KeyphrasesTable.Arn
                             Effect: Allow
+                - PolicyName: ParsedContentBucketFetchPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - s3:GetObject
+                            Resource: !Sub "${ParsedContentBucket.Arn}/*"
+                            Effect: Allow
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
     FindKeyphrases:
@@ -139,6 +147,7 @@ Resources:
             Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: TextRepositoryLibraryLayer
             Timeout: 30
             MemorySize: 256
             Environment:

@@ -24,7 +24,14 @@ class KeyphraseFinder implements KeyphrasesPort {
         let content: string;
         try {
             content = await this.parsedContentRepository.getPageText(url);
-        } catch {
+        } catch (ex) {
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
+
+            console.error(
+                `Error occurred obtaining parsed content: ${errorContent}`
+            );
+
             return false;
         }
 
