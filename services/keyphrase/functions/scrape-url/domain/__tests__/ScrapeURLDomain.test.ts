@@ -19,6 +19,10 @@ const domain = new ScrapeURLDomain(
     mockRepository
 );
 
+beforeAll(() => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+});
+
 beforeEach(() => {
     mockCrawlClient.getContent.mockReset();
     mockHTMLParser.parseHTML.mockReset();

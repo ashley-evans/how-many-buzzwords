@@ -16,7 +16,14 @@ class ScrapeURLDomain implements ScrapeURLPort {
             const html = await this.crawlClient.getContent(url);
             const parsedHTML = this.htmlParser.parseHTML(html);
             return await this.repository.storePageText(url, parsedHTML);
-        } catch {
+        } catch (ex) {
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
+
+            console.error(
+                `Error occurred during page text storage: ${errorContent}`
+            );
+
             return false;
         }
     }
