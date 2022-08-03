@@ -143,7 +143,8 @@ Resources:
             MemorySize: 256
             Environment:
                 Variables:
-                    TABLE_NAME: !Ref KeyphrasesTable
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+                    PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
     KeyphrasesCRUD:
         Type: AWS::Serverless::Function
         Properties:
