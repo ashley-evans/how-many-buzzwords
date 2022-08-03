@@ -208,6 +208,14 @@ Resources:
                                 - lambda:InvokeFunction
                             Resource: !GetAtt FindKeyphrases.Arn
                             Effect: Allow
+                - PolicyName: InvokeScrapeURL
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt ScrapeURL.Arn
+                            Effect: Allow
     KeyphraseStateMachine:
         Type: AWS::Serverless::StateMachine
         Properties:
@@ -217,6 +225,7 @@ Resources:
             DefinitionUri: ./keyphrase-state-machine.asl.json
             DefinitionSubstitutions:
                 FindKeyphrasesARN: !GetAtt FindKeyphrases.Arn
+                ScrapeURLARN: !GetAtt ScrapeURL.Arn
             Role: !GetAtt KeyphraseStateMachineRole.Arn
     InvokeKeyphraseStateMachineRole:
         Type: AWS::IAM::Role

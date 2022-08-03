@@ -11,8 +11,28 @@
                 "pathname.$": "$$.Map.Item.Value"
             },
             "Iterator": {
-                "StartAt": "Find Keyphrases",
+                "StartAt": "Parse URL",
                 "States": {
+                    "Parse URL": {
+                        "Type": "Task",
+                        "Resource": "${ScrapeURLARN}",
+                        "Retry": [
+                            {
+                                "ErrorEquals": [
+                                    "Lambda.ServiceException",
+                                    "Lambda.AWSLambdaException",
+                                    "Lambda.SdkClientException",
+                                    "Lambda.TooManyRequestsException",
+                                    "Lambda.Unknown"
+                                ],
+                                "IntervalSeconds": 3,
+                                "BackoffRate": 2.0,
+                                "MaxAttempts": 3
+                            }
+                        ],
+                        "Next": "Find Keyphrases",
+                        "ResultPath": null
+                    },
                     "Find Keyphrases": {
                         "Type": "Task",
                         "Resource": "${FindKeyphrasesARN}",
