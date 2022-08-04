@@ -2,9 +2,8 @@ import {
     Repository,
     KeyphraseOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
+import { TextRepository } from "buzzword-aws-text-repository-library";
 
-import HTMLParsingProvider from "../ports/HTMLParsingProvider";
-import HTTPRequestProvider from "../ports/HTTPRequestProvider";
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import {
     KeyphraseProvider,
@@ -14,8 +13,7 @@ import OccurrenceCounter from "../ports/OccurrenceCounter";
 
 class KeyphraseFinder implements KeyphrasesPort {
     constructor(
-        private httpRequester: HTTPRequestProvider,
-        private htmlParser: HTMLParsingProvider,
+        private parsedContentRepository: TextRepository,
         private keyphraseProvider: KeyphraseProvider,
         private occurrenceCounter: OccurrenceCounter,
         private repository: Repository
@@ -25,10 +23,13 @@ class KeyphraseFinder implements KeyphrasesPort {
         console.log(`Attempting to find keyphrases at ${url.toString()}`);
         let content: string;
         try {
-            content = await this.httpRequester.getBody(url);
-        } catch (ex: unknown) {
+            content = await this.parsedContentRepository.getPageText(url);
+        } catch (ex) {
+            const errorContent =
+                ex instanceof Error ? ex.message : JSON.stringify(ex);
+
             console.error(
-                `Error occurred during page GET: ${JSON.stringify(ex)}}`
+                `Error occurred obtaining parsed content: ${errorContent}`
             );
 
             return false;
@@ -79,10 +80,9 @@ class KeyphraseFinder implements KeyphrasesPort {
     }
 
     private async findKeyphrasesOccurrences(
-        HTMLContent: string,
+        text: string,
         previousPhrases: KeyphraseOccurrences[]
     ): Promise<KeyphraseOccurrences[]> {
-        const text = this.htmlParser.parseHTML(HTMLContent);
         const phrases = await this.keyphraseProvider.findKeyphrases(text);
 
         const combinedPhrases = this.combinePhrases(

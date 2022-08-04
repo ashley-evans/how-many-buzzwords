@@ -109,7 +109,7 @@ class CrawleeProvider implements CrawlProvider {
                     currentDepth: currentDepth + 1,
                     maxCrawlDepth: maxDepthAllowed,
                 },
-                strategy: EnqueueStrategy.SameDomain,
+                strategy: EnqueueStrategy.SameHostname,
             });
         }
 

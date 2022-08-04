@@ -363,7 +363,51 @@ describe("crawls to pages only inside same domain name", () => {
         expect(domainPathnameMock.isDone()).toBe(false);
     });
 
-    test("crawler only returns URLs inside domain", () => {
+    test("crawler only returns URLs with same hostname as base URL", () => {
+        expect(response).toHaveLength(1);
+        expect(response[0].url).toEqual(ENTRY_POINT_URL);
+    });
+});
+
+describe("sub domain crawling", () => {
+    beforeEach(() => {
+        mockURLFromFile(
+            ENTRY_POINT_URL,
+            ENTRY_POINT_URL.pathname,
+            path.join(ASSET_FOLDER, "same-domain.html"),
+            false
+        );
+    });
+
+    test("crawler does not hit URLs with the same domain as base URL", async () => {
+        const sameDomainURL = new URL("http://www.wow.an.example.com/");
+        const sameDomainMock = mockURLFromFile(
+            new URL(sameDomainURL.origin),
+            sameDomainURL.pathname,
+            path.join(ASSET_FOLDER, "sub-page-1.html"),
+            false
+        );
+        const provider = new CrawleeProvider(DEFAULT_SETTINGS);
+
+        const observable = provider.crawl(ENTRY_POINT_URL);
+        await receiveObservableOutput(observable);
+
+        expect(sameDomainMock.isDone()).toBe(false);
+    });
+
+    test("crawler returns only URLs with same hostname if page only contains links to other pages with same domain", async () => {
+        const sameDomainURL = new URL("http://www.wow.an.example.com/");
+        mockURLFromFile(
+            new URL(sameDomainURL.origin),
+            sameDomainURL.pathname,
+            path.join(ASSET_FOLDER, "sub-page-1.html"),
+            false
+        );
+        const provider = new CrawleeProvider(DEFAULT_SETTINGS);
+
+        const observable = provider.crawl(ENTRY_POINT_URL);
+        const response = await receiveObservableOutput(observable);
+
         expect(response).toHaveLength(1);
         expect(response[0].url).toEqual(ENTRY_POINT_URL);
     });

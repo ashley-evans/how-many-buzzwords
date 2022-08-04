@@ -116,21 +116,6 @@ describe("given an event that fails validation", () => {
 describe.each([
     ["url with protocol", VALID_URL.toString(), VALID_URL],
     ["url without protocol", VALID_URL.hostname, VALID_URL],
-    [
-        "url with protocol (URL encoded)",
-        encodeURIComponent(VALID_URL.toString()),
-        VALID_URL,
-    ],
-    [
-        "url without protocol (Double URL encoded)",
-        encodeURIComponent(VALID_URL.hostname.toString()),
-        VALID_URL,
-    ],
-    [
-        "url with query parameters (DoubleURL encoded)",
-        encodeURIComponent(`${VALID_URL.hostname}/test?test=test`),
-        new URL(`http://${VALID_URL.hostname}/test?test=test`),
-    ],
 ])(
     "given a valid event with a %s that has been crawled recently",
     (message: string, eventURL: string, expectedURL: URL) => {

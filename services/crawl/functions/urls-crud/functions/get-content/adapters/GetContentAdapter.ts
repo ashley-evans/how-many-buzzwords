@@ -60,7 +60,6 @@ class GetContentAdapter implements APIGatewayAdapter {
             throw "Number provided when expecting URL";
         }
 
-        url = decodeURIComponent(url);
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
             url = `http://${url}`;
         }

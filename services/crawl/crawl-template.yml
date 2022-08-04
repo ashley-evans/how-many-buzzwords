@@ -731,3 +731,9 @@ Outputs:
     CrawlIdentityPoolID:
         Description: The identity pool that provides auth access to GraphQL API
         Value: !Ref CrawlIdentityPool
+    CrawlGraphQLAPIEndpoint:
+        Description: The URL for the Crawl Service's GraphQL API
+        Value: !GetAtt CrawlGraphQLAPI.GraphQLUrl
+    CrawlRESTAPIEndpoint:
+        Description: The URL for the Crawl Service's REST API
+        Value: !Sub https://${CrawlHTTPGateway}.execute-api.${AWS::Region}.amazonaws.com

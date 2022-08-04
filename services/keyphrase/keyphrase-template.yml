@@ -8,6 +8,9 @@ Parameters:
     CrawlEventBusARN:
         Type: String
         Description: The ARN of the Crawl service's Event Bus
+    CrawlRESTEndpoint:
+        Type: String
+        Description: The endpoint for the crawl service's REST API
 Resources:
     KeyphraseNodeDependencyLayer:
         Type: AWS::Serverless::LayerVersion
@@ -53,6 +56,17 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    TextRepositoryLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub TextRepositoryLibraryLayer-${EnvironmentNameSuffix}
+            Description: Library layer containing S3 repository client for page parsed text
+            CompatibleRuntimes:
+                - nodejs16.x
+            ContentUri: ./libs/text-repository-library
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     KeyphrasesTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -80,6 +94,15 @@ Resources:
                         KeyType: RANGE
                   Projection:
                       ProjectionType: KEYS_ONLY
+    ParsedContentBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            AccessControl: Private
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
     FindKeyphrasesRole:
         Type: AWS::IAM::Role
         Properties:
@@ -104,6 +127,14 @@ Resources:
                                 - dynamodb:Query
                             Resource: !GetAtt KeyphrasesTable.Arn
                             Effect: Allow
+                - PolicyName: ParsedContentBucketFetchPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - s3:GetObject
+                            Resource: !Sub "${ParsedContentBucket.Arn}/*"
+                            Effect: Allow
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
     FindKeyphrases:
@@ -116,11 +147,13 @@ Resources:
             Description: Finds the top 5 key words and key phrases and stores them in DynamoDB
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: TextRepositoryLibraryLayer
             Timeout: 30
             MemorySize: 256
             Environment:
                 Variables:
-                    TABLE_NAME: !Ref KeyphrasesTable
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+                    PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
     KeyphrasesCRUD:
         Type: AWS::Serverless::Function
         Properties:
@@ -185,6 +218,14 @@ Resources:
                                 - lambda:InvokeFunction
                             Resource: !GetAtt FindKeyphrases.Arn
                             Effect: Allow
+                - PolicyName: InvokeScrapeURL
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt ScrapeURL.Arn
+                            Effect: Allow
     KeyphraseStateMachine:
         Type: AWS::Serverless::StateMachine
         Properties:
@@ -194,6 +235,7 @@ Resources:
             DefinitionUri: ./keyphrase-state-machine.asl.json
             DefinitionSubstitutions:
                 FindKeyphrasesARN: !GetAtt FindKeyphrases.Arn
+                ScrapeURLARN: !GetAtt ScrapeURL.Arn
             Role: !GetAtt KeyphraseStateMachineRole.Arn
     InvokeKeyphraseStateMachineRole:
         Type: AWS::IAM::Role
@@ -508,3 +550,42 @@ Resources:
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
+    ScrapeURLRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: ParsedContentBucketStorePolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - s3:PutObject
+                            Resource: !Sub "${ParsedContentBucket.Arn}/*"
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    ScrapeURL:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: scrape-url.handler
+            Role: !GetAtt ScrapeURLRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/scrape-url
+            Description: Obtains the content for a given URL, scrapes all text from page then stores result in S3
+            Layers:
+                - Ref: TextRepositoryLibraryLayer
+            Timeout: 10
+            Environment:
+                Variables:
+                    CRAWL_SERVICE_REST_ENDPOINT: !Ref CrawlRESTEndpoint
+                    PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
