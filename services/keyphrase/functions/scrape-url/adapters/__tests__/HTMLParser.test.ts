@@ -62,3 +62,11 @@ test.each([
 
     expect(result).toEqual("This is actual text!");
 });
+
+test("returns the displayed text for a given link without the href attribute", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "link.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("A link!");
+});

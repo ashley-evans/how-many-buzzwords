@@ -1,41 +1,12 @@
-import { Parser } from "htmlparser2";
+import { convert } from "html-to-text";
 
 import HTMLParsingProvider from "../ports/HTMLParsingProvider";
 
-enum UnparsableElements {
-    Script = "script",
-    Style = "style",
-}
-
 class HTMLParser implements HTMLParsingProvider {
     parseHTML(html: string): string {
-        let completeText = "";
-        let skip = false;
-        const parser = new Parser({
-            onopentag: (name) => {
-                const unparsable: string[] = Object.values(UnparsableElements);
-                skip = unparsable.includes(name);
-            },
-            ontext: (text) => {
-                if (!skip) {
-                    completeText = `${completeText} ${this.removeExtraWhitespace(
-                        text
-                    )}`;
-                }
-            },
+        return convert(html, {
+            selectors: [{ selector: "a", options: { ignoreHref: true } }],
         });
-
-        parser.write(html);
-        parser.end();
-        return this.removeSpecialCharacters(completeText).trim();
-    }
-
-    private removeExtraWhitespace(text: string): string {
-        return text.replace(/\s+/g, " ");
-    }
-
-    private removeSpecialCharacters(text: string): string {
-        return text.replace(/\n|\r|\t/g, "");
     }
 }
 
