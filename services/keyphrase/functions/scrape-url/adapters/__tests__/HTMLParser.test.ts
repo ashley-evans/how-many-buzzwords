@@ -55,7 +55,8 @@ test.each([
     ["script", "script.html"],
     ["style", "style.html"],
     ["comment", "comment.html"],
-])("returns text outside of %s elements", (elementType, fileName) => {
+    ["img", "image.html"],
+])("ignores content found in %s elements", (elementType, fileName) => {
     const html = readFile(path.join(ASSET_FOLDER, fileName));
 
     const result = parser.parseHTML(html);
