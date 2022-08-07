@@ -30,18 +30,19 @@ Rel(user, single_page_application, "Views buzzwords and statistics related to a 
 
 Rel_R(content_delivery_network, single_page_application, "Delivers to the user's web browser")
 
-Rel(single_page_application, crawl_microservice, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSocket")
-Rel(single_page_application, keyphrase_microservice, "Listens to results via connection to", "WebSocket")
+Rel(single_page_application, crawl_microservice, "Initiates crawl", "HTTP")
+Rel_U(crawl_microservice, single_page_application, "Sends crawl status updates to", "WebSocket")
+Rel_U(keyphrase_microservice, single_page_application, "Sends keyphrase results to", "WebSocket")
 
-Rel_L(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
-Rel_U(crawl_microservice, crawl_content_db, "Writes to", "S3 Client")
-Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
+Rel(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
+Rel(crawl_microservice, crawl_content_db, "Writes to", "S3 Client")
+Rel_L(crawl_microservice, websites, "Crawls content from", "HTTP")
 
-Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose")
-Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose")
-Rel_U(keyphrase_microservice, parsed_content_db, "Reads from and writes to", "S3 Client")
-Rel_R(crawl_microservice, keyphrase_microservice, "Subscribes to crawl complete events", "Event Bridge")
-Rel_L(keyphrase_microservice, crawl_microservice, "Gets content for analysis using", "HTTP")
+Rel(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose")
+Rel(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose")
+Rel_R(keyphrase_microservice, parsed_content_db, "Reads from and writes to", "S3 Client")
+Rel(crawl_microservice, keyphrase_microservice, "Sends crawl complete events to", "Event Bridge")
+Rel(keyphrase_microservice, crawl_microservice, "Gets content for analysis using", "HTTP")
 
 SHOW_LEGEND()
 
