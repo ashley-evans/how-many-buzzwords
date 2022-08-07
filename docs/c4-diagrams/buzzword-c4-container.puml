@@ -19,6 +19,7 @@ System_Boundary(buzzword_system, "How many Buzzwords System") {
         Container(keyphrase_microservice, "Keyphrase Microservice", "Lambda, TypeScript, Step Functions", "Provides keyphrase analysis and occurrence counting functionality via events on event bus. Enables listening to keyphrase results related to a given URL via WebSocket API")
         ContainerDb(keyphrase_db, "Keyphrase and Occurrence Database", "DynamoDB", "Stores keyphrases found on a given URL and corresponding occurrence counts")
         ContainerDb(active_connections_db, "Active Connections Database", "DynamoDB", "Stores listening WebSocket client details and corresponding URLs")
+        ContainerDb(parsed_content_db, "Parsed Content Database", "S3", "Caches parsed HTML from websites")
     }
 }
 
@@ -38,8 +39,9 @@ Rel(crawl_microservice, websites, "Crawls content using", "HTTP")
 
 Rel_R(keyphrase_microservice, keyphrase_db, "Reads from and writes to", "Dynamoose")
 Rel_U(keyphrase_microservice, active_connections_db, "Reads from and writes to", "Dynamoose")
-Rel_L(keyphrase_microservice, crawl_microservice, "Subscribes to crawl complete events", "Event Bridge")
-Rel(keyphrase_microservice, websites, "Gets content for analysis using", "HTTP")
+Rel_U(keyphrase_microservice, parsed_content_db, "Reads from and writes to", "S3 Client")
+Rel_R(crawl_microservice, keyphrase_microservice, "Subscribes to crawl complete events", "Event Bridge")
+Rel_L(keyphrase_microservice, crawl_microservice, "Gets content for analysis using", "HTTP")
 
 SHOW_LEGEND()
 
