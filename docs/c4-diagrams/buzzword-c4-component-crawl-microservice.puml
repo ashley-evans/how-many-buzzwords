@@ -25,36 +25,40 @@ ContainerDb(content_db, "Content Database", "S3", $descr="Stores page content fo
 
 System_Ext(websites, "Websites", "Any website on the internet")
 
-Rel(single_page_application, graphql_api, "Initiates crawl and subscribes to crawl status via", "HTTP and WebSocket")
+Rel(single_page_application, graphql_api, "Initiates crawl", "HTTP")
 
+Rel(graphql_api, single_page_application, "Sends crawl status updates to", "WebSocket")
 Rel(graphql_api, step_function, "Starts execution")
-Rel_L(graphql_api, get_urls_lambda, "Routes queries against the urls field to")
+Rel(graphql_api, get_urls_lambda, "Routes queries against the urls field to")
 
-Rel_R(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
+Rel(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
 
 Rel(step_function, recent_crawl_lambda, "Uses")
 Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
-Rel(step_function, event_bus, "Sends crawl complete events containing all crawled URLs and status updates to")
+Rel_U(step_function, event_bus, "Sends crawl complete events containing all crawled URLs and status updates to")
 Rel(step_function, update_status_lambda, "Updates crawl status to failure if an error occurs during crawl")
 
 Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(crawl_urls_lambda, url_db, "Writes to", "Dynamoose")
 Rel(crawl_urls_lambda, content_db, "Writes to", "S3 Client")
-Rel(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
+Rel_R(crawl_urls_lambda, websites, "Crawls content using", "HTTP")
 
 Rel(get_urls_lambda, url_db, "Reads from", "Dynamoose")
 
 Rel(get_content_lambda, content_db, "Reads from", "S3 Client")
 
-Rel_R(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
-Rel_L(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
+Rel(publish_urls_lambda, url_db, "Listens to updates from", "DynamoDB Stream")
+Rel_U(publish_urls_lambda, event_bus, "Sends new URL event containing new URL to", "Event Bridge Client")
 
 Rel(update_status_lambda, url_db, "Writes to", "Dynamoose")
-Rel(update_status_lambda, event_bus, "Sends crawl status updates to")
+Rel_U(update_status_lambda, event_bus, "Sends crawl status updates to")
 
-Rel(keyphrase_microservice, event_bus, "Subscribes to crawl complete events from")
-Rel(graphql_api, event_bus, "Subscribes to crawl status updates from")
+Rel_U(event_bus, keyphrase_microservice, "Sends crawl complete events to")
+Rel_U(keyphrase_microservice, api_gateway, "Gets content for analysis using", "HTTP")
+
+Rel_U(event_bus, graphql_api, "Sends crawl status update events to")
+
 
 SHOW_LEGEND()
 
