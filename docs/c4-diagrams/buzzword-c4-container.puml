@@ -32,7 +32,7 @@ Rel_R(content_delivery_network, single_page_application, "Delivers to the user's
 
 Rel(single_page_application, crawl_microservice, "Initiates crawl", "HTTP")
 Rel_U(crawl_microservice, single_page_application, "Sends crawl status updates to", "WebSocket")
-Rel_U(keyphrase_microservice, single_page_application, "Sends keyphrase results to", "WebSocket")
+BiRel_U(keyphrase_microservice, single_page_application, "Subscribes to keyphrase results from", "WebSocket")
 
 Rel(crawl_microservice, crawl_url_db, "Reads from and writes to", "Dynamoose")
 Rel(crawl_microservice, crawl_content_db, "Writes to", "S3 Client")
