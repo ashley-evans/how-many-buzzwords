@@ -1,0 +1,6 @@
+{
+    "name": "buzzword-aws-count-occurrences-domain",
+    "version": "1.0.0",
+    "main": "./index.js",
+    "exports": "./index.js"
+}
