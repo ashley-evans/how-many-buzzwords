@@ -22,17 +22,27 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
             }
 
             const keyphrase = [...keyphrases][0];
-            const matcher = new RegExp(keyphrase, "g");
-            const matches = content.match(matcher);
-
-            await this.keyphraseRepository.storeKeyphrases(
-                url.hostname,
-                url.pathname,
-                { keyphrase: "test", occurrences: matches ? matches.length : 0 }
-            );
+            const matches = this.countMatches(content, keyphrase);
+            if (matches > 0) {
+                await this.keyphraseRepository.storeKeyphrases(
+                    url.hostname,
+                    url.pathname,
+                    {
+                        keyphrase: "test",
+                        occurrences: matches,
+                    }
+                );
+            }
         }
 
         return true;
+    }
+
+    private countMatches(content: string, textToMatch: string): number {
+        const matcher = new RegExp(textToMatch, "g");
+        const matches = content.match(matcher);
+
+        return matches ? matches.length : 0;
     }
 }
 

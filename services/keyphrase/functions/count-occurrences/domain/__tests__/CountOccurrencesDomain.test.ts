@@ -96,3 +96,14 @@ test("stores several occurrences against the URL given multiple matches against 
         expectedKeyphrase
     );
 });
+
+test("does not store any occurrences against the URL given no matches against a single keyphrase", async () => {
+    const keyphrases = new Set(["test"]);
+    mockParsedContentRepository.getPageText.mockResolvedValue(
+        "something different"
+    );
+
+    await domain.countOccurrences(VALID_URL, keyphrases);
+
+    expect(mockKeyphraseRepository.storeKeyphrases).not.toHaveBeenCalled();
+});
