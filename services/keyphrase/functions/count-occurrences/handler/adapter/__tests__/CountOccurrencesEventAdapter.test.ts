@@ -112,3 +112,24 @@ test("returns success if keyphrases are counted successfully", async () => {
 
     expect(actual.success).toBe(true);
 });
+
+test("throws an error if unhandled error is thrown while counting occurrences", async () => {
+    const expectedError = new Error("test");
+    mockPort.countOccurrences.mockRejectedValue(expectedError);
+    const event = createEvent(VALID_URL, create2DArray(1));
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(expectedError);
+});
+
+test("throws an error if the counting of occurrences fails", async () => {
+    mockPort.countOccurrences.mockResolvedValue(false);
+    const event = createEvent(VALID_URL, create2DArray(1));
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(
+        expect.objectContaining({
+            message: "Failed to count keyphrase occurrences.",
+        })
+    );
+});

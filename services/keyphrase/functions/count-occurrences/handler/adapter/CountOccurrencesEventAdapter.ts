@@ -40,11 +40,16 @@ class CountOccurrencesEventAdapter {
         event: Partial<CountOccurrencesEvent>
     ): Promise<CountOccurrencesResponse> {
         const parsedEvent = this.parseEvent(event);
-        await this.port.countOccurrences(
+        const success = await this.port.countOccurrences(
             parsedEvent.url,
             new Set(parsedEvent.keyphrases.flat())
         );
-        return { success: true };
+
+        if (!success) {
+            throw new Error("Failed to count keyphrase occurrences.");
+        }
+
+        return { success };
     }
 
     private parseEvent(event: Partial<CountOccurrencesEvent>): ParsedEvent {
@@ -52,7 +57,7 @@ class CountOccurrencesEventAdapter {
             const validEvent = this.validator.validate(event);
             let url: string = validEvent.url;
             if (!isNaN(parseInt(url))) {
-                throw "Number provided when expecting valid base URL (hostname w/ or w/o protocol).";
+                throw "Number provided when expecting valid URL (hostname w/ or w/o protocol).";
             }
 
             if (!url.startsWith("https://") && !url.startsWith("http://")) {
