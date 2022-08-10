@@ -589,3 +589,52 @@ Resources:
                 Variables:
                     CRAWL_SERVICE_REST_ENDPOINT: !Ref CrawlRESTEndpoint
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
+    CountOccurrencesRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: KeyphrasesTableWritePolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:BatchWriteItem
+                            Resource: !GetAtt KeyphrasesTable.Arn
+                            Effect: Allow
+                - PolicyName: ParsedContentBucketFetchPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - s3:GetObject
+                            Resource: !Sub "${ParsedContentBucket.Arn}/*"
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    CountOccurrences:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: count-occurrences.handler
+            Role: !GetAtt CountOccurrencesRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/count-occurrences
+            Description: Obtains the content for a given URL, counts all occurrences of the provided keyphrases storing the result in DynamoDB
+            Layers:
+                - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: TextRepositoryLibraryLayer
+            Timeout: 10
+            Environment:
+                Variables:
+                    PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
