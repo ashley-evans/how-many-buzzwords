@@ -1,5 +1,8 @@
 import { TextRepository } from "buzzword-aws-text-repository-library";
-import { Repository as KeyphraseRepository } from "buzzword-aws-keyphrase-repository-library";
+import {
+    KeyphraseOccurrences,
+    Repository as KeyphraseRepository,
+} from "buzzword-aws-keyphrase-repository-library";
 
 import CountOccurrencesPort from "./ports/CountOccurrencesPort";
 
@@ -14,23 +17,33 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
         keyphrases: Set<string>
     ): Promise<boolean> {
         if (keyphrases.size > 0) {
-            let content;
+            let content: string;
             try {
                 content = await this.parsedContentRepository.getPageText(url);
             } catch {
                 return false;
             }
 
-            const keyphrase = [...keyphrases][0];
-            const matches = this.countMatches(content, keyphrase);
-            if (matches > 0) {
+            const occurrences: KeyphraseOccurrences[] = [...keyphrases].reduce(
+                (result: KeyphraseOccurrences[], keyphrase) => {
+                    const matches = this.countMatches(content, keyphrase);
+                    if (matches > 0) {
+                        result.push({
+                            keyphrase,
+                            occurrences: matches,
+                        });
+                    }
+
+                    return result;
+                },
+                []
+            );
+
+            if (occurrences.length > 0) {
                 await this.keyphraseRepository.storeKeyphrases(
                     url.hostname,
                     url.pathname,
-                    {
-                        keyphrase: "test",
-                        occurrences: matches,
-                    }
+                    occurrences
                 );
             }
         }

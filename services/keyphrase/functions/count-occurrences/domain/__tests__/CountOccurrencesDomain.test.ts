@@ -74,9 +74,15 @@ test.each([
     ],
     [
         "a single occurrence against the URL given a single match (different casing)",
-        "test",
-        "wibble TEST",
+        "wibble",
+        "WIBBLE test",
         1,
+    ],
+    [
+        "several occurrences against the URL given multiple matches (different casing)",
+        "wibble",
+        "WIBBLE test test test WIBBLE",
+        2,
     ],
 ])(
     "stores %s against a single keyphrase",
@@ -101,18 +107,52 @@ test.each([
         expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledWith(
             VALID_URL.hostname,
             VALID_URL.pathname,
-            expectedKeyphrase
+            [expectedKeyphrase]
         );
     }
 );
 
-test("does not store any occurrences against the URL given no matches against a single keyphrase", async () => {
-    const keyphrases = new Set(["test"]);
+test.each([
+    ["a single keyphrase", ["test"]],
+    ["multiple keyphrases", ["test", "wibble"]],
+])(
+    "does not store any occurrences against the URL given no matches against a single keyphrase",
+    async (message: string, input: string[]) => {
+        const keyphrases = new Set(input);
+        mockParsedContentRepository.getPageText.mockResolvedValue(
+            "something different"
+        );
+
+        await domain.countOccurrences(VALID_URL, keyphrases);
+
+        expect(mockKeyphraseRepository.storeKeyphrases).not.toHaveBeenCalled();
+    }
+);
+
+test("stores multiple occurrences against the URL given matches on multiple words", async () => {
+    const expected: KeyphraseOccurrences[] = [
+        {
+            keyphrase: "test",
+            occurrences: 2,
+        },
+        {
+            keyphrase: "interface",
+            occurrences: 3,
+        },
+    ];
     mockParsedContentRepository.getPageText.mockResolvedValue(
-        "something different"
+        "test test wibble interface interface interface wobble"
     );
 
-    await domain.countOccurrences(VALID_URL, keyphrases);
+    await domain.countOccurrences(
+        VALID_URL,
+        new Set(expected.map((value) => value.keyphrase))
+    );
 
-    expect(mockKeyphraseRepository.storeKeyphrases).not.toHaveBeenCalled();
+    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledTimes(1);
+    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledWith(
+        VALID_URL.hostname,
+        VALID_URL.pathname,
+        expected
+    );
 });
