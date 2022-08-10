@@ -40,11 +40,15 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
             );
 
             if (occurrences.length > 0) {
-                await this.keyphraseRepository.storeKeyphrases(
-                    url.hostname,
-                    url.pathname,
-                    occurrences
-                );
+                try {
+                    return await this.keyphraseRepository.storeKeyphrases(
+                        url.hostname,
+                        url.pathname,
+                        occurrences
+                    );
+                } catch {
+                    return false;
+                }
             }
         }
 

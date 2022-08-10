@@ -156,3 +156,42 @@ test("stores multiple occurrences against the URL given matches on multiple word
         expected
     );
 });
+
+test("returns failure if an unhandled exception occurs while storing keyphrases", async () => {
+    const keyphrase = "test";
+    mockParsedContentRepository.getPageText.mockResolvedValue(keyphrase);
+    mockKeyphraseRepository.storeKeyphrases.mockRejectedValue(new Error());
+
+    const actual = await domain.countOccurrences(
+        VALID_URL,
+        new Set([keyphrase])
+    );
+
+    expect(actual).toBe(false);
+});
+
+test("returns failure if the storage of keyphrases fails", async () => {
+    const keyphrase = "test";
+    mockParsedContentRepository.getPageText.mockResolvedValue(keyphrase);
+    mockKeyphraseRepository.storeKeyphrases.mockResolvedValue(false);
+
+    const actual = await domain.countOccurrences(
+        VALID_URL,
+        new Set([keyphrase])
+    );
+
+    expect(actual).toBe(false);
+});
+
+test("returns success if the storage of keyphrases succeeds", async () => {
+    const keyphrase = "test";
+    mockParsedContentRepository.getPageText.mockResolvedValue(keyphrase);
+    mockKeyphraseRepository.storeKeyphrases.mockResolvedValue(true);
+
+    const actual = await domain.countOccurrences(
+        VALID_URL,
+        new Set([keyphrase])
+    );
+
+    expect(actual).toBe(true);
+});
