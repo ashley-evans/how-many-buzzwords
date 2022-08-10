@@ -1,9 +1,9 @@
-import { CountOccurrencesPort } from "buzzword-aws-count-occurrences-domain";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 
 import CountOccurrencesEvent from "../types/CountOccurrencesEvent";
 import CountOccurrencesResponse from "../types/CountOccurrencesResponse";
+import CountOccurrencesPort from "../ports/CountOccurrencesPort";
 
 type ParsedEvent = {
     url: URL;

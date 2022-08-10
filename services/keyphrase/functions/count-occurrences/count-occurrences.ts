@@ -6,8 +6,8 @@ import {
     Repository,
     KeyphraseRepository,
 } from "buzzword-aws-keyphrase-repository-library";
-import { CountOccurrencesDomain } from "buzzword-aws-count-occurrences-domain";
 
+import CountOccurrencesDomain from "./domain/CountOccurrencesDomain";
 import CountOccurrencesEvent from "./types/CountOccurrencesEvent";
 import CountOccurrencesResponse from "./types/CountOccurrencesResponse";
 import { CountOccurrencesEventAdapter } from "./adapter/CountOccurrencesEventAdapter";

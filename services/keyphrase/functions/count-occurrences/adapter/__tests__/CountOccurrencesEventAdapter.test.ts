@@ -1,8 +1,8 @@
 import { mock } from "jest-mock-extended";
-import { CountOccurrencesPort } from "buzzword-aws-count-occurrences-domain";
 
 import { CountOccurrencesEventAdapter } from "../CountOccurrencesEventAdapter";
 import CountOccurrencesEvent from "../../types/CountOccurrencesEvent";
+import CountOccurrencesPort from "../../ports/CountOccurrencesPort";
 
 const VALID_URL = new URL("https://www.example.com/");
 

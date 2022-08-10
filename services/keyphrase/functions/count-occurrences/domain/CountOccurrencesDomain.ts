@@ -4,7 +4,7 @@ import {
     Repository as KeyphraseRepository,
 } from "buzzword-aws-keyphrase-repository-library";
 
-import CountOccurrencesPort from "./ports/CountOccurrencesPort";
+import CountOccurrencesPort from "../ports/CountOccurrencesPort";
 
 class CountOccurrencesDomain implements CountOccurrencesPort {
     constructor(
