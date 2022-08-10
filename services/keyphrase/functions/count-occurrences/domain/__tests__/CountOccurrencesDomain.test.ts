@@ -59,43 +59,52 @@ test("returns failure if an error occurred while obtaining parsed content for UR
     expect(actual).toBe(false);
 });
 
-test("stores a single occurrence against the URL given a single match against a single keyphrase", async () => {
-    const expectedKeyphrase: KeyphraseOccurrences = {
-        keyphrase: "test",
-        occurrences: 1,
-    };
-    const keyphrases = new Set([expectedKeyphrase.keyphrase]);
-    mockParsedContentRepository.getPageText.mockResolvedValue(
-        expectedKeyphrase.keyphrase
-    );
+test.each([
+    [
+        "a single occurrence against the URL given a single match",
+        "test",
+        "wibble test",
+        1,
+    ],
+    [
+        "several occurrences against the URL given multiple matches",
+        "test",
+        "wibble test test test wibble",
+        3,
+    ],
+    [
+        "a single occurrence against the URL given a single match (different casing)",
+        "test",
+        "wibble TEST",
+        1,
+    ],
+])(
+    "stores %s against a single keyphrase",
+    async (
+        message: string,
+        keyphrase: string,
+        content: string,
+        expectedOccurences: number
+    ) => {
+        const keyphrases = new Set([keyphrase]);
+        mockParsedContentRepository.getPageText.mockResolvedValue(content);
 
-    await domain.countOccurrences(VALID_URL, keyphrases);
+        await domain.countOccurrences(VALID_URL, keyphrases);
 
-    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledTimes(1);
-    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledWith(
-        VALID_URL.hostname,
-        VALID_URL.pathname,
-        expectedKeyphrase
-    );
-});
-
-test("stores several occurrences against the URL given multiple matches against a single keyphrase", async () => {
-    const expectedKeyphrase: KeyphraseOccurrences = {
-        keyphrase: "test",
-        occurrences: 3,
-    };
-    const keyphrases = new Set([expectedKeyphrase.keyphrase]);
-    mockParsedContentRepository.getPageText.mockResolvedValue("test test test");
-
-    await domain.countOccurrences(VALID_URL, keyphrases);
-
-    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledTimes(1);
-    expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledWith(
-        VALID_URL.hostname,
-        VALID_URL.pathname,
-        expectedKeyphrase
-    );
-});
+        const expectedKeyphrase: KeyphraseOccurrences = {
+            keyphrase,
+            occurrences: expectedOccurences,
+        };
+        expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledTimes(
+            1
+        );
+        expect(mockKeyphraseRepository.storeKeyphrases).toHaveBeenCalledWith(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expectedKeyphrase
+        );
+    }
+);
 
 test("does not store any occurrences against the URL given no matches against a single keyphrase", async () => {
     const keyphrases = new Set(["test"]);

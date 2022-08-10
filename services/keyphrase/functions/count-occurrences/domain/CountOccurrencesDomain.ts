@@ -39,7 +39,7 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
     }
 
     private countMatches(content: string, textToMatch: string): number {
-        const matcher = new RegExp(textToMatch, "g");
+        const matcher = new RegExp(textToMatch, "gi");
         const matches = content.match(matcher);
 
         return matches ? matches.length : 0;
