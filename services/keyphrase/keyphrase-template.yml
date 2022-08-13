@@ -136,7 +136,6 @@ Resources:
             CodeUri: ./functions/find-keyphrases
             Description: Finds the top keywords and phrases in parsed HTML content
             Layers:
-                - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
             Environment:
