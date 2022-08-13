@@ -129,14 +129,20 @@ test.each([
     }
 );
 
-test("does not store any occurrences against the URL given keyphrase containing a regular expression", async () => {
-    const keyphrases = new Set([".*"]);
-    mockParsedContentRepository.getPageText.mockResolvedValue("test content");
+test.each([
+    ["keyphrase list contains a regular expression", [".*"], "test content"],
+    ["keyphrase only exists as part of a larger word", ["test"], "testing"],
+])(
+    "does not store any occurrences against the URL given %s",
+    async (message: string, input: string[], content: string) => {
+        const keyphrases = new Set(input);
+        mockParsedContentRepository.getPageText.mockResolvedValue(content);
 
-    await domain.countOccurrences(VALID_URL, keyphrases);
+        await domain.countOccurrences(VALID_URL, keyphrases);
 
-    expect(mockKeyphraseRepository.storeKeyphrases).not.toHaveBeenCalled();
-});
+        expect(mockKeyphraseRepository.storeKeyphrases).not.toHaveBeenCalled();
+    }
+);
 
 test("stores multiple occurrences against the URL given matches on multiple words", async () => {
     const expected: KeyphraseOccurrences[] = [

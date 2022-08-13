@@ -57,7 +57,7 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
     }
 
     private countMatches(content: string, textToMatch: string): number {
-        const matcher = new RegExp(`${escapeRegExp(textToMatch)}`, "gi");
+        const matcher = new RegExp(`\\b${escapeRegExp(textToMatch)}\\b`, "gi");
         const matches = content.match(matcher);
 
         return matches ? matches.length : 0;
