@@ -1,11 +1,11 @@
 {
-    "StartAt": "Find Keyphrases for each URL",
+    "StartAt": "Parse and find keyphrases for each URL",
     "States": {
-        "Find Keyphrases for each URL": {
+        "Parse and find keyphrases for each URL": {
             "Type": "Map",
             "ItemsPath": "$.pathnames",
             "MaxConcurrency": 20,
-            "ResultPath": "$",
+            "ResultPath": "$.keyphrases",
             "Parameters": {
                 "baseURL.$": "$.baseURL",
                 "pathname.$": "$$.Map.Item.Value"
@@ -39,7 +39,6 @@
                         "Retry": [
                             {
                                 "ErrorEquals": [
-                                    "KeyphrasesError",
                                     "Lambda.ServiceException",
                                     "Lambda.AWSLambdaException",
                                     "Lambda.SdkClientException",
