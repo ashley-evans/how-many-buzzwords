@@ -470,7 +470,7 @@ Resources:
             CodeUri: ./functions/new-connection
             Description: Provides new connections with current database state
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 1024
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: WebSocketClientLibraryLayer
