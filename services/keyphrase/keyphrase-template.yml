@@ -138,6 +138,8 @@ Resources:
             Layers:
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
@@ -159,6 +161,8 @@ Resources:
                         Action:
                             - dynamodb:Query
                         Resource: !GetAtt KeyphrasesTable.Arn
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref KeyphrasesTable
@@ -345,6 +349,8 @@ Resources:
             Description: Manages active web socket connections
             Layers:
                 - Ref: ActiveConnectionsRepositoryLibraryLayer
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
@@ -477,6 +483,8 @@ Resources:
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref KeyphrasesTable
@@ -542,6 +550,8 @@ Resources:
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref ActiveConnectionsTable
@@ -580,6 +590,8 @@ Resources:
             Layers:
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     CRAWL_SERVICE_REST_ENDPOINT: !Ref CrawlRESTEndpoint
@@ -629,6 +641,8 @@ Resources:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
