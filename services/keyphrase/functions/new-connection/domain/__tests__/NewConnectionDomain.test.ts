@@ -670,3 +670,34 @@ describe("given duplicate connections", () => {
         expect(response[0]).toEqual(CONNECTION_ID);
     });
 });
+
+test("sends keyphrases in chunks of 100 if more than 100 keyphrases are stored", async () => {
+    jest.resetAllMocks();
+    const expectedFirstChunk = createOccurrences(BASE_URL, 100);
+    const expectedSecondChunk = createOccurrences(BASE_URL, 100);
+    const expectedThirdChunk = createOccurrences(BASE_URL, 1);
+    const connection = createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL);
+    mockRepository.getKeyphrases.mockResolvedValue([
+        ...expectedFirstChunk,
+        ...expectedSecondChunk,
+        ...expectedThirdChunk,
+    ]);
+    mockClientFactory.createClient.mockReturnValue(mockClient);
+    const domain = new NewConnectionDomain(mockClientFactory, mockRepository);
+
+    await domain.provideCurrentKeyphrases(connection);
+
+    expect(mockClient.sendData).toHaveBeenCalledTimes(3);
+    expect(mockClient.sendData).toHaveBeenCalledWith(
+        JSON.stringify(expectedFirstChunk),
+        CONNECTION_ID
+    );
+    expect(mockClient.sendData).toHaveBeenCalledWith(
+        JSON.stringify(expectedSecondChunk),
+        CONNECTION_ID
+    );
+    expect(mockClient.sendData).toHaveBeenCalledWith(
+        JSON.stringify(expectedThirdChunk),
+        CONNECTION_ID
+    );
+});
