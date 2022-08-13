@@ -9,6 +9,8 @@ import {
 
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
 
+const MESSAGE_CHUNK_SIZE = 100;
+
 class NewConnectionDomain implements NewConnectionPort {
     private clients: Map<URL, WebSocketClient>;
 
@@ -90,10 +92,17 @@ class NewConnectionDomain implements NewConnectionPort {
     ): Promise<boolean> {
         if (occurrences && occurrences.length > 0) {
             const client = this.getClient(connection.callbackURL);
-            return client.sendData(
-                JSON.stringify(occurrences),
-                connection.connectionID
+
+            const chunks: PathnameOccurrences[][] = [];
+            for (let i = 0; i < occurrences.length; i += MESSAGE_CHUNK_SIZE) {
+                chunks.push(occurrences.slice(i, i + MESSAGE_CHUNK_SIZE));
+            }
+
+            const promises = chunks.map((chunk) =>
+                client.sendData(JSON.stringify(chunk), connection.connectionID)
             );
+
+            return (await Promise.all(promises)).every(Boolean);
         }
 
         return true;

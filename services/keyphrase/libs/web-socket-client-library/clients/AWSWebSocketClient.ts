@@ -58,7 +58,7 @@ class AWSWebSocketClient implements WebSocketClient {
         try {
             await this.client.send(new PostToConnectionCommand(input));
             console.log(
-                `Successfully sent data: ${data} to connection ID: ${connectionID}`
+                `Successfully sent data to connection ID: ${connectionID}`
             );
 
             return true;
@@ -72,7 +72,7 @@ class AWSWebSocketClient implements WebSocketClient {
             }
 
             console.error(
-                `An error occurred while sending data: ${data} to connection ID: ${connectionID}. Error: "${ex}"`
+                `An error occurred while sending data to connection ID: ${connectionID}. Error: "${ex}"`
             );
 
             throw ex;
