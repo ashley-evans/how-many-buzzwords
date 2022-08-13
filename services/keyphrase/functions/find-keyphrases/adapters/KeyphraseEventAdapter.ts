@@ -4,7 +4,6 @@ import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import KeyphrasesPort from "../ports/KeyphrasePort";
 import {
     KeyphrasesEvent,
-    KeyphrasesResponse,
     KeyphrasePrimaryAdapter,
 } from "../ports/KeyphrasePrimaryAdapter";
 
@@ -28,14 +27,10 @@ class KeyphraseEventAdapter implements KeyphrasePrimaryAdapter {
         this.validator = new AjvValidator(schema);
     }
 
-    async findKeyphrases(
-        event: Partial<KeyphrasesEvent>
-    ): Promise<KeyphrasesResponse> {
+    async findKeyphrases(event: Partial<KeyphrasesEvent>): Promise<string[]> {
         const parsedURL = this.parseEvent(event);
         const keyphrases = await this.keyphraseFinder.findKeyphrases(parsedURL);
-        return {
-            keyphrases: [...keyphrases],
-        };
+        return [...keyphrases];
     }
 
     private parseEvent(event: Partial<KeyphrasesEvent>): URL {

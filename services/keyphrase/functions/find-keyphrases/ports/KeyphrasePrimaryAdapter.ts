@@ -3,14 +3,8 @@ type KeyphrasesEvent = {
     pathname: string;
 };
 
-type KeyphrasesResponse = {
-    keyphrases: string[];
-};
-
 interface KeyphrasePrimaryAdapter {
-    findKeyphrases(
-        event: Partial<KeyphrasesEvent>
-    ): Promise<KeyphrasesResponse>;
+    findKeyphrases(event: Partial<KeyphrasesEvent>): Promise<string[]>;
 }
 
-export { KeyphrasesEvent, KeyphrasesResponse, KeyphrasePrimaryAdapter };
+export { KeyphrasesEvent, KeyphrasePrimaryAdapter };

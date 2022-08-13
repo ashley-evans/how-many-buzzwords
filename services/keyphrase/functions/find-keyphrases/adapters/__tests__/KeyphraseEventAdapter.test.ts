@@ -78,7 +78,7 @@ test("returns keyphrases found from analysis in response", async () => {
 
     const actual = await adapter.findKeyphrases(event);
 
-    expect(actual.keyphrases).toEqual(expected);
+    expect(actual).toEqual(expected);
 });
 
 test("throws an error if an unhandled error is thrown while finding keyphrases", async () => {
