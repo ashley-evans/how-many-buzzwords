@@ -3,6 +3,7 @@ import {
     KeyphraseOccurrences,
     Repository as KeyphraseRepository,
 } from "buzzword-aws-keyphrase-repository-library";
+import escapeRegExp from "lodash.escaperegexp";
 
 import CountOccurrencesPort from "../ports/CountOccurrencesPort";
 
@@ -56,7 +57,7 @@ class CountOccurrencesDomain implements CountOccurrencesPort {
     }
 
     private countMatches(content: string, textToMatch: string): number {
-        const matcher = new RegExp(textToMatch, "gi");
+        const matcher = new RegExp(`${escapeRegExp(textToMatch)}`, "gi");
         const matches = content.match(matcher);
 
         return matches ? matches.length : 0;
