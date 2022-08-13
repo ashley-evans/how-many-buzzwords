@@ -1,5 +1,6 @@
 type CountOccurrencesEvent = {
-    url: string;
+    baseURL: string;
+    pathname: string;
     keyphrases: string[][];
 };
 

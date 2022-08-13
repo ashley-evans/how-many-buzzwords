@@ -13,7 +13,10 @@ type ParsedEvent = {
 const schema: JSONSchemaType<CountOccurrencesEvent> = {
     type: "object",
     properties: {
-        url: {
+        baseURL: {
+            type: "string",
+        },
+        pathname: {
             type: "string",
         },
         keyphrases: {
@@ -26,7 +29,7 @@ const schema: JSONSchemaType<CountOccurrencesEvent> = {
             },
         },
     },
-    required: ["url", "keyphrases"],
+    required: ["baseURL", "pathname", "keyphrases"],
 };
 
 class CountOccurrencesEventAdapter {
@@ -55,17 +58,20 @@ class CountOccurrencesEventAdapter {
     private parseEvent(event: Partial<CountOccurrencesEvent>): ParsedEvent {
         try {
             const validEvent = this.validator.validate(event);
-            let url: string = validEvent.url;
-            if (!isNaN(parseInt(url))) {
-                throw "Number provided when expecting valid URL (hostname w/ or w/o protocol).";
+            let baseURL: string = validEvent.baseURL;
+            if (!isNaN(parseInt(baseURL))) {
+                throw "Number provided when expecting valid base URL (hostname w/ or w/o protocol).";
             }
 
-            if (!url.startsWith("https://") && !url.startsWith("http://")) {
-                url = `https://${url}`;
+            if (
+                !baseURL.startsWith("https://") &&
+                !baseURL.startsWith("http://")
+            ) {
+                baseURL = `https://${baseURL}`;
             }
 
             return {
-                url: new URL(url),
+                url: new URL(`${baseURL}${validEvent.pathname}`),
                 keyphrases: validEvent.keyphrases,
             };
         } catch (ex) {
