@@ -1,146 +1,43 @@
-import {
-    Repository,
-    KeyphraseOccurrences,
-} from "buzzword-aws-keyphrase-repository-library";
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-ignore
+import retext from "retext";
+// @ts-ignore
+import retextPos from "retext-pos";
+// @ts-ignore
+import retextKeywords from "retext-keywords";
+// @ts-ignore
+import toString from "nlcst-to-string";
 import { TextRepository } from "buzzword-aws-text-repository-library";
 
 import KeyphrasesPort from "../ports/KeyphrasePort";
-import {
-    KeyphraseProvider,
-    KeyphraseResponse,
-} from "../ports/KeyphraseProvider";
-import OccurrenceCounter from "../ports/OccurrenceCounter";
 
 class KeyphraseFinder implements KeyphrasesPort {
-    constructor(
-        private parsedContentRepository: TextRepository,
-        private keyphraseProvider: KeyphraseProvider,
-        private occurrenceCounter: OccurrenceCounter,
-        private repository: Repository
-    ) {}
+    constructor(private parsedContentRepository: TextRepository) {}
 
-    async findKeyphrases(url: URL): Promise<boolean> {
-        console.log(`Attempting to find keyphrases at ${url.toString()}`);
-        let content: string;
-        try {
-            content = await this.parsedContentRepository.getPageText(url);
-        } catch (ex) {
-            const errorContent =
-                ex instanceof Error ? ex.message : JSON.stringify(ex);
-
-            console.error(
-                `Error occurred obtaining parsed content: ${errorContent}`
-            );
-
-            return false;
-        }
-
+    async findKeyphrases(url: URL): Promise<Set<string>> {
+        const uniqueKeyphrases = new Set<string>();
+        const content = await this.parsedContentRepository.getPageText(url);
         if (content) {
-            let previousPhrases: KeyphraseOccurrences[];
-            try {
-                previousPhrases = await this.repository.getPathKeyphrases(
-                    url.hostname,
-                    url.pathname
-                );
-            } catch (ex: unknown) {
-                console.error(
-                    "Error occurred during existing keyphrase retrieval: " +
-                        JSON.stringify(ex)
-                );
+            const parsedFile = await retext()
+                .use(retextPos)
+                .use(retextKeywords)
+                .process(content);
 
-                return false;
+            for (const keyword of parsedFile.data.keywords) {
+                const current = toString(keyword.matches[0].node).toLowerCase();
+                uniqueKeyphrases.add(current);
             }
 
-            const occurrences = await this.findKeyphrasesOccurrences(
-                content,
-                previousPhrases
-            );
-
-            if (occurrences.length == 0) {
-                return true;
-            }
-
-            try {
-                return await this.repository.storeKeyphrases(
-                    url.hostname,
-                    url.pathname,
-                    this.addOccurrences(occurrences, previousPhrases)
-                );
-            } catch (ex: unknown) {
-                console.error(
-                    "Error occurred during occurrence storage: " +
-                        JSON.stringify(ex)
-                );
-
-                return false;
+            for (const keyphrase of parsedFile.data.keyphrases) {
+                const current = keyphrase.matches[0].nodes
+                    .map((node: unknown) => toString(node))
+                    .join("")
+                    .toLowerCase();
+                uniqueKeyphrases.add(current);
             }
         }
 
-        return true;
-    }
-
-    private async findKeyphrasesOccurrences(
-        text: string,
-        previousPhrases: KeyphraseOccurrences[]
-    ): Promise<KeyphraseOccurrences[]> {
-        const phrases = await this.keyphraseProvider.findKeyphrases(text);
-
-        const combinedPhrases = this.combinePhrases(
-            phrases,
-            previousPhrases.map((occurence) => occurence.keyphrase)
-        );
-
-        return this.countAllOccurrences(text, combinedPhrases);
-    }
-
-    private combinePhrases(
-        keyphrases: KeyphraseResponse,
-        existing: string[]
-    ): string[] {
-        const allPhrases = [
-            ...keyphrases.keywords,
-            ...keyphrases.keyphrases,
-            ...existing,
-        ];
-
-        return [...new Set(allPhrases)];
-    }
-
-    private countAllOccurrences(
-        text: string,
-        words: string[]
-    ): KeyphraseOccurrences[] {
-        return words.map((word) => this.countOccurrences(text, word));
-    }
-
-    private countOccurrences(text: string, word: string): KeyphraseOccurrences {
-        const occurrences = this.occurrenceCounter.countOccurrences(text, word);
-
-        return {
-            keyphrase: word,
-            occurrences,
-        };
-    }
-
-    private addOccurrences(
-        newOccurrences: KeyphraseOccurrences[],
-        existingOccurrences: KeyphraseOccurrences[]
-    ): KeyphraseOccurrences[] {
-        return newOccurrences.map((occurrence) => {
-            const match = existingOccurrences.find(
-                (x) => x.keyphrase === occurrence.keyphrase
-            );
-            const phrase: KeyphraseOccurrences = {
-                keyphrase: occurrence.keyphrase,
-                occurrences: occurrence.occurrences,
-            };
-
-            if (match) {
-                phrase.occurrences += match.occurrences;
-            }
-
-            return phrase;
-        });
+        return uniqueKeyphrases;
     }
 }
 

@@ -12,7 +12,8 @@ Container_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
     Component(ws_api_gateway, "WebSocket API Gateway", "API Gateway", "Enables bi-directional communication with user via a WebSocket connection, allowing the service to push updates automatically to subscribed users")
     Component(step_function, "Keyphrase Finding Step Function", "Step Functions", "Orchestrates keyphrase analysis and occurrence counting on a set of URLs")
     Component(scrape_url_lambda, "Scrape URL Lambda", "Lambda and TypeScript", "Retrieves and parses HTML content for a given URL")
-    Component(find_keyphrases_lambda, "Find Keyphrases Lambda", "Lambda and TypeScript", "Performs keyphrase analysis and occurrence counting on page content")
+    Component(find_keyphrases_lambda, "Find Keyphrases Lambda", "Lambda and TypeScript", "Performs keyphrase analysis on page content")
+    Component(count_occurrences_lambda, "Count Occurrences Lambda", "Lambda and TypeScript", "Counts the number of occurrences for a set of keyphrases on a given page")
     Component(crud_lambda, "Keyphrases CRUD Lambda", "Lambda and TypeScript", "Provides CRUD functionality for the keyphrase and occurrence data")
     Component(update_connections_lambda, "Update Connections Lambda", "Lambda and TypeScript", "Updates listening clients with relevant changes to the keyphrase and occurrence data")
     Component(new_connection_lambda, "New Connection Lambda", "Lambda and TypeScript", "Provides new clients with the current keyphrase and occurrence data related to their provided URL")
@@ -39,20 +40,23 @@ Rel_U(new_connection_lambda, ws_api_gateway, "Sends current relevant keyphrase a
 
 Rel(crawl_microservice, step_function, "Starts execution upon crawl complete event received")
 
-Rel(step_function, scrape_url_lambda, "Uses")
-Rel(step_function, find_keyphrases_lambda, "Uses")
+Rel(step_function, scrape_url_lambda, "Uses per URL provided")
+Rel(step_function, find_keyphrases_lambda, "Uses per URL provided")
+Rel(step_function, count_occurrences_lambda, "Uses per URL provided")
 
 Rel(scrape_url_lambda, crawl_microservice, "Gets content for analysis using", "HTTP")
 Rel(scrape_url_lambda, parsed_content_db, "Writes to", "S3 Client")
 
-Rel(find_keyphrases_lambda, keyphrase_db, "Writes to", "Dynamoose")
 Rel(find_keyphrases_lambda, parsed_content_db, "Reads from", "S3 Client")
+
+Rel(count_occurrences_lambda, keyphrase_db, "Writes to", "Dynamoose")
+Rel(count_occurrences_lambda, parsed_content_db, "Reads from", "S3 Client")
 
 Rel(update_connections_lambda, keyphrase_db, "Listens to new keyphrases and occurrences from", "DynamoDB Stream")
 Rel(update_connections_lambda, active_connections_db, "Retrieves relevant listening client details from", "Dynamoose")
 Rel_U(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
 
-Lay_R(single_page_application, crawl_microservice)
+Lay_L(single_page_application, crawl_microservice)
 
 SHOW_LEGEND()
 
