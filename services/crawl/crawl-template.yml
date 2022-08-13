@@ -123,6 +123,8 @@ Resources:
                 - Ref: CrawlNodeDependencyLayer
             Timeout: 120
             MemorySize: 2048
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
@@ -189,6 +191,8 @@ Resources:
                     Properties:
                         Stream: !GetAtt URLsTable.StreamArn
                         StartingPosition: LATEST
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
@@ -212,6 +216,8 @@ Resources:
                             - dynamodb:DescribeTable
                             - dynamodb:Query
                         Resource: !GetAtt URLsTable.Arn
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
@@ -272,6 +278,8 @@ Resources:
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
@@ -296,6 +304,8 @@ Resources:
                         Action:
                             - s3:GetObject
                         Resource: !Sub "${CrawlContentBucket.Arn}/*"
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     CONTENT_BUCKET_NAME: !Ref CrawlContentBucket
@@ -720,6 +730,8 @@ Resources:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
             Timeout: 6
+            Architectures:
+                - arm64
             Environment:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
