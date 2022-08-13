@@ -214,6 +214,14 @@ Resources:
                                 - lambda:InvokeFunction
                             Resource: !GetAtt ScrapeURL.Arn
                             Effect: Allow
+                - PolicyName: InvokeCountOccurrences
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt CountOccurrences.Arn
+                            Effect: Allow
     KeyphraseStateMachine:
         Type: AWS::Serverless::StateMachine
         Properties:
@@ -224,6 +232,7 @@ Resources:
             DefinitionSubstitutions:
                 FindKeyphrasesARN: !GetAtt FindKeyphrases.Arn
                 ScrapeURLARN: !GetAtt ScrapeURL.Arn
+                CountOccurrencesARN: !GetAtt CountOccurrences.Arn
             Role: !GetAtt KeyphraseStateMachineRole.Arn
     InvokeKeyphraseStateMachineRole:
         Type: AWS::IAM::Role
@@ -278,7 +287,6 @@ Resources:
                     Name: AWS::Include
                     Parameters:
                         Location: ./keyphrase-openapi.yml
-    # Web socket resources
     ActiveConnectionsTable:
         Type: AWS::DynamoDB::Table
         Properties:

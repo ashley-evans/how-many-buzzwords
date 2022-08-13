@@ -54,6 +54,41 @@
                     }
                 }
             },
+            "Next": "Count keyphrase occurrences for each URL"
+        },
+        "Count keyphrase occurrences for each URL": {
+            "Type": "Map",
+            "ItemsPath": "$.pathnames",
+            "MaxConcurrency": 20,
+            "Parameters": {
+                "baseURL.$": "$.baseURL",
+                "pathname.$": "$$.Map.Item.Value",
+                "keyphrases.$": "$.keyphrases"
+            },
+            "Iterator": {
+                "StartAt": "Count Occurrences",
+                "States": {
+                    "Count Occurrences": {
+                        "Type": "Task",
+                        "Resource": "${CountOccurrencesARN}",
+                        "Retry": [
+                            {
+                                "ErrorEquals": [
+                                    "Lambda.ServiceException",
+                                    "Lambda.AWSLambdaException",
+                                    "Lambda.SdkClientException",
+                                    "Lambda.TooManyRequestsException",
+                                    "Lambda.Unknown"
+                                ],
+                                "IntervalSeconds": 3,
+                                "BackoffRate": 2.0,
+                                "MaxAttempts": 3
+                            }
+                        ],
+                        "End": true
+                    }
+                }
+            },
             "End": true
         }
     }
