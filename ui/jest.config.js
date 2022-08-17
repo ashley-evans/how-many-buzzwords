@@ -6,6 +6,7 @@ module.exports = {
         ".npm-cache",
         "node_modules",
         "__tests__/helpers",
+        "tests",
     ],
     runner: "groups",
     setupFilesAfterEnv: ["<rootDir>/config/jest-setup.ts"],
