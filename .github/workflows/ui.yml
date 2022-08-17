@@ -135,7 +135,7 @@ jobs:
               run: |
                   npm ci
                   npm --prefix ${{ inputs.path }} ci
-                  npx playwright install-deps chromium
+                  npx playwright install
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Browser Component Tests
