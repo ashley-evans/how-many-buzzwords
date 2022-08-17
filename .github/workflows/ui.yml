@@ -121,7 +121,7 @@ jobs:
               run: |
                   ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }} --verbose
     browser-component-test:
-        runs on: ubuntu-latest
+        runs-on: ubuntu-latest
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
