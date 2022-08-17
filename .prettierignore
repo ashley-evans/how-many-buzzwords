@@ -19,3 +19,9 @@ dist/
 # Auto-generated files
 
 schema.d.ts
+
+# Playwright
+
+test-results/
+playwright-report/
+**/playwright/.cache/
