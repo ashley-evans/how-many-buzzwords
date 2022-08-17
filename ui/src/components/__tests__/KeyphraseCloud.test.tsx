@@ -1,6 +1,13 @@
 import React from "react";
 import { render } from "@testing-library/react";
 
+jest.mock("@ant-design/plots", () => ({
+    __esModule: true,
+    WordCloud: () => {
+        return <></>;
+    },
+}));
+
 import KeyphraseCloud from "../KeyphraseCloud";
 import { PathnameOccurrences } from "../../clients/interfaces/KeyphraseServiceClient";
 
@@ -38,19 +45,10 @@ describe("given a single occurrence", () => {
     });
 
     test("renders the word cloud figure", () => {
-        const { getByRole, getByText } = render(
+        const { getByRole } = render(
             <KeyphraseCloud occurrences={occurrences} />
         );
 
         expect(getByRole("figure")).toBeInTheDocument();
-
-        const test = getByText("wibble");
-
-        console.dir(test);
     });
 });
-
-// TODO: Visual differences does not work as the chart is different every time the application is run
-// By converting to SVG, we can use getByText to get the rendered text in the graph
-// We can then check the size of the containing box, ensuring that the containers are larger
-// Past that, I have no idea what to be able test
