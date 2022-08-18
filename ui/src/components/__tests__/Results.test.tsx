@@ -3,13 +3,19 @@ import { render, waitFor, within } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 import { from } from "rxjs";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import path from "path";
 
-import Results from "../Results";
+import { mockComponent } from "./helpers/utils";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
 import {
     KeyphraseServiceClient,
     PathnameOccurrences,
 } from "../../clients/interfaces/KeyphraseServiceClient";
+
+const mockKeyphraseCloud = jest.fn();
+mockComponent(path.join(__dirname, "..", "KeyphraseCloud"), mockKeyphraseCloud);
+
+import Results from "../Results";
 
 const VALID_URL = "http://www.example.com/";
 
@@ -21,6 +27,7 @@ beforeEach(() => {
     mockKeyphraseClient.getConfiguredEndpoint.mockClear();
     mockKeyphraseClient.observeKeyphraseResults.mockClear();
     mockKeyphraseClientFactory.createClient.mockClear();
+    mockKeyphraseCloud.mockClear();
 
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
@@ -46,7 +53,7 @@ test.each([
     ["invalid encoded url (IP)", encodeURIComponent(0)],
 ])(
     "does not create a client to listen to keyphrase occurrence results given an %s",
-    (message: string, url?: string) => {
+    (_message: string, url?: string) => {
         renderWithRouter(
             <Results
                 keyphraseServiceClientFactory={mockKeyphraseClientFactory}
@@ -126,9 +133,23 @@ describe("given valid encoded url", () => {
         );
     });
 
-    test.each([
+    test("provides no keyphrases to keyphrase cloud if no keyphrases returned", async () => {
+        renderWithRouter(
+            <Results
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />,
+            encodeURIComponent(VALID_URL)
+        );
+
+        expect(mockKeyphraseCloud).toHaveBeenCalledTimes(1);
+        expect(mockKeyphraseCloud).toHaveBeenCalledWith({
+            occurrences: [],
+        });
+    });
+
+    describe.each([
         [
-            "a single occurrence detail if a single occurrence",
+            "a single occurrence",
             [
                 {
                     pathname: "/test",
@@ -138,7 +159,7 @@ describe("given valid encoded url", () => {
             ],
         ],
         [
-            "multiple occurrence details if multiple occurrences",
+            "multiple occurrences",
             [
                 {
                     pathname: "/test",
@@ -153,44 +174,70 @@ describe("given valid encoded url", () => {
             ],
         ],
     ])(
-        "renders %s received",
-        async (message: string, expectedOccurrences: PathnameOccurrences[]) => {
-            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
-                from(expectedOccurrences)
-            );
+        "result rendering given %s returned",
+        (message: string, expectedOccurrences: PathnameOccurrences[]) => {
+            beforeEach(() => {
+                mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                    from(expectedOccurrences)
+                );
+            });
 
-            const { queryByText, getByRole } = renderWithRouter(
-                <Results
-                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-                />,
-                encodeURIComponent(VALID_URL)
-            );
-            await waitFor(() =>
-                expect(
-                    queryByText(AWAITING_RESULTS_MESSAGE)
-                ).not.toBeInTheDocument()
-            );
-            const table = getByRole("table");
-
-            for (const expectedOccurrence of expectedOccurrences) {
+            test("renders a result table containing returned occurrences", async () => {
+                const { queryByText, getByRole } = renderWithRouter(
+                    <Results
+                        keyphraseServiceClientFactory={
+                            mockKeyphraseClientFactory
+                        }
+                    />,
+                    encodeURIComponent(VALID_URL)
+                );
                 await waitFor(() =>
                     expect(
-                        within(table).getByRole("cell", {
-                            name: expectedOccurrence.pathname,
-                        })
-                    ).toBeInTheDocument()
+                        queryByText(AWAITING_RESULTS_MESSAGE)
+                    ).not.toBeInTheDocument()
                 );
-                expect(
-                    within(table).getByRole("cell", {
-                        name: expectedOccurrence.keyphrase,
-                    })
-                ).toBeInTheDocument();
-                expect(
-                    within(table).getByRole("cell", {
-                        name: expectedOccurrence.occurrences.toString(),
-                    })
-                ).toBeInTheDocument();
-            }
+                const table = getByRole("table");
+
+                for (const expectedOccurrence of expectedOccurrences) {
+                    await waitFor(() =>
+                        expect(
+                            within(table).getByRole("cell", {
+                                name: expectedOccurrence.pathname,
+                            })
+                        ).toBeInTheDocument()
+                    );
+                    expect(
+                        within(table).getByRole("cell", {
+                            name: expectedOccurrence.keyphrase,
+                        })
+                    ).toBeInTheDocument();
+                    expect(
+                        within(table).getByRole("cell", {
+                            name: expectedOccurrence.occurrences.toString(),
+                        })
+                    ).toBeInTheDocument();
+                }
+            });
+
+            test("provides occurrences to keyphrase cloud", async () => {
+                const { queryByText } = renderWithRouter(
+                    <Results
+                        keyphraseServiceClientFactory={
+                            mockKeyphraseClientFactory
+                        }
+                    />,
+                    encodeURIComponent(VALID_URL)
+                );
+                await waitFor(() =>
+                    expect(
+                        queryByText(AWAITING_RESULTS_MESSAGE)
+                    ).not.toBeInTheDocument()
+                );
+
+                expect(mockKeyphraseCloud).toHaveBeenLastCalledWith({
+                    occurrences: expectedOccurrences,
+                });
+            });
         }
     );
 });

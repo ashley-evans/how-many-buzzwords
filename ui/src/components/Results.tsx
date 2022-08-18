@@ -5,6 +5,7 @@ import { Button, Col, Row, Typography } from "antd";
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import OccurrenceTable from "./OccurrenceTable";
+import KeyphraseCloud from "./KeyphraseCloud";
 
 type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
@@ -52,6 +53,12 @@ function Results(props: ResultsProps) {
                         <Button>
                             <Link to="/">Return to search</Link>
                         </Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col flex="1 1 500px" />
+                    <Col flex="1 0 500px">
+                        <KeyphraseCloud occurrences={occurrences} />
                     </Col>
                 </Row>
                 <Row>
