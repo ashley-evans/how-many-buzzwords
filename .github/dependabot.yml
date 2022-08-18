@@ -1,0 +1,63 @@
+version: 2
+updates:
+    # Root
+    - directory: /
+      package-ecosystem: npm
+    # UI
+    - directory: /ui
+      package-ecosystem: npm
+    # Packages
+    - directory: /packages/crawl-client
+      package-ecosystem: npm
+    - directory: /packages/object-validator
+      package-ecosystem: npm
+    # Crawl Service
+    - directory: /services/crawl
+      package-ecosystem: npm
+    - directory: /services/crawl/libs/content-repository-library
+      package-ecosystem: npm
+    - directory: /services/crawl/libs/urls-repository-library
+      package-ecosystem: npm
+    - directory: /services/crawl/common
+      package-ecosystem: npm
+    - directory: /services/crawl/functions
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/crawl-urls
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/publish-urls
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/recent-crawl
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/update-status
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/urls-crud/functions/get-content
+      package-ecosystem: npm
+    - directory: /services/crawl/functions/urls-crud/functions/get-urls
+      package-ecosystem: npm
+    # Keyphrase Service
+    - directory: /services/keyphrase
+      package-ecosystem: npm
+    - directory: /services/keyphrase/libs/active-connections-repository-library
+      package-ecosystem: npm
+    - directory: /services/keyphrase/libs/keyphrase-repository-library
+      package-ecosystem: npm
+    - directory: /services/keyphrase/libs/text-repository-library
+      package-ecosystem: npm
+    - directory: /services/keyphrase/libs/web-socket-client-library
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/connection-manager
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/count-occurrences
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/find-keyphrases
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/keyphrases-crud
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/new-connection
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/scrape-url
+      package-ecosystem: npm
+    - directory: /services/keyphrase/functions/update-connections
+      package-ecosystem: npm
