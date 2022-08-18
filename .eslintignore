@@ -15,3 +15,9 @@ storage/
 # TSC Output
 
 dist/
+
+# Playwright
+
+test-results/
+playwright-report/
+**/playwright/.cache/

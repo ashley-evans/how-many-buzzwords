@@ -2,16 +2,21 @@ import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 import { from } from "rxjs";
+import path from "path";
 
-import App from "../App";
 import {
     renderWithMockProvider,
     createStatusUpdateMock,
     createStartCrawlMock,
+    mockComponent,
 } from "./helpers/utils";
 import KeyphraseServiceClientFactory from "../../clients/interfaces/KeyphraseServiceClientFactory";
 import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServiceClient";
 import CrawlStatus from "../../enums/CrawlStatus";
+
+mockComponent(path.join(__dirname, "..", "KeyphraseCloud"));
+
+import App from "../App";
 
 const APPLICATION_TITLE = "How many buzzwords";
 const URL_INPUT_LABEL = "URL";

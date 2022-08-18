@@ -45,4 +45,22 @@ function createStartCrawlMock(started: boolean, url: string) {
     };
 }
 
-export { renderWithMockProvider, createStatusUpdateMock, createStartCrawlMock };
+function mockComponent<PropType>(
+    moduleName: string,
+    mockImplementation: jest.Mock = jest.fn()
+) {
+    const mockedComponent = (props: PropType) => {
+        mockImplementation(props);
+
+        return <></>;
+    };
+
+    jest.mock(moduleName, () => mockedComponent);
+}
+
+export {
+    renderWithMockProvider,
+    createStatusUpdateMock,
+    createStartCrawlMock,
+    mockComponent,
+};
