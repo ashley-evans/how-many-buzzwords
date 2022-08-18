@@ -33,6 +33,7 @@ function KeyphraseCloud(props: KeyphraseCloudProps) {
         data: sumUniqueOccurrences(props.occurrences),
         wordField: "keyphrase",
         weightField: "occurrences",
+        colorField: "keyphrase",
         autoFit: false,
         renderer: "svg",
     };
