@@ -2,7 +2,7 @@
     "name": "buzzword-aws-crawl-urls-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@crawlee/cheerio": "3.0.2",
+        "@crawlee/cheerio": "3.0.3",
         "rxjs": "7.4.0"
     }
 }
