@@ -49,9 +49,7 @@ const TEST_BATCH_KEYPHRASES = createRandomOccurrences(26);
 
 const repository = new KeyphraseRepository(TABLE_NAME, true);
 
-beforeEach(() => {
-    jest.resetAllMocks();
-
+beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
@@ -743,6 +741,56 @@ describe("total handling", () => {
             const actual = await repository.deleteTotals(baseURL);
 
             expect(actual).toBe(false);
+        }
+    );
+
+    test("returns failure when storage fails given a single page total", async () => {
+        const putItemSpy = jest.spyOn(dynamoDB, "putItem");
+        putItemSpy.mockImplementation(() => {
+            throw new Error("test error");
+        });
+
+        const actual = await repository.storeTotals(
+            TEST_KEYPHRASES[0],
+            VALID_URL.hostname
+        );
+        putItemSpy.mockRestore();
+
+        expect(actual).toBe(false);
+    });
+
+    test("returns failure when storage fails given multiple page totals", async () => {
+        const putItemSpy = jest.spyOn(dynamoDB, "batchWriteItem");
+        putItemSpy.mockImplementation(() => {
+            throw new Error("test error");
+        });
+
+        const actual = await repository.storeTotals(
+            TEST_KEYPHRASES,
+            VALID_URL.hostname
+        );
+        putItemSpy.mockRestore();
+
+        expect(actual).toBe(false);
+    });
+
+    test.each([
+        ["global totals", undefined],
+        ["page totals", VALID_URL.hostname],
+    ])(
+        "throws an error when an unexpected error occurs while retrieving %s",
+        async (message: string, baseURL?: string) => {
+            const expectedError = new Error("Test Error");
+            const querySpy = jest.spyOn(dynamoDB, "query");
+            querySpy.mockImplementation(() => {
+                throw expectedError;
+            });
+
+            expect.assertions(1);
+            await expect(repository.getTotals(baseURL)).rejects.toEqual(
+                expectedError
+            );
+            querySpy.mockRestore();
         }
     );
 
