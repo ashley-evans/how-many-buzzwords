@@ -1,5 +1,5 @@
 import dynamoose from "dynamoose";
-import { QueryResponse } from "dynamoose/dist/ItemRetriever";
+import { QueryResponse, ScanResponse } from "dynamoose/dist/ItemRetriever";
 
 import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
 import KeyphraseTableConstants from "../enums/KeyphraseTableConstants";
@@ -42,27 +42,29 @@ class KeyphraseRepository implements Repository {
         );
     }
 
-    async deleteKeyphrases(
-        baseURL: string,
-        skPrefix?: string
-    ): Promise<boolean> {
-        const items = await this.queryKeyphrases(baseURL, skPrefix);
-        if (items.length == 0) {
-            return false;
+    async empty(): Promise<boolean> {
+        const keyphrases = (await this.occurrenceModel
+            .scan()
+            .exec()) as ScanResponse<KeyphraseTableOccurrenceItem>;
+        if (keyphrases.length == 0) {
+            return true;
         }
 
-        const batches = this.createBatches(this.convertResponseToKeys(items));
-        const promises = batches.map((batch) =>
-            this.deleteKeyphraseBatch(baseURL, batch)
+        const batches = this.createBatches(
+            this.convertResponseToKeys(keyphrases)
         );
+        const promises = batches.map(async (batch) => {
+            if (batch.length > KeyphraseRepository.BATCH_SIZE) {
+                return false;
+            }
+
+            const result = await this.occurrenceModel.batchDelete(batch);
+            return result.unprocessedItems.length == 0;
+        });
 
         try {
             return (await Promise.all(promises)).every(Boolean);
         } catch (ex) {
-            console.error(
-                `An error occured during keyphrase deletion for URL: ${baseURL}. Error: ${ex}`
-            );
-
             return false;
         }
     }
@@ -144,17 +146,6 @@ class KeyphraseRepository implements Repository {
         }));
     }
 
-    async deleteTotals(baseURL?: string): Promise<boolean> {
-        if (baseURL) {
-            return this.deleteKeyphrases(
-                baseURL,
-                `${KeyphraseTableConstants.TotalKey}#`
-            );
-        }
-
-        return this.deleteKeyphrases(KeyphraseTableConstants.TotalKey);
-    }
-
     async getKeyphraseUsages(keyphrase: string): Promise<string[]> {
         const usages = (await this.totalModel
             .query(KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey)
@@ -189,7 +180,7 @@ class KeyphraseRepository implements Repository {
     }
 
     private convertResponseToKeys(
-        response: QueryResponse<KeyphraseTableOccurrenceItem>
+        response: KeyphraseTableOccurrenceItem[]
     ): KeyphraseOccurrenceKeys[] {
         return response.map((item) => ({
             [KeyphraseTableKeyFields.HashKey]: item.pk,
@@ -241,33 +232,6 @@ class KeyphraseRepository implements Repository {
             sk: `${pathname}#${occurrence.keyphrase}`,
             Occurrences: occurrence.occurrences,
         };
-    }
-
-    private async deleteKeyphraseBatch(
-        baseURL: string,
-        batch: KeyphraseOccurrenceKeys[]
-    ): Promise<boolean> {
-        if (batch.length > KeyphraseRepository.BATCH_SIZE) {
-            return false;
-        }
-
-        const result = await this.occurrenceModel.batchDelete(batch);
-        const success = result.unprocessedItems.length == 0;
-        if (success) {
-            console.log(
-                `Successfully deleted: ${JSON.stringify(batch)} for ${baseURL}`
-            );
-
-            return success;
-        }
-
-        console.error(
-            `Batch write failed to write the following: ${JSON.stringify(
-                result.unprocessedItems
-            )} for ${baseURL}`
-        );
-
-        return false;
     }
 
     private async storeOccurrenceItems(

@@ -83,7 +83,7 @@ describe.each([
         });
 
         afterAll(async () => {
-            await repository.deleteKeyphrases(VALID_URL.hostname);
+            await repository.empty();
         });
     }
 );
@@ -121,7 +121,7 @@ describe("GET ALL: given keyphrases occurrences stored against multiple paths on
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -153,8 +153,7 @@ describe("GET ALL: given keyphrase occurrences stored for multiple URLs", () => 
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
-        await repository.deleteKeyphrases(OTHER_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -189,7 +188,7 @@ describe.each([
         });
 
         afterAll(async () => {
-            await repository.deleteKeyphrases(VALID_URL.hostname);
+            await repository.empty();
         });
     }
 );
@@ -224,7 +223,7 @@ describe("GET PATH: given keyphrase occurrences stored for multiple paths on sam
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -259,8 +258,7 @@ describe("GET PATH: given keyphrase occurrences stored for same path on multiple
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
-        await repository.deleteKeyphrases(OTHER_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -280,8 +278,7 @@ describe("GET TOTAL: Only returns totals related to provided base URL", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteTotals(VALID_URL.hostname);
-        await repository.deleteTotals(OTHER_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -310,9 +307,7 @@ describe.each([
         });
 
         afterAll(async () => {
-            for (const page of pages) {
-                await repository.deleteTotals(page);
-            }
+            await repository.empty();
         });
     }
 );
@@ -336,8 +331,7 @@ describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteTotals(expectedPage);
-        await repository.deleteTotals(OTHER_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -368,7 +362,7 @@ describe("PUT: Stores new keyphrase occurrence", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -405,7 +399,7 @@ describe("PUT: Overwrites existing keyphrase occurrence", () => {
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
+        await repository.empty();
     });
 });
 
@@ -443,7 +437,7 @@ describe.each([
         });
 
         afterAll(async () => {
-            await repository.deleteKeyphrases(VALID_URL.hostname);
+            await repository.empty();
         });
     }
 );
@@ -482,128 +476,13 @@ describe("PUT: Overwrites existing keyphrase occurrences given multiple stored s
     });
 
     afterAll(async () => {
-        await repository.deleteKeyphrases(VALID_URL.hostname);
-    });
-});
-
-describe.each([
-    ["one occurrence", [TEST_KEYPHRASES[0]]],
-    ["less than 25 occurrences", createRandomOccurrences(24)],
-    ["greater than 25 occurrences", createRandomOccurrences(26)],
-])(
-    "DELETE: given %s stored for URL",
-    (message: string, occurrences: KeyphraseOccurrences[]) => {
-        let response: boolean;
-
-        beforeAll(async () => {
-            await repository.storeKeyphrases(
-                VALID_URL.hostname,
-                VALID_URL.pathname,
-                occurrences
-            );
-
-            response = await repository.deleteKeyphrases(VALID_URL.hostname);
-        });
-
-        test("returns no pathnames following deletion", async () => {
-            const result = await repository.getKeyphrases(VALID_URL.hostname);
-
-            expect(result).toHaveLength(0);
-        });
-
-        test("returns success", () => {
-            expect(response).toEqual(true);
-        });
-    }
-);
-
-describe("DELETE: given keyphrases occurrences stored against multiple paths on base URL", () => {
-    const OTHER_PATHNAME = `${VALID_URL.pathname}1`;
-
-    let response: boolean;
-
-    beforeAll(async () => {
-        await repository.storeKeyphrases(
-            VALID_URL.hostname,
-            VALID_URL.pathname,
-            TEST_KEYPHRASES[0]
-        );
-        await repository.storeKeyphrases(
-            VALID_URL.hostname,
-            OTHER_PATHNAME,
-            TEST_KEYPHRASES[1]
-        );
-
-        response = await repository.deleteKeyphrases(VALID_URL.hostname);
-    });
-
-    test("returns no pathnames following deletion", async () => {
-        const result = await repository.getKeyphrases(VALID_URL.hostname);
-
-        expect(result).toHaveLength(0);
-    });
-
-    test("returns success", () => {
-        expect(response).toEqual(true);
-    });
-});
-
-test("DELETE: returns failure given no keyphrase occurrences stored", async () => {
-    const response = await repository.deleteKeyphrases(VALID_URL.hostname);
-
-    expect(response).toEqual(false);
-});
-
-describe("DELETE: only effects associated keyphrase occurrences", () => {
-    const expectedKeyphrase = TEST_KEYPHRASES[1];
-
-    let response: boolean;
-
-    beforeAll(async () => {
-        await repository.storeKeyphrases(
-            VALID_URL.hostname,
-            VALID_URL.pathname,
-            TEST_KEYPHRASES[0]
-        );
-        await repository.storeKeyphrases(
-            OTHER_URL.hostname,
-            OTHER_URL.pathname,
-            expectedKeyphrase
-        );
-
-        response = await repository.deleteKeyphrases(VALID_URL.hostname);
-    });
-
-    test("returns no keyphrase occurrences for affected URL", async () => {
-        const result = await repository.getKeyphrases(VALID_URL.hostname);
-
-        expect(result).toHaveLength(0);
-    });
-
-    test("returns keyphrase occurrences for non-affected URL", async () => {
-        const result = await repository.getKeyphrases(OTHER_URL.hostname);
-
-        expect(result).toHaveLength(1);
-        expect(result[0]).toEqual({
-            pathname: OTHER_URL.pathname,
-            keyphrase: expectedKeyphrase.keyphrase,
-            occurrences: expectedKeyphrase.occurrences,
-        });
-    });
-
-    test("deletion returns success", () => {
-        expect(response).toEqual(true);
-    });
-
-    afterAll(async () => {
-        await repository.deleteKeyphrases(OTHER_URL.hostname);
+        await repository.empty();
     });
 });
 
 describe("total handling", () => {
     beforeEach(async () => {
-        await repository.deleteTotals();
-        await repository.deleteTotals(VALID_URL.hostname);
+        await repository.empty();
     });
 
     test.each([
@@ -695,55 +574,6 @@ describe("total handling", () => {
         expect(stored).toEqual(TEST_KEYPHRASES);
     });
 
-    test.each([
-        ["a single page total", TEST_KEYPHRASES[0]],
-        ["less than 25 totals", TEST_KEYPHRASES],
-        ["greater than 25 totals", TEST_BATCH_KEYPHRASES],
-    ])(
-        "returns success when total deletion succeeds given %s stored",
-        async (
-            message: string,
-            existing: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            await repository.storeTotals(existing, VALID_URL.hostname);
-
-            const actual = await repository.deleteTotals(VALID_URL.hostname);
-
-            expect(actual).toBe(true);
-        }
-    );
-
-    test.each([
-        ["a single page total", TEST_KEYPHRASES[0]],
-        ["less than 25 totals", TEST_KEYPHRASES],
-        ["greater than 25 totals", TEST_BATCH_KEYPHRASES],
-    ])(
-        "removes page totals successfully given %s stored",
-        async (
-            message: string,
-            input: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            await repository.storeTotals(input, VALID_URL.hostname);
-
-            await repository.deleteTotals(VALID_URL.hostname);
-            const stored = await repository.getTotals(VALID_URL.hostname);
-
-            expect(stored).toHaveLength(0);
-        }
-    );
-
-    test.each([
-        ["global totals", undefined],
-        ["page totals", VALID_URL.hostname],
-    ])(
-        "returns failure given no %s stored",
-        async (message: string, baseURL?: string) => {
-            const actual = await repository.deleteTotals(baseURL);
-
-            expect(actual).toBe(false);
-        }
-    );
-
     test("returns failure when storage fails given a single page total", async () => {
         const putItemSpy = jest.spyOn(dynamoDB, "putItem");
         putItemSpy.mockImplementation(() => {
@@ -795,7 +625,80 @@ describe("total handling", () => {
     );
 
     afterEach(async () => {
-        await repository.deleteTotals();
-        await repository.deleteTotals(VALID_URL.hostname);
+        await repository.empty();
     });
+});
+
+describe("Empty table behaviour", () => {
+    describe.each([
+        ["nothing", []],
+        ["a single keyphrase occurrence", TEST_KEYPHRASES[0]],
+        ["less than 25 occurrences", TEST_KEYPHRASES],
+        ["more than 25 occurrences", TEST_BATCH_KEYPHRASES],
+    ])(
+        "Empty clears all keyphrase occurrences given %s stored",
+        (
+            message: string,
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
+        ) => {
+            beforeEach(async () => {
+                await repository.storeKeyphrases(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrences
+                );
+            });
+
+            test("returns success", async () => {
+                const actual = await repository.empty();
+
+                expect(actual).toBe(true);
+            });
+
+            test("empties table of occurrences", async () => {
+                await repository.empty();
+                const actual = await repository.getKeyphrases(
+                    VALID_URL.hostname
+                );
+
+                expect(actual).toHaveLength(0);
+            });
+        }
+    );
+
+    describe.each([
+        ["a single total", TEST_KEYPHRASES[0]],
+        ["less than 25 totals", TEST_KEYPHRASES],
+        ["more than 25 totals", TEST_BATCH_KEYPHRASES],
+    ])(
+        "Empty clears all totals given %s stored",
+        (
+            message: string,
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
+        ) => {
+            beforeEach(async () => {
+                await repository.storeTotals(occurrences, VALID_URL.hostname);
+            });
+
+            test("returns success", async () => {
+                const actual = await repository.empty();
+
+                expect(actual).toBe(true);
+            });
+
+            test("empties table of page totals", async () => {
+                await repository.empty();
+                const actual = await repository.getTotals(VALID_URL.hostname);
+
+                expect(actual).toHaveLength(0);
+            });
+
+            test("empties table of global totals", async () => {
+                await repository.empty();
+                const actual = await repository.getTotals();
+
+                expect(actual).toHaveLength(0);
+            });
+        }
+    );
 });
