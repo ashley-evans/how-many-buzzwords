@@ -2,7 +2,7 @@
     "name": "buzzword-aws-publish-urls-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@aws-sdk/client-eventbridge": "3.55.0",
+        "@aws-sdk/client-eventbridge": "3.154.0",
         "@middy/core": "2.5.4",
         "@middy/validator": "2.5.4"
     }
