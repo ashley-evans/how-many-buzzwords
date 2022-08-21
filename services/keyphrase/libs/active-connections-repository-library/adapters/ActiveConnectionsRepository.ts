@@ -4,7 +4,7 @@ import {
     ActiveConnectionsRepositoryPort,
     Connection,
 } from "../ports/ActiveConnectionsRepositoryPort";
-import ActiveConnectionDocument from "../schemas/ActiveConnectionDocument";
+import ActiveConnectionItem from "../schemas/ActiveConnectionItem";
 import ActiveConnectionSchema from "../schemas/ActiveConnectionSchema";
 import { ActiveConnectionsTableKeyFields } from "../enums/ActiveConnectionsTableFields";
 import ActiveConnectionsTableConstants from "../enums/ActiveConnectionsTableConstants";
@@ -13,25 +13,28 @@ class ActiveConnectionsRepository implements ActiveConnectionsRepositoryPort {
     private activeConnectionModel;
 
     constructor(tableName: string, createTable?: boolean) {
-        this.activeConnectionModel = dynamoose.model<ActiveConnectionDocument>(
-            tableName,
-            ActiveConnectionSchema,
-            { create: createTable || false }
+        this.activeConnectionModel = dynamoose.model<ActiveConnectionItem>(
+            "ActiveConnection",
+            ActiveConnectionSchema
         );
+
+        new dynamoose.Table(tableName, [this.activeConnectionModel], {
+            create: createTable || false,
+        });
     }
 
     async getListeningConnections(baseURL: string): Promise<Connection[]> {
-        const documents = (await this.activeConnectionModel
+        const items = (await this.activeConnectionModel
             .query(ActiveConnectionsTableKeyFields.ListeningURLKey)
             .eq(baseURL)
             .using(
                 ActiveConnectionsTableConstants.ListeningConnectionsIndexName
             )
-            .exec()) as ActiveConnectionDocument[];
+            .exec()) as ActiveConnectionItem[];
 
-        return documents.map((document) => ({
-            connectionID: document.ConnectionID,
-            callbackURL: new URL(document.CallbackURL),
+        return items.map((item) => ({
+            connectionID: item.ConnectionID,
+            callbackURL: new URL(item.CallbackURL),
         }));
     }
 
