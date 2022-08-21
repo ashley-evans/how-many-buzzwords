@@ -15,7 +15,7 @@ const schema = new Schema({
         type: String,
         index: {
             name: ActiveConnectionsTableConstants.ListeningConnectionsIndexName,
-            global: true,
+            type: "global",
             rangeKey: ActiveConnectionsTableKeyFields.ConnectionIDKey,
             project: true,
         },
