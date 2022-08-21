@@ -22,7 +22,7 @@ interface Repository {
         occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
     deleteTotals(baseURL?: string): Promise<boolean>;
-    getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
+    getTotals(baseURL: string): Promise<KeyphraseOccurrences[]>;
     storeTotals(
         totals: KeyphraseOccurrences | KeyphraseOccurrences[],
         baseURL?: string

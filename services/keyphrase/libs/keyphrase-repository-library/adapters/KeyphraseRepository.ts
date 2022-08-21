@@ -112,27 +112,17 @@ class KeyphraseRepository implements Repository {
 
     async storeTotals(
         totals: KeyphraseOccurrences | KeyphraseOccurrences[],
-        baseURL?: string
+        baseURL: string
     ): Promise<boolean> {
-        if (baseURL) {
-            if (Array.isArray(totals)) {
-                const items = totals.map((total) =>
-                    this.createPageTotalItem(baseURL, total)
-                );
-                return this.storePageTotals(items);
-            }
-
-            const item = this.createPageTotalItem(baseURL, totals);
-            return this.storeIndividualPageTotal(item);
-        }
-
         if (Array.isArray(totals)) {
-            const items = totals.map((total) => this.createTotalItem(total));
-            return this.storeOccurrenceItems(items);
+            const items = totals.map((total) =>
+                this.createPageTotalItem(baseURL, total)
+            );
+            return this.storePageTotals(items);
         }
 
-        const item = this.createTotalItem(totals);
-        return this.storeIndividualKeyphrase(item);
+        const item = this.createPageTotalItem(baseURL, totals);
+        return this.storeIndividualPageTotal(item);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -227,16 +217,6 @@ class KeyphraseRepository implements Repository {
 
             return false;
         }
-    }
-
-    private createTotalItem(
-        total: KeyphraseOccurrences
-    ): Partial<KeyphraseTableOccurrenceItem> {
-        return {
-            pk: KeyphraseTableConstants.TotalKey,
-            sk: total.keyphrase,
-            Occurrences: total.occurrences,
-        };
     }
 
     private createPageTotalItem(
