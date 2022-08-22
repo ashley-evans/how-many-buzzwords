@@ -1,7 +1,10 @@
 import dynamoose from "dynamoose";
 import { QueryResponse, ScanResponse } from "dynamoose/dist/ItemRetriever";
 
-import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
+import {
+    KeyphraseTableKeyFields,
+    KeyphraseTableNonKeyFields,
+} from "../enums/KeyphraseTableFields";
 import KeyphraseTableConstants from "../enums/KeyphraseTableConstants";
 import {
     KeyphraseOccurrences,
@@ -273,13 +276,16 @@ class KeyphraseRepository implements Repository {
     ) {
         try {
             const pageTotal = this.createPageTotalItem(baseURL, total);
-            const globalTotal = this.createGlobalTotalItem(total);
+            const globalTotalKey = this.createGlobalTotalKey(total);
             await dynamoose.transaction([
                 this.totalModel.transaction.create(pageTotal, {
                     overwrite: true,
                 }),
-                this.occurrenceModel.transaction.create(globalTotal, {
-                    overwrite: true,
+                this.occurrenceModel.transaction.update(globalTotalKey, {
+                    $ADD: {
+                        [KeyphraseTableNonKeyFields.Occurrences]:
+                            total.occurrences,
+                    },
                 }),
             ]);
 
@@ -308,13 +314,12 @@ class KeyphraseRepository implements Repository {
         };
     }
 
-    private createGlobalTotalItem(
+    private createGlobalTotalKey(
         total: KeyphraseOccurrences
     ): Partial<KeyphraseTableOccurrenceItem> {
         return {
             pk: KeyphraseTableConstants.TotalKey,
             sk: total.keyphrase,
-            Occurrences: total.occurrences,
         };
     }
 

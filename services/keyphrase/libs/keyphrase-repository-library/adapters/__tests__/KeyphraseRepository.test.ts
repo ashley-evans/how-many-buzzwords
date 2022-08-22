@@ -548,53 +548,71 @@ describe("total handling", () => {
     );
 
     describe("existing total storage", () => {
-        test.each([
-            ["page total", VALID_URL.hostname],
-            ["global total", undefined],
-        ])(
-            "overwrites single %s if already exists",
-            async (message: string, baseURL?: string) => {
-                const existingTotal: KeyphraseOccurrences = {
-                    keyphrase: TEST_KEYPHRASES[0].keyphrase,
-                    occurrences: TEST_KEYPHRASES[0].occurrences + 1,
-                };
-                await repository.storeTotals(VALID_URL.hostname, existingTotal);
+        test("overwrites single page total if already exists", async () => {
+            const existingTotal: KeyphraseOccurrences = {
+                keyphrase: TEST_KEYPHRASES[0].keyphrase,
+                occurrences: TEST_KEYPHRASES[0].occurrences + 1,
+            };
+            await repository.storeTotals(VALID_URL.hostname, existingTotal);
 
-                await repository.storeTotals(
-                    VALID_URL.hostname,
-                    TEST_KEYPHRASES[0]
-                );
-                const stored = await repository.getTotals(baseURL);
+            await repository.storeTotals(
+                VALID_URL.hostname,
+                TEST_KEYPHRASES[0]
+            );
+            const stored = await repository.getTotals(VALID_URL.hostname);
 
-                expect(stored).toHaveLength(1);
-                expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
-            }
-        );
+            expect(stored).toHaveLength(1);
+            expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
+        });
 
-        test.each([
-            ["page totals", VALID_URL.hostname],
-            ["global totals", undefined],
-        ])(
-            "overwrites all existing %s given multiple clashing totals",
-            async (message: string, baseURL?: string) => {
-                const existingTotals = TEST_KEYPHRASES.map((keyphrase) => {
-                    keyphrase.occurrences += 1;
-                    return keyphrase;
-                });
-                await repository.storeTotals(
-                    VALID_URL.hostname,
-                    existingTotals
-                );
+        test("overwrites all existing page totals given multiple clashing totals", async () => {
+            const existingTotals = TEST_KEYPHRASES.map((keyphrase) => {
+                keyphrase.occurrences += 1;
+                return keyphrase;
+            });
+            await repository.storeTotals(VALID_URL.hostname, existingTotals);
 
-                await repository.storeTotals(
-                    VALID_URL.hostname,
-                    TEST_KEYPHRASES
-                );
-                const stored = await repository.getTotals(baseURL);
+            await repository.storeTotals(VALID_URL.hostname, TEST_KEYPHRASES);
+            const stored = await repository.getTotals(VALID_URL.hostname);
 
-                expect(stored).toEqual(TEST_KEYPHRASES);
-            }
-        );
+            expect(stored).toEqual(TEST_KEYPHRASES);
+        });
+
+        test("increments existing global keyphrase total given a new occurrence on a different base URL", async () => {
+            await repository.storeTotals(
+                VALID_URL.hostname,
+                TEST_KEYPHRASES[0]
+            );
+
+            await repository.storeTotals(
+                OTHER_URL.hostname,
+                TEST_KEYPHRASES[0]
+            );
+            const stored = await repository.getTotals();
+
+            expect(stored).toHaveLength(1);
+            expect(stored[0]).toEqual({
+                keyphrase: TEST_KEYPHRASES[0].keyphrase,
+                occurrences: TEST_KEYPHRASES[0].occurrences * 2,
+            });
+        });
+
+        test("increments existing global keyphrase totals given new occurrences on a different base URL", async () => {
+            await repository.storeTotals(VALID_URL.hostname, TEST_KEYPHRASES);
+
+            await repository.storeTotals(OTHER_URL.hostname, TEST_KEYPHRASES);
+            const stored = await repository.getTotals();
+
+            expect(stored).toHaveLength(2);
+            expect(stored[0]).toEqual({
+                keyphrase: TEST_KEYPHRASES[0].keyphrase,
+                occurrences: TEST_KEYPHRASES[0].occurrences * 2,
+            });
+            expect(stored[1]).toEqual({
+                keyphrase: TEST_KEYPHRASES[1].keyphrase,
+                occurrences: TEST_KEYPHRASES[1].occurrences * 2,
+            });
+        });
     });
 
     test("returns failure when storage fails given a single total", async () => {
