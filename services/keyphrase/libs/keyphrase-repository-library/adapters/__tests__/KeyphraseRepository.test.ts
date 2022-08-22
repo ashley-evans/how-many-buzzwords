@@ -485,27 +485,8 @@ describe("total handling", () => {
         await repository.empty();
     });
 
-    test.each([
-        ["a single page total", TEST_KEYPHRASES[0]],
-        ["less than 25 totals", TEST_KEYPHRASES],
-        ["greater than 25 totals", TEST_BATCH_KEYPHRASES],
-    ])(
-        "returns success when total storage succeeds given %s that have not been stored before",
-        async (
-            message: string,
-            pageTotals: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            const actual = await repository.storeTotals(
-                pageTotals,
-                VALID_URL.hostname
-            );
-
-            expect(actual).toBe(true);
-        }
-    );
-
-    test.each([
-        ["a single page total", TEST_KEYPHRASES[0], [TEST_KEYPHRASES[0]]],
+    describe.each([
+        ["a single total", TEST_KEYPHRASES[0], [TEST_KEYPHRASES[0]]],
         ["less than 25 totals", TEST_KEYPHRASES, TEST_KEYPHRASES],
         [
             "greater than 25 totals",
@@ -513,23 +494,42 @@ describe("total handling", () => {
             TEST_BATCH_KEYPHRASES,
         ],
     ])(
-        "stores page totals successfully given %s that have been stored before",
-        async (
+        "new total storage given %s",
+        (
             message: string,
             input: KeyphraseOccurrences | KeyphraseOccurrences[],
             expected: KeyphraseOccurrences[]
         ) => {
-            await repository.storeTotals(input, VALID_URL.hostname);
+            test("returns success when total storage succeeds", async () => {
+                const actual = await repository.storeTotals(
+                    input,
+                    VALID_URL.hostname
+                );
 
-            const stored = await repository.getTotals(VALID_URL.hostname);
+                expect(actual).toBe(true);
+            });
 
-            expect(stored).toEqual(expect.arrayContaining(expected));
+            test("stores page totals successfully", async () => {
+                await repository.storeTotals(input, VALID_URL.hostname);
+
+                const stored = await repository.getTotals(VALID_URL.hostname);
+
+                expect(stored).toEqual(expect.arrayContaining(expected));
+            });
+
+            test("stores global total successfully", async () => {
+                await repository.storeTotals(input, VALID_URL.hostname);
+
+                const stored = await repository.getTotals();
+
+                expect(stored).toEqual(expect.arrayContaining(expected));
+            });
         }
     );
 
     test.each([
-        ["a single page total", TEST_KEYPHRASES[0]],
-        ["multiple page totals", TEST_KEYPHRASES],
+        ["a single total", TEST_KEYPHRASES[0]],
+        ["multiple totals", TEST_KEYPHRASES],
     ])(
         "returns success when total storage succeeds given %s that have been stored before",
         async (
@@ -547,35 +547,58 @@ describe("total handling", () => {
         }
     );
 
-    test("overwrites single page total if already exists", async () => {
-        const existingTotal: KeyphraseOccurrences = {
-            keyphrase: TEST_KEYPHRASES[0].keyphrase,
-            occurrences: TEST_KEYPHRASES[0].occurrences + 1,
-        };
-        await repository.storeTotals(existingTotal, VALID_URL.hostname);
+    describe("existing total storage", () => {
+        test.each([
+            ["page total", VALID_URL.hostname],
+            ["global total", undefined],
+        ])(
+            "overwrites single %s if already exists",
+            async (message: string, baseURL?: string) => {
+                const existingTotal: KeyphraseOccurrences = {
+                    keyphrase: TEST_KEYPHRASES[0].keyphrase,
+                    occurrences: TEST_KEYPHRASES[0].occurrences + 1,
+                };
+                await repository.storeTotals(existingTotal, VALID_URL.hostname);
 
-        await repository.storeTotals(TEST_KEYPHRASES[0], VALID_URL.hostname);
-        const stored = await repository.getTotals(VALID_URL.hostname);
+                await repository.storeTotals(
+                    TEST_KEYPHRASES[0],
+                    VALID_URL.hostname
+                );
+                const stored = await repository.getTotals(baseURL);
 
-        expect(stored).toHaveLength(1);
-        expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
+                expect(stored).toHaveLength(1);
+                expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
+            }
+        );
+
+        test.each([
+            ["page totals", VALID_URL.hostname],
+            ["global totals", undefined],
+        ])(
+            "overwrites all existing %s given multiple clashing totals",
+            async (message: string, baseURL?: string) => {
+                const existingTotals = TEST_KEYPHRASES.map((keyphrase) => {
+                    keyphrase.occurrences += 1;
+                    return keyphrase;
+                });
+                await repository.storeTotals(
+                    existingTotals,
+                    VALID_URL.hostname
+                );
+
+                await repository.storeTotals(
+                    TEST_KEYPHRASES,
+                    VALID_URL.hostname
+                );
+                const stored = await repository.getTotals(baseURL);
+
+                expect(stored).toEqual(TEST_KEYPHRASES);
+            }
+        );
     });
 
-    test("overwrites all exisiting page totals given multiple clashing totals", async () => {
-        const existingTotals = TEST_KEYPHRASES.map((keyphrase) => {
-            keyphrase.occurrences += 1;
-            return keyphrase;
-        });
-        await repository.storeTotals(existingTotals, VALID_URL.hostname);
-
-        await repository.storeTotals(TEST_KEYPHRASES, VALID_URL.hostname);
-        const stored = await repository.getTotals(VALID_URL.hostname);
-
-        expect(stored).toEqual(TEST_KEYPHRASES);
-    });
-
-    test("returns failure when storage fails given a single page total", async () => {
-        const putItemSpy = jest.spyOn(dynamoDB, "putItem");
+    test("returns failure when storage fails given a single total", async () => {
+        const putItemSpy = jest.spyOn(dynamoDB, "transactWriteItems");
         putItemSpy.mockImplementation(() => {
             throw new Error("test error");
         });
@@ -589,8 +612,8 @@ describe("total handling", () => {
         expect(actual).toBe(false);
     });
 
-    test("returns failure when storage fails given multiple page totals", async () => {
-        const putItemSpy = jest.spyOn(dynamoDB, "batchWriteItem");
+    test("returns failure when storage fails given multiple totals", async () => {
+        const putItemSpy = jest.spyOn(dynamoDB, "transactWriteItems");
         putItemSpy.mockImplementation(() => {
             throw new Error("test error");
         });
@@ -629,7 +652,7 @@ describe("total handling", () => {
     });
 });
 
-describe("Empty table behaviour", () => {
+describe("empty table behaviour", () => {
     describe.each([
         ["nothing", []],
         ["a single keyphrase occurrence", TEST_KEYPHRASES[0]],
