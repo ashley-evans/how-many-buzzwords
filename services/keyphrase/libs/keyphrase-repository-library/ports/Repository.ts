@@ -21,7 +21,7 @@ interface Repository {
         pathname: string,
         occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
-    getTotals(baseURL: string): Promise<KeyphraseOccurrences[]>;
+    getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
     storeTotals(
         baseURL: string,
         totals: KeyphraseOccurrences | KeyphraseOccurrences[]
