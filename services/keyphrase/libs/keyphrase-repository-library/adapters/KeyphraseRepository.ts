@@ -113,8 +113,8 @@ class KeyphraseRepository implements Repository {
     }
 
     async storeTotals(
-        totals: KeyphraseOccurrences | KeyphraseOccurrences[],
-        baseURL: string
+        baseURL: string,
+        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean> {
         if (Array.isArray(totals)) {
             const promises = totals.map((total) =>

@@ -23,8 +23,8 @@ interface Repository {
     ): Promise<boolean>;
     getTotals(baseURL: string): Promise<KeyphraseOccurrences[]>;
     storeTotals(
-        totals: KeyphraseOccurrences | KeyphraseOccurrences[],
-        baseURL?: string
+        baseURL: string,
+        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
 }
