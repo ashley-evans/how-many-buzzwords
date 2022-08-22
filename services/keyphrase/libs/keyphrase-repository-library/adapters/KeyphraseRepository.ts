@@ -115,7 +115,7 @@ class KeyphraseRepository implements Repository {
         return this.storeIndividualKeyphrase(item);
     }
 
-    async storeTotals(
+    async addTotals(
         baseURL: string,
         totals: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean> {

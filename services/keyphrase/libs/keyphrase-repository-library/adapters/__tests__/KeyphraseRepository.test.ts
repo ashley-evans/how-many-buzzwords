@@ -266,8 +266,8 @@ describe("GET TOTAL: Only returns totals related to provided base URL", () => {
     const expectedTotal = TEST_KEYPHRASES[0];
 
     beforeAll(async () => {
-        await repository.storeTotals(VALID_URL.hostname, expectedTotal);
-        await repository.storeTotals(OTHER_URL.hostname, TEST_KEYPHRASES[1]);
+        await repository.addTotals(VALID_URL.hostname, expectedTotal);
+        await repository.addTotals(OTHER_URL.hostname, TEST_KEYPHRASES[1]);
     });
 
     test("get returns only totals associated with provied base URL", async () => {
@@ -293,7 +293,7 @@ describe.each([
 
         beforeAll(async () => {
             for (const page of pages) {
-                await repository.storeTotals(page, expectedKeyphrase);
+                await repository.addTotals(page, expectedKeyphrase);
             }
         });
 
@@ -317,8 +317,8 @@ describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
     const expectedPage = VALID_URL.hostname;
 
     beforeAll(async () => {
-        await repository.storeTotals(expectedPage, expectedKeyphrase);
-        await repository.storeTotals(OTHER_URL.hostname, TEST_KEYPHRASES[1]);
+        await repository.addTotals(expectedPage, expectedKeyphrase);
+        await repository.addTotals(OTHER_URL.hostname, TEST_KEYPHRASES[1]);
     });
 
     test("get returns only totals associated with provided base URL", async () => {
@@ -501,7 +501,7 @@ describe("total handling", () => {
             expected: KeyphraseOccurrences[]
         ) => {
             test("returns success when total storage succeeds", async () => {
-                const actual = await repository.storeTotals(
+                const actual = await repository.addTotals(
                     VALID_URL.hostname,
                     input
                 );
@@ -510,7 +510,7 @@ describe("total handling", () => {
             });
 
             test("stores page totals successfully", async () => {
-                await repository.storeTotals(VALID_URL.hostname, input);
+                await repository.addTotals(VALID_URL.hostname, input);
 
                 const stored = await repository.getTotals(VALID_URL.hostname);
 
@@ -518,7 +518,7 @@ describe("total handling", () => {
             });
 
             test("stores global total successfully", async () => {
-                await repository.storeTotals(VALID_URL.hostname, input);
+                await repository.addTotals(VALID_URL.hostname, input);
 
                 const stored = await repository.getTotals();
 
@@ -536,9 +536,9 @@ describe("total handling", () => {
             message: string,
             pageTotals: KeyphraseOccurrences | KeyphraseOccurrences[]
         ) => {
-            await repository.storeTotals(VALID_URL.hostname, pageTotals);
+            await repository.addTotals(VALID_URL.hostname, pageTotals);
 
-            const actual = await repository.storeTotals(
+            const actual = await repository.addTotals(
                 VALID_URL.hostname,
                 pageTotals
             );
@@ -553,12 +553,9 @@ describe("total handling", () => {
                 keyphrase: TEST_KEYPHRASES[0].keyphrase,
                 occurrences: TEST_KEYPHRASES[0].occurrences + 1,
             };
-            await repository.storeTotals(VALID_URL.hostname, existingTotal);
+            await repository.addTotals(VALID_URL.hostname, existingTotal);
 
-            await repository.storeTotals(
-                VALID_URL.hostname,
-                TEST_KEYPHRASES[0]
-            );
+            await repository.addTotals(VALID_URL.hostname, TEST_KEYPHRASES[0]);
             const stored = await repository.getTotals(VALID_URL.hostname);
 
             expect(stored).toHaveLength(1);
@@ -570,24 +567,18 @@ describe("total handling", () => {
                 keyphrase.occurrences += 1;
                 return keyphrase;
             });
-            await repository.storeTotals(VALID_URL.hostname, existingTotals);
+            await repository.addTotals(VALID_URL.hostname, existingTotals);
 
-            await repository.storeTotals(VALID_URL.hostname, TEST_KEYPHRASES);
+            await repository.addTotals(VALID_URL.hostname, TEST_KEYPHRASES);
             const stored = await repository.getTotals(VALID_URL.hostname);
 
             expect(stored).toEqual(TEST_KEYPHRASES);
         });
 
         test("increments existing global keyphrase total given a new occurrence on a different base URL", async () => {
-            await repository.storeTotals(
-                VALID_URL.hostname,
-                TEST_KEYPHRASES[0]
-            );
+            await repository.addTotals(VALID_URL.hostname, TEST_KEYPHRASES[0]);
 
-            await repository.storeTotals(
-                OTHER_URL.hostname,
-                TEST_KEYPHRASES[0]
-            );
+            await repository.addTotals(OTHER_URL.hostname, TEST_KEYPHRASES[0]);
             const stored = await repository.getTotals();
 
             expect(stored).toHaveLength(1);
@@ -598,9 +589,9 @@ describe("total handling", () => {
         });
 
         test("increments existing global keyphrase totals given new occurrences on a different base URL", async () => {
-            await repository.storeTotals(VALID_URL.hostname, TEST_KEYPHRASES);
+            await repository.addTotals(VALID_URL.hostname, TEST_KEYPHRASES);
 
-            await repository.storeTotals(OTHER_URL.hostname, TEST_KEYPHRASES);
+            await repository.addTotals(OTHER_URL.hostname, TEST_KEYPHRASES);
             const stored = await repository.getTotals();
 
             expect(stored).toHaveLength(2);
@@ -621,7 +612,7 @@ describe("total handling", () => {
             throw new Error("test error");
         });
 
-        const actual = await repository.storeTotals(
+        const actual = await repository.addTotals(
             VALID_URL.hostname,
             TEST_KEYPHRASES[0]
         );
@@ -636,7 +627,7 @@ describe("total handling", () => {
             throw new Error("test error");
         });
 
-        const actual = await repository.storeTotals(
+        const actual = await repository.addTotals(
             VALID_URL.hostname,
             TEST_KEYPHRASES
         );
@@ -718,7 +709,7 @@ describe("empty table behaviour", () => {
             occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
         ) => {
             beforeEach(async () => {
-                await repository.storeTotals(VALID_URL.hostname, occurrences);
+                await repository.addTotals(VALID_URL.hostname, occurrences);
             });
 
             test("returns success", async () => {
