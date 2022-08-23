@@ -1,7 +1,10 @@
 import dynamoose from "dynamoose";
 import { QueryResponse, ScanResponse } from "dynamoose/dist/ItemRetriever";
 
-import { KeyphraseTableKeyFields } from "../enums/KeyphraseTableFields";
+import {
+    KeyphraseTableKeyFields,
+    KeyphraseTableNonKeyFields,
+} from "../enums/KeyphraseTableFields";
 import KeyphraseTableConstants from "../enums/KeyphraseTableConstants";
 import {
     KeyphraseOccurrences,
@@ -112,19 +115,19 @@ class KeyphraseRepository implements Repository {
         return this.storeIndividualKeyphrase(item);
     }
 
-    async storeTotals(
+    async addTotals(
         baseURL: string,
         totals: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean> {
         if (Array.isArray(totals)) {
             const promises = totals.map((total) =>
-                this.storeIndividualTotal(baseURL, total)
+                this.addIndividualTotal(baseURL, total)
             );
 
             return (await Promise.all(promises)).every(Boolean);
         }
 
-        return this.storeIndividualTotal(baseURL, totals);
+        return this.addIndividualTotal(baseURL, totals);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -267,27 +270,36 @@ class KeyphraseRepository implements Repository {
         return false;
     }
 
-    private async storeIndividualTotal(
+    private async addIndividualTotal(
         baseURL: string,
         total: KeyphraseOccurrences
     ) {
         try {
-            const pageTotal = this.createPageTotalItem(baseURL, total);
-            const globalTotal = this.createGlobalTotalItem(total);
+            const siteTotalKey = this.createSiteTotalKey(baseURL, total);
+            const globalTotalKey = this.createGlobalTotalKey(total);
             await dynamoose.transaction([
-                this.totalModel.transaction.create(pageTotal, {
-                    overwrite: true,
+                this.totalModel.transaction.update(siteTotalKey, {
+                    $ADD: {
+                        [KeyphraseTableNonKeyFields.Occurrences]:
+                            total.occurrences,
+                    },
+                    $SET: {
+                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
+                    },
                 }),
-                this.occurrenceModel.transaction.create(globalTotal, {
-                    overwrite: true,
+                this.occurrenceModel.transaction.update(globalTotalKey, {
+                    $ADD: {
+                        [KeyphraseTableNonKeyFields.Occurrences]:
+                            total.occurrences,
+                    },
                 }),
             ]);
 
-            console.log(`Successfully stored: ${JSON.stringify(total)}`);
+            console.log(`Successfully updated total: ${JSON.stringify(total)}`);
             return true;
         } catch (ex) {
             console.error(
-                `An error occurred during the storage of ${JSON.stringify(
+                `An error occurred during the total update of ${JSON.stringify(
                     total
                 )}. Error: ${ex}`
             );
@@ -296,25 +308,22 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    private createPageTotalItem(
+    private createSiteTotalKey(
         baseURL: string,
         total: KeyphraseOccurrences
     ): Partial<KeyphraseTableTotalItem> {
         return {
             pk: baseURL,
             sk: `${KeyphraseTableConstants.TotalKey}#${total.keyphrase}`,
-            Occurrences: total.occurrences,
-            kui_pk: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
         };
     }
 
-    private createGlobalTotalItem(
+    private createGlobalTotalKey(
         total: KeyphraseOccurrences
     ): Partial<KeyphraseTableOccurrenceItem> {
         return {
             pk: KeyphraseTableConstants.TotalKey,
             sk: total.keyphrase,
-            Occurrences: total.occurrences,
         };
     }
 
