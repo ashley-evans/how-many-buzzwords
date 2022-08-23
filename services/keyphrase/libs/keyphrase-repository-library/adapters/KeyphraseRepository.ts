@@ -121,13 +121,13 @@ class KeyphraseRepository implements Repository {
     ): Promise<boolean> {
         if (Array.isArray(totals)) {
             const promises = totals.map((total) =>
-                this.storeIndividualTotal(baseURL, total)
+                this.addIndividualTotal(baseURL, total)
             );
 
             return (await Promise.all(promises)).every(Boolean);
         }
 
-        return this.storeIndividualTotal(baseURL, totals);
+        return this.addIndividualTotal(baseURL, totals);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -270,16 +270,22 @@ class KeyphraseRepository implements Repository {
         return false;
     }
 
-    private async storeIndividualTotal(
+    private async addIndividualTotal(
         baseURL: string,
         total: KeyphraseOccurrences
     ) {
         try {
-            const pageTotal = this.createPageTotalItem(baseURL, total);
+            const siteTotalKey = this.createSiteTotalKey(baseURL, total);
             const globalTotalKey = this.createGlobalTotalKey(total);
             await dynamoose.transaction([
-                this.totalModel.transaction.create(pageTotal, {
-                    overwrite: true,
+                this.totalModel.transaction.update(siteTotalKey, {
+                    $ADD: {
+                        [KeyphraseTableNonKeyFields.Occurrences]:
+                            total.occurrences,
+                    },
+                    $SET: {
+                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
+                    },
                 }),
                 this.occurrenceModel.transaction.update(globalTotalKey, {
                     $ADD: {
@@ -289,11 +295,11 @@ class KeyphraseRepository implements Repository {
                 }),
             ]);
 
-            console.log(`Successfully stored: ${JSON.stringify(total)}`);
+            console.log(`Successfully updated total: ${JSON.stringify(total)}`);
             return true;
         } catch (ex) {
             console.error(
-                `An error occurred during the storage of ${JSON.stringify(
+                `An error occurred during the total update of ${JSON.stringify(
                     total
                 )}. Error: ${ex}`
             );
@@ -302,15 +308,13 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    private createPageTotalItem(
+    private createSiteTotalKey(
         baseURL: string,
         total: KeyphraseOccurrences
     ): Partial<KeyphraseTableTotalItem> {
         return {
             pk: baseURL,
             sk: `${KeyphraseTableConstants.TotalKey}#${total.keyphrase}`,
-            Occurrences: total.occurrences,
-            kui_pk: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
         };
     }
 
