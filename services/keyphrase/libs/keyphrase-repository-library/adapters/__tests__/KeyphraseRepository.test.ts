@@ -283,27 +283,27 @@ describe("GET TOTAL: Only returns totals related to provided base URL", () => {
 });
 
 describe.each([
-    ["no pages", []],
-    ["one page", [VALID_URL.hostname]],
-    ["multiple pages", [VALID_URL.hostname, OTHER_URL.hostname]],
+    ["no sites", []],
+    ["one site", [VALID_URL.hostname]],
+    ["multiple sites", [VALID_URL.hostname, OTHER_URL.hostname]],
 ])(
     "GET USAGES: given keyphrase used on %s",
-    (message: string, pages: string[]) => {
+    (message: string, sites: string[]) => {
         const expectedKeyphrase = TEST_KEYPHRASES[0];
 
         beforeAll(async () => {
-            for (const page of pages) {
-                await repository.addTotals(page, expectedKeyphrase);
+            for (const site of sites) {
+                await repository.addTotals(site, expectedKeyphrase);
             }
         });
 
-        test("get returns all pages keyphrase is used on", async () => {
+        test("get returns all sites keyphrase is used on", async () => {
             const response = await repository.getKeyphraseUsages(
                 expectedKeyphrase.keyphrase
             );
 
-            expect(response).toHaveLength(pages.length);
-            expect(response).toEqual(pages);
+            expect(response).toHaveLength(sites.length);
+            expect(response).toEqual(sites);
         });
 
         afterAll(async () => {
@@ -314,10 +314,10 @@ describe.each([
 
 describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
     const expectedKeyphrase = TEST_KEYPHRASES[0];
-    const expectedPage = VALID_URL.hostname;
+    const expectedSite = VALID_URL.hostname;
 
     beforeAll(async () => {
-        await repository.addTotals(expectedPage, expectedKeyphrase);
+        await repository.addTotals(expectedSite, expectedKeyphrase);
         await repository.addTotals(OTHER_URL.hostname, TEST_KEYPHRASES[1]);
     });
 
@@ -327,7 +327,7 @@ describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
         );
 
         expect(response).toHaveLength(1);
-        expect(response[0]).toEqual(expectedPage);
+        expect(response[0]).toEqual(expectedSite);
     });
 
     afterAll(async () => {
@@ -509,7 +509,7 @@ describe("total handling", () => {
                 expect(actual).toBe(true);
             });
 
-            test("stores page totals successfully", async () => {
+            test("stores site totals successfully", async () => {
                 await repository.addTotals(VALID_URL.hostname, input);
 
                 const stored = await repository.getTotals(VALID_URL.hostname);
@@ -534,13 +534,13 @@ describe("total handling", () => {
         "returns success when total storage succeeds given %s that have been stored before",
         async (
             message: string,
-            pageTotals: KeyphraseOccurrences | KeyphraseOccurrences[]
+            totals: KeyphraseOccurrences | KeyphraseOccurrences[]
         ) => {
-            await repository.addTotals(VALID_URL.hostname, pageTotals);
+            await repository.addTotals(VALID_URL.hostname, totals);
 
             const actual = await repository.addTotals(
                 VALID_URL.hostname,
-                pageTotals
+                totals
             );
 
             expect(actual).toBe(true);
@@ -641,7 +641,7 @@ describe("total handling", () => {
 
     test.each([
         ["global totals", undefined],
-        ["page totals", VALID_URL.hostname],
+        ["site totals", VALID_URL.hostname],
     ])(
         "throws an error when an unexpected error occurs while retrieving %s",
         async (message: string, baseURL?: string) => {
@@ -721,7 +721,7 @@ describe("empty table behaviour", () => {
                 expect(actual).toBe(true);
             });
 
-            test("empties table of page totals", async () => {
+            test("empties table of site totals", async () => {
                 await repository.empty();
                 const actual = await repository.getTotals(VALID_URL.hostname);
 
