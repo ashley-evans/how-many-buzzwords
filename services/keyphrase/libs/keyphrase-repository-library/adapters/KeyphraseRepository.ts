@@ -80,6 +80,7 @@ class KeyphraseRepository implements Repository {
                 pathname: splitSK[0],
                 keyphrase: splitSK[1],
                 occurrences: document.Occurrences,
+                aggregated: document.Aggregated,
             };
         });
     }
@@ -222,6 +223,7 @@ class KeyphraseRepository implements Repository {
             pk: baseURL,
             sk: `${pathname}#${occurrence.keyphrase}`,
             Occurrences: occurrence.occurrences,
+            Aggregated: false,
         };
     }
 

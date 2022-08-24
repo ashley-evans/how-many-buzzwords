@@ -9,6 +9,7 @@ class KeyphraseTableOccurrenceItem extends Item {
     [KeyphraseTableKeyFields.HashKey]!: string;
     [KeyphraseTableKeyFields.RangeKey]!: string;
     [KeyphraseTableNonKeyFields.Occurrences]!: number;
+    [KeyphraseTableNonKeyFields.Aggregated]!: boolean | undefined;
 }
 
 export default KeyphraseTableOccurrenceItem;

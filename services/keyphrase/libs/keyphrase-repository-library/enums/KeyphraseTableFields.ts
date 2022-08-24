@@ -6,6 +6,7 @@ enum KeyphraseTableKeyFields {
 
 enum KeyphraseTableNonKeyFields {
     Occurrences = "Occurrences",
+    Aggregated = "Aggregated",
 }
 
 export { KeyphraseTableKeyFields, KeyphraseTableNonKeyFields };

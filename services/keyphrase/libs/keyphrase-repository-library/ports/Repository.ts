@@ -1,13 +1,11 @@
-type KeyphraseOccurrences = {
-    keyphrase: string;
-    occurrences: number;
-};
-
 type PathnameOccurrences = {
     pathname: string;
     keyphrase: string;
     occurrences: number;
+    aggregated?: boolean;
 };
+
+type KeyphraseOccurrences = Omit<PathnameOccurrences, "pathname">;
 
 interface Repository {
     empty(): Promise<boolean>;
