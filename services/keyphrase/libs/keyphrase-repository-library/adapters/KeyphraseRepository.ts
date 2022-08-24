@@ -95,6 +95,7 @@ class KeyphraseRepository implements Repository {
             return {
                 keyphrase: splitSK[1],
                 occurrences: document.Occurrences,
+                aggregated: document.Aggregated,
             };
         });
     }

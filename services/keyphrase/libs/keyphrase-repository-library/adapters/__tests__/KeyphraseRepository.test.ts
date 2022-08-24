@@ -138,11 +138,11 @@ describe("path keyphrase occurrence retrieval", () => {
         ["multiple occurrences stored for path", TEST_KEYPHRASES],
     ])(
         "returns stored occurrences for path given %s",
-        async (message: string, expected: KeyphraseOccurrences[]) => {
+        async (message: string, input: KeyphraseOccurrences[]) => {
             await repository.storeKeyphrases(
                 VALID_URL.hostname,
                 VALID_URL.pathname,
-                expected
+                input
             );
 
             const stored = await repository.getPathKeyphrases(
@@ -150,6 +150,9 @@ describe("path keyphrase occurrence retrieval", () => {
                 VALID_URL.pathname
             );
 
+            const expected = input.map((occurrence) => {
+                return { ...occurrence, aggregated: false };
+            });
             expect(stored).toEqual(expected);
         }
     );
@@ -173,7 +176,7 @@ describe("path keyphrase occurrence retrieval", () => {
         );
 
         expect(stored).toHaveLength(1);
-        expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
+        expect(stored[0]).toEqual({ ...TEST_KEYPHRASES[0], aggregated: false });
     });
 
     test("only returns occurrences related to provided path and site given occurrences on same path on another site", async () => {
@@ -194,7 +197,7 @@ describe("path keyphrase occurrence retrieval", () => {
         );
 
         expect(stored).toHaveLength(1);
-        expect(stored[0]).toEqual(TEST_KEYPHRASES[0]);
+        expect(stored[0]).toEqual({ ...TEST_KEYPHRASES[0], aggregated: false });
     });
 
     afterEach(async () => {
