@@ -72,26 +72,50 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    getKeyphrases(
+    getOccurrences(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): Promise<KeyphraseOccurrences | undefined>;
+    getOccurrences(
         baseURL: string,
         pathname: string
     ): Promise<KeyphraseOccurrences[]>;
-    getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
+    getOccurrences(baseURL: string): Promise<PathnameOccurrences[]>;
 
-    async getKeyphrases(
+    async getOccurrences(
         baseURL: string,
-        pathname?: string
-    ): Promise<KeyphraseOccurrences[] | PathnameOccurrences[]> {
+        pathname?: string,
+        keyphrase?: string
+    ): Promise<
+        | KeyphraseOccurrences
+        | undefined
+        | KeyphraseOccurrences[]
+        | PathnameOccurrences[]
+    > {
+        if (pathname && keyphrase) {
+            const item = await this.getKeyphrase(baseURL, pathname, keyphrase);
+            if (item) {
+                const splitSK = item.sk.split("#");
+                return {
+                    keyphrase: splitSK[1],
+                    occurrences: item.Occurrences,
+                    aggregated: item.Aggregated,
+                };
+            }
+
+            return item;
+        }
+
         const documents = await this.queryKeyphrases(
             baseURL,
             pathname ? `${pathname}#` : undefined
         );
 
-        if (!pathname) {
+        if (pathname) {
             return documents.map((document) => {
                 const splitSK = document.sk.split("#");
                 return {
-                    pathname: splitSK[0],
                     keyphrase: splitSK[1],
                     occurrences: document.Occurrences,
                     aggregated: document.Aggregated,
@@ -102,6 +126,7 @@ class KeyphraseRepository implements Repository {
         return documents.map((document) => {
             const splitSK = document.sk.split("#");
             return {
+                pathname: splitSK[0],
                 keyphrase: splitSK[1],
                 occurrences: document.Occurrences,
                 aggregated: document.Aggregated,
@@ -168,6 +193,21 @@ class KeyphraseRepository implements Repository {
             .exec()) as QueryResponse<KeyphraseTableTotalItem>;
 
         return usages.map((usage) => usage.pk);
+    }
+
+    private async getKeyphrase(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): Promise<KeyphraseTableOccurrenceItem | undefined> {
+        try {
+            return await this.occurrenceModel.get({
+                [KeyphraseTableKeyFields.HashKey]: baseURL,
+                [KeyphraseTableKeyFields.RangeKey]: `${pathname}#${keyphrase}`,
+            });
+        } catch {
+            return undefined;
+        }
     }
 
     private async queryKeyphrases(

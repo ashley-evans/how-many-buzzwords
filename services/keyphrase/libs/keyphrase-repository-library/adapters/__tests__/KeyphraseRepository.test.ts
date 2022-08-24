@@ -127,6 +127,43 @@ describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
     });
 });
 
+describe("individual keyphrase occurrence retrieval", () => {
+    beforeEach(async () => {
+        await repository.empty();
+    });
+
+    test("returns undefined if no occurrences stored for keyphrase", async () => {
+        const actual = await repository.getOccurrences(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            TEST_KEYPHRASES[0].keyphrase
+        );
+
+        expect(actual).toBeUndefined();
+    });
+
+    test("returns occurrence if occurrences stored for provided keyphrase on site", async () => {
+        const expected = TEST_KEYPHRASES[0];
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expected
+        );
+
+        const actual = await repository.getOccurrences(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expected.keyphrase
+        );
+
+        expect(actual).toEqual({ ...expected, aggregated: false });
+    });
+
+    afterEach(async () => {
+        await repository.empty();
+    });
+});
+
 describe("path keyphrase occurrence retrieval", () => {
     beforeEach(async () => {
         await repository.empty();
@@ -145,7 +182,7 @@ describe("path keyphrase occurrence retrieval", () => {
                 input
             );
 
-            const stored = await repository.getKeyphrases(
+            const stored = await repository.getOccurrences(
                 VALID_URL.hostname,
                 VALID_URL.pathname
             );
@@ -170,7 +207,7 @@ describe("path keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const stored = await repository.getKeyphrases(
+        const stored = await repository.getOccurrences(
             VALID_URL.hostname,
             VALID_URL.pathname
         );
@@ -191,7 +228,7 @@ describe("path keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const stored = await repository.getKeyphrases(
+        const stored = await repository.getOccurrences(
             VALID_URL.hostname,
             VALID_URL.pathname
         );
@@ -211,7 +248,7 @@ describe("site keyphrase occurrence retrieval", () => {
     });
 
     test("returns no keyphrase occurrences given none stored for site", async () => {
-        const stored = await repository.getKeyphrases(VALID_URL.hostname);
+        const stored = await repository.getOccurrences(VALID_URL.hostname);
 
         expect(stored).toHaveLength(0);
     });
@@ -229,7 +266,7 @@ describe("site keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const response = await repository.getKeyphrases(VALID_URL.hostname);
+        const response = await repository.getOccurrences(VALID_URL.hostname);
 
         expect(response).toHaveLength(2);
         expect(response).toContainEqual({
@@ -259,7 +296,7 @@ describe("site keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const response = await repository.getKeyphrases(VALID_URL.hostname);
+        const response = await repository.getOccurrences(VALID_URL.hostname);
 
         expect(response).toHaveLength(1);
         expect(response[0]).toEqual({
@@ -312,7 +349,7 @@ describe("keyphrase occurrence storage", () => {
                     input
                 );
 
-                const stored = await repository.getKeyphrases(
+                const stored = await repository.getOccurrences(
                     VALID_URL.hostname
                 );
 
@@ -346,7 +383,7 @@ describe("keyphrase occurrence storage", () => {
                 VALID_URL.pathname,
                 newValue
             );
-            const stored = await repository.getKeyphrases(VALID_URL.hostname);
+            const stored = await repository.getOccurrences(VALID_URL.hostname);
 
             expect(stored).toHaveLength(1);
             expect(stored[0]).toEqual({
@@ -373,7 +410,7 @@ describe("keyphrase occurrence storage", () => {
                 VALID_URL.pathname,
                 newValues
             );
-            const stored = await repository.getKeyphrases(VALID_URL.hostname);
+            const stored = await repository.getOccurrences(VALID_URL.hostname);
 
             expect(stored).toHaveLength(newValues.length);
             for (const occurrence of newValues) {
@@ -604,7 +641,7 @@ describe("empty table behaviour", () => {
 
             test("empties table of occurrences", async () => {
                 await repository.empty();
-                const actual = await repository.getKeyphrases(
+                const actual = await repository.getOccurrences(
                     VALID_URL.hostname
                 );
 
