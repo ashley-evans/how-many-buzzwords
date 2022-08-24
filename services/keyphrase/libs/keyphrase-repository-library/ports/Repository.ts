@@ -9,11 +9,11 @@ type KeyphraseOccurrences = Omit<PathnameOccurrences, "pathname">;
 
 interface Repository {
     empty(): Promise<boolean>;
-    getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
-    getPathKeyphrases(
+    getKeyphrases(
         baseURL: string,
         pathname: string
     ): Promise<KeyphraseOccurrences[]>;
+    getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
     storeKeyphrases(
         baseURL: string,
         pathname: string,

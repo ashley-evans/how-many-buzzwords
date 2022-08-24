@@ -145,7 +145,7 @@ describe("path keyphrase occurrence retrieval", () => {
                 input
             );
 
-            const stored = await repository.getPathKeyphrases(
+            const stored = await repository.getKeyphrases(
                 VALID_URL.hostname,
                 VALID_URL.pathname
             );
@@ -170,7 +170,7 @@ describe("path keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const stored = await repository.getPathKeyphrases(
+        const stored = await repository.getKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname
         );
@@ -191,7 +191,7 @@ describe("path keyphrase occurrence retrieval", () => {
             TEST_KEYPHRASES[1]
         );
 
-        const stored = await repository.getPathKeyphrases(
+        const stored = await repository.getKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname
         );

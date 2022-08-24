@@ -72,24 +72,33 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
-        const documents = await this.queryKeyphrases(baseURL);
-        return documents.map((document) => {
-            const splitSK = document.sk.split("#");
-            return {
-                pathname: splitSK[0],
-                keyphrase: splitSK[1],
-                occurrences: document.Occurrences,
-                aggregated: document.Aggregated,
-            };
-        });
-    }
-
-    async getPathKeyphrases(
+    getKeyphrases(
         baseURL: string,
         pathname: string
-    ): Promise<KeyphraseOccurrences[]> {
-        const documents = await this.queryKeyphrases(baseURL, `${pathname}#`);
+    ): Promise<KeyphraseOccurrences[]>;
+    getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]>;
+
+    async getKeyphrases(
+        baseURL: string,
+        pathname?: string
+    ): Promise<KeyphraseOccurrences[] | PathnameOccurrences[]> {
+        const documents = await this.queryKeyphrases(
+            baseURL,
+            pathname ? `${pathname}#` : undefined
+        );
+
+        if (!pathname) {
+            return documents.map((document) => {
+                const splitSK = document.sk.split("#");
+                return {
+                    pathname: splitSK[0],
+                    keyphrase: splitSK[1],
+                    occurrences: document.Occurrences,
+                    aggregated: document.Aggregated,
+                };
+            });
+        }
+
         return documents.map((document) => {
             const splitSK = document.sk.split("#");
             return {
