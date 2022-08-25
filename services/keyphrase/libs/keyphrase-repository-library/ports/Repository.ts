@@ -1,10 +1,12 @@
-type PathnameOccurrences = {
+type SiteKeyphraseOccurrences = {
+    baseURL: string;
     pathname: string;
     keyphrase: string;
     occurrences: number;
     aggregated?: boolean;
 };
 
+type PathnameOccurrences = Omit<SiteKeyphraseOccurrences, "baseURL">;
 type KeyphraseOccurrences = Omit<PathnameOccurrences, "pathname">;
 
 interface Repository {
@@ -25,11 +27,15 @@ interface Repository {
         occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
     ): Promise<boolean>;
     getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
-    addTotals(
-        baseURL: string,
-        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
+    addOccurrencesToTotals(
+        occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
     ): Promise<boolean>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
 }
 
-export { KeyphraseOccurrences, PathnameOccurrences, Repository };
+export {
+    KeyphraseOccurrences,
+    PathnameOccurrences,
+    Repository,
+    SiteKeyphraseOccurrences,
+};

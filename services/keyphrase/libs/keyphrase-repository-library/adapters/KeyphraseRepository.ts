@@ -10,6 +10,7 @@ import {
     KeyphraseOccurrences,
     PathnameOccurrences,
     Repository,
+    SiteKeyphraseOccurrences,
 } from "../ports/Repository";
 import KeyphraseTableOccurrenceItem from "../schemas/KeyphraseTableOccurrenceItem";
 import KeyphraseTableOccurrenceSchema from "../schemas/KeyphraseTableOccurrenceSchema";
@@ -151,19 +152,15 @@ class KeyphraseRepository implements Repository {
         return this.storeIndividualKeyphrase(item);
     }
 
-    async addTotals(
-        baseURL: string,
-        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
+    async addOccurrencesToTotals(
+        items: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
     ): Promise<boolean> {
-        if (Array.isArray(totals)) {
-            const promises = totals.map((total) =>
-                this.addIndividualTotal(baseURL, total)
-            );
-
+        if (Array.isArray(items)) {
+            const promises = items.map((item) => this.addItemToTotal(item));
             return (await Promise.all(promises)).every(Boolean);
         }
 
-        return this.addIndividualTotal(baseURL, totals);
+        return this.addItemToTotal(items);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -322,37 +319,39 @@ class KeyphraseRepository implements Repository {
         return false;
     }
 
-    private async addIndividualTotal(
-        baseURL: string,
-        total: KeyphraseOccurrences
-    ) {
+    private async addItemToTotal(item: SiteKeyphraseOccurrences) {
         try {
-            const siteTotalKey = this.createSiteTotalKey(baseURL, total);
-            const globalTotalKey = this.createGlobalTotalKey(total);
+            const siteTotalKey = this.createSiteTotalKey(
+                item.baseURL,
+                item.keyphrase
+            );
+            const globalTotalKey = this.createGlobalTotalKey(item.keyphrase);
             await dynamoose.transaction([
                 this.totalModel.transaction.update(siteTotalKey, {
                     $ADD: {
                         [KeyphraseTableNonKeyFields.Occurrences]:
-                            total.occurrences,
+                            item.occurrences,
                     },
                     $SET: {
-                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
+                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${item.keyphrase}`,
                     },
                 }),
                 this.occurrenceModel.transaction.update(globalTotalKey, {
                     $ADD: {
                         [KeyphraseTableNonKeyFields.Occurrences]:
-                            total.occurrences,
+                            item.occurrences,
                     },
                 }),
             ]);
 
-            console.log(`Successfully updated total: ${JSON.stringify(total)}`);
+            console.log(
+                `Successfully updated total with: ${JSON.stringify(item)}`
+            );
             return true;
         } catch (ex) {
             console.error(
-                `An error occurred during the total update of ${JSON.stringify(
-                    total
+                `An error occurred during updating total with ${JSON.stringify(
+                    item
                 )}. Error: ${ex}`
             );
 
@@ -362,20 +361,20 @@ class KeyphraseRepository implements Repository {
 
     private createSiteTotalKey(
         baseURL: string,
-        total: KeyphraseOccurrences
+        keyphrase: string
     ): Partial<KeyphraseTableTotalItem> {
         return {
             pk: baseURL,
-            sk: `${KeyphraseTableConstants.TotalKey}#${total.keyphrase}`,
+            sk: `${KeyphraseTableConstants.TotalKey}#${keyphrase}`,
         };
     }
 
     private createGlobalTotalKey(
-        total: KeyphraseOccurrences
+        keyphrase: string
     ): Partial<KeyphraseTableOccurrenceItem> {
         return {
             pk: KeyphraseTableConstants.TotalKey,
-            sk: total.keyphrase,
+            sk: keyphrase,
         };
     }
 
