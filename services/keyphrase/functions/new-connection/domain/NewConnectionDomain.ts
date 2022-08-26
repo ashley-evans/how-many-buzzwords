@@ -33,7 +33,7 @@ class NewConnectionDomain implements NewConnectionPort {
         }
 
         try {
-            const occurrences = await this.repository.getKeyphrases(
+            const occurrences = await this.repository.getOccurrences(
                 connections.baseURL
             );
 
@@ -115,7 +115,7 @@ class NewConnectionDomain implements NewConnectionPort {
 
         const result = new Map();
         for (const baseURL of uniqueBaseURLs) {
-            const occurrences = await this.repository.getKeyphrases(baseURL);
+            const occurrences = await this.repository.getOccurrences(baseURL);
             result.set(baseURL, occurrences);
         }
 
