@@ -31,22 +31,6 @@ function createSiteOccurrence(
     };
 }
 
-function createRandomSiteOccurrences(
-    url: URL,
-    numberToCreate: number
-): SiteKeyphraseOccurrences[] {
-    const result: SiteKeyphraseOccurrences[] = [];
-    for (let i = 1; i <= numberToCreate; i++) {
-        const occurrence = createSiteOccurrence(
-            url,
-            createKeyphraseOccurrence(`test-${i}`, i)
-        );
-        result.push(occurrence);
-    }
-
-    return result;
-}
-
 function createKeyphraseOccurrence(
     keyphrase: string,
     occurrences: number
@@ -69,28 +53,17 @@ function createRandomOccurrences(
     return result;
 }
 
-function extractKeyphraseOccurrence(
-    siteOccurrence: SiteKeyphraseOccurrences
-): KeyphraseOccurrences;
-function extractKeyphraseOccurrence(
-    siteOccurrence: SiteKeyphraseOccurrences[]
-): KeyphraseOccurrences[];
-function extractKeyphraseOccurrence(
-    siteOccurrence: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
-): KeyphraseOccurrences | KeyphraseOccurrences[] {
-    if (Array.isArray(siteOccurrence)) {
-        return siteOccurrence.map((current) => ({
-            keyphrase: current.keyphrase,
-            occurrences: current.occurrences,
-            aggregated: current.aggregated,
-        }));
+function createOccurrenceItem(
+    url: URL,
+    keyphraseOccurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
+): SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[] {
+    if (Array.isArray(keyphraseOccurrences)) {
+        return keyphraseOccurrences.map((occurrence) =>
+            createSiteOccurrence(url, occurrence)
+        );
     }
 
-    return {
-        keyphrase: siteOccurrence.keyphrase,
-        occurrences: siteOccurrence.occurrences,
-        aggregated: siteOccurrence.aggregated,
-    };
+    return createSiteOccurrence(url, keyphraseOccurrences);
 }
 
 const TABLE_NAME = "keyphrase-table";
@@ -111,18 +84,25 @@ beforeAll(() => {
 });
 
 describe("GET TOTAL: Only returns totals related to provided base URL", () => {
-    const expectedTotal = createSiteOccurrence(
-        VALID_URL,
-        createKeyphraseOccurrence("sphere", 3)
-    );
+    const expectedKeyphrase = createKeyphraseOccurrence("sphere", 3);
 
     beforeAll(async () => {
-        await repository.addOccurrencesToTotals(expectedTotal);
+        const otherKeyphrase = createKeyphraseOccurrence("dyson", 2);
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expectedKeyphrase
+        );
+        await repository.storeKeyphrases(
+            OTHER_URL.hostname,
+            OTHER_URL.pathname,
+            otherKeyphrase
+        );
         await repository.addOccurrencesToTotals(
-            createSiteOccurrence(
-                OTHER_URL,
-                createKeyphraseOccurrence("dyson", 2)
-            )
+            createSiteOccurrence(VALID_URL, expectedKeyphrase)
+        );
+        await repository.addOccurrencesToTotals(
+            createSiteOccurrence(OTHER_URL, otherKeyphrase)
         );
     });
 
@@ -131,8 +111,8 @@ describe("GET TOTAL: Only returns totals related to provided base URL", () => {
 
         expect(response).toHaveLength(1);
         expect(response[0]).toEqual({
-            keyphrase: expectedTotal.keyphrase,
-            occurrences: expectedTotal.occurrences,
+            keyphrase: expectedKeyphrase.keyphrase,
+            occurrences: expectedKeyphrase.occurrences,
         });
     });
 
@@ -153,6 +133,11 @@ describe.each([
         beforeAll(async () => {
             for (const site of sites) {
                 const total = createSiteOccurrence(site, expectedKeyphrase);
+                await repository.storeKeyphrases(
+                    site.hostname,
+                    site.pathname,
+                    expectedKeyphrase
+                );
                 await repository.addOccurrencesToTotals(total);
             }
         });
@@ -176,17 +161,26 @@ describe("GET USAGE: Only returns usages related to provided keyphrase", () => {
     const expectedKeyphrase = "sphere";
 
     beforeAll(async () => {
+        const expected = createKeyphraseOccurrence(expectedKeyphrase, 2);
+        const unexpected = createKeyphraseOccurrence("unexpected", 4);
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            expected
+        );
         await repository.addOccurrencesToTotals(
             createSiteOccurrence(
                 VALID_URL,
                 createKeyphraseOccurrence(expectedKeyphrase, 2)
             )
         );
+        await repository.storeKeyphrases(
+            OTHER_URL.hostname,
+            OTHER_URL.pathname,
+            unexpected
+        );
         await repository.addOccurrencesToTotals(
-            createSiteOccurrence(
-                OTHER_URL,
-                createKeyphraseOccurrence("wibble", 2)
-            )
+            createSiteOccurrence(OTHER_URL, unexpected)
         );
     });
 
@@ -470,10 +464,12 @@ describe("keyphrase occurrence storage", () => {
         });
 
         test("overwrites existing values with new values given multiple keyphrases", async () => {
-            const newValues = TEST_KEYPHRASES.map((keyphrase) => {
-                keyphrase.occurrences *= 2;
-                return keyphrase;
-            });
+            const newValues: KeyphraseOccurrences[] = TEST_KEYPHRASES.map(
+                (current) => ({
+                    keyphrase: current.keyphrase,
+                    occurrences: current.occurrences * 2,
+                })
+            );
             await repository.storeKeyphrases(
                 VALID_URL.hostname,
                 VALID_URL.pathname,
@@ -505,47 +501,39 @@ describe("keyphrase occurrence storage", () => {
 });
 
 describe("total handling", () => {
-    const TEST_SITE_OCCURRENCES = createRandomSiteOccurrences(VALID_URL, 1);
-    const TEST_BATCH_SITE_OCCURRENCES = createRandomSiteOccurrences(
-        VALID_URL,
-        26
-    );
-
     beforeEach(async () => {
         await repository.empty();
     });
 
     describe.each([
-        [
-            "a single item",
-            TEST_SITE_OCCURRENCES[0],
-            [extractKeyphraseOccurrence(TEST_SITE_OCCURRENCES[0])],
-        ],
-        [
-            "less than 25 items",
-            TEST_BATCH_SITE_OCCURRENCES,
-            extractKeyphraseOccurrence(TEST_BATCH_SITE_OCCURRENCES),
-        ],
-        [
-            "greater than 25 items",
-            TEST_BATCH_SITE_OCCURRENCES,
-            extractKeyphraseOccurrence(TEST_BATCH_SITE_OCCURRENCES),
-        ],
+        ["a single item", TEST_KEYPHRASES[0], [TEST_KEYPHRASES[0]]],
+        ["less than 25 items", TEST_KEYPHRASES, TEST_KEYPHRASES],
+        ["greater than 25 items", TEST_BATCH_KEYPHRASES, TEST_BATCH_KEYPHRASES],
     ])(
         "new total storage given %s",
         (
             message: string,
-            input: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[],
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[],
             expected: KeyphraseOccurrences[]
         ) => {
+            const items = createOccurrenceItem(VALID_URL, occurrences);
+
+            beforeEach(async () => {
+                await repository.storeKeyphrases(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrences
+                );
+            });
+
             test("returns success when total storage succeeds", async () => {
-                const actual = await repository.addOccurrencesToTotals(input);
+                const actual = await repository.addOccurrencesToTotals(items);
 
                 expect(actual).toBe(true);
             });
 
             test("stores site totals successfully", async () => {
-                await repository.addOccurrencesToTotals(input);
+                await repository.addOccurrencesToTotals(items);
 
                 const stored = await repository.getTotals(VALID_URL.hostname);
 
@@ -553,7 +541,7 @@ describe("total handling", () => {
             });
 
             test("stores global total successfully", async () => {
-                await repository.addOccurrencesToTotals(input);
+                await repository.addOccurrencesToTotals(items);
 
                 const stored = await repository.getTotals();
 
@@ -563,14 +551,20 @@ describe("total handling", () => {
     );
 
     test.each([
-        ["a single item", TEST_SITE_OCCURRENCES[0]],
-        ["multiple items", TEST_SITE_OCCURRENCES],
+        ["a single item", TEST_KEYPHRASES[0]],
+        ["multiple items", TEST_KEYPHRASES],
     ])(
-        "returns success when total storage succeeds given %s that have been totalled before",
+        "returns success given %s that have been totalled before",
         async (
             message: string,
-            items: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
         ) => {
+            const items = createOccurrenceItem(VALID_URL, occurrences);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrences
+            );
             await repository.addOccurrencesToTotals(items);
 
             const actual = await repository.addOccurrencesToTotals(items);
@@ -580,36 +574,58 @@ describe("total handling", () => {
     );
 
     describe("existing total storage", () => {
-        test("increments site total given item that has been previously added to total", async () => {
-            await repository.addOccurrencesToTotals(TEST_SITE_OCCURRENCES[0]);
+        test("does not increment site total given item has already been added to total", async () => {
+            const item = createOccurrenceItem(VALID_URL, TEST_KEYPHRASES[0]);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                TEST_KEYPHRASES[0]
+            );
+            await repository.addOccurrencesToTotals(item);
 
-            await repository.addOccurrencesToTotals(TEST_SITE_OCCURRENCES[0]);
+            await repository.addOccurrencesToTotals(item);
             const stored = await repository.getTotals(VALID_URL.hostname);
 
             expect(stored).toHaveLength(1);
             expect(stored[0]).toEqual({
-                keyphrase: TEST_SITE_OCCURRENCES[0].keyphrase,
-                occurrences: TEST_SITE_OCCURRENCES[0].occurrences * 2,
+                keyphrase: TEST_KEYPHRASES[0].keyphrase,
+                occurrences: TEST_KEYPHRASES[0].occurrences,
             });
         });
 
-        test("increments site totals given existing site totals", async () => {
-            await repository.addOccurrencesToTotals(TEST_SITE_OCCURRENCES);
+        test("does not increment site totals given multiple items that have already been added to total", async () => {
+            const items = createOccurrenceItem(VALID_URL, TEST_KEYPHRASES);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                TEST_KEYPHRASES
+            );
+            await repository.addOccurrencesToTotals(items);
 
-            await repository.addOccurrencesToTotals(TEST_SITE_OCCURRENCES);
+            await repository.addOccurrencesToTotals(items);
             const stored = await repository.getTotals(VALID_URL.hostname);
 
-            expect(stored).toHaveLength(TEST_SITE_OCCURRENCES.length);
-            for (const expected of TEST_SITE_OCCURRENCES) {
+            expect(stored).toHaveLength(TEST_KEYPHRASES.length);
+            for (const expected of TEST_KEYPHRASES) {
                 expect(stored).toContainEqual({
                     keyphrase: expected.keyphrase,
-                    occurrences: expected.occurrences * 2,
+                    occurrences: expected.occurrences,
                 });
             }
         });
 
         test("increments existing global keyphrase total given a new occurrence on a different base URL", async () => {
             const commonKeyphrase = createKeyphraseOccurrence("test", 15);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                commonKeyphrase
+            );
+            await repository.storeKeyphrases(
+                OTHER_URL.hostname,
+                OTHER_URL.pathname,
+                commonKeyphrase
+            );
             await repository.addOccurrencesToTotals(
                 createSiteOccurrence(VALID_URL, commonKeyphrase)
             );
@@ -633,7 +649,16 @@ describe("total handling", () => {
             const secondSiteOccurrences = TEST_KEYPHRASES.map((current) =>
                 createSiteOccurrence(OTHER_URL, current)
             );
-
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                firstSiteOccurrences
+            );
+            await repository.storeKeyphrases(
+                OTHER_URL.hostname,
+                OTHER_URL.pathname,
+                secondSiteOccurrences
+            );
             await repository.addOccurrencesToTotals(firstSiteOccurrences);
 
             await repository.addOccurrencesToTotals(secondSiteOccurrences);
@@ -656,7 +681,7 @@ describe("total handling", () => {
         });
 
         const actual = await repository.addOccurrencesToTotals(
-            TEST_SITE_OCCURRENCES[0]
+            createOccurrenceItem(VALID_URL, TEST_KEYPHRASES[0])
         );
         putItemSpy.mockRestore();
 
@@ -670,7 +695,7 @@ describe("total handling", () => {
         });
 
         const actual = await repository.addOccurrencesToTotals(
-            TEST_SITE_OCCURRENCES
+            createOccurrenceItem(VALID_URL, TEST_KEYPHRASES)
         );
         putItemSpy.mockRestore();
 
@@ -740,17 +765,24 @@ describe("empty table behaviour", () => {
     );
 
     describe.each([
-        ["a single total", createRandomSiteOccurrences(VALID_URL, 1)[0]],
-        ["less than 25 totals", createRandomSiteOccurrences(VALID_URL, 24)],
-        ["more than 25 totals", createRandomSiteOccurrences(VALID_URL, 26)],
+        ["a single total", TEST_KEYPHRASES[0]],
+        ["less than 25 totals", TEST_KEYPHRASES],
+        ["more than 25 totals", TEST_BATCH_KEYPHRASES],
     ])(
         "Empty clears all totals given %s stored",
         (
             message: string,
-            occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
         ) => {
             beforeEach(async () => {
-                await repository.addOccurrencesToTotals(occurrences);
+                await repository.storeKeyphrases(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrences
+                );
+                await repository.addOccurrencesToTotals(
+                    createOccurrenceItem(VALID_URL, occurrences)
+                );
             });
 
             test("returns success", async () => {

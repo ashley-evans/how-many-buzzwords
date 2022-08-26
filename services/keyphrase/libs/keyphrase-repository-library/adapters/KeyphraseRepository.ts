@@ -22,6 +22,10 @@ type KeyphraseOccurrenceKeys = {
     [KeyphraseTableKeyFields.RangeKey]: string;
 };
 
+type TransactionCanceledException = {
+    CancellationReasons: { Code: string }[];
+};
+
 class KeyphraseRepository implements Repository {
     private static BATCH_SIZE = 25;
     private occurrenceModel;
@@ -321,6 +325,11 @@ class KeyphraseRepository implements Repository {
 
     private async addItemToTotal(item: SiteKeyphraseOccurrences) {
         try {
+            const itemKey = this.createOccurrenceKey(
+                item.baseURL,
+                item.pathname,
+                item.keyphrase
+            );
             const siteTotalKey = this.createSiteTotalKey(
                 item.baseURL,
                 item.keyphrase
@@ -342,6 +351,19 @@ class KeyphraseRepository implements Repository {
                             item.occurrences,
                     },
                 }),
+                this.occurrenceModel.transaction.update(
+                    itemKey,
+                    {
+                        $SET: {
+                            [KeyphraseTableNonKeyFields.Aggregated]: true,
+                        },
+                    },
+                    {
+                        condition: new dynamoose.Condition()
+                            .where(KeyphraseTableNonKeyFields.Aggregated)
+                            .eq(false),
+                    }
+                ),
             ]);
 
             console.log(
@@ -349,6 +371,13 @@ class KeyphraseRepository implements Repository {
             );
             return true;
         } catch (ex) {
+            if (
+                this.isTransactionCancelledException(ex) &&
+                ex.CancellationReasons[2].Code == "ConditionalCheckFailed"
+            ) {
+                return true;
+            }
+
             console.error(
                 `An error occurred during updating total with ${JSON.stringify(
                     item
@@ -362,19 +391,28 @@ class KeyphraseRepository implements Repository {
     private createSiteTotalKey(
         baseURL: string,
         keyphrase: string
-    ): Partial<KeyphraseTableTotalItem> {
+    ): KeyphraseOccurrenceKeys {
         return {
             pk: baseURL,
             sk: `${KeyphraseTableConstants.TotalKey}#${keyphrase}`,
         };
     }
 
-    private createGlobalTotalKey(
-        keyphrase: string
-    ): Partial<KeyphraseTableOccurrenceItem> {
+    private createGlobalTotalKey(keyphrase: string): KeyphraseOccurrenceKeys {
         return {
             pk: KeyphraseTableConstants.TotalKey,
             sk: keyphrase,
+        };
+    }
+
+    private createOccurrenceKey(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): KeyphraseOccurrenceKeys {
+        return {
+            pk: baseURL,
+            sk: `${pathname}#${keyphrase}`,
         };
     }
 
@@ -390,6 +428,26 @@ class KeyphraseRepository implements Repository {
             result[batchIndex].push(item);
             return result;
         }, []);
+    }
+
+    private isTransactionCancelledException(
+        exception: unknown
+    ): exception is TransactionCanceledException {
+        const transactionCancelled = exception as TransactionCanceledException;
+        if (Array.isArray(transactionCancelled.CancellationReasons)) {
+            for (const reason of transactionCancelled.CancellationReasons) {
+                if (
+                    reason.Code === undefined &&
+                    typeof reason.Code === "string"
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
 
