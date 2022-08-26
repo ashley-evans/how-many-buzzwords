@@ -1,12 +1,26 @@
 import { SiteKeyphraseOccurrences } from "buzzword-aws-keyphrase-repository-library";
 
-type KeyphraseOccurrencesItem = {
-    current: SiteKeyphraseOccurrences;
-    previous?: SiteKeyphraseOccurrences;
+type OccurrenceTotalImage = {
+    baseURL?: string;
+    keyphrase: string;
+    occurrences: number;
 };
 
+type ItemState<T> = {
+    current: T;
+    previous?: T;
+};
+
+type OccurrenceItem = ItemState<SiteKeyphraseOccurrences>;
+type TotalItem = ItemState<OccurrenceTotalImage>;
+
 interface TotalOccurrencesPort {
-    updateTotal(items: KeyphraseOccurrencesItem[]): Promise<boolean>;
+    updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean>;
 }
 
-export { KeyphraseOccurrencesItem, TotalOccurrencesPort };
+export {
+    OccurrenceTotalImage,
+    OccurrenceItem,
+    TotalOccurrencesPort,
+    TotalItem,
+};

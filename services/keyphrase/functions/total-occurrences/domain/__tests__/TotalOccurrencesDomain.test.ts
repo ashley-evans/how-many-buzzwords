@@ -5,13 +5,17 @@ import {
 } from "buzzword-aws-keyphrase-repository-library";
 
 import TotalOccurrencesDomain from "../TotalOccurrencesDomain";
-import { KeyphraseOccurrencesItem } from "../../ports/TotalOccurrencesPort";
+import {
+    OccurrenceItem,
+    OccurrenceTotalImage,
+    TotalItem,
+} from "../../ports/TotalOccurrencesPort";
 
 const mockRepository = mock<Repository>();
 
 const domain = new TotalOccurrencesDomain(mockRepository);
 
-function createSiteOccurrence(
+function createOccurrenceImage(
     url: URL,
     keyphrase: string,
     occurrences: number
@@ -19,6 +23,18 @@ function createSiteOccurrence(
     return {
         baseURL: url.hostname,
         pathname: url.pathname,
+        keyphrase,
+        occurrences,
+    };
+}
+
+function createTotalImage(
+    keyphrase: string,
+    occurrences: number,
+    url?: URL
+): OccurrenceTotalImage {
+    return {
+        baseURL: url ? url.hostname : undefined,
         keyphrase,
         occurrences,
     };
@@ -44,21 +60,10 @@ describe("handles no items", () => {
     });
 });
 
-test("returns success if updating totals in repository succeeds", async () => {
-    mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
-    const item: KeyphraseOccurrencesItem = {
-        current: createSiteOccurrence(VALID_URL, "dyson", 15),
-    };
-
-    const actual = await domain.updateTotal([item]);
-
-    expect(actual).toBe(true);
-});
-
 test("returns failure if updating totals in repository fails", async () => {
     mockRepository.addOccurrencesToTotals.mockResolvedValue(false);
-    const item: KeyphraseOccurrencesItem = {
-        current: createSiteOccurrence(VALID_URL, "dyson", 15),
+    const item: OccurrenceItem = {
+        current: createOccurrenceImage(VALID_URL, "dyson", 15),
     };
 
     const actual = await domain.updateTotal([item]);
@@ -66,10 +71,10 @@ test("returns failure if updating totals in repository fails", async () => {
     expect(actual).toBe(false);
 });
 
-test("returns failure if an unhandldd exception occurs while updating totals in repository", async () => {
+test("returns failure if an unhandled exception occurs while updating totals in repository", async () => {
     mockRepository.addOccurrencesToTotals.mockRejectedValue(new Error());
-    const item: KeyphraseOccurrencesItem = {
-        current: createSiteOccurrence(VALID_URL, "dyson", 15),
+    const item: OccurrenceItem = {
+        current: createOccurrenceImage(VALID_URL, "dyson", 15),
     };
 
     const actual = await domain.updateTotal([item]);
@@ -77,37 +82,118 @@ test("returns failure if an unhandldd exception occurs while updating totals in 
     expect(actual).toBe(false);
 });
 
-test.each([
+describe.each([
     [
-        "a single item that has",
+        "a single occurrence item that has",
         [
             {
-                current: createSiteOccurrence(VALID_URL, "dyson", 15),
+                current: createOccurrenceImage(VALID_URL, "dyson", 15),
             },
         ],
     ],
     [
-        "multiple items that have",
+        "multiple occurrence items that have",
         [
             {
-                current: createSiteOccurrence(VALID_URL, "dyson", 15),
+                current: createOccurrenceImage(VALID_URL, "dyson", 15),
             },
             {
-                current: createSiteOccurrence(VALID_URL, "test", 2),
+                current: createOccurrenceImage(VALID_URL, "test", 2),
             },
         ],
     ],
 ])(
-    "calls repository to add all occurrences to total given %s no previous state",
-    async (message: string, items: KeyphraseOccurrencesItem[]) => {
-        const expected = items.map((item) => item.current);
-        mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
+    "total updating given %s no previous state",
+    (message: string, items: OccurrenceItem[]) => {
+        test("calls repository to add all occurrences to total", async () => {
+            const expected = items.map((item) => item.current);
+            mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
 
-        await domain.updateTotal(items);
+            await domain.updateTotal(items);
 
-        expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledTimes(1);
-        expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledWith(
-            expected
-        );
+            expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledTimes(
+                1
+            );
+            expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledWith(
+                expected
+            );
+        });
+
+        test("returns success if updating totals in repository succeeds", async () => {
+            mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
+
+            const actual = await domain.updateTotal(items);
+
+            expect(actual).toBe(true);
+        });
     }
 );
+
+describe.each([
+    [
+        "a single global total",
+        [
+            {
+                current: createTotalImage("test", 12),
+            },
+        ],
+    ],
+    [
+        "multiple global totals",
+        [
+            {
+                current: createTotalImage("test", 12),
+            },
+            { current: createTotalImage("wibble", 14) },
+        ],
+    ],
+    [
+        "a single site total",
+        [
+            {
+                current: createTotalImage("test", 12, VALID_URL),
+            },
+        ],
+    ],
+    [
+        "multiple site totals",
+        [
+            {
+                current: createTotalImage("test", 12, VALID_URL),
+            },
+            { current: createTotalImage("wibble", 14, VALID_URL) },
+        ],
+    ],
+])("total updating given %s", (message: string, items: TotalItem[]) => {
+    test("does not call repository to update totals", async () => {
+        await domain.updateTotal(items);
+
+        expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
+    });
+
+    test("returns success", async () => {
+        const actual = await domain.updateTotal(items);
+
+        expect(actual).toBe(true);
+    });
+});
+
+test("only calls repository to update totals with provided occurrence items given both occurrence and total items", async () => {
+    const expected = createOccurrenceImage(VALID_URL, "test", 12);
+    const items: (OccurrenceItem | TotalItem)[] = [
+        {
+            current: expected,
+        },
+        {
+            current: createTotalImage("wibble", 12),
+        },
+    ];
+    mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
+
+    await domain.updateTotal(items);
+
+    expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledTimes(1);
+    expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledWith([
+        expected,
+    ]);
+});

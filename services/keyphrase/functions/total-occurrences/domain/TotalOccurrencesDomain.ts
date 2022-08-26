@@ -1,26 +1,50 @@
-import { Repository } from "buzzword-aws-keyphrase-repository-library";
+import {
+    Repository,
+    SiteKeyphraseOccurrences,
+} from "buzzword-aws-keyphrase-repository-library";
 
 import {
-    KeyphraseOccurrencesItem,
+    OccurrenceItem,
+    TotalItem,
     TotalOccurrencesPort,
 } from "../ports/TotalOccurrencesPort";
 
 class TotalOccurrencesDomain implements TotalOccurrencesPort {
     constructor(private repository: Repository) {}
 
-    async updateTotal(items: KeyphraseOccurrencesItem[]): Promise<boolean> {
-        if (items.length == 0) {
+    async updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean> {
+        const occurrencesToTotal: SiteKeyphraseOccurrences[] = items.reduce(
+            (acc: SiteKeyphraseOccurrences[], item) => {
+                if (this.isOccurrenceItem(item)) {
+                    acc.push(item.current);
+                }
+
+                return acc;
+            },
+            []
+        );
+
+        if (occurrencesToTotal.length == 0) {
             return true;
         }
 
-        const currentOccurrences = items.map((item) => item.current);
         try {
             return await this.repository.addOccurrencesToTotals(
-                currentOccurrences
+                occurrencesToTotal
             );
         } catch {
             return false;
         }
+    }
+
+    private isOccurrenceItem(
+        item: OccurrenceItem | TotalItem
+    ): item is OccurrenceItem {
+        const occurrence = item as OccurrenceItem;
+        return (
+            occurrence.current.baseURL !== undefined &&
+            occurrence.current.pathname !== undefined
+        );
     }
 }
 
