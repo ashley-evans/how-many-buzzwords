@@ -57,7 +57,7 @@ Rel(update_connections_lambda, keyphrase_db, "Listens to new keyphrases and occu
 Rel(update_connections_lambda, active_connections_db, "Retrieves relevant listening client details from", "Dynamoose")
 Rel_U(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
 
-BiRel(total_lambda, keyphrase_db, "Listens to occurrence updates, updating totals to reflect changes")
+BiRel(total_lambda, keyphrase_db, "Listens to occurrence updates, updating totals to reflect changes", "DynamoDB Stream")
 
 Lay_L(single_page_application, crawl_microservice)
 Lay_R(total_lambda, crud_lambda)
