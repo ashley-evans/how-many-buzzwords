@@ -64,7 +64,7 @@ describe("given a single new connection listening to a base URL", () => {
         beforeAll(async () => {
             jest.resetAllMocks();
             mockClientFactory.createClient.mockReturnValue(mockClient);
-            mockRepository.getKeyphrases.mockResolvedValue([]);
+            mockRepository.getOccurrences.mockResolvedValue([]);
 
             const domain = new NewConnectionDomain(
                 mockClientFactory,
@@ -74,8 +74,8 @@ describe("given a single new connection listening to a base URL", () => {
         });
 
         test("calls repository to obtain current keyphrase state for base URL", () => {
-            expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
-            expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(
+            expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getOccurrences).toHaveBeenCalledWith(
                 connection.baseURL
             );
         });
@@ -114,7 +114,7 @@ describe("given a single new connection listening to a base URL", () => {
                 );
                 mockSendData.mockResolvedValue(true);
                 mockClientFactory.createClient.mockReturnValue(mockClient);
-                mockRepository.getKeyphrases.mockResolvedValue(
+                mockRepository.getOccurrences.mockResolvedValue(
                     expectedOccurrences
                 );
                 const domain = new NewConnectionDomain(
@@ -126,8 +126,8 @@ describe("given a single new connection listening to a base URL", () => {
             });
 
             test("calls repository to obtain current keyphrase state for base URL", () => {
-                expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
-                expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(
+                expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(1);
+                expect(mockRepository.getOccurrences).toHaveBeenCalledWith(
                     connection.baseURL
                 );
             });
@@ -160,7 +160,7 @@ describe("given a single new connection listening to a base URL", () => {
             jest.resetAllMocks();
             jest.spyOn(console, "error").mockImplementation(() => undefined);
             mockClientFactory.createClient.mockReturnValue(mockClient);
-            mockRepository.getKeyphrases.mockRejectedValue(new Error());
+            mockRepository.getOccurrences.mockRejectedValue(new Error());
             const domain = new NewConnectionDomain(
                 mockClientFactory,
                 mockRepository
@@ -190,7 +190,7 @@ describe("given a single new connection listening to a base URL", () => {
             mockClientFactory.createClient.mockImplementation(() => {
                 throw new Error();
             });
-            mockRepository.getKeyphrases.mockResolvedValue(
+            mockRepository.getOccurrences.mockResolvedValue(
                 createOccurrences(BASE_URL, 1)
             );
 
@@ -213,7 +213,7 @@ describe("given a single new connection listening to a base URL", () => {
     test("returns failure if error occurs during the transmission of keyphrases state", async () => {
         jest.resetAllMocks();
         jest.spyOn(console, "error").mockImplementation(() => undefined);
-        mockRepository.getKeyphrases.mockResolvedValue(
+        mockRepository.getOccurrences.mockResolvedValue(
             createOccurrences(BASE_URL, 1)
         );
         mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -233,7 +233,7 @@ describe("given a single new connection listening to a base URL", () => {
 
     test("returns failure if the client fails to send keyphrase state", async () => {
         jest.resetAllMocks();
-        mockRepository.getKeyphrases.mockResolvedValue(
+        mockRepository.getOccurrences.mockResolvedValue(
             createOccurrences(BASE_URL, 1)
         );
         mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -300,7 +300,7 @@ describe.each([
             beforeAll(async () => {
                 jest.resetAllMocks();
                 mockClientFactory.createClient.mockReturnValue(mockClient);
-                mockRepository.getKeyphrases.mockResolvedValue([]);
+                mockRepository.getOccurrences.mockResolvedValue([]);
                 const domain = new NewConnectionDomain(
                     mockClientFactory,
                     mockRepository
@@ -310,10 +310,10 @@ describe.each([
             });
 
             test("calls repository to obtain current keyphrase state for each base URL", () => {
-                expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(
+                expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(
                     uniqueBaseURLs.length
                 );
-                expect(mockRepository.getKeyphrases.mock.calls.flat()).toEqual(
+                expect(mockRepository.getOccurrences.mock.calls.flat()).toEqual(
                     expect.arrayContaining(uniqueBaseURLs)
                 );
             });
@@ -349,7 +349,7 @@ describe.each([
                 beforeAll(async () => {
                     jest.resetAllMocks();
                     mockClientFactory.createClient.mockReturnValue(mockClient);
-                    mockRepository.getKeyphrases.mockResolvedValue(
+                    mockRepository.getOccurrences.mockResolvedValue(
                         expectedOccurrences
                     );
                     mockSendData = On(mockClient).get(
@@ -367,11 +367,11 @@ describe.each([
                 });
 
                 test("calls repository to obtain current keyphrase state for each base URL", () => {
-                    expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(
+                    expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(
                         uniqueBaseURLs.length
                     );
                     expect(
-                        mockRepository.getKeyphrases.mock.calls.flat()
+                        mockRepository.getOccurrences.mock.calls.flat()
                     ).toEqual(expect.arrayContaining(uniqueBaseURLs));
                 });
 
@@ -415,7 +415,7 @@ describe.each([
                     () => undefined
                 );
                 mockClientFactory.createClient.mockReturnValue(mockClient);
-                mockRepository.getKeyphrases.mockRejectedValue(new Error());
+                mockRepository.getOccurrences.mockRejectedValue(new Error());
                 const domain = new NewConnectionDomain(
                     mockClientFactory,
                     mockRepository
@@ -448,7 +448,7 @@ describe.each([
                 mockClientFactory.createClient.mockImplementation(() => {
                     throw new Error();
                 });
-                mockRepository.getKeyphrases.mockResolvedValue(
+                mockRepository.getOccurrences.mockResolvedValue(
                     createOccurrences(BASE_URL, 1)
                 );
                 const domain = new NewConnectionDomain(
@@ -474,7 +474,7 @@ describe.each([
         test("returns all IDs if error occurs during the transmission of keyphrases state to all connections", async () => {
             jest.resetAllMocks();
             jest.spyOn(console, "error").mockImplementation(() => undefined);
-            mockRepository.getKeyphrases.mockResolvedValue(
+            mockRepository.getOccurrences.mockResolvedValue(
                 createOccurrences(BASE_URL, 1)
             );
             mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -497,7 +497,7 @@ describe.each([
 
         test("returns all IDs if the client fails to send keyphrase state to all connections", async () => {
             jest.resetAllMocks();
-            mockRepository.getKeyphrases.mockResolvedValue(
+            mockRepository.getOccurrences.mockResolvedValue(
                 createOccurrences(BASE_URL, 1)
             );
             mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -520,7 +520,7 @@ describe.each([
 
         test("returns first ID if the client only fails to send keyphrase for first connection", async () => {
             jest.resetAllMocks();
-            mockRepository.getKeyphrases.mockResolvedValue(
+            mockRepository.getOccurrences.mockResolvedValue(
                 createOccurrences(BASE_URL, 1)
             );
             mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -556,7 +556,9 @@ describe("given duplicate connections", () => {
         beforeAll(async () => {
             jest.resetAllMocks();
             mockClientFactory.createClient.mockReturnValue(mockClient);
-            mockRepository.getKeyphrases.mockResolvedValue(expectedOccurrences);
+            mockRepository.getOccurrences.mockResolvedValue(
+                expectedOccurrences
+            );
             mockSendData = On(mockClient).get(method((mock) => mock.sendData));
             mockSendData.mockResolvedValue(true);
             const domain = new NewConnectionDomain(
@@ -568,8 +570,10 @@ describe("given duplicate connections", () => {
         });
 
         test("calls repository once to obtain current keyphrase state", () => {
-            expect(mockRepository.getKeyphrases).toHaveBeenCalledTimes(1);
-            expect(mockRepository.getKeyphrases).toHaveBeenCalledWith(BASE_URL);
+            expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(1);
+            expect(mockRepository.getOccurrences).toHaveBeenCalledWith(
+                BASE_URL
+            );
         });
 
         test("calls the web socket client factory to create a client once", () => {
@@ -596,7 +600,7 @@ describe("given duplicate connections", () => {
         jest.resetAllMocks();
         jest.spyOn(console, "error").mockImplementation(() => undefined);
         mockClientFactory.createClient.mockReturnValue(mockClient);
-        mockRepository.getKeyphrases.mockRejectedValue(new Error());
+        mockRepository.getOccurrences.mockRejectedValue(new Error());
         const domain = new NewConnectionDomain(
             mockClientFactory,
             mockRepository
@@ -613,7 +617,7 @@ describe("given duplicate connections", () => {
         mockClientFactory.createClient.mockImplementation(() => {
             throw new Error();
         });
-        mockRepository.getKeyphrases.mockResolvedValue(
+        mockRepository.getOccurrences.mockResolvedValue(
             createOccurrences(BASE_URL, 1)
         );
         const domain = new NewConnectionDomain(
@@ -630,7 +634,7 @@ describe("given duplicate connections", () => {
     test("returns one failure ID if error occurs during the transmission of keyphrases state", async () => {
         jest.resetAllMocks();
         jest.spyOn(console, "error").mockImplementation(() => undefined);
-        mockRepository.getKeyphrases.mockResolvedValue(
+        mockRepository.getOccurrences.mockResolvedValue(
             createOccurrences(BASE_URL, 1)
         );
         mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -651,7 +655,7 @@ describe("given duplicate connections", () => {
 
     test("returns one failure ID if the client fails to send keyphrase state", async () => {
         jest.resetAllMocks();
-        mockRepository.getKeyphrases.mockResolvedValue(
+        mockRepository.getOccurrences.mockResolvedValue(
             createOccurrences(BASE_URL, 1)
         );
         mockClientFactory.createClient.mockReturnValue(mockClient);
@@ -677,7 +681,7 @@ test("sends keyphrases in chunks of 100 if more than 100 keyphrases are stored",
     const expectedSecondChunk = createOccurrences(BASE_URL, 100);
     const expectedThirdChunk = createOccurrences(BASE_URL, 1);
     const connection = createConnection(CONNECTION_ID, CALLBACK_URL, BASE_URL);
-    mockRepository.getKeyphrases.mockResolvedValue([
+    mockRepository.getOccurrences.mockResolvedValue([
         ...expectedFirstChunk,
         ...expectedSecondChunk,
         ...expectedThirdChunk,

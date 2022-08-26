@@ -18,6 +18,9 @@ const schema = new Schema({
         type: Number,
         required: true,
     },
+    [KeyphraseTableNonKeyFields.Aggregated]: {
+        type: Boolean,
+    },
 });
 
 export default schema;

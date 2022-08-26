@@ -10,6 +10,7 @@ import {
     KeyphraseOccurrences,
     PathnameOccurrences,
     Repository,
+    SiteKeyphraseOccurrences,
 } from "../ports/Repository";
 import KeyphraseTableOccurrenceItem from "../schemas/KeyphraseTableOccurrenceItem";
 import KeyphraseTableOccurrenceSchema from "../schemas/KeyphraseTableOccurrenceSchema";
@@ -19,6 +20,10 @@ import KeyphraseTableTotalSchema from "../schemas/KeyphraseTableTotalSchema";
 type KeyphraseOccurrenceKeys = {
     [KeyphraseTableKeyFields.HashKey]: string;
     [KeyphraseTableKeyFields.RangeKey]: string;
+};
+
+type TransactionCanceledException = {
+    CancellationReasons: { Code: string }[];
 };
 
 class KeyphraseRepository implements Repository {
@@ -72,28 +77,64 @@ class KeyphraseRepository implements Repository {
         }
     }
 
-    async getKeyphrases(baseURL: string): Promise<PathnameOccurrences[]> {
-        const documents = await this.queryKeyphrases(baseURL);
+    getOccurrences(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): Promise<KeyphraseOccurrences | undefined>;
+    getOccurrences(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
+    getOccurrences(baseURL: string): Promise<PathnameOccurrences[]>;
+
+    async getOccurrences(
+        baseURL: string,
+        pathname?: string,
+        keyphrase?: string
+    ): Promise<
+        | KeyphraseOccurrences
+        | undefined
+        | KeyphraseOccurrences[]
+        | PathnameOccurrences[]
+    > {
+        if (pathname && keyphrase) {
+            const item = await this.getKeyphrase(baseURL, pathname, keyphrase);
+            if (item) {
+                const splitSK = item.sk.split("#");
+                return {
+                    keyphrase: splitSK[1],
+                    occurrences: item.Occurrences,
+                    aggregated: item.Aggregated,
+                };
+            }
+
+            return item;
+        }
+
+        const documents = await this.queryKeyphrases(
+            baseURL,
+            pathname ? `${pathname}#` : undefined
+        );
+
+        if (pathname) {
+            return documents.map((document) => {
+                const splitSK = document.sk.split("#");
+                return {
+                    keyphrase: splitSK[1],
+                    occurrences: document.Occurrences,
+                    aggregated: document.Aggregated,
+                };
+            });
+        }
+
         return documents.map((document) => {
             const splitSK = document.sk.split("#");
             return {
                 pathname: splitSK[0],
                 keyphrase: splitSK[1],
                 occurrences: document.Occurrences,
-            };
-        });
-    }
-
-    async getPathKeyphrases(
-        baseURL: string,
-        pathname: string
-    ): Promise<KeyphraseOccurrences[]> {
-        const documents = await this.queryKeyphrases(baseURL, `${pathname}#`);
-        return documents.map((document) => {
-            const splitSK = document.sk.split("#");
-            return {
-                keyphrase: splitSK[1],
-                occurrences: document.Occurrences,
+                aggregated: document.Aggregated,
             };
         });
     }
@@ -115,19 +156,15 @@ class KeyphraseRepository implements Repository {
         return this.storeIndividualKeyphrase(item);
     }
 
-    async addTotals(
-        baseURL: string,
-        totals: KeyphraseOccurrences | KeyphraseOccurrences[]
+    async addOccurrencesToTotals(
+        items: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
     ): Promise<boolean> {
-        if (Array.isArray(totals)) {
-            const promises = totals.map((total) =>
-                this.addIndividualTotal(baseURL, total)
-            );
-
+        if (Array.isArray(items)) {
+            const promises = items.map((item) => this.addItemToTotal(item));
             return (await Promise.all(promises)).every(Boolean);
         }
 
-        return this.addIndividualTotal(baseURL, totals);
+        return this.addItemToTotal(items);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -157,6 +194,21 @@ class KeyphraseRepository implements Repository {
             .exec()) as QueryResponse<KeyphraseTableTotalItem>;
 
         return usages.map((usage) => usage.pk);
+    }
+
+    private async getKeyphrase(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): Promise<KeyphraseTableOccurrenceItem | undefined> {
+        try {
+            return await this.occurrenceModel.get({
+                [KeyphraseTableKeyFields.HashKey]: baseURL,
+                [KeyphraseTableKeyFields.RangeKey]: `${pathname}#${keyphrase}`,
+            });
+        } catch {
+            return undefined;
+        }
     }
 
     private async queryKeyphrases(
@@ -222,6 +274,7 @@ class KeyphraseRepository implements Repository {
             pk: baseURL,
             sk: `${pathname}#${occurrence.keyphrase}`,
             Occurrences: occurrence.occurrences,
+            Aggregated: false,
         };
     }
 
@@ -270,37 +323,64 @@ class KeyphraseRepository implements Repository {
         return false;
     }
 
-    private async addIndividualTotal(
-        baseURL: string,
-        total: KeyphraseOccurrences
-    ) {
+    private async addItemToTotal(item: SiteKeyphraseOccurrences) {
         try {
-            const siteTotalKey = this.createSiteTotalKey(baseURL, total);
-            const globalTotalKey = this.createGlobalTotalKey(total);
+            const itemKey = this.createOccurrenceKey(
+                item.baseURL,
+                item.pathname,
+                item.keyphrase
+            );
+            const siteTotalKey = this.createSiteTotalKey(
+                item.baseURL,
+                item.keyphrase
+            );
+            const globalTotalKey = this.createGlobalTotalKey(item.keyphrase);
             await dynamoose.transaction([
                 this.totalModel.transaction.update(siteTotalKey, {
                     $ADD: {
                         [KeyphraseTableNonKeyFields.Occurrences]:
-                            total.occurrences,
+                            item.occurrences,
                     },
                     $SET: {
-                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${total.keyphrase}`,
+                        [KeyphraseTableKeyFields.KeyphraseUsageIndexHashKey]: `${KeyphraseTableConstants.KeyphraseEntityKey}#${item.keyphrase}`,
                     },
                 }),
                 this.occurrenceModel.transaction.update(globalTotalKey, {
                     $ADD: {
                         [KeyphraseTableNonKeyFields.Occurrences]:
-                            total.occurrences,
+                            item.occurrences,
                     },
                 }),
+                this.occurrenceModel.transaction.update(
+                    itemKey,
+                    {
+                        $SET: {
+                            [KeyphraseTableNonKeyFields.Aggregated]: true,
+                        },
+                    },
+                    {
+                        condition: new dynamoose.Condition()
+                            .where(KeyphraseTableNonKeyFields.Aggregated)
+                            .eq(false),
+                    }
+                ),
             ]);
 
-            console.log(`Successfully updated total: ${JSON.stringify(total)}`);
+            console.log(
+                `Successfully updated total with: ${JSON.stringify(item)}`
+            );
             return true;
         } catch (ex) {
+            if (
+                this.isTransactionCancelledException(ex) &&
+                ex.CancellationReasons[2]?.Code == "ConditionalCheckFailed"
+            ) {
+                return true;
+            }
+
             console.error(
-                `An error occurred during the total update of ${JSON.stringify(
-                    total
+                `An error occurred during updating total with ${JSON.stringify(
+                    item
                 )}. Error: ${ex}`
             );
 
@@ -310,20 +390,29 @@ class KeyphraseRepository implements Repository {
 
     private createSiteTotalKey(
         baseURL: string,
-        total: KeyphraseOccurrences
-    ): Partial<KeyphraseTableTotalItem> {
+        keyphrase: string
+    ): KeyphraseOccurrenceKeys {
         return {
             pk: baseURL,
-            sk: `${KeyphraseTableConstants.TotalKey}#${total.keyphrase}`,
+            sk: `${KeyphraseTableConstants.TotalKey}#${keyphrase}`,
         };
     }
 
-    private createGlobalTotalKey(
-        total: KeyphraseOccurrences
-    ): Partial<KeyphraseTableOccurrenceItem> {
+    private createGlobalTotalKey(keyphrase: string): KeyphraseOccurrenceKeys {
         return {
             pk: KeyphraseTableConstants.TotalKey,
-            sk: total.keyphrase,
+            sk: keyphrase,
+        };
+    }
+
+    private createOccurrenceKey(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string
+    ): KeyphraseOccurrenceKeys {
+        return {
+            pk: baseURL,
+            sk: `${pathname}#${keyphrase}`,
         };
     }
 
@@ -339,6 +428,26 @@ class KeyphraseRepository implements Repository {
             result[batchIndex].push(item);
             return result;
         }, []);
+    }
+
+    private isTransactionCancelledException(
+        exception: unknown
+    ): exception is TransactionCanceledException {
+        const transactionCancelled = exception as TransactionCanceledException;
+        if (Array.isArray(transactionCancelled.CancellationReasons)) {
+            for (const reason of transactionCancelled.CancellationReasons) {
+                if (
+                    reason.Code === undefined &&
+                    typeof reason.Code === "string"
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
 
