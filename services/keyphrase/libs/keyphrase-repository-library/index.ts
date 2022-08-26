@@ -1,6 +1,7 @@
 import {
     KeyphraseOccurrences,
     PathnameOccurrences,
+    SiteKeyphraseOccurrences,
     Repository,
 } from "./ports/Repository";
 import KeyphraseRepository from "./adapters/KeyphraseRepository";
@@ -12,6 +13,7 @@ import {
 export {
     KeyphraseOccurrences,
     PathnameOccurrences,
+    SiteKeyphraseOccurrences,
     Repository,
     KeyphraseRepository,
     KeyphraseTableKeyFields,
