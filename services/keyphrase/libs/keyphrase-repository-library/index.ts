@@ -9,6 +9,7 @@ import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
 } from "./enums/KeyphraseTableFields";
+import KeyphraseTableConstants from "./enums/KeyphraseTableConstants";
 
 export {
     KeyphraseOccurrences,
@@ -18,4 +19,5 @@ export {
     KeyphraseRepository,
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
+    KeyphraseTableConstants,
 };
