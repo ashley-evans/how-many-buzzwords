@@ -13,8 +13,14 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
             return true;
         }
 
-        await this.repository.addOccurrencesToTotals(items[0].current);
-        return true;
+        const currentOccurrences = items.map((item) => item.current);
+        try {
+            return await this.repository.addOccurrencesToTotals(
+                currentOccurrences
+            );
+        } catch {
+            return false;
+        }
     }
 }
 
