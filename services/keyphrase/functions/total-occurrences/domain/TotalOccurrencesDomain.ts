@@ -13,26 +13,7 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
     constructor(private repository: Repository) {}
 
     async updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean> {
-        const occurrencesToTotal: SiteKeyphraseOccurrences[] = items.reduce(
-            (acc: SiteKeyphraseOccurrences[], item) => {
-                if (this.isOccurrenceItem(item)) {
-                    const newOccurrences = item.previous
-                        ? item.current.occurrences - item.previous.occurrences
-                        : item.current.occurrences;
-
-                    acc.push({
-                        baseURL: item.current.baseURL,
-                        pathname: item.current.pathname,
-                        keyphrase: item.current.keyphrase,
-                        occurrences: newOccurrences,
-                    });
-                }
-
-                return acc;
-            },
-            []
-        );
-
+        const occurrencesToTotal = this.createTotalUpdates(items);
         if (occurrencesToTotal.length == 0) {
             return true;
         }
@@ -44,6 +25,27 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
         } catch {
             return false;
         }
+    }
+
+    private createTotalUpdates(
+        items: (OccurrenceItem | TotalItem)[]
+    ): SiteKeyphraseOccurrences[] {
+        return items.reduce((acc: SiteKeyphraseOccurrences[], item) => {
+            if (this.isOccurrenceItem(item)) {
+                const newOccurrences = item.previous
+                    ? item.current.occurrences - item.previous.occurrences
+                    : item.current.occurrences;
+
+                acc.push({
+                    baseURL: item.current.baseURL,
+                    pathname: item.current.pathname,
+                    keyphrase: item.current.keyphrase,
+                    occurrences: newOccurrences,
+                });
+            }
+
+            return acc;
+        }, []);
     }
 
     private isOccurrenceItem(
