@@ -16,7 +16,16 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
         const occurrencesToTotal: SiteKeyphraseOccurrences[] = items.reduce(
             (acc: SiteKeyphraseOccurrences[], item) => {
                 if (this.isOccurrenceItem(item)) {
-                    acc.push(item.current);
+                    const newOccurrences = item.previous
+                        ? item.current.occurrences - item.previous.occurrences
+                        : item.current.occurrences;
+
+                    acc.push({
+                        baseURL: item.current.baseURL,
+                        pathname: item.current.pathname,
+                        keyphrase: item.current.keyphrase,
+                        occurrences: newOccurrences,
+                    });
                 }
 
                 return acc;

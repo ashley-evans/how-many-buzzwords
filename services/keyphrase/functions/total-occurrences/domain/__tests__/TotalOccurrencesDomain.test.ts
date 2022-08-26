@@ -197,3 +197,49 @@ test("only calls repository to update totals with provided occurrence items give
         expected,
     ]);
 });
+
+test.each([
+    [
+        "a single occurrence item",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 5),
+                previous: createOccurrenceImage(VALID_URL, "test", 2),
+            },
+        ],
+        [createOccurrenceImage(VALID_URL, "test", 3)],
+    ],
+    [
+        "multiple occurrence items",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 5),
+                previous: createOccurrenceImage(VALID_URL, "test", 2),
+            },
+            {
+                current: createOccurrenceImage(VALID_URL, "wibble", 3),
+                previous: createOccurrenceImage(VALID_URL, "wibble", 2),
+            },
+        ],
+        [
+            createOccurrenceImage(VALID_URL, "test", 3),
+            createOccurrenceImage(VALID_URL, "wibble", 1),
+        ],
+    ],
+])(
+    "updates totals with different in occurrences given %s with previous state",
+    async (
+        message: string,
+        items: OccurrenceItem[],
+        expected: SiteKeyphraseOccurrences[]
+    ) => {
+        mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
+
+        await domain.updateTotal(items);
+
+        expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledTimes(1);
+        expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledWith(
+            expect.arrayContaining(expected)
+        );
+    }
+);
