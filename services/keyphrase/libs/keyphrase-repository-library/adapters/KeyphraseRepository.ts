@@ -373,7 +373,7 @@ class KeyphraseRepository implements Repository {
         } catch (ex) {
             if (
                 this.isTransactionCancelledException(ex) &&
-                ex.CancellationReasons[2].Code == "ConditionalCheckFailed"
+                ex.CancellationReasons[2]?.Code == "ConditionalCheckFailed"
             ) {
                 return true;
             }
