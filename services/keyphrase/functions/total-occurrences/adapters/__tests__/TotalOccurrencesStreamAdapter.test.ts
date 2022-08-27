@@ -205,6 +205,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     mockPort.updateTotal.mockReset();
+    mockPort.updateTotal.mockResolvedValue(true);
 });
 
 describe.each([
@@ -309,8 +310,6 @@ describe("given an event with both valid and invalid insert occurrence records",
     });
 
     test("returns no batch item failures if update to totals succeeds", async () => {
-        mockPort.updateTotal.mockResolvedValue(true);
-
         const actual = await adapter.handleEvent(event);
 
         expect(actual.batchItemFailures).toHaveLength(0);
@@ -352,8 +351,6 @@ describe.each([
         });
 
         test("returns no batch item failures if update to totals succeeds", async () => {
-            mockPort.updateTotal.mockResolvedValue(true);
-
             const actual = await adapter.handleEvent(event);
 
             expect(actual.batchItemFailures).toHaveLength(0);
@@ -388,8 +385,6 @@ describe("given a valid modify occurrence record", () => {
     });
 
     test("returns no batch item failures if update to totals succeeds", async () => {
-        mockPort.updateTotal.mockResolvedValue(true);
-
         const actual = await adapter.handleEvent(event);
 
         expect(actual.batchItemFailures).toHaveLength(0);
@@ -417,8 +412,6 @@ describe.each([
     });
 
     test("returns no batch item failures if update to totals succeeds", async () => {
-        mockPort.updateTotal.mockResolvedValue(true);
-
         const actual = await adapter.handleEvent(event);
 
         expect(actual.batchItemFailures).toHaveLength(0);
@@ -452,10 +445,40 @@ describe.each([
     });
 
     test("returns no batch item failures if update to totals succeeds", async () => {
-        mockPort.updateTotal.mockResolvedValue(true);
-
         const actual = await adapter.handleEvent(event);
 
         expect(actual.batchItemFailures).toHaveLength(0);
     });
+});
+
+test("throws an error if update to totals fails", async () => {
+    mockPort.updateTotal.mockResolvedValue(false);
+    const event = createEvent([
+        createOccurrenceInsertRecord(VALID_URL, "test", 15),
+    ]);
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(
+        expect.objectContaining({
+            message: expect.stringContaining(
+                "Failed to update totals for provided records:"
+            ),
+        })
+    );
+});
+
+test("throws an error if an unhandled exception occurs while updating totals", async () => {
+    mockPort.updateTotal.mockRejectedValue(new Error());
+    const event = createEvent([
+        createOccurrenceInsertRecord(VALID_URL, "test", 15),
+    ]);
+
+    expect.assertions(1);
+    await expect(adapter.handleEvent(event)).rejects.toEqual(
+        expect.objectContaining({
+            message: expect.stringContaining(
+                "Failed to update totals for provided records:"
+            ),
+        })
+    );
 });

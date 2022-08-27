@@ -130,7 +130,14 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         }
 
         if (itemsToTotal.length != 0) {
-            await this.port.updateTotal(itemsToTotal);
+            try {
+                const success = await this.port.updateTotal(itemsToTotal);
+                if (!success) {
+                    this.throwFailureError(itemsToTotal);
+                }
+            } catch {
+                this.throwFailureError(itemsToTotal);
+            }
         }
 
         return this.createResponse();
@@ -247,6 +254,14 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
 
     private createResponse(): SQSBatchResponse {
         return { batchItemFailures: [] };
+    }
+
+    private throwFailureError(items: (OccurrenceItem | TotalItem)[]) {
+        throw new Error(
+            `Failed to update totals for provided records: ${JSON.stringify(
+                items
+            )}`
+        );
     }
 }
 
