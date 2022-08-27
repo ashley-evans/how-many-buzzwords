@@ -1,5 +1,6 @@
 import { DynamoDBRecord, DynamoDBStreamEvent } from "aws-lambda";
 import {
+    KeyphraseTableConstants,
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
     SiteKeyphraseOccurrences,
@@ -8,6 +9,8 @@ import { mock } from "jest-mock-extended";
 
 import {
     OccurrenceItem,
+    OccurrenceTotalImage,
+    TotalItem,
     TotalOccurrencesPort,
 } from "../../ports/TotalOccurrencesPort";
 import TotalOccurrencesStreamAdapter from "../TotalOccurrencesStreamAdapter";
@@ -36,6 +39,28 @@ function createOccurrence(
     return {
         baseURL: url.hostname,
         pathname: url.pathname,
+        keyphrase,
+        occurrences,
+    };
+}
+
+function createExpectedTotalItem(
+    current: OccurrenceTotalImage,
+    previous?: OccurrenceTotalImage
+): TotalItem {
+    return {
+        current,
+        previous,
+    };
+}
+
+function createTotalOccurrence(
+    keyphrase: string,
+    occurrences: number,
+    url?: URL
+): OccurrenceTotalImage {
+    return {
+        baseURL: url?.hostname,
         keyphrase,
         occurrences,
     };
@@ -124,6 +149,28 @@ function createOccurrenceModifyRecord(
         createSortKey(url.pathname, keyphrase),
         newOccurrences,
         oldOccurrences
+    );
+}
+
+function createTotalInsertRecord(
+    keyphrase: string,
+    occurrences: number,
+    url?: URL
+) {
+    if (url) {
+        return createRecord(
+            "INSERT",
+            url.hostname,
+            createSortKey(KeyphraseTableConstants.TotalKey, keyphrase),
+            occurrences
+        );
+    }
+
+    return createRecord(
+        "INSERT",
+        KeyphraseTableConstants.TotalKey,
+        keyphrase,
+        occurrences
     );
 }
 
@@ -289,7 +336,7 @@ describe.each([
     }
 );
 
-describe("given a modify occurrence record", () => {
+describe("given a valid modify occurrence record", () => {
     const expectedKeyphrase = "test";
     const oldOccurences = createOccurrence(VALID_URL, expectedKeyphrase, 1);
     const newOccurrences = createOccurrence(VALID_URL, expectedKeyphrase, 5);
@@ -323,3 +370,34 @@ describe("given a modify occurrence record", () => {
         expect(actual.batchItemFailures).toHaveLength(0);
     });
 });
+
+describe.each([
+    ["global", createTotalOccurrence("test", 15)],
+    ["site", createTotalOccurrence("test", 15, VALID_URL), VALID_URL],
+])(
+    "given a valid insert %s total record",
+    (message: string, total: OccurrenceTotalImage, site?: URL) => {
+        const event = createEvent([
+            createTotalInsertRecord(total.keyphrase, total.occurrences, site),
+        ]);
+
+        test("calls domain with provided total record", async () => {
+            const expected = createExpectedTotalItem(total);
+
+            await adapter.handleEvent(event);
+
+            expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
+            expect(mockPort.updateTotal).toHaveBeenCalledWith(
+                expect.arrayContaining([expected])
+            );
+        });
+
+        test("returns no batch item failures if update to totals succeeds", async () => {
+            mockPort.updateTotal.mockResolvedValue(true);
+
+            const actual = await adapter.handleEvent(event);
+
+            expect(actual.batchItemFailures).toHaveLength(0);
+        });
+    }
+);

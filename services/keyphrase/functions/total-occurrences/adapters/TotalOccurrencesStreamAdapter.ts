@@ -4,9 +4,9 @@ import {
     SQSBatchResponse,
 } from "aws-lambda";
 import {
+    KeyphraseTableConstants,
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
-    SiteKeyphraseOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
@@ -14,6 +14,7 @@ import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import DynamoDBSteamAdapter from "../../interfaces/DynamoDBStreamAdapter";
 import {
     OccurrenceItem,
+    TotalItem,
     TotalOccurrencesPort,
 } from "../ports/TotalOccurrencesPort";
 
@@ -117,7 +118,7 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             return this.createResponse();
         }
 
-        const itemsToTotal: OccurrenceItem[] = [];
+        const itemsToTotal: (OccurrenceItem | TotalItem)[] = [];
         for (const record of event.Records) {
             try {
                 itemsToTotal.push(this.parseRecord(record));
@@ -135,9 +136,15 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         return this.createResponse();
     }
 
-    private parseRecord(record: DynamoDBRecord): OccurrenceItem {
+    private parseRecord(record: DynamoDBRecord): OccurrenceItem | TotalItem {
         const validatedRecord = this.validator.validate(record);
         const streamRecord = validatedRecord.dynamodb;
+        const partitionKey =
+            streamRecord.Keys[KeyphraseTableKeyFields.HashKey].S;
+        const sortKey = streamRecord.Keys[KeyphraseTableKeyFields.RangeKey].S;
+        const newOccurrences =
+            streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N;
+
         if (
             validatedRecord.eventName == AcceptedEventNames.Modify &&
             !streamRecord.OldImage
@@ -147,55 +154,74 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             );
         }
 
-        const splitSK =
-            streamRecord.Keys[KeyphraseTableKeyFields.RangeKey].S.split("#");
+        if (partitionKey == KeyphraseTableConstants.TotalKey) {
+            return {
+                current: {
+                    keyphrase: sortKey,
+                    occurrences: this.parseOccurrence(newOccurrences),
+                },
+            };
+        }
 
+        const splitSK = sortKey.split("#");
         if (splitSK.length != 2) {
             throw new Error("An invalid SK was provided, missing seperator");
         }
 
-        const baseURL = streamRecord.Keys[KeyphraseTableKeyFields.HashKey].S;
         const pathname = splitSK[0];
         const keyphrase = splitSK[1];
+        if (pathname == KeyphraseTableConstants.TotalKey) {
+            return {
+                current: {
+                    baseURL: partitionKey,
+                    keyphrase,
+                    occurrences: this.parseOccurrence(newOccurrences),
+                },
+            };
+        }
 
+        return this.createOccurrenceItem(
+            partitionKey,
+            pathname,
+            keyphrase,
+            newOccurrences,
+            streamRecord.OldImage?.[KeyphraseTableNonKeyFields.Occurrences].N
+        );
+    }
+
+    private createOccurrenceItem(
+        partitionKey: string,
+        pathname: string,
+        keyphrase: string,
+        newOccurrences: string,
+        oldOccurences?: string
+    ) {
         return {
-            current: this.parseOccurrence(
-                baseURL,
+            current: {
+                baseURL: partitionKey,
                 pathname,
                 keyphrase,
-                streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N
-            ),
-            previous: streamRecord.OldImage
-                ? this.parseOccurrence(
-                      baseURL,
+                occurrences: this.parseOccurrence(newOccurrences),
+            },
+            previous: oldOccurences
+                ? {
+                      baseURL: partitionKey,
                       pathname,
                       keyphrase,
-                      streamRecord.OldImage[
-                          KeyphraseTableNonKeyFields.Occurrences
-                      ].N
-                  )
+                      occurrences: this.parseOccurrence(oldOccurences),
+                  }
                 : undefined,
         };
     }
 
-    private parseOccurrence(
-        baseURL: string,
-        pathname: string,
-        keyphrase: string,
-        occurrences: string
-    ): SiteKeyphraseOccurrences {
+    private parseOccurrence(occurrences: string): number {
         const parsedOccurrences = parseInt(occurrences);
 
         if (isNaN(parsedOccurrences)) {
             throw new Error("A non-numeric occurrences valid was provided");
         }
 
-        return {
-            baseURL,
-            pathname,
-            keyphrase,
-            occurrences: parsedOccurrences,
-        };
+        return parsedOccurrences;
     }
 
     private createResponse(): SQSBatchResponse {
