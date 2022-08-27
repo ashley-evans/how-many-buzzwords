@@ -98,16 +98,19 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             return this.createResponse();
         }
 
-        try {
-            const parsedRecord = this.parseRecord(event.Records[0]);
-            await this.port.updateTotal([parsedRecord]);
-        } catch (ex) {
-            console.log(
-                `record: ${JSON.stringify(
-                    event.Records[0]
-                )} error: ${JSON.stringify(ex)}`
-            );
-            return this.createResponse();
+        const itemsToTotal: OccurrenceItem[] = [];
+        for (const record of event.Records) {
+            try {
+                itemsToTotal.push(this.parseRecord(record));
+            } catch {
+                console.log(
+                    `Skipping invalid record: ${JSON.stringify(record)}`
+                );
+            }
+        }
+
+        if (itemsToTotal.length != 0) {
+            await this.port.updateTotal(itemsToTotal);
         }
 
         return this.createResponse();

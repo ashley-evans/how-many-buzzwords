@@ -102,6 +102,10 @@ function createOccurrenceInsertRecord(
     );
 }
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 beforeEach(() => {
     mockPort.updateTotal.mockReset();
 });
@@ -145,6 +149,13 @@ describe.each([
             ),
         ]),
     ],
+    [
+        "multiple records with invalid properties",
+        createEvent([
+            createRecord("INSERT", undefined, createSortKey("test", "test"), 1),
+            createRecord("INSERT", "test", createSortKey("test", "test")),
+        ]),
+    ],
 ])(
     "given an invalid event with %s",
     (message: string, event: DynamoDBStreamEvent) => {
@@ -162,9 +173,10 @@ describe.each([
     }
 );
 
-describe("given a single valid insert occurrence record", () => {
+describe("given an event with both valid and invalid insert occurrence records", () => {
     const expected = createOccurrence(VALID_URL, "test", 15);
     const event = createEvent([
+        createRecord("INSERT", "test", createSortKey("test", "test")),
         createOccurrenceInsertRecord(
             VALID_URL,
             expected.keyphrase,
@@ -172,18 +184,64 @@ describe("given a single valid insert occurrence record", () => {
         ),
     ]);
 
-    test("calls domain with validated records", async () => {
+    test("only calls domain with valid records", async () => {
         await adapter.handleEvent(event);
 
         expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
-        expect(mockPort.updateTotal).toHaveBeenCalledWith(
-            expect.arrayContaining([createExpectedOccurrenceItem(expected)])
-        );
+        expect(mockPort.updateTotal).toHaveBeenCalledWith([
+            createExpectedOccurrenceItem(expected),
+        ]);
     });
 
-    test("returns no batch item failures", async () => {
+    test("returns no batch item failures if update to totals succeeds", async () => {
+        mockPort.updateTotal.mockResolvedValue(true);
+
         const actual = await adapter.handleEvent(event);
 
         expect(actual.batchItemFailures).toHaveLength(0);
     });
 });
+
+describe.each([
+    ["a single", [createOccurrence(VALID_URL, "test", 15)]],
+    [
+        "multiple",
+        [
+            createOccurrence(VALID_URL, "test", 15),
+            createOccurrence(VALID_URL, "dyson", 16),
+        ],
+    ],
+])(
+    "given %s valid insert occurrence record",
+    (message: string, occurrences: SiteKeyphraseOccurrences[]) => {
+        const records = occurrences.map((current) =>
+            createOccurrenceInsertRecord(
+                VALID_URL,
+                current.keyphrase,
+                current.occurrences
+            )
+        );
+        const event = createEvent(records);
+
+        test("calls domain with validated records", async () => {
+            const expected = occurrences.map((current) =>
+                createExpectedOccurrenceItem(current)
+            );
+
+            await adapter.handleEvent(event);
+
+            expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
+            expect(mockPort.updateTotal).toHaveBeenCalledWith(
+                expect.arrayContaining(expected)
+            );
+        });
+
+        test("returns no batch item failures if update to totals succeeds", async () => {
+            mockPort.updateTotal.mockResolvedValue(true);
+
+            const actual = await adapter.handleEvent(event);
+
+            expect(actual.batchItemFailures).toHaveLength(0);
+        });
+    }
+);
