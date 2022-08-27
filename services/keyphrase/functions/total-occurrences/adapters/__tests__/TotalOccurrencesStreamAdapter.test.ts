@@ -19,10 +19,12 @@ const mockPort = mock<TotalOccurrencesPort>();
 const adapter = new TotalOccurrencesStreamAdapter(mockPort);
 
 function createExpectedOccurrenceItem(
-    current: SiteKeyphraseOccurrences
+    current: SiteKeyphraseOccurrences,
+    previous?: SiteKeyphraseOccurrences
 ): OccurrenceItem {
     return {
         current,
+        previous,
     };
 }
 
@@ -53,16 +55,17 @@ function createEvent(records?: DynamoDBRecord[]) {
 }
 
 function createRecord(
-    eventName?: "INSERT",
+    eventName?: "INSERT" | "MODIFY",
     pk?: string,
     sk?: string,
-    occurrences?: number | string
+    newOccurrences?: number | string,
+    oldOccurrences?: number | string
 ): DynamoDBRecord {
     const record: DynamoDBRecord = {
         eventName,
     };
 
-    if (pk || sk || occurrences) {
+    if (pk || sk || newOccurrences || oldOccurrences) {
         record.dynamodb = {
             Keys: {
                 ...(pk && {
@@ -76,10 +79,17 @@ function createRecord(
                     },
                 }),
             },
-            ...(occurrences && {
+            ...(newOccurrences && {
                 NewImage: {
                     [KeyphraseTableNonKeyFields.Occurrences]: {
-                        N: occurrences.toString(),
+                        N: newOccurrences.toString(),
+                    },
+                },
+            }),
+            ...(oldOccurrences && {
+                OldImage: {
+                    [KeyphraseTableNonKeyFields.Occurrences]: {
+                        N: oldOccurrences.toString(),
                     },
                 },
             }),
@@ -99,6 +109,21 @@ function createOccurrenceInsertRecord(
         url.hostname,
         createSortKey(url.pathname, keyphrase),
         occurrences
+    );
+}
+
+function createOccurrenceModifyRecord(
+    url: URL,
+    keyphrase: string,
+    newOccurrences: number,
+    oldOccurrences: number
+): DynamoDBRecord {
+    return createRecord(
+        "MODIFY",
+        url.hostname,
+        createSortKey(url.pathname, keyphrase),
+        newOccurrences,
+        oldOccurrences
     );
 }
 
@@ -245,3 +270,38 @@ describe.each([
         });
     }
 );
+
+describe("given a modify occurrence record", () => {
+    const expectedKeyphrase = "test";
+    const oldOccurences = createOccurrence(VALID_URL, expectedKeyphrase, 1);
+    const newOccurrences = createOccurrence(VALID_URL, expectedKeyphrase, 5);
+    const record = createOccurrenceModifyRecord(
+        VALID_URL,
+        expectedKeyphrase,
+        newOccurrences.occurrences,
+        oldOccurences.occurrences
+    );
+    const event = createEvent([record]);
+
+    test("calls domain with both new and old state of occurrence record", async () => {
+        const expected = createExpectedOccurrenceItem(
+            newOccurrences,
+            oldOccurences
+        );
+
+        await adapter.handleEvent(event);
+
+        expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
+        expect(mockPort.updateTotal).toHaveBeenCalledWith(
+            expect.arrayContaining([expected])
+        );
+    });
+
+    test("returns no batch item failures if update to totals succeeds", async () => {
+        mockPort.updateTotal.mockResolvedValue(true);
+
+        const actual = await adapter.handleEvent(event);
+
+        expect(actual.batchItemFailures).toHaveLength(0);
+    });
+});

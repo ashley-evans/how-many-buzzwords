@@ -6,6 +6,7 @@ import {
 import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
+    SiteKeyphraseOccurrences,
 } from "buzzword-aws-keyphrase-repository-library";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
@@ -18,6 +19,7 @@ import {
 
 enum AcceptedEventNames {
     Insert = "INSERT",
+    Modify = "MODIFY",
 }
 
 type ValidOccurrenceRecord = {
@@ -30,6 +32,9 @@ type ValidOccurrenceRecord = {
         NewImage: {
             [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
         };
+        OldImage:
+            | { [KeyphraseTableNonKeyFields.Occurrences]: { N: string } }
+            | undefined;
     };
 };
 
@@ -38,7 +43,7 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
     properties: {
         eventName: {
             type: "string",
-            enum: [AcceptedEventNames.Insert],
+            enum: [AcceptedEventNames.Insert, AcceptedEventNames.Modify],
         },
         dynamodb: {
             type: "object",
@@ -78,6 +83,20 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                         },
                     },
                     required: [KeyphraseTableNonKeyFields.Occurrences],
+                },
+                OldImage: {
+                    type: "object",
+                    properties: {
+                        [KeyphraseTableNonKeyFields.Occurrences]: {
+                            type: "object",
+                            properties: {
+                                N: { type: "string" },
+                            },
+                            required: ["N"],
+                        },
+                    },
+                    required: [KeyphraseTableNonKeyFields.Occurrences],
+                    nullable: true,
                 },
             },
             required: ["Keys", "NewImage"],
@@ -126,21 +145,47 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             throw new Error("An invalid SK was provided, missing seperator");
         }
 
-        const parsedOccurrences = parseInt(
-            streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N
-        );
+        const baseURL = streamRecord.Keys[KeyphraseTableKeyFields.HashKey].S;
+        const pathname = splitSK[0];
+        const keyphrase = splitSK[1];
+
+        return {
+            current: this.parseOccurrence(
+                baseURL,
+                pathname,
+                keyphrase,
+                streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N
+            ),
+            previous: streamRecord.OldImage
+                ? this.parseOccurrence(
+                      baseURL,
+                      pathname,
+                      keyphrase,
+                      streamRecord.OldImage[
+                          KeyphraseTableNonKeyFields.Occurrences
+                      ].N
+                  )
+                : undefined,
+        };
+    }
+
+    private parseOccurrence(
+        baseURL: string,
+        pathname: string,
+        keyphrase: string,
+        occurrences: string
+    ): SiteKeyphraseOccurrences {
+        const parsedOccurrences = parseInt(occurrences);
 
         if (isNaN(parsedOccurrences)) {
             throw new Error("A non-numeric occurrences valid was provided");
         }
 
         return {
-            current: {
-                baseURL: streamRecord.Keys[KeyphraseTableKeyFields.HashKey].S,
-                pathname: splitSK[0],
-                keyphrase: splitSK[1],
-                occurrences: parsedOccurrences,
-            },
+            baseURL,
+            pathname,
+            keyphrase,
+            occurrences: parsedOccurrences,
         };
     }
 
