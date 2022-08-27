@@ -695,6 +695,7 @@ Resources:
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
             Timeout: 10
+            MemorySize: 256
             Events:
                 KeyphraseStreamEvent:
                     Type: DynamoDB
@@ -703,6 +704,7 @@ Resources:
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+                        ParallelizationFactor: 5
             Architectures:
                 - arm64
             Environment:
