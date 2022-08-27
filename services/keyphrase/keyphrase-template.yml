@@ -84,7 +84,7 @@ Resources:
                 - AttributeName: sk
                   KeyType: RANGE
             StreamSpecification:
-                StreamViewType: NEW_IMAGE
+                StreamViewType: NEW_AND_OLD_IMAGES
             GlobalSecondaryIndexes:
                 - IndexName: KeyphraseUsageIndex
                   KeySchema:
@@ -646,4 +646,67 @@ Resources:
             Environment:
                 Variables:
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+    TotalOccurrencesRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: KeyphrasesTableWritePolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:TransactWriteItems
+                                - dynamodb:UpdateItem
+                            Resource: !GetAtt KeyphrasesTable.Arn
+                            Effect: Allow
+                - PolicyName: KeyphraseTableReadStreamPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeStream
+                                - dynamodb:GetRecords
+                                - dynamodb:GetShardIterator
+                                - dynamodb:ListStreams
+                            Resource: !GetAtt KeyphrasesTable.StreamArn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    TotalOccurrences:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: total-occurrences.handler
+            Role: !GetAtt TotalOccurrencesRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/total-occurrences
+            Description: Aggregates keyphrase occurrences at a site and global level, storing aggregated results in DynamoDB
+            Layers:
+                - Ref: KeyphraseRepositoryLibraryLayer
+            Timeout: 10
+            MemorySize: 256
+            Events:
+                KeyphraseStreamEvent:
+                    Type: DynamoDB
+                    Properties:
+                        Stream: !GetAtt KeyphrasesTable.StreamArn
+                        BatchSize: 10
+                        StartingPosition: TRIM_HORIZON
+                        MaximumRetryAttempts: 5
+                        ParallelizationFactor: 5
+            Architectures:
+                - arm64
+            Environment:
+                Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable

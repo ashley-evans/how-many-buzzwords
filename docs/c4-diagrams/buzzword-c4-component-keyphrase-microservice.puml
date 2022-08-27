@@ -15,6 +15,7 @@ Container_Boundary(keyphrase_microservice_boundary, "Keyphrase Microservice") {
     Component(find_keyphrases_lambda, "Find Keyphrases Lambda", "Lambda and TypeScript", "Performs keyphrase analysis on page content")
     Component(count_occurrences_lambda, "Count Occurrences Lambda", "Lambda and TypeScript", "Counts the number of occurrences for a set of keyphrases on a given page")
     Component(crud_lambda, "Keyphrases CRUD Lambda", "Lambda and TypeScript", "Provides CRUD functionality for the keyphrase and occurrence data")
+    Component(total_occurrences_lambda, "Total Occurrences Lambda", "Lambda and TypeScript", "Totals occurrences of keyphrases across a given site and across all sites")
     Component(update_connections_lambda, "Update Connections Lambda", "Lambda and TypeScript", "Updates listening clients with relevant changes to the keyphrase and occurrence data")
     Component(new_connection_lambda, "New Connection Lambda", "Lambda and TypeScript", "Provides new clients with the current keyphrase and occurrence data related to their provided URL")
     Component(connection_manager_lambda, "Connection Manager Lambda", "Lambda and TypeScript", "Manages client connections and disconnections")
@@ -56,7 +57,10 @@ Rel(update_connections_lambda, keyphrase_db, "Listens to new keyphrases and occu
 Rel(update_connections_lambda, active_connections_db, "Retrieves relevant listening client details from", "Dynamoose")
 Rel_U(update_connections_lambda, ws_api_gateway, "Sends new keyphrase and occurrence state to", "API Gateway Management Client")
 
+BiRel(total_occurrences_lambda, keyphrase_db, "Listens to occurrence updates, updating totals to reflect changes", "DynamoDB Stream")
+
 Lay_L(single_page_application, crawl_microservice)
+Lay_R(total_occurrences_lambda, crud_lambda)
 
 SHOW_LEGEND()
 
