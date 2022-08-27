@@ -144,7 +144,8 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         const sortKey = streamRecord.Keys[KeyphraseTableKeyFields.RangeKey].S;
         const newOccurrences =
             streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N;
-
+        const oldOccurrences =
+            streamRecord.OldImage?.[KeyphraseTableNonKeyFields.Occurrences].N;
         if (
             validatedRecord.eventName == AcceptedEventNames.Modify &&
             !streamRecord.OldImage
@@ -155,12 +156,11 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         }
 
         if (partitionKey == KeyphraseTableConstants.TotalKey) {
-            return {
-                current: {
-                    keyphrase: sortKey,
-                    occurrences: this.parseOccurrence(newOccurrences),
-                },
-            };
+            return this.createTotalItem(
+                sortKey,
+                newOccurrences,
+                oldOccurrences
+            );
         }
 
         const splitSK = sortKey.split("#");
@@ -171,13 +171,12 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         const pathname = splitSK[0];
         const keyphrase = splitSK[1];
         if (pathname == KeyphraseTableConstants.TotalKey) {
-            return {
-                current: {
-                    baseURL: partitionKey,
-                    keyphrase,
-                    occurrences: this.parseOccurrence(newOccurrences),
-                },
-            };
+            return this.createTotalItem(
+                keyphrase,
+                newOccurrences,
+                oldOccurrences,
+                partitionKey
+            );
         }
 
         return this.createOccurrenceItem(
@@ -185,7 +184,7 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             pathname,
             keyphrase,
             newOccurrences,
-            streamRecord.OldImage?.[KeyphraseTableNonKeyFields.Occurrences].N
+            oldOccurrences
         );
     }
 
@@ -209,6 +208,28 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
                       pathname,
                       keyphrase,
                       occurrences: this.parseOccurrence(oldOccurences),
+                  }
+                : undefined,
+        };
+    }
+
+    private createTotalItem(
+        keyphrase: string,
+        newOccurrences: string,
+        oldOccurrences?: string,
+        baseURL?: string
+    ): TotalItem {
+        return {
+            current: {
+                baseURL,
+                keyphrase,
+                occurrences: this.parseOccurrence(newOccurrences),
+            },
+            previous: oldOccurrences
+                ? {
+                      baseURL,
+                      keyphrase,
+                      occurrences: this.parseOccurrence(oldOccurrences),
                   }
                 : undefined,
         };

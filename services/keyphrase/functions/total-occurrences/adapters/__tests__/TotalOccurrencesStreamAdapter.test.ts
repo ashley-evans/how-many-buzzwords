@@ -174,6 +174,31 @@ function createTotalInsertRecord(
     );
 }
 
+function createTotalModifyRecord(
+    keyphrase: string,
+    newOccurrences: number,
+    oldOccurences?: number,
+    url?: URL
+) {
+    if (url) {
+        return createRecord(
+            "MODIFY",
+            url.hostname,
+            createSortKey(KeyphraseTableConstants.TotalKey, keyphrase),
+            newOccurrences,
+            oldOccurences
+        );
+    }
+
+    return createRecord(
+        "MODIFY",
+        KeyphraseTableConstants.TotalKey,
+        keyphrase,
+        newOccurrences,
+        oldOccurences
+    );
+}
+
 beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
 });
@@ -372,32 +397,65 @@ describe("given a valid modify occurrence record", () => {
 });
 
 describe.each([
-    ["global", createTotalOccurrence("test", 15)],
-    ["site", createTotalOccurrence("test", 15, VALID_URL), VALID_URL],
-])(
-    "given a valid insert %s total record",
-    (message: string, total: OccurrenceTotalImage, site?: URL) => {
-        const event = createEvent([
-            createTotalInsertRecord(total.keyphrase, total.occurrences, site),
-        ]);
+    ["global", undefined],
+    ["site", VALID_URL],
+])("given a valid insert %s total record", (message: string, site?: URL) => {
+    const total = createTotalOccurrence("test", 15, site);
+    const event = createEvent([
+        createTotalInsertRecord(total.keyphrase, total.occurrences, site),
+    ]);
 
-        test("calls domain with provided total record", async () => {
-            const expected = createExpectedTotalItem(total);
+    test("calls domain with provided total record", async () => {
+        const expected = createExpectedTotalItem(total);
 
-            await adapter.handleEvent(event);
+        await adapter.handleEvent(event);
 
-            expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
-            expect(mockPort.updateTotal).toHaveBeenCalledWith(
-                expect.arrayContaining([expected])
-            );
-        });
+        expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
+        expect(mockPort.updateTotal).toHaveBeenCalledWith(
+            expect.arrayContaining([expected])
+        );
+    });
 
-        test("returns no batch item failures if update to totals succeeds", async () => {
-            mockPort.updateTotal.mockResolvedValue(true);
+    test("returns no batch item failures if update to totals succeeds", async () => {
+        mockPort.updateTotal.mockResolvedValue(true);
 
-            const actual = await adapter.handleEvent(event);
+        const actual = await adapter.handleEvent(event);
 
-            expect(actual.batchItemFailures).toHaveLength(0);
-        });
-    }
-);
+        expect(actual.batchItemFailures).toHaveLength(0);
+    });
+});
+
+describe.each([
+    ["global", undefined],
+    ["site", VALID_URL],
+])("given a valid modify %s total record", (message: string, site?: URL) => {
+    const expectedKeyphrase = "test";
+    const oldOccurences = createTotalOccurrence(expectedKeyphrase, 15, site);
+    const newOccurrences = createTotalOccurrence(expectedKeyphrase, 17, site);
+    const record = createTotalModifyRecord(
+        expectedKeyphrase,
+        newOccurrences.occurrences,
+        oldOccurences.occurrences,
+        site
+    );
+    const event = createEvent([record]);
+
+    test("calls domain with both new and old state of occurrence record", async () => {
+        const expected = createExpectedTotalItem(newOccurrences, oldOccurences);
+
+        await adapter.handleEvent(event);
+
+        expect(mockPort.updateTotal).toHaveBeenCalledTimes(1);
+        expect(mockPort.updateTotal).toHaveBeenCalledWith(
+            expect.arrayContaining([expected])
+        );
+    });
+
+    test("returns no batch item failures if update to totals succeeds", async () => {
+        mockPort.updateTotal.mockResolvedValue(true);
+
+        const actual = await adapter.handleEvent(event);
+
+        expect(actual.batchItemFailures).toHaveLength(0);
+    });
+});
