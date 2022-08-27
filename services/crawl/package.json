@@ -2,7 +2,7 @@
     "name": "buzzword-aws-crawl",
     "version": "1.0.0",
     "devDependencies": {
-        "@graphql-codegen/cli": "^2.8.0",
+        "@graphql-codegen/cli": "^2.11.8",
         "@graphql-codegen/typescript": "^2.7.1",
         "buzzword-aws-crawl-common": "file:common",
         "buzzword-aws-crawl-content-repository-library": "file:libs/content-repository-library",
