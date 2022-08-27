@@ -158,18 +158,36 @@ describe.each([
         createEvent([createRecord("INSERT", "test", "test/test", 1)]),
     ],
     [
-        "a record with a missing number of occurrences",
+        "a record with a missing number of new occurrences",
         createEvent([
             createRecord("INSERT", "test", createSortKey("test", "test")),
         ]),
     ],
     [
-        "a record with a non-numeric number of occurrences",
+        "a record with a non-numeric number of new occurrences",
         createEvent([
             createRecord(
                 "INSERT",
                 "test",
                 createSortKey("test", "test"),
+                "this is not a number"
+            ),
+        ]),
+    ],
+    [
+        "a modify record with a missing number of old occurrences",
+        createEvent([
+            createRecord("MODIFY", "test", createSortKey("test", "test"), 1),
+        ]),
+    ],
+    [
+        "a modify record with a non-numeric number of old occurrences",
+        createEvent([
+            createRecord(
+                "MODIFY",
+                "test",
+                createSortKey("test", "test"),
+                1,
                 "this is not a number"
             ),
         ]),

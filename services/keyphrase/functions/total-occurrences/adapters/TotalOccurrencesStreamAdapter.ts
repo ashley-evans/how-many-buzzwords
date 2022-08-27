@@ -138,6 +138,15 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
     private parseRecord(record: DynamoDBRecord): OccurrenceItem {
         const validatedRecord = this.validator.validate(record);
         const streamRecord = validatedRecord.dynamodb;
+        if (
+            validatedRecord.eventName == AcceptedEventNames.Modify &&
+            !streamRecord.OldImage
+        ) {
+            throw new Error(
+                "An invalid modify event was provided, no old image"
+            );
+        }
+
         const splitSK =
             streamRecord.Keys[KeyphraseTableKeyFields.RangeKey].S.split("#");
 
