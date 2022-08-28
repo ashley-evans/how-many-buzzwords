@@ -6,6 +6,7 @@ import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClien
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import OccurrenceTable from "./OccurrenceTable";
 import KeyphraseCloud from "./KeyphraseCloud";
+import ResultConstants from "../enums/Constants";
 
 type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
@@ -22,6 +23,7 @@ function parseURL(url?: string): URL {
 function Results(props: ResultsProps) {
     const { url } = useParams();
     const [occurrences, setOccurrences] = useState<PathnameOccurrences[]>([]);
+    const [totals, setTotals] = useState<Record<string, number>>({});
 
     try {
         const validatedURL = parseURL(url);
@@ -33,6 +35,12 @@ function Results(props: ResultsProps) {
             observable.subscribe({
                 next: (occurrence) => {
                     setOccurrences((previous) => [...previous, occurrence]);
+                    if (occurrence.pathname == ResultConstants.TOTAL) {
+                        setTotals((previous) => ({
+                            ...previous,
+                            [occurrence.keyphrase]: occurrence.occurrences,
+                        }));
+                    }
                 },
             });
 
@@ -58,7 +66,7 @@ function Results(props: ResultsProps) {
                 <Row>
                     <Col flex="1 1 500px" />
                     <Col flex="1 0 500px">
-                        <KeyphraseCloud occurrences={occurrences} />
+                        <KeyphraseCloud occurrences={totals} />
                     </Col>
                 </Row>
                 <Row>

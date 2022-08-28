@@ -16,6 +16,7 @@ const mockKeyphraseCloud = jest.fn();
 mockComponent(path.join(__dirname, "..", "KeyphraseCloud"), mockKeyphraseCloud);
 
 import Results from "../Results";
+import ResultConstants from "../../enums/Constants";
 
 const VALID_URL = "http://www.example.com/";
 
@@ -143,9 +144,92 @@ describe("given valid encoded url", () => {
 
         expect(mockKeyphraseCloud).toHaveBeenCalledTimes(1);
         expect(mockKeyphraseCloud).toHaveBeenCalledWith({
-            occurrences: [],
+            occurrences: {},
         });
     });
+
+    test.each([
+        [
+            "no values",
+            "a single non-total occurrence",
+            [{ pathname: "/test", keyphrase: "wibble", occurrences: 15 }],
+            {},
+        ],
+        [
+            "total",
+            "a single total occurrence",
+            [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "wibble",
+                    occurrences: 15,
+                },
+            ],
+            { wibble: 15 },
+        ],
+        [
+            "multiple different totals",
+            "multiple different total occurrences",
+            [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "wibble",
+                    occurrences: 15,
+                },
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "test",
+                    occurrences: 12,
+                },
+            ],
+            { wibble: 15, test: 12 },
+        ],
+        [
+            "the most recent total",
+            "multiple of the same total occurrence",
+            [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "wibble",
+                    occurrences: 15,
+                },
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "wibble",
+                    occurrences: 20,
+                },
+            ],
+            { wibble: 20 },
+        ],
+    ])(
+        "provides %s to keyphrase cloud given %s returned",
+        async (
+            expectedMessage: string,
+            inputMessage: string,
+            inputOccurrences: PathnameOccurrences[],
+            expectedOccurrences: Record<string, number>
+        ) => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(inputOccurrences)
+            );
+
+            const { queryByText } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+
+            expect(mockKeyphraseCloud).toHaveBeenLastCalledWith({
+                occurrences: expectedOccurrences,
+            });
+        }
+    );
 
     describe.each([
         [
@@ -217,26 +301,6 @@ describe("given valid encoded url", () => {
                         })
                     ).toBeInTheDocument();
                 }
-            });
-
-            test("provides occurrences to keyphrase cloud", async () => {
-                const { queryByText } = renderWithRouter(
-                    <Results
-                        keyphraseServiceClientFactory={
-                            mockKeyphraseClientFactory
-                        }
-                    />,
-                    encodeURIComponent(VALID_URL)
-                );
-                await waitFor(() =>
-                    expect(
-                        queryByText(AWAITING_RESULTS_MESSAGE)
-                    ).not.toBeInTheDocument()
-                );
-
-                expect(mockKeyphraseCloud).toHaveBeenLastCalledWith({
-                    occurrences: expectedOccurrences,
-                });
             });
         }
     );
