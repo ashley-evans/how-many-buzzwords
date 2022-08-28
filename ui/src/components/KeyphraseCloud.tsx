@@ -1,5 +1,6 @@
 import React, { Fragment } from "react";
 import { WordCloud, WordCloudConfig } from "@ant-design/plots";
+import { Empty } from "antd";
 
 type KeyphraseCloudProps = {
     occurrences: Record<string, number>;
@@ -21,7 +22,9 @@ function KeyphraseCloud(props: KeyphraseCloudProps) {
 
     return (
         <Fragment>
-            {occurrences.length == 0 && <p>Awaiting results...</p>}
+            {occurrences.length == 0 && (
+                <Empty description={<span>Awaiting results...</span>} />
+            )}
             {occurrences.length != 0 && (
                 <figure>
                     <WordCloud {...config} />
