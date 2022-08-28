@@ -22,11 +22,13 @@ const columns: ColumnsType<GroupedOccurrences> = [
         title: "Keyphrase",
         dataIndex: "keyphrase",
         key: "keyphrase",
+        width: "25%",
     },
     {
         title: "Pathname",
         dataIndex: "pathname",
         key: "pathname",
+        width: "60%",
     },
     {
         title: "Occurrences",
