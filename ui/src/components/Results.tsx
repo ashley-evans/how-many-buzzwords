@@ -40,11 +40,23 @@ function groupOccurrences(
 ): GroupedOccurrences[] {
     const totals: Record<string, number> = {};
     const groups = Object.entries(occurrences).reduce(
-        (groups: Record<string, OccurrenceRow[]>, [key, occurrences]) => {
-            const splitKey = key.split("#");
-            if (splitKey[0] == ResultConstants.TOTAL) {
-                totals[splitKey[1]] = occurrences;
-                groups[splitKey[1]] = [];
+        (
+            groups: Record<string, Omit<OccurrenceRow, "keyphrase">[]>,
+            [key, occurrences]
+        ) => {
+            const [pathname, keyphrase] = key.split("#");
+            if (!groups[keyphrase]) {
+                groups[keyphrase] = [];
+            }
+
+            if (pathname == ResultConstants.TOTAL) {
+                totals[keyphrase] = occurrences;
+            } else {
+                groups[keyphrase].push({
+                    key: `${pathname}#${keyphrase}`,
+                    pathname,
+                    occurrences,
+                });
             }
 
             return groups;
@@ -52,11 +64,11 @@ function groupOccurrences(
         {}
     );
 
-    return Object.entries(groups).map(([keyphrase, children]) => ({
+    return Object.entries(totals).map(([keyphrase, occurrences]) => ({
         key: keyphrase,
         keyphrase,
-        occurrences: totals[keyphrase],
-        children,
+        occurrences,
+        children: groups[keyphrase],
     }));
 }
 

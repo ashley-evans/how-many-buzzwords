@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, within } from "@testing-library/react";
+import { render, waitFor, within, fireEvent } from "@testing-library/react";
 import { mock } from "jest-mock-extended";
 import { from } from "rxjs";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -444,6 +444,190 @@ describe("given valid encoded url", () => {
                 name: ResultConstants.TOTAL,
             })
         ).not.toBeInTheDocument();
+    });
+
+    describe("occurrence breakdown rendering given both site and path occurrences for same keyphrase", () => {
+        const EXPECTED_EXPAND_ROW_TEXT = "Expand row";
+        const EXPECTED_COLLAPSE_ROW_TEXT = "Collapse row";
+
+        const totalOccurrence: PathnameOccurrences = {
+            pathname: ResultConstants.TOTAL,
+            keyphrase: "test",
+            occurrences: 15,
+        };
+        const pathOccurrences = { ...totalOccurrence, pathname: "wibble" };
+        const occurrences = [totalOccurrence, pathOccurrences];
+
+        beforeEach(() => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+        });
+
+        test("does not show breakdown of occurrences by default", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+
+            expect(
+                within(table).getByRole("cell", {
+                    name: totalOccurrence.keyphrase,
+                })
+            ).toBeInTheDocument();
+            expect(
+                within(table).queryByRole("cell", {
+                    name: pathOccurrences.pathname,
+                })
+            ).not.toBeInTheDocument();
+        });
+
+        test("renders an expand row button", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+
+            expect(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            ).toBeInTheDocument();
+        });
+
+        test("renders path occurrences when expand row button is pressed", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            );
+
+            expect(
+                within(table).getByRole("cell", {
+                    name: pathOccurrences.pathname,
+                })
+            ).toBeInTheDocument();
+        });
+
+        test("does not render total as path occurrence when expand row is pressed", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            );
+
+            expect(
+                within(table).queryByRole("cell", {
+                    name: totalOccurrence.pathname,
+                })
+            ).not.toBeInTheDocument();
+        });
+
+        test("renders a collapse row button when row is expanded", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            );
+
+            await waitFor(() =>
+                expect(
+                    within(table).getByRole("button", {
+                        name: EXPECTED_COLLAPSE_ROW_TEXT,
+                    })
+                ).toBeInTheDocument()
+            );
+        });
+
+        test("hides path occurrences when grouped row is collapsed", async () => {
+            const { queryByText, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            );
+            await waitFor(() =>
+                expect(
+                    within(table).getByRole("button", {
+                        name: EXPECTED_COLLAPSE_ROW_TEXT,
+                    })
+                ).toBeInTheDocument()
+            );
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_COLLAPSE_ROW_TEXT,
+                })
+            );
+
+            expect(
+                within(table).queryByRole("cell", {
+                    name: pathOccurrences.pathname,
+                })
+            ).not.toBeInTheDocument();
+        });
     });
 });
 
