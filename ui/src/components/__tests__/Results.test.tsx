@@ -390,6 +390,11 @@ describe("given valid encoded url", () => {
                             name: expectedOccurrence.occurrences.toString(),
                         })
                     ).toBeInTheDocument();
+                    expect(
+                        within(table).queryByRole("cell", {
+                            name: ResultConstants.TOTAL,
+                        })
+                    ).not.toBeInTheDocument();
                 }
             });
         }
@@ -434,6 +439,11 @@ describe("given valid encoded url", () => {
                 name: secondValue.occurrences.toString(),
             })
         ).toBeInTheDocument();
+        expect(
+            within(table).queryByRole("cell", {
+                name: ResultConstants.TOTAL,
+            })
+        ).not.toBeInTheDocument();
     });
 });
 
