@@ -134,27 +134,38 @@ describe("given valid encoded url", () => {
         );
     });
 
-    test("provides no keyphrases to keyphrase cloud if no keyphrases returned", async () => {
-        renderWithRouter(
-            <Results
-                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
-            />,
-            encodeURIComponent(VALID_URL)
-        );
+    test.each([
+        ["no keyphrases returned", []],
+        [
+            "no total occurrences returned",
+            [{ pathname: "/test", keyphrase: "wibble", occurrences: 15 }],
+        ],
+    ])(
+        "provides no keyphrases to keyphrase cloud if no keyphrases returned",
+        async (message: string, occurrences: PathnameOccurrences[]) => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
 
-        expect(mockKeyphraseCloud).toHaveBeenCalledTimes(1);
-        expect(mockKeyphraseCloud).toHaveBeenCalledWith({
-            occurrences: {},
-        });
-    });
+            const { queryByText } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).toBeInTheDocument()
+            );
+
+            expect(mockKeyphraseCloud).toHaveBeenLastCalledWith({
+                occurrences: {},
+            });
+        }
+    );
 
     test.each([
-        [
-            "no values",
-            "a single non-total occurrence",
-            [{ pathname: "/test", keyphrase: "wibble", occurrences: 15 }],
-            {},
-        ],
         [
             "total",
             "a single total occurrence",
@@ -233,25 +244,80 @@ describe("given valid encoded url", () => {
 
     describe.each([
         [
-            "a single occurrence",
+            "a single non-total keyphrase occurrence",
+            [{ pathname: "/test", keyphrase: "wibble", occurrences: 15 }],
+        ],
+        [
+            "multiple non-total keyphrase occurrences",
+            [
+                { pathname: "/test", keyphrase: "wibble", occurrences: 15 },
+                { pathname: "/wibble", keyphrase: "test", occurrences: 12 },
+            ],
+        ],
+    ])(
+        "missing total row rendering given %s",
+        (message: string, occurrences: PathnameOccurrences[]) => {
+            beforeEach(() => {
+                mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                    from(occurrences)
+                );
+            });
+
+            test("renders awaiting message", async () => {
+                const { getByText } = renderWithRouter(
+                    <Results
+                        keyphraseServiceClientFactory={
+                            mockKeyphraseClientFactory
+                        }
+                    />,
+                    encodeURIComponent(VALID_URL)
+                );
+
+                await waitFor(() =>
+                    expect(
+                        getByText(AWAITING_RESULTS_MESSAGE)
+                    ).toBeInTheDocument()
+                );
+            });
+
+            test("does not render table to display results", async () => {
+                const { queryByRole } = renderWithRouter(
+                    <Results
+                        keyphraseServiceClientFactory={
+                            mockKeyphraseClientFactory
+                        }
+                    />,
+                    encodeURIComponent(VALID_URL)
+                );
+
+                await waitFor(() =>
+                    expect(queryByRole("table")).not.toBeInTheDocument()
+                );
+            });
+        }
+    );
+
+    describe.each([
+        [
+            "a single total occurrence",
             [
                 {
-                    pathname: "/test",
+                    pathname: ResultConstants.TOTAL,
                     keyphrase: "wibble",
                     occurrences: 15,
                 },
             ],
         ],
         [
-            "multiple occurrences",
+            "multiple total occurrences",
             [
                 {
-                    pathname: "/test",
+                    pathname: ResultConstants.TOTAL,
                     keyphrase: "wibble",
                     occurrences: 15,
                 },
                 {
-                    pathname: "/example",
+                    pathname: ResultConstants.TOTAL,
                     keyphrase: "wobble",
                     occurrences: 12,
                 },
@@ -266,7 +332,7 @@ describe("given valid encoded url", () => {
                 );
             });
 
-            test("renders required columns to contain results from crawl within table", async () => {
+            test("renders required table columns", async () => {
                 const expectedColumns = [
                     "Pathname",
                     "Keyphrase",
@@ -297,7 +363,7 @@ describe("given valid encoded url", () => {
                 }
             });
 
-            test("renders each keyphrase result in the table", async () => {
+            test("renders each total occurrence in the table", async () => {
                 const { queryByText, getByRole } = renderWithRouter(
                     <Results
                         keyphraseServiceClientFactory={
@@ -314,13 +380,6 @@ describe("given valid encoded url", () => {
                 const table = getByRole("table");
 
                 for (const expectedOccurrence of expectedOccurrences) {
-                    await waitFor(() =>
-                        expect(
-                            within(table).getByRole("cell", {
-                                name: expectedOccurrence.pathname,
-                            })
-                        ).toBeInTheDocument()
-                    );
                     expect(
                         within(table).getByRole("cell", {
                             name: expectedOccurrence.keyphrase,
@@ -336,9 +395,9 @@ describe("given valid encoded url", () => {
         }
     );
 
-    test("only most recently received value given multiple values received for same path and keyphrase", async () => {
+    test("renders only most recently received total given multiple values received for same keyphrase total", async () => {
         const firstValue: PathnameOccurrences = {
-            pathname: "/test",
+            pathname: ResultConstants.TOTAL,
             keyphrase: "wibble",
             occurrences: 15,
         };
@@ -366,7 +425,7 @@ describe("given valid encoded url", () => {
         await waitFor(() =>
             expect(
                 within(table).getByRole("cell", {
-                    name: secondValue.pathname,
+                    name: secondValue.keyphrase,
                 })
             ).toBeInTheDocument()
         );

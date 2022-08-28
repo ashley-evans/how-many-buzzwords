@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState, ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Button, Col, Row, Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -12,16 +12,21 @@ type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
 
-const columns: ColumnsType<PathnameOccurrences> = [
-    {
-        title: "Pathname",
-        dataIndex: "pathname",
-        key: "pathname",
-    },
+type OccurrenceRow = PathnameOccurrences & { key: ReactNode };
+type GroupedOccurrences = Omit<OccurrenceRow, "pathname"> & {
+    children?: Omit<OccurrenceRow, "keyphrase">[];
+};
+
+const columns: ColumnsType<GroupedOccurrences> = [
     {
         title: "Keyphrase",
         dataIndex: "keyphrase",
         key: "keyphrase",
+    },
+    {
+        title: "Pathname",
+        dataIndex: "pathname",
+        key: "pathname",
     },
     {
         title: "Occurrences",
@@ -29,6 +34,31 @@ const columns: ColumnsType<PathnameOccurrences> = [
         key: "occurrences",
     },
 ];
+
+function groupOccurrences(
+    occurrences: Record<OccurrenceKey, number>
+): GroupedOccurrences[] {
+    const totals: Record<string, number> = {};
+    const groups = Object.entries(occurrences).reduce(
+        (groups: Record<string, OccurrenceRow[]>, [key, occurrences]) => {
+            const splitKey = key.split("#");
+            if (splitKey[0] == ResultConstants.TOTAL) {
+                totals[splitKey[1]] = occurrences;
+                groups[splitKey[1]] = [];
+            }
+
+            return groups;
+        },
+        {}
+    );
+
+    return Object.entries(groups).map(([keyphrase, children]) => ({
+        key: keyphrase,
+        keyphrase,
+        occurrences: totals[keyphrase],
+        children,
+    }));
+}
 
 function parseURL(url?: string): URL {
     if (!url) {
@@ -45,7 +75,7 @@ function Results(props: ResultsProps) {
     const [occurrences, setOccurrences] = useState<
         Record<OccurrenceKey, number>
     >({});
-    const [totals, setTotals] = useState<Record<string, number>>({});
+    const [totals, setTotals] = useState<Record<OccurrenceKey, number>>({});
 
     let validatedURL: URL;
     try {
@@ -80,14 +110,7 @@ function Results(props: ResultsProps) {
         };
     }, []);
 
-    const results = Object.entries(occurrences).map(([key, occurrences]) => {
-        const splitKey = key.split("#");
-        return {
-            pathname: splitKey[0],
-            keyphrase: splitKey[1],
-            occurrences,
-        };
-    });
+    const groupedResults = groupOccurrences(occurrences);
 
     return (
         <Fragment>
@@ -111,14 +134,11 @@ function Results(props: ResultsProps) {
             </Row>
             <Row>
                 <Col span={24}>
-                    {results.length == 0 && <p>Awaiting results...</p>}
-                    {results.length != 0 && (
+                    {groupedResults.length == 0 && <p>Awaiting results...</p>}
+                    {groupedResults.length != 0 && (
                         <Table
                             columns={columns}
-                            dataSource={results}
-                            rowKey={(record) =>
-                                `${record.pathname}#${record.keyphrase}`
-                            }
+                            dataSource={groupedResults}
                             pagination={false}
                         />
                     )}
