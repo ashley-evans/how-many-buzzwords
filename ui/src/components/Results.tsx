@@ -146,7 +146,7 @@ function Results(props: ResultsProps) {
                     <KeyphraseCloud occurrences={totals} />
                 </Col>
             </Row>
-            <Row>
+            <Row style={{ marginTop: "5px" }}>
                 <Col span={24}>
                     <Table
                         columns={columns}
