@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useState, ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Button, Col, Row, Table, Typography } from "antd";
+import { Button, Col, Row, Table, Typography, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
@@ -148,14 +148,20 @@ function Results(props: ResultsProps) {
             </Row>
             <Row>
                 <Col span={24}>
-                    {groupedResults.length == 0 && <p>Awaiting results...</p>}
-                    {groupedResults.length != 0 && (
-                        <Table
-                            columns={columns}
-                            dataSource={groupedResults}
-                            pagination={false}
-                        />
-                    )}
+                    <Table
+                        columns={columns}
+                        dataSource={groupedResults}
+                        pagination={false}
+                        locale={{
+                            emptyText: (
+                                <Empty
+                                    description={
+                                        <span>Awaiting results...</span>
+                                    }
+                                />
+                            ),
+                        }}
+                    />
                 </Col>
             </Row>
         </Fragment>
