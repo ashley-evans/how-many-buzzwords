@@ -712,3 +712,7 @@ Resources:
             Environment:
                 Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+Outputs:
+    WebSocketAPIEndpoint:
+        Description: The endpoint for the Keyhrase service's WebSocket API
+        Value: !GetAtt KeyphraseWebSocketGateway.ApiEndpoint
