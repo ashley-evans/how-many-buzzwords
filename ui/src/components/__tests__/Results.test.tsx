@@ -258,7 +258,7 @@ describe("given valid encoded url", () => {
             ],
         ],
     ])(
-        "result rendering given %s returned",
+        "results table rendering given %s",
         (message: string, expectedOccurrences: PathnameOccurrences[]) => {
             beforeEach(() => {
                 mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
@@ -266,7 +266,38 @@ describe("given valid encoded url", () => {
                 );
             });
 
-            test("renders a result table containing returned occurrences", async () => {
+            test("renders required columns to contain results from crawl within table", async () => {
+                const expectedColumns = [
+                    "Pathname",
+                    "Keyphrase",
+                    "Occurrences",
+                ];
+
+                const { queryByText, getByRole } = renderWithRouter(
+                    <Results
+                        keyphraseServiceClientFactory={
+                            mockKeyphraseClientFactory
+                        }
+                    />,
+                    encodeURIComponent(VALID_URL)
+                );
+                await waitFor(() =>
+                    expect(
+                        queryByText(AWAITING_RESULTS_MESSAGE)
+                    ).not.toBeInTheDocument()
+                );
+                const table = getByRole("table");
+
+                for (const expectedColumn of expectedColumns) {
+                    expect(
+                        within(table).getByRole("columnheader", {
+                            name: expectedColumn,
+                        })
+                    ).toBeInTheDocument();
+                }
+            });
+
+            test("renders each keyphrase result in the table", async () => {
                 const { queryByText, getByRole } = renderWithRouter(
                     <Results
                         keyphraseServiceClientFactory={
@@ -304,6 +335,47 @@ describe("given valid encoded url", () => {
             });
         }
     );
+
+    test("only most recently received value given multiple values received for same path and keyphrase", async () => {
+        const firstValue: PathnameOccurrences = {
+            pathname: "/test",
+            keyphrase: "wibble",
+            occurrences: 15,
+        };
+        const secondValue: PathnameOccurrences = {
+            ...firstValue,
+            occurrences: 18,
+        };
+        mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+            from([firstValue, secondValue])
+        );
+
+        const { queryByText, getByRole } = renderWithRouter(
+            <Results
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />,
+            encodeURIComponent(VALID_URL)
+        );
+        await waitFor(() =>
+            expect(
+                queryByText(AWAITING_RESULTS_MESSAGE)
+            ).not.toBeInTheDocument()
+        );
+        const table = getByRole("table");
+
+        await waitFor(() =>
+            expect(
+                within(table).getByRole("cell", {
+                    name: secondValue.pathname,
+                })
+            ).toBeInTheDocument()
+        );
+        expect(
+            within(table).getByRole("cell", {
+                name: secondValue.occurrences.toString(),
+            })
+        ).toBeInTheDocument();
+    });
 });
 
 test("disconnects keyphrase connection when component is unmounted", () => {
