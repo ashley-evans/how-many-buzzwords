@@ -24,7 +24,7 @@ const schema = new Schema({
         index: {
             name: KeyphraseTableConstants.KeyphraseUsageIndexName,
             rangeKey: KeyphraseTableKeyFields.HashKey,
-            project: false,
+            project: [KeyphraseTableNonKeyFields.Occurrences],
         },
         required: true,
     },

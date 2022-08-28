@@ -93,7 +93,9 @@ Resources:
                       - AttributeName: pk
                         KeyType: RANGE
                   Projection:
-                      ProjectionType: KEYS_ONLY
+                      ProjectionType: INCLUDE
+                      NonKeyAttributes:
+                          - Occurrences
     ParsedContentBucket:
         Type: AWS::S3::Bucket
         Properties:
@@ -710,3 +712,7 @@ Resources:
             Environment:
                 Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+Outputs:
+    WebSocketAPIEndpoint:
+        Description: The endpoint for the Keyhrase service's WebSocket API
+        Value: !GetAtt KeyphraseWebSocketGateway.ApiEndpoint
