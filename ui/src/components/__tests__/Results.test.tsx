@@ -280,8 +280,8 @@ describe("given valid encoded url", () => {
                 );
             });
 
-            test("does not render table to display results", async () => {
-                const { queryByRole } = renderWithRouter(
+            test("does not render any of the occurrences", async () => {
+                const { getByText, getByRole } = renderWithRouter(
                     <Results
                         keyphraseServiceClientFactory={
                             mockKeyphraseClientFactory
@@ -289,10 +289,30 @@ describe("given valid encoded url", () => {
                     />,
                     encodeURIComponent(VALID_URL)
                 );
-
                 await waitFor(() =>
-                    expect(queryByRole("table")).not.toBeInTheDocument()
+                    expect(
+                        getByText(AWAITING_RESULTS_MESSAGE)
+                    ).toBeInTheDocument()
                 );
+                const table = getByRole("table");
+
+                for (const occurrence of occurrences) {
+                    expect(
+                        within(table).queryByRole("cell", {
+                            name: occurrence.keyphrase,
+                        })
+                    ).not.toBeInTheDocument();
+                    expect(
+                        within(table).queryByRole("cell", {
+                            name: occurrence.pathname,
+                        })
+                    ).not.toBeInTheDocument();
+                    expect(
+                        within(table).queryByRole("cell", {
+                            name: occurrence.occurrences.toString(),
+                        })
+                    ).not.toBeInTheDocument();
+                }
             });
         }
     );
