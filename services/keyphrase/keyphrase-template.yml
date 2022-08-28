@@ -93,7 +93,9 @@ Resources:
                       - AttributeName: pk
                         KeyType: RANGE
                   Projection:
-                      ProjectionType: KEYS_ONLY
+                      ProjectionType: INCLUDE
+                      NonKeyAttributes:
+                          - Occurrences
     ParsedContentBucket:
         Type: AWS::S3::Bucket
         Properties:
