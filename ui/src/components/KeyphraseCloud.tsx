@@ -18,6 +18,7 @@ function KeyphraseCloud(props: KeyphraseCloudProps) {
         colorField: "keyphrase",
         autoFit: false,
         renderer: "svg",
+        theme: "dark",
     };
 
     return (

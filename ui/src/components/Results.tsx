@@ -6,7 +6,9 @@ import type { ColumnsType } from "antd/es/table";
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import KeyphraseCloud from "./KeyphraseCloud";
+import KeyphraseCirclePacking from "./KeyphraseCirclePacking";
 import ResultConstants from "../enums/Constants";
+import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
 
 type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
@@ -38,7 +40,7 @@ const columns: ColumnsType<GroupedOccurrences> = [
 ];
 
 function groupOccurrences(
-    occurrences: Record<OccurrenceKey, number>
+    occurrences: Record<UniqueOccurrenceKey, number>
 ): GroupedOccurrences[] {
     const totals: Record<string, number> = {};
     const groups = Object.entries(occurrences).reduce(
@@ -82,14 +84,14 @@ function parseURL(url?: string): URL {
     return new URL(url);
 }
 
-type OccurrenceKey = `${string}#${string}`;
-
 function Results(props: ResultsProps) {
     const { url } = useParams();
-    const [occurrences, setOccurrences] = useState<
-        Record<OccurrenceKey, number>
+    const [uniqueOccurrences, setUniqueOccurrences] = useState<
+        Record<UniqueOccurrenceKey, number>
     >({});
-    const [totals, setTotals] = useState<Record<OccurrenceKey, number>>({});
+    const [totals, setTotals] = useState<Record<UniqueOccurrenceKey, number>>(
+        {}
+    );
 
     let validatedURL: URL;
     try {
@@ -104,7 +106,7 @@ function Results(props: ResultsProps) {
         const observable = client.observeKeyphraseResults();
         observable.subscribe({
             next: (occurrence) => {
-                setOccurrences((previous) => ({
+                setUniqueOccurrences((previous) => ({
                     ...previous,
                     [`${occurrence.pathname}#${occurrence.keyphrase}`]:
                         occurrence.occurrences,
@@ -124,7 +126,7 @@ function Results(props: ResultsProps) {
         };
     }, []);
 
-    const groupedResults = groupOccurrences(occurrences);
+    const groupedResults = groupOccurrences(uniqueOccurrences);
 
     return (
         <Fragment>
@@ -141,7 +143,12 @@ function Results(props: ResultsProps) {
                 </Col>
             </Row>
             <Row>
-                <Col flex="1 1 500px" />
+                <Col flex="0 1 500px" style={{ marginRight: "5px" }}>
+                    <KeyphraseCirclePacking
+                        occurrences={uniqueOccurrences}
+                        url={validatedURL}
+                    />
+                </Col>
                 <Col flex="1 0 500px">
                     <KeyphraseCloud occurrences={totals} />
                 </Col>
