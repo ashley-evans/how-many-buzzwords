@@ -14,16 +14,20 @@ type KeyphraseCirclePackingValue = {
     value: number;
 };
 
-type KeyphraseTreeMapTotal = KeyphraseCirclePackingValue & {
-    children: {
-        name: string;
-        children: KeyphraseCirclePackingValue[];
-    }[];
+type KeyphraseCirclePackingChild = Omit<
+    KeyphraseCirclePackingValue,
+    "value"
+> & {
+    children: KeyphraseCirclePackingValue[];
+};
+
+type KeyphraseCirclePackingTotal = KeyphraseCirclePackingValue & {
+    children: KeyphraseCirclePackingChild[];
 };
 
 function createKeyphraseTreeData(
     occurrences: Record<UniqueOccurrenceKey, number>
-): KeyphraseTreeMapTotal[] {
+): KeyphraseCirclePackingTotal[] {
     const totals: Record<string, number> = {};
     const groups = Object.entries(occurrences).reduce(
         (
@@ -50,7 +54,7 @@ function createKeyphraseTreeData(
     );
 
     return Object.entries(totals).reduce(
-        (acc: KeyphraseTreeMapTotal[], [keyphrase, occurrences]) => {
+        (acc: KeyphraseCirclePackingTotal[], [keyphrase, occurrences]) => {
             if (groups[keyphrase].length != 0) {
                 acc.push({
                     name: "",
