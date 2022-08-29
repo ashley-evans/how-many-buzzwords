@@ -1,20 +1,29 @@
 import React, { Fragment } from "react";
 import { Treemap } from "@ant-design/plots";
 
-import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import ResultConstants from "../enums/Constants";
+import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
 
 type KeyphraseTreeMapProps = {
-    occurrences: PathnameOccurrences[];
+    occurrences: Record<UniqueOccurrenceKey, number>;
+};
+
+type KeyphraseTreeMapValue = {
+    name: string;
+    value: number;
 };
 
 function KeyphraseTreeMap(props: KeyphraseTreeMapProps) {
-    const totalOccurrences = props.occurrences
-        .filter((occurrence) => occurrence.pathname == ResultConstants.TOTAL)
-        .map(({ keyphrase, occurrences }) => ({
-            name: keyphrase,
-            value: occurrences,
-        }));
+    const totalOccurrences: KeyphraseTreeMapValue[] = Object.entries(
+        props.occurrences
+    ).reduce((acc: KeyphraseTreeMapValue[], [key, value]) => {
+        const [pathname, keyphrase] = key.split("#");
+        if (pathname == ResultConstants.TOTAL) {
+            acc.push({ name: keyphrase, value });
+        }
+
+        return acc;
+    }, []);
 
     const data = {
         name: "root",
