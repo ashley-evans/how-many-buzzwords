@@ -1,5 +1,6 @@
 import React, { Fragment } from "react";
 import { CirclePacking, CirclePackingConfig } from "@ant-design/plots";
+import { Empty } from "antd";
 
 import ResultConstants from "../enums/Constants";
 import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
@@ -107,7 +108,9 @@ function KeyphraseTreeMap(props: KeyphraseCirclePackingProps) {
 
     return (
         <Fragment>
-            {data.children.length == 0 && <p>Awaiting results...</p>}
+            {data.children.length == 0 && (
+                <Empty description={<span>Awaiting results...</span>} />
+            )}
             {data.children.length != 0 && (
                 <figure>
                     <CirclePacking {...config} />
