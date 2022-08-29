@@ -40,3 +40,18 @@ test("should display multiple keyphrase total occurrences", async ({
     await expect(component).toContainText(firstExpectedKeyphrase);
     await expect(component).toContainText(secondExpectedKeyphrase);
 });
+
+test("should display a treemap with keyphrase sized proportionally to totals given multiple totals", async ({
+    mount,
+}) => {
+    const expectedLargeKeyphrase = "dyson";
+    const expectedSmallKeyphrase = "sphere";
+    const totals = {
+        [createOcurrenceKey(expectedLargeKeyphrase)]: 11,
+        [createOcurrenceKey(expectedSmallKeyphrase)]: 9,
+    };
+
+    const component = await mount(<KeyphraseTreeMap occurrences={totals} />);
+
+    await expect(component).toHaveScreenshot();
+});
