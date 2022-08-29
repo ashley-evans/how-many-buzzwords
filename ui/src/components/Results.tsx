@@ -143,7 +143,7 @@ function Results(props: ResultsProps) {
                 </Col>
             </Row>
             <Row>
-                <Col flex="1 1 500px">
+                <Col flex="0 1 950px">
                     <KeyphraseTreeMap occurrences={uniqueOccurrences} />
                 </Col>
                 <Col flex="1 0 500px">
