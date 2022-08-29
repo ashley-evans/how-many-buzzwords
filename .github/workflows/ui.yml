@@ -145,7 +145,7 @@ jobs:
               if: always()
               with:
                   name: snapshot-failures
-                  path: test-results/*.png
+                  path: ${{ inputs.path }}/test-results/*.png
     deploy:
         runs-on: ubuntu-latest
         needs: [audit, build, format, lint, unit-test, browser-component-test]
