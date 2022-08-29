@@ -15,6 +15,7 @@ import { KeyphraseServiceClient } from "../../clients/interfaces/KeyphraseServic
 import CrawlStatus from "../../enums/CrawlStatus";
 
 mockComponent(path.join(__dirname, "..", "KeyphraseCloud"));
+mockComponent(path.join(__dirname, "..", "KeyphraseTreeMap"));
 
 import App from "../App";
 

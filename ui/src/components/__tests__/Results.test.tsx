@@ -11,12 +11,18 @@ import {
     KeyphraseServiceClient,
     PathnameOccurrences,
 } from "../../clients/interfaces/KeyphraseServiceClient";
+import ResultConstants from "../../enums/Constants";
+import { UniqueOccurrenceKey } from "../../types/UniqueOccurrenceKey";
 
 const mockKeyphraseCloud = jest.fn();
 mockComponent(path.join(__dirname, "..", "KeyphraseCloud"), mockKeyphraseCloud);
+const mockKeyphraseTreeMap = jest.fn();
+mockComponent(
+    path.join(__dirname, "..", "KeyphraseTreeMap"),
+    mockKeyphraseTreeMap
+);
 
 import Results from "../Results";
-import ResultConstants from "../../enums/Constants";
 
 const VALID_URL = "http://www.example.com/";
 
@@ -29,6 +35,7 @@ beforeEach(() => {
     mockKeyphraseClient.observeKeyphraseResults.mockClear();
     mockKeyphraseClientFactory.createClient.mockClear();
     mockKeyphraseCloud.mockClear();
+    mockKeyphraseTreeMap.mockClear();
 
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
@@ -134,6 +141,94 @@ describe("given valid encoded url", () => {
         );
     });
 
+    test("provides no occurrences to keyphrase tree map if no keyphrase occurrences returned", async () => {
+        mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
+
+        const { queryByText } = renderWithRouter(
+            <Results
+                keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+            />,
+            encodeURIComponent(VALID_URL)
+        );
+        await waitFor(() =>
+            expect(queryByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument()
+        );
+
+        expect(mockKeyphraseTreeMap).toHaveBeenLastCalledWith({
+            occurrences: {},
+        });
+    });
+
+    test.each([
+        [
+            "returned occurrences",
+            "multiple keyphrase occurences returned",
+            [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "test",
+                    occurrences: 15,
+                },
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "wibble",
+                    occurrences: 20,
+                },
+            ],
+            {
+                [`${ResultConstants.TOTAL}#test`]: 15,
+                [`${ResultConstants.TOTAL}#wibble`]: 20,
+            },
+        ],
+        [
+            "latest occurrence value returned",
+            "multiple keyphrase occurrences received for same path and keyphrase combination",
+            [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "test",
+                    occurrences: 15,
+                },
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: "test",
+                    occurrences: 20,
+                },
+            ],
+            {
+                [`${ResultConstants.TOTAL}#test`]: 20,
+            },
+        ],
+    ])(
+        "provides %s to tree map if %s",
+        async (
+            expectedMessage: string,
+            inputMessage: string,
+            occurrences: PathnameOccurrences[],
+            expected: Record<UniqueOccurrenceKey, number>
+        ) => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+
+            const { queryByText } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+
+            expect(mockKeyphraseTreeMap).toHaveBeenLastCalledWith({
+                occurrences: expected,
+            });
+        }
+    );
+
     test.each([
         ["no keyphrases returned", []],
         [
@@ -141,7 +236,7 @@ describe("given valid encoded url", () => {
             [{ pathname: "/test", keyphrase: "wibble", occurrences: 15 }],
         ],
     ])(
-        "provides no keyphrases to keyphrase cloud if no keyphrases returned",
+        "provides no keyphrases to keyphrase cloud if %s",
         async (message: string, occurrences: PathnameOccurrences[]) => {
             mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
                 from(occurrences)
