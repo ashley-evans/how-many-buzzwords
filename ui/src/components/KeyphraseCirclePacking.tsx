@@ -49,16 +49,25 @@ function createKeyphraseTreeData(
         {}
     );
 
-    return Object.entries(totals).map(([keyphrase, occurrences]) => ({
-        name: "",
-        value: occurrences,
-        children: [
-            {
-                name: keyphrase,
-                children: groups[keyphrase],
-            },
-        ],
-    }));
+    return Object.entries(totals).reduce(
+        (acc: KeyphraseTreeMapTotal[], [keyphrase, occurrences]) => {
+            if (groups[keyphrase].length != 0) {
+                acc.push({
+                    name: "",
+                    value: occurrences,
+                    children: [
+                        {
+                            name: keyphrase,
+                            children: groups[keyphrase],
+                        },
+                    ],
+                });
+            }
+
+            return acc;
+        },
+        []
+    );
 }
 
 function KeyphraseTreeMap(props: KeyphraseCirclePackingProps) {
