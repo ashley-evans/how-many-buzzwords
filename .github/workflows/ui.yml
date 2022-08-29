@@ -146,6 +146,8 @@ jobs:
               with:
                   name: snapshot-failures
                   path: ${{ inputs.path }}/**/test-results/*
+                  if-no-files-found: ignore
+                  retention-days: 5
     deploy:
         runs-on: ubuntu-latest
         needs: [audit, build, format, lint, unit-test, browser-component-test]
