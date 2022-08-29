@@ -3,14 +3,16 @@ import { render } from "@testing-library/react";
 
 jest.mock("@ant-design/plots", () => ({
     __esModule: true,
-    Treemap: () => {
+    CirclePacking: () => {
         return <></>;
     },
 }));
 
-import KeyphraseTreeMap from "../KeyphraseTreeMap";
+import KeyphraseCirclePacking from "../KeyphraseCirclePacking";
 import ResultConstants from "../../enums/Constants";
 import { UniqueOccurrenceKey } from "../../types/UniqueOccurrenceKey";
+
+const VALID_URL = new URL("http://www.example.com/");
 
 const EXPECTED_AWAITING_MESSAGE = "Awaiting results...";
 
@@ -22,15 +24,21 @@ describe.each([
     (message: string, occurrences: Record<UniqueOccurrenceKey, number>) => {
         test("renders awaiting results message", () => {
             const { getByText } = render(
-                <KeyphraseTreeMap occurrences={occurrences} />
+                <KeyphraseCirclePacking
+                    occurrences={occurrences}
+                    url={VALID_URL}
+                />
             );
 
             expect(getByText(EXPECTED_AWAITING_MESSAGE)).toBeInTheDocument();
         });
 
-        test("does not render the tree map figure", () => {
+        test("does not render the circle packing figure", () => {
             const { queryByRole } = render(
-                <KeyphraseTreeMap occurrences={occurrences} />
+                <KeyphraseCirclePacking
+                    occurrences={occurrences}
+                    url={VALID_URL}
+                />
             );
 
             expect(queryByRole("figure")).not.toBeInTheDocument();
@@ -45,14 +53,16 @@ describe("given a total row occurrence", () => {
 
     test("does not render the awaiting results message", () => {
         const { queryByText } = render(
-            <KeyphraseTreeMap occurrences={total} />
+            <KeyphraseCirclePacking occurrences={total} url={VALID_URL} />
         );
 
         expect(queryByText(EXPECTED_AWAITING_MESSAGE)).not.toBeInTheDocument();
     });
 
     test("renders the tree map figure", () => {
-        const { getByRole } = render(<KeyphraseTreeMap occurrences={total} />);
+        const { getByRole } = render(
+            <KeyphraseCirclePacking occurrences={total} url={VALID_URL} />
+        );
 
         expect(getByRole("figure")).toBeInTheDocument();
     });

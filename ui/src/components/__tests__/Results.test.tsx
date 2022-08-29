@@ -16,10 +16,10 @@ import { UniqueOccurrenceKey } from "../../types/UniqueOccurrenceKey";
 
 const mockKeyphraseCloud = jest.fn();
 mockComponent(path.join(__dirname, "..", "KeyphraseCloud"), mockKeyphraseCloud);
-const mockKeyphraseTreeMap = jest.fn();
+const mockKeyphraseCirclePacking = jest.fn();
 mockComponent(
-    path.join(__dirname, "..", "KeyphraseTreeMap"),
-    mockKeyphraseTreeMap
+    path.join(__dirname, "..", "KeyphraseCirclePacking"),
+    mockKeyphraseCirclePacking
 );
 
 import Results from "../Results";
@@ -35,7 +35,7 @@ beforeEach(() => {
     mockKeyphraseClient.observeKeyphraseResults.mockClear();
     mockKeyphraseClientFactory.createClient.mockClear();
     mockKeyphraseCloud.mockClear();
-    mockKeyphraseTreeMap.mockClear();
+    mockKeyphraseCirclePacking.mockClear();
 
     mockKeyphraseClientFactory.createClient.mockReturnValue(
         mockKeyphraseClient
@@ -141,7 +141,7 @@ describe("given valid encoded url", () => {
         );
     });
 
-    test("provides no occurrences to keyphrase tree map if no keyphrase occurrences returned", async () => {
+    test("provides no occurrences to keyphrase circle packing if no keyphrase occurrences returned", async () => {
         mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
 
         const { queryByText } = renderWithRouter(
@@ -154,8 +154,9 @@ describe("given valid encoded url", () => {
             expect(queryByText(AWAITING_RESULTS_MESSAGE)).toBeInTheDocument()
         );
 
-        expect(mockKeyphraseTreeMap).toHaveBeenLastCalledWith({
+        expect(mockKeyphraseCirclePacking).toHaveBeenLastCalledWith({
             occurrences: {},
+            url: new URL(VALID_URL),
         });
     });
 
@@ -200,7 +201,7 @@ describe("given valid encoded url", () => {
             },
         ],
     ])(
-        "provides %s to tree map if %s",
+        "provides %s to keyphrase circle packing if %s",
         async (
             expectedMessage: string,
             inputMessage: string,
@@ -223,8 +224,9 @@ describe("given valid encoded url", () => {
                 ).not.toBeInTheDocument()
             );
 
-            expect(mockKeyphraseTreeMap).toHaveBeenLastCalledWith({
+            expect(mockKeyphraseCirclePacking).toHaveBeenLastCalledWith({
                 occurrences: expected,
+                url: new URL(VALID_URL),
             });
         }
     );

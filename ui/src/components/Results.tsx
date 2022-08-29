@@ -6,7 +6,7 @@ import type { ColumnsType } from "antd/es/table";
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import KeyphraseCloud from "./KeyphraseCloud";
-import KeyphraseTreeMap from "./KeyphraseTreeMap";
+import KeyphraseCirclePacking from "./KeyphraseCirclePacking";
 import ResultConstants from "../enums/Constants";
 import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
 
@@ -143,8 +143,11 @@ function Results(props: ResultsProps) {
                 </Col>
             </Row>
             <Row>
-                <Col flex="0 1 950px">
-                    <KeyphraseTreeMap occurrences={uniqueOccurrences} />
+                <Col flex="0 1 500px" style={{ marginRight: "5px" }}>
+                    <KeyphraseCirclePacking
+                        occurrences={uniqueOccurrences}
+                        url={validatedURL}
+                    />
                 </Col>
                 <Col flex="1 0 500px">
                     <KeyphraseCloud occurrences={totals} />
