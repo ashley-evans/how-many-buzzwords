@@ -1,6 +1,13 @@
 import React from "react";
 import { render } from "@testing-library/react";
 
+jest.mock("@ant-design/plots", () => ({
+    __esModule: true,
+    Treemap: () => {
+        return <></>;
+    },
+}));
+
 import KeyphraseTreeMap from "../KeyphraseTreeMap";
 import { PathnameOccurrences } from "../../clients/interfaces/KeyphraseServiceClient";
 import ResultConstants from "../../enums/Constants";
