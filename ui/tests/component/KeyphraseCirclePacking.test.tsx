@@ -100,8 +100,29 @@ test("should drill down into path breakdown if total keyphrase pressed given pat
     const component = await mount(
         <KeyphraseCirclePacking occurrences={occurrences} url={VALID_URL} />
     );
-    await page.locator(`text=${expectedKeyphrase}`).first().click();
+    await page.locator(`text=${expectedKeyphrase}`).click();
 
     await expect(component).toContainText(expectedFirstPathname);
     await expect(component).toContainText(expectedSecondPathname);
+});
+
+test("should display a circle packing of path occurrences with paths sized to number of occurrences given drilled down to path breakdown", async ({
+    mount,
+    page,
+}) => {
+    const expectedKeyphrase = "dyson";
+    const expectedFirstPathname = "/test";
+    const expectedSecondPathname = "/wibble";
+    const occurrences = {
+        [createOcurrenceKey(expectedKeyphrase)]: 11,
+        [createOcurrenceKey(expectedKeyphrase, expectedFirstPathname)]: 8,
+        [createOcurrenceKey(expectedKeyphrase, expectedSecondPathname)]: 3,
+    };
+
+    const component = await mount(
+        <KeyphraseCirclePacking occurrences={occurrences} url={VALID_URL} />
+    );
+    await page.locator(`text=${expectedKeyphrase}`).click();
+
+    await expect(component).toHaveScreenshot();
 });
