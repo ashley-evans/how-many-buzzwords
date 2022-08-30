@@ -1,18 +1,11 @@
 import React, { Fragment, useState } from "react";
-import { gql, useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { Navigate } from "react-router-dom";
 
 import { URLInput } from "./URLInput";
 import { CrawlingSpinner } from "./CrawlingSpinner";
 import CrawlStatus from "../enums/CrawlStatus";
-
-const START_CRAWL_MUTATION = gql`
-    mutation StartCrawl($input: StartCrawlInput!) {
-        startCrawl(input: $input) {
-            started
-        }
-    }
-`;
+import START_CRAWL_MUTATION from "../graphql/StartCrawlMutation";
 
 type StartCrawlInput = {
     url: string;
@@ -89,4 +82,4 @@ function Search() {
     );
 }
 
-export { Search, START_CRAWL_MUTATION };
+export default Search;
