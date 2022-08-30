@@ -2,9 +2,10 @@ import React, { Fragment } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
-import Results from "./Results";
-import { Search } from "./Search";
 import SiteLayout from "./SiteLayout";
+
+const Search = React.lazy(() => import("./Search"));
+const Results = React.lazy(() => import("./Results"));
 
 import "../css/App.css";
 
