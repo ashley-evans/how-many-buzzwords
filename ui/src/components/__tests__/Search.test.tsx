@@ -8,7 +8,8 @@ import {
     createStatusUpdateMock,
     createStartCrawlMock,
 } from "./helpers/utils";
-import { Search, START_CRAWL_MUTATION } from "../Search";
+import Search from "../Search";
+import START_CRAWL_MUTATION from "../../graphql/StartCrawlMutation";
 import CrawlStatus from "../../enums/CrawlStatus";
 
 const URL_INPUT_LABEL = "URL";

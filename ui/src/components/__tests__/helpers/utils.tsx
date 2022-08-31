@@ -3,7 +3,7 @@ import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import { render } from "@testing-library/react";
 
 import { CRAWL_STATUS_UPDATE_SUBSCRIPTION } from "../../CrawlingSpinner";
-import { START_CRAWL_MUTATION } from "../../Search";
+import START_CRAWL_MUTATION from "../../../graphql/StartCrawlMutation";
 import CrawlStatus from "../../../enums/CrawlStatus";
 
 function renderWithMockProvider(
