@@ -1,5 +1,6 @@
-import React, { Fragment } from "react";
+import React, { Fragment, Suspense } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { Spin } from "antd";
 
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import SiteLayout from "./SiteLayout";
@@ -13,6 +14,8 @@ type AppProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
 
+const LOADING_MESSAGE = "Loading...";
+
 function App(props: AppProps) {
     return (
         <BrowserRouter>
@@ -22,21 +25,27 @@ function App(props: AppProps) {
                     <Route
                         path="results"
                         element={
-                            <Results
-                                keyphraseServiceClientFactory={
-                                    props.keyphraseServiceClientFactory
-                                }
-                            />
-                        }
-                    >
-                        <Route
-                            path=":url"
-                            element={
+                            <Suspense fallback={<Spin tip={LOADING_MESSAGE} />}>
                                 <Results
                                     keyphraseServiceClientFactory={
                                         props.keyphraseServiceClientFactory
                                     }
                                 />
+                            </Suspense>
+                        }
+                    >
+                        <Route
+                            path=":url"
+                            element={
+                                <Suspense
+                                    fallback={<Spin tip={LOADING_MESSAGE} />}
+                                >
+                                    <Results
+                                        keyphraseServiceClientFactory={
+                                            props.keyphraseServiceClientFactory
+                                        }
+                                    />
+                                </Suspense>
                             }
                         />
                     </Route>
