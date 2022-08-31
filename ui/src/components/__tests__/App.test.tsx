@@ -36,34 +36,40 @@ beforeEach(() => {
 });
 
 describe("navigating to root", () => {
-    test("displays the title of the site in a header", () => {
+    test("displays the title of the site in a header", async () => {
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("heading", { name: APPLICATION_TITLE })
+            ).toBeInTheDocument()
+        );
     });
 
-    test("displays a URL textbox with an appropriate label", () => {
+    test("displays a URL textbox with an appropriate label", async () => {
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("textbox", { name: URL_INPUT_LABEL })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("textbox", { name: URL_INPUT_LABEL })
+            ).toBeInTheDocument()
+        );
     });
 
-    test("displays a search button", () => {
+    test("displays a search button", async () => {
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("button", { name: SEARCH_BUTTON_TEXT })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("button", { name: SEARCH_BUTTON_TEXT })
+            ).toBeInTheDocument()
+        );
     });
 });
 
@@ -81,26 +87,30 @@ describe("navigating to results with valid encoded URL", () => {
         );
     });
 
-    test("displays the title of the site in a header", () => {
+    test("displays the title of the site in a header", async () => {
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("heading", { name: APPLICATION_TITLE })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("heading", { name: APPLICATION_TITLE })
+            ).toBeInTheDocument()
+        );
     });
 
-    test("renders results header", () => {
+    test("renders results header", async () => {
         const expectedHeader = `Results for: ${VALID_URL}`;
 
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("heading", { name: expectedHeader })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("heading", { name: expectedHeader })
+            ).toBeInTheDocument()
+        );
     });
 });
 
@@ -110,16 +120,18 @@ test.each([
     ["an invalid encoded url (IP)", encodeURIComponent(0)],
 ])(
     "navigating to the results page with %s redirects to search page",
-    (message: string, url?: string) => {
+    async (message: string, url?: string) => {
         window.history.pushState({}, "", `/results/${url}`);
 
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        expect(
-            getByRole("textbox", { name: URL_INPUT_LABEL })
-        ).toBeInTheDocument();
+        await waitFor(() =>
+            expect(
+                getByRole("textbox", { name: URL_INPUT_LABEL })
+            ).toBeInTheDocument()
+        );
         expect(
             getByRole("button", { name: SEARCH_BUTTON_TEXT })
         ).toBeInTheDocument();
