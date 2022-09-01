@@ -77,6 +77,8 @@ test.each([
 
 describe("given valid encoded url", () => {
     const AWAITING_RESULTS_MESSAGE = "Awaiting results...";
+    const EXPECTED_EXPAND_ROW_TEXT = "Expand row";
+    const EXPECTED_OCCURRENCE_HEADER_NAME = "Occurrences caret-up caret-down";
 
     beforeEach(() => {
         mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(from([]));
@@ -453,7 +455,7 @@ describe("given valid encoded url", () => {
                 const expectedColumns = [
                     "Pathname",
                     "Keyphrase",
-                    "Occurrences",
+                    EXPECTED_OCCURRENCE_HEADER_NAME,
                 ];
 
                 const { queryByText, getByRole } = renderWithRouter(
@@ -564,7 +566,6 @@ describe("given valid encoded url", () => {
     });
 
     describe("occurrence breakdown rendering given both site and path occurrences for same keyphrase", () => {
-        const EXPECTED_EXPAND_ROW_TEXT = "Expand row";
         const EXPECTED_COLLAPSE_ROW_TEXT = "Collapse row";
 
         const totalOccurrence: PathnameOccurrences = {
@@ -744,6 +745,218 @@ describe("given valid encoded url", () => {
                     name: pathOccurrences.pathname,
                 })
             ).not.toBeInTheDocument();
+        });
+    });
+
+    describe("results sorting", () => {
+        const expectedLargestKeyphrase = "dyson";
+        const expectedSmallestKeyphrase = "wibble";
+        const multipleTotals: PathnameOccurrences[] = [
+            {
+                pathname: ResultConstants.TOTAL,
+                keyphrase: expectedSmallestKeyphrase,
+                occurrences: 15,
+            },
+            {
+                pathname: "/test",
+                keyphrase: expectedSmallestKeyphrase,
+                occurrences: 15,
+            },
+            {
+                pathname: ResultConstants.TOTAL,
+                keyphrase: expectedLargestKeyphrase,
+                occurrences: 20,
+            },
+            {
+                pathname: "/dyson",
+                keyphrase: expectedLargestKeyphrase,
+                occurrences: 20,
+            },
+        ];
+
+        test("renders total occurrences in descending order by default", async () => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(multipleTotals)
+            );
+
+            const { queryByText, getAllByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const rows = getAllByRole("row");
+
+            expect(
+                within(rows[1]).getByRole("cell", {
+                    name: expectedLargestKeyphrase,
+                })
+            ).toBeInTheDocument();
+            expect(
+                within(rows[2]).getByRole("cell", {
+                    name: expectedSmallestKeyphrase,
+                })
+            ).toBeInTheDocument();
+        });
+
+        test("renders path occurrences in descending order by default", async () => {
+            const expectedFirstPath = "/test";
+            const expectedSecondPath = "/wibble";
+            const keyphrase = "test";
+            const occurrences: PathnameOccurrences[] = [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase,
+                    occurrences: 15,
+                },
+                {
+                    pathname: expectedSecondPath,
+                    keyphrase,
+                    occurrences: 5,
+                },
+                {
+                    pathname: expectedFirstPath,
+                    keyphrase,
+                    occurrences: 10,
+                },
+            ];
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+
+            const { queryByText, getByRole, getAllByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("button", {
+                    name: EXPECTED_EXPAND_ROW_TEXT,
+                })
+            );
+
+            const rows = getAllByRole("row");
+            expect(
+                within(rows[2]).getByRole("cell", {
+                    name: expectedFirstPath,
+                })
+            ).toBeInTheDocument();
+            expect(
+                within(rows[3]).getByRole("cell", {
+                    name: expectedSecondPath,
+                })
+            ).toBeInTheDocument();
+        });
+
+        test("can reset occurrence sorting to non-sorted", async () => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(multipleTotals)
+            );
+
+            const { queryByText, getAllByRole, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("columnheader", {
+                    name: EXPECTED_OCCURRENCE_HEADER_NAME,
+                })
+            );
+            const rows = getAllByRole("row");
+
+            expect(
+                within(rows[1]).getByRole("cell", {
+                    name: expectedSmallestKeyphrase,
+                })
+            ).toBeInTheDocument();
+            expect(
+                within(rows[2]).getByRole("cell", {
+                    name: expectedLargestKeyphrase,
+                })
+            ).toBeInTheDocument();
+        });
+
+        test("can sort keyphrases from smallest to largest number of occurrences", async () => {
+            const multipleTotals: PathnameOccurrences[] = [
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: expectedLargestKeyphrase,
+                    occurrences: 20,
+                },
+                {
+                    pathname: "/dyson",
+                    keyphrase: expectedLargestKeyphrase,
+                    occurrences: 20,
+                },
+                {
+                    pathname: ResultConstants.TOTAL,
+                    keyphrase: expectedSmallestKeyphrase,
+                    occurrences: 15,
+                },
+                {
+                    pathname: "/test",
+                    keyphrase: expectedSmallestKeyphrase,
+                    occurrences: 15,
+                },
+            ];
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(multipleTotals)
+            );
+
+            const { queryByText, getAllByRole, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const table = getByRole("table");
+            fireEvent.click(
+                within(table).getByRole("columnheader", {
+                    name: EXPECTED_OCCURRENCE_HEADER_NAME,
+                })
+            );
+            fireEvent.click(
+                within(table).getByRole("columnheader", {
+                    name: EXPECTED_OCCURRENCE_HEADER_NAME,
+                })
+            );
+            const rows = getAllByRole("row");
+
+            expect(
+                within(rows[1]).getByRole("cell", {
+                    name: expectedSmallestKeyphrase,
+                })
+            ).toBeInTheDocument();
+            expect(
+                within(rows[2]).getByRole("cell", {
+                    name: expectedLargestKeyphrase,
+                })
+            ).toBeInTheDocument();
         });
     });
 });
