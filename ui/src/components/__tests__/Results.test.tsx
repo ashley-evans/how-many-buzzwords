@@ -55,6 +55,27 @@ function renderWithRouter(component: React.ReactNode, url?: string) {
     );
 }
 
+function generateOccurrences(numberToGenerate: number) {
+    const result: PathnameOccurrences[] = [];
+    for (let i = 1; i <= numberToGenerate; i++) {
+        const keyphrase = `keyphrase-${i}`;
+        result.push(
+            {
+                pathname: ResultConstants.TOTAL,
+                keyphrase,
+                occurrences: i,
+            },
+            {
+                pathname: "/dyson",
+                keyphrase,
+                occurrences: i,
+            }
+        );
+    }
+
+    return result;
+}
+
 test.each([
     ["missing url", undefined],
     ["invalid encoded url", encodeURIComponent("not a valid URL")],
@@ -957,6 +978,144 @@ describe("given valid encoded url", () => {
                     name: expectedLargestKeyphrase,
                 })
             ).toBeInTheDocument();
+        });
+    });
+
+    describe("results pagination", () => {
+        test("cannot view next results page if only ten items", async () => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(generateOccurrences(10))
+            );
+
+            const { queryByText, queryByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+
+            expect(queryByRole("button", { name: "right" })).toBeDisabled();
+        });
+
+        test("cannot navigate back in list if on first page", async () => {
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(generateOccurrences(10))
+            );
+
+            const { queryByText, queryByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+
+            expect(queryByRole("button", { name: "left" })).toBeDisabled();
+        });
+
+        test("only renders first ten results if more than ten returned", async () => {
+            const occurrences = generateOccurrences(15).reverse();
+            const expectedTotals = occurrences.filter(
+                (value) => value.pathname == ResultConstants.TOTAL
+            );
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+
+            const { queryByText, getAllByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            const rows = getAllByRole("row");
+
+            expect(rows.length).toEqual(11);
+            for (let i = 1; i < rows.length; i++) {
+                expect(
+                    within(rows[i]).getByRole("cell", {
+                        name: expectedTotals[i - 1].keyphrase,
+                    })
+                ).toBeInTheDocument();
+            }
+        });
+
+        test("can view remaining results given next button is pressed", async () => {
+            const occurrences = generateOccurrences(15).reverse();
+            const expectedTotals = occurrences
+                .filter((value) => value.pathname == ResultConstants.TOTAL)
+                .slice(10);
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+
+            const { queryByText, getAllByRole, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            fireEvent.click(
+                getByRole("button", {
+                    name: "right",
+                })
+            );
+            const rows = getAllByRole("row");
+
+            expect(rows.length).toEqual(6);
+            for (let i = 1; i < rows.length; i++) {
+                expect(
+                    within(rows[i]).getByRole("cell", {
+                        name: expectedTotals[i - 1].keyphrase,
+                    })
+                ).toBeInTheDocument();
+            }
+        });
+
+        test("can return to first page of results given previous button is pressed on subsequent page", async () => {
+            const occurrences = generateOccurrences(15);
+            mockKeyphraseClient.observeKeyphraseResults.mockReturnValue(
+                from(occurrences)
+            );
+
+            const { queryByText, getAllByRole, getByRole } = renderWithRouter(
+                <Results
+                    keyphraseServiceClientFactory={mockKeyphraseClientFactory}
+                />,
+                encodeURIComponent(VALID_URL)
+            );
+            await waitFor(() =>
+                expect(
+                    queryByText(AWAITING_RESULTS_MESSAGE)
+                ).not.toBeInTheDocument()
+            );
+            fireEvent.click(
+                getByRole("button", {
+                    name: "left",
+                })
+            );
+            const rows = getAllByRole("row");
+
+            expect(rows.length).toEqual(11);
         });
     });
 });
