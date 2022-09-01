@@ -36,6 +36,8 @@ const columns: ColumnsType<GroupedOccurrences> = [
         title: "Occurrences",
         dataIndex: "occurrences",
         key: "occurrences",
+        sorter: (a, b) => a.occurrences - b.occurrences,
+        defaultSortOrder: "descend",
     },
 ];
 
