@@ -160,7 +160,6 @@ function Results(props: ResultsProps) {
                     <Table
                         columns={columns}
                         dataSource={groupedResults}
-                        pagination={false}
                         locale={{
                             emptyText: (
                                 <Empty

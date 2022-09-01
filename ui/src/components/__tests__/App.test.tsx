@@ -87,20 +87,8 @@ describe("navigating to results with valid encoded URL", () => {
         );
     });
 
-    test("displays the title of the site in a header", async () => {
-        const { getByRole } = renderWithMockProvider(
-            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
-        );
-
-        await waitFor(() =>
-            expect(
-                getByRole("heading", { name: APPLICATION_TITLE })
-            ).toBeInTheDocument()
-        );
-    });
-
-    test("renders results header", async () => {
-        const expectedHeader = `Results for: ${VALID_URL}`;
+    test("displays the title of the site and results message in headers", async () => {
+        const expectedResultsHeader = `Results for: ${VALID_URL}`;
 
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
@@ -108,9 +96,12 @@ describe("navigating to results with valid encoded URL", () => {
 
         await waitFor(() =>
             expect(
-                getByRole("heading", { name: expectedHeader })
+                getByRole("heading", { name: expectedResultsHeader })
             ).toBeInTheDocument()
         );
+        expect(
+            getByRole("heading", { name: APPLICATION_TITLE })
+        ).toBeInTheDocument();
     });
 });
 
