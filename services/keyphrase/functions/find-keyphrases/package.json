@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-object-validator": "1.0.0",
-        "ajv": "8.8.2",
+        "ajv": "8.11.0",
         "nlcst-to-string": "2.0.4",
         "retext": "7.0.1",
         "retext-keywords": "6.0.0",
