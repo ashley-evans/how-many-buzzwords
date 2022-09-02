@@ -34,4 +34,16 @@ describe("given used as a layout route", () => {
 
         expect(getByText(expectedContent)).toBeInTheDocument();
     });
+
+    test("renders a link to the GitHub repository for the project", () => {
+        const expectedLink =
+            "https://github.com/ashley-evans/how-many-buzzwords";
+
+        const { getByRole } = renderWithChildRoute(<p>Test</p>);
+
+        expect(getByRole("link", { name: "github" })).toHaveAttribute(
+            "href",
+            expectedLink
+        );
+    });
 });
