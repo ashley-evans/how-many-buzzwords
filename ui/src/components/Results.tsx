@@ -10,6 +10,8 @@ import KeyphraseCirclePacking from "./KeyphraseCirclePacking";
 import ResultConstants from "../enums/Constants";
 import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
 
+import "../css/Results.css";
+
 type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
@@ -132,7 +134,7 @@ function Results(props: ResultsProps) {
 
     return (
         <Fragment>
-            <Row>
+            <Row className="results-header-row">
                 <Col flex={9}>
                     <Typography.Title
                         level={2}
