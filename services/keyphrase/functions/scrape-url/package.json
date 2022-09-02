@@ -4,7 +4,7 @@
     "dependencies": {
         "@ashley-evans/buzzword-crawl-client": "1.0.0",
         "@ashley-evans/buzzword-object-validator": "1.0.0",
-        "ajv": "8.8.2",
+        "ajv": "8.11.0",
         "htmlparser2": "8.0.1"
     }
 }
