@@ -1,0 +1,15 @@
+.results-header-row {
+    align-items: center;
+}
+
+.results-header-row .ant-col {
+    display: flex;
+}
+
+.results-header-row .ant-col h2 {
+    margin: 0;
+}
+
+.results-header-row .ant-col:last-child {
+    justify-content: flex-end;
+}
