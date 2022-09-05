@@ -11,6 +11,9 @@
     "references": [
         {
             "path": "../../helpers"
+        },
+        {
+            "path": "./functions/find-keyphrases/tsconfig.build.json"
         }
     ],
     "exclude": []

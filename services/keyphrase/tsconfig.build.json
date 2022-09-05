@@ -3,5 +3,10 @@
     "compilerOptions": {
         "rootDir": ""
     },
+    "references": [
+        {
+            "path": "./functions/find-keyphrases/tsconfig.build.json"
+        }
+    ],
     "exclude": ["**/__tests__/**/*", "jest.config.js", "config/**/*"]
 }
