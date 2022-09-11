@@ -1,5 +1,5 @@
 import { mock } from "jest-mock-extended";
-import { CrawlStatus } from "buzzword-aws-crawl-urls-repository-library";
+import { CrawlStatus } from "buzzword-aws-crawl-service-urls-repository-library";
 
 import { RecentCrawlEventAdapter } from "../RecentCrawlEventAdapter";
 import { RecentCrawlEvent } from "../../ports/RecentCrawlAdapter";

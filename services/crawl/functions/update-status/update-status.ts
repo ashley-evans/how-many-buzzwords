@@ -1,7 +1,7 @@
 import {
     Repository,
     URLsTableRepository,
-} from "buzzword-aws-crawl-urls-repository-library";
+} from "buzzword-aws-crawl-service-urls-repository-library";
 
 import {
     UpdateStatusEvent,

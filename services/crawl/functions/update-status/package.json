@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-update-status-lambda",
+    "name": "buzzword-aws-crawl-service-update-status-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@aws-sdk/client-eventbridge": "3.55.0"

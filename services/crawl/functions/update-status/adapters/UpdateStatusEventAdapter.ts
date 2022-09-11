@@ -1,6 +1,6 @@
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import { JSONSchemaType } from "ajv";
-import { CrawlStatus } from "buzzword-aws-crawl-urls-repository-library";
+import { CrawlStatus } from "buzzword-aws-crawl-service-urls-repository-library";
 
 import UpdateStatusPort from "../ports/UpdateStatusPort";
 import {

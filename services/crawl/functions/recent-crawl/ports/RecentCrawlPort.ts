@@ -1,4 +1,4 @@
-import { CrawlStatus } from "buzzword-aws-crawl-urls-repository-library";
+import { CrawlStatus } from "buzzword-aws-crawl-service-urls-repository-library";
 
 type RecentCrawlResponse = {
     recentlyCrawled: boolean;

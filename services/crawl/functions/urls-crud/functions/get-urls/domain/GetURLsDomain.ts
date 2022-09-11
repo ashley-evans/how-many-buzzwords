@@ -1,4 +1,4 @@
-import { Repository } from "buzzword-aws-crawl-urls-repository-library";
+import { Repository } from "buzzword-aws-crawl-service-urls-repository-library";
 
 import { GetURLsPort, PathnameResponse } from "../ports/GetURLsPort";
 

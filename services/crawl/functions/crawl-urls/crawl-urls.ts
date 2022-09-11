@@ -1,11 +1,11 @@
 import {
     ContentRepository,
     S3Repository,
-} from "buzzword-aws-crawl-content-repository-library";
+} from "buzzword-aws-crawl-service-content-repository-library";
 import {
     Repository,
     URLsTableRepository,
-} from "buzzword-aws-crawl-urls-repository-library";
+} from "buzzword-aws-crawl-service-urls-repository-library";
 
 import { CrawleeProvider } from "./adapters/CrawleeProvider";
 import { CrawlEventAdapter } from "./adapters/CrawlEventAdapter";

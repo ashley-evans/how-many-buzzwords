@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-crawl-content-repository-library",
+    "name": "buzzword-aws-crawl-service-content-repository-library",
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {

@@ -3,7 +3,7 @@ import {
     CrawlStatus,
     CrawlStatusRecord,
     Repository,
-} from "buzzword-aws-crawl-urls-repository-library";
+} from "buzzword-aws-crawl-service-urls-repository-library";
 
 import RecentCrawlDomain from "../RecentCrawlDomain";
 
