@@ -36,6 +36,7 @@ current_dir=$( pwd )
 script_dir=$( dirname "${BASH_SOURCE[0]}" )
 root_dir=$( dirname "$( dirname $script_dir )" )
 path=$(realpath --relative-to $current_dir $path)
+package_name=$(jq -r ".name" $path/package.json)
 
 if [ -z $output_path ]; then
     output_path="$root_dir/dist"
@@ -48,11 +49,9 @@ if [ $clean ]; then
         exit 1
     fi
 
-    npm --prefix $root_dir ci
-    $script_dir/npm-all.sh -c ci -r $path
+    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --ci
 else
-    npm --prefix $root_dir i
-    $script_dir/npm-all.sh -c i -r $path
+    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --no-ci
 fi
 
 if [ $? -ne 0 ]; then
