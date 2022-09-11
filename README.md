@@ -52,13 +52,7 @@ chmod u+x $(find ./scripts/ -type f)
 Run the following command to install all of the dependencies for the project:
 
 ```shell
-npm run ci:sequential
-```
-
-Dependencies can also be installed in parallel by running:
-
-```shell
-npm run ci:parallel
+npm run ci
 ```
 
 ### Deploying components to AWS
