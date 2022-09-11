@@ -8,7 +8,7 @@ import { JSONSchemaType } from "ajv";
 import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
 
 import DynamoDBStreamAdapter from "../../interfaces/DynamoDBStreamAdapter";
 import {

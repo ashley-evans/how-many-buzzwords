@@ -7,7 +7,7 @@ import {
 import {
     ActiveConnectionsTableKeyFields,
     ActiveConnectionsTableNonKeyFields,
-} from "buzzword-aws-active-connections-repository-library";
+} from "buzzword-aws-keyphrase-service-active-connections-repository-library";
 
 import NewConnectionStreamAdapter from "../NewConnectionStreamAdapter";
 import { NewConnectionPort, Connection } from "../../ports/NewConnectionPort";

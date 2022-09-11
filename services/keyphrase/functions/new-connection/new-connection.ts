@@ -1,9 +1,9 @@
 import { DynamoDBStreamEvent, SQSBatchResponse } from "aws-lambda";
-import { AWSWebSocketClientFactory } from "buzzword-aws-web-socket-client-library";
+import { AWSWebSocketClientFactory } from "buzzword-aws-keyphrase-service-web-socket-client-library";
 import {
     Repository,
     KeyphraseRepository,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
 
 import NewConnectionDomain from "./domain/NewConnectionDomain";
 import NewConnectionStreamAdapter from "./adapters/NewConnectionStreamAdapter";

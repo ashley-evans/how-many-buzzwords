@@ -4,7 +4,7 @@ import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
     SiteKeyphraseOccurrences,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
 import { mock } from "jest-mock-extended";
 
 import {

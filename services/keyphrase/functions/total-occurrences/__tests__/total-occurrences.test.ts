@@ -1,4 +1,4 @@
-jest.mock("buzzword-aws-keyphrase-repository-library");
+jest.mock("buzzword-aws-keyphrase-service-keyphrase-repository-library");
 
 beforeEach(() => {
     process.env.KEYPHRASE_TABLE_NAME = "test_keyphrase_table";

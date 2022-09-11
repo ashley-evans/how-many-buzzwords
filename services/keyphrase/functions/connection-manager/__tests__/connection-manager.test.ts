@@ -1,7 +1,9 @@
 import { mock } from "jest-mock-extended";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
-jest.mock("buzzword-aws-active-connections-repository-library");
+jest.mock(
+    "buzzword-aws-keyphrase-service-active-connections-repository-library"
+);
 
 import { handler } from "../connection-manager";
 

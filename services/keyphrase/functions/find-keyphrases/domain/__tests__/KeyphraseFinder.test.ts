@@ -1,5 +1,5 @@
 import { mock } from "jest-mock-extended";
-import { TextRepository } from "buzzword-aws-text-repository-library";
+import { TextRepository } from "buzzword-aws-keyphrase-service-text-repository-library";
 
 import KeyphraseFinder from "../KeyphraseFinder";
 

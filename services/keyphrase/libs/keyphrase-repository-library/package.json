@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-keyphrase-service-repository-library",
+    "name": "buzzword-aws-keyphrase-service-keyphrase-repository-library",
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {

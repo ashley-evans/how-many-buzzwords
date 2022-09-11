@@ -7,7 +7,7 @@ import {
 import {
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
 
 import UpdateConnectionsStreamAdapter from "../UpdateConnectionsStreamAdapter";
 import {

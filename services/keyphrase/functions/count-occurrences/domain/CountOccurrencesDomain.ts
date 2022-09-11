@@ -1,8 +1,8 @@
-import { TextRepository } from "buzzword-aws-text-repository-library";
+import { TextRepository } from "buzzword-aws-keyphrase-service-text-repository-library";
 import {
     KeyphraseOccurrences,
     Repository as KeyphraseRepository,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
 import escapeRegExp from "lodash.escaperegexp";
 
 import CountOccurrencesPort from "../ports/CountOccurrencesPort";

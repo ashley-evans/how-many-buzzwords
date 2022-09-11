@@ -1,7 +1,7 @@
 import {
     ActiveConnectionsRepositoryPort,
     Connection,
-} from "buzzword-aws-active-connections-repository-library";
+} from "buzzword-aws-keyphrase-service-active-connections-repository-library";
 
 import ConnectionManagerPort from "../ports/ConnectionManagerPort";
 

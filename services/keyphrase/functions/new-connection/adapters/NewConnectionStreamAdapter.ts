@@ -8,7 +8,7 @@ import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 import {
     ActiveConnectionsTableKeyFields,
     ActiveConnectionsTableNonKeyFields,
-} from "buzzword-aws-active-connections-repository-library";
+} from "buzzword-aws-keyphrase-service-active-connections-repository-library";
 
 import DynamoDBSteamAdapter from "../../interfaces/DynamoDBStreamAdapter";
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
