@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-find-keyphrases-lambda",
+    "name": "buzzword-aws-keyphrase-service-find-keyphrases-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-object-validator": "1.0.0",

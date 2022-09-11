@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-active-connections-repository-library",
+    "name": "buzzword-aws-keyphrase-service-active-connections-repository-library",
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {

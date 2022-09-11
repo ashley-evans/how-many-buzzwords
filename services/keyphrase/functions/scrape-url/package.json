@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-scrape-url-lambda",
+    "name": "buzzword-aws-keyphrase-service-scrape-url-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-crawl-client": "1.0.0",
