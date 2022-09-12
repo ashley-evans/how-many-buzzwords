@@ -1,4 +1,4 @@
-jest.mock("buzzword-aws-crawl-service-urls-repository-library");
+jest.mock("buzzword-crawl-urls-repository-library");
 jest.mock("@aws-sdk/client-eventbridge");
 
 beforeEach(() => {

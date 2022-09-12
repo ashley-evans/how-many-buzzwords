@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
     ContentRepository,
     S3Repository,
-} from "buzzword-aws-crawl-service-content-repository-library";
+} from "buzzword-crawl-content-repository-library";
 import {
     AjvValidator,
     ObjectValidator,

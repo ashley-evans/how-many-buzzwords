@@ -1,7 +1,7 @@
 import { mock } from "jest-mock-extended";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
-jest.mock("buzzword-aws-crawl-service-urls-repository-library");
+jest.mock("buzzword-crawl-urls-repository-library");
 
 import { handler } from "../get-content";
 

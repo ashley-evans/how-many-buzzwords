@@ -2,7 +2,7 @@ import { AppSyncResolverEvent } from "aws-lambda";
 import {
     Repository,
     URLsTableRepository,
-} from "buzzword-aws-crawl-service-urls-repository-library";
+} from "buzzword-crawl-urls-repository-library";
 
 import GetURLsDomain from "./domain/GetURLsDomain";
 import GetURLsAdapter from "./adapters/GetURLsAdapter";

@@ -1,4 +1,4 @@
-import { CrawlStatus } from "buzzword-aws-crawl-service-urls-repository-library";
+import { CrawlStatus } from "buzzword-crawl-urls-repository-library";
 
 type RecentCrawlEvent = {
     url?: string;

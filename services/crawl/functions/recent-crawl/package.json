@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-crawl-service-recent-crawl-lambda",
+    "name": "buzzword-crawl-recent-crawl-lambda",
     "version": "1.0.0",
     "dependencies": {
         "dayjs": "1.10.7"

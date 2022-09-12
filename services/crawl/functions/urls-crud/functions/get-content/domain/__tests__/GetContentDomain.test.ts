@@ -1,5 +1,5 @@
 import { mock } from "jest-mock-extended";
-import { ContentRepository } from "buzzword-aws-crawl-service-content-repository-library";
+import { ContentRepository } from "buzzword-crawl-content-repository-library";
 
 import GetContentDomain from "../GetContentDomain";
 

@@ -1,8 +1,5 @@
 import { mock } from "jest-mock-extended";
-import {
-    Pathname,
-    Repository,
-} from "buzzword-aws-crawl-service-urls-repository-library";
+import { Pathname, Repository } from "buzzword-crawl-urls-repository-library";
 
 import GetURLsDomain from "../GetURLsDomain";
 import { PathnameResponse } from "../../ports/GetURLsPort";

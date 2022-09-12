@@ -1,4 +1,4 @@
-jest.mock("buzzword-aws-crawl-service-urls-repository-library");
+jest.mock("buzzword-crawl-urls-repository-library");
 
 test("throws error if table name is undefined", async () => {
     delete process.env.TABLE_NAME;

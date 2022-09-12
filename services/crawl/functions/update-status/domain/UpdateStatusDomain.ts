@@ -1,7 +1,7 @@
 import {
     CrawlStatus,
     Repository,
-} from "buzzword-aws-crawl-service-urls-repository-library";
+} from "buzzword-crawl-urls-repository-library";
 
 import UpdateStatusPort from "../ports/UpdateStatusPort";
 import EventClient from "../ports/EventClient";

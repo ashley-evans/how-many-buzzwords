@@ -1,4 +1,4 @@
-import { ContentRepository } from "buzzword-aws-crawl-service-content-repository-library";
+import { ContentRepository } from "buzzword-crawl-content-repository-library";
 
 import GetContentPort from "../ports/GetContentPort";
 

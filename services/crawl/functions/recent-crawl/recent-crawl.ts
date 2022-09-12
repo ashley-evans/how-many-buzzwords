@@ -1,7 +1,7 @@
 import {
     Repository,
     URLsTableRepository,
-} from "buzzword-aws-crawl-service-urls-repository-library";
+} from "buzzword-crawl-urls-repository-library";
 
 import {
     RecentCrawlEvent,

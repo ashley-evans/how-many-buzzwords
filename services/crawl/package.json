@@ -1,10 +1,10 @@
 {
-    "name": "buzzword-aws-crawl-service",
+    "name": "buzzword-crawl",
     "version": "1.0.0",
     "devDependencies": {
-        "buzzword-aws-crawl-service-common": "1.0.0",
-        "buzzword-aws-crawl-service-content-repository-library": "1.0.0",
-        "buzzword-aws-crawl-service-urls-repository-library": "1.0.0"
+        "buzzword-crawl-common": "1.0.0",
+        "buzzword-crawl-content-repository-library": "1.0.0",
+        "buzzword-crawl-urls-repository-library": "1.0.0"
     },
     "scripts": {
         "postinstall": "npx graphql-codegen --config ./codegen.yml"

@@ -5,7 +5,7 @@ const {
     PutEventsCommand,
 } = require("@aws-sdk/client-eventbridge");
 
-const { URLsTableKeyFields } = require("buzzword-aws-crawl-service-common");
+const { URLsTableKeyFields } = require("buzzword-crawl-common");
 
 const INPUT_SCHEMA = {
     type: "object",
