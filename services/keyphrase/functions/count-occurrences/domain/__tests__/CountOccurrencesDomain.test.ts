@@ -1,9 +1,9 @@
 import { mock } from "jest-mock-extended";
-import { TextRepository } from "buzzword-aws-text-repository-library";
+import { TextRepository } from "buzzword-keyphrase-text-repository-library";
 import {
     KeyphraseOccurrences,
     Repository as KeyphraseRepository,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import CountOccurrencesDomain from "../CountOccurrencesDomain";
 

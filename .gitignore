@@ -49,3 +49,8 @@ schema.d.ts
 test-results/
 playwright-report/
 **/playwright/.cache/
+
+# Lerna
+
+package.json.lerna_backup
+lerna-debug.log

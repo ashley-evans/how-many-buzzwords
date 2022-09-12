@@ -3,7 +3,7 @@ import {
     EventBridgeClient as EBClient,
     PutEventsCommand,
 } from "@aws-sdk/client-eventbridge";
-import { CrawlStatus } from "buzzword-aws-crawl-urls-repository-library";
+import { CrawlStatus } from "buzzword-crawl-urls-repository-library";
 
 import EventBridgeClient from "../EventBridgeClient";
 

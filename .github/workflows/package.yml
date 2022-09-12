@@ -64,8 +64,8 @@ jobs:
                   node-version: "16"
             - name: Install Dependencies
               run: |
-                  npm ci
-                  npm --prefix ${{ inputs.path }} ci
+                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
+                  npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}"
             - name: Run linters
               run: |
                   ./node_modules/.bin/eslint ${{ inputs.path }} --max-warnings 0 --ext .js,.jsx,.ts,.tsx
@@ -81,8 +81,8 @@ jobs:
                   node-version: "16"
             - name: Install Dependencies
               run: |
-                  npm ci
-                  npm --prefix ${{ inputs.path }} ci
+                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
+                  npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}"
             - name: Run Unit Tests
               run: |
                   ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }} --verbose

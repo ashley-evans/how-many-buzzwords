@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-keyphrases-node-common",
+    "name": "buzzword-keyphrase-node-common",
     "version": "1.0.0",
     "dependencies": {
         "@aws-sdk/client-dynamodb": "3.55.0",

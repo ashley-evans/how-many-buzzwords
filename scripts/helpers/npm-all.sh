@@ -88,7 +88,7 @@ if [ -z $root_dir ]; then
     root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 fi
 
-folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package.json -printf '%h\n')
+folders=$(find $root_dir ! -path "*/node_modules/*" ! -path "*/.aws-sam/*" ! -path "*/dist/*" -name package-lock.json -printf '%h\n')
 
 if [ $run_parallel ]; then
     if [ -z $threads ]; then

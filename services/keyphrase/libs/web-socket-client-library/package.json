@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-web-socket-client-library",
+    "name": "buzzword-keyphrase-web-socket-client-library",
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {

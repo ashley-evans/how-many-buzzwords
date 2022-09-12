@@ -1,4 +1,4 @@
-jest.mock("buzzword-aws-text-repository-library");
+jest.mock("buzzword-keyphrase-text-repository-library");
 
 beforeEach(() => {
     process.env.PARSED_CONTENT_S3_BUCKET_NAME = "test_bucket_name";

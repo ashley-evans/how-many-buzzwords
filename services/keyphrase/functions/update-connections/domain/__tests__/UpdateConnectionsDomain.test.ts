@@ -5,15 +5,15 @@ import { when } from "jest-when";
 import {
     WebSocketClientFactory,
     WebSocketClient,
-} from "buzzword-aws-web-socket-client-library";
+} from "buzzword-keyphrase-web-socket-client-library";
 import {
     ActiveConnectionsRepositoryPort,
     Connection,
-} from "buzzword-aws-active-connections-repository-library";
+} from "buzzword-keyphrase-active-connections-repository-library";
 
 import UpdateConnectionsDomain from "../UpdateConnectionsDomain";
 import { BaseURLOccurrences } from "../../ports/UpdateConnectionsPort";
-import { PathnameOccurrences } from "buzzword-aws-keyphrase-repository-library";
+import { PathnameOccurrences } from "buzzword-keyphrase-keyphrase-repository-library";
 
 const mockClientFactory = mock<WebSocketClientFactory>();
 const mockClient = createMock<WebSocketClient>();

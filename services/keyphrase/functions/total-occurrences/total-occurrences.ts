@@ -2,7 +2,7 @@ import { DynamoDBStreamEvent, SQSBatchResponse } from "aws-lambda";
 import {
     KeyphraseRepository,
     Repository,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import TotalOccurrencesStreamAdapter from "./adapters/TotalOccurrencesStreamAdapter";
 import TotalOccurrencesDomain from "./domain/TotalOccurrencesDomain";

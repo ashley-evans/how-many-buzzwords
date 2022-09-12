@@ -7,7 +7,7 @@ import retextPos from "retext-pos";
 import retextKeywords from "retext-keywords";
 // @ts-ignore
 import toString from "nlcst-to-string";
-import { TextRepository } from "buzzword-aws-text-repository-library";
+import { TextRepository } from "buzzword-keyphrase-text-repository-library";
 
 import KeyphrasesPort from "../ports/KeyphrasePort";
 

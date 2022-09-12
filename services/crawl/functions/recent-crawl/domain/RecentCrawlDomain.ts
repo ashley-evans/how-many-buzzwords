@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import {
     CrawlStatus,
     Repository,
-} from "buzzword-aws-crawl-urls-repository-library";
+} from "buzzword-crawl-urls-repository-library";
 
 import { RecentCrawlPort, RecentCrawlResponse } from "../ports/RecentCrawlPort";
 

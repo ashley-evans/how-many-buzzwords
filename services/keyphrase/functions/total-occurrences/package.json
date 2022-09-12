@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-total-occurrences-lambda",
+    "name": "buzzword-keyphrase-occurrences-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-object-validator": "1.0.0",

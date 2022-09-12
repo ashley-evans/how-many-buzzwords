@@ -1,11 +1,11 @@
 import {
     WebSocketClientFactory,
     WebSocketClient,
-} from "buzzword-aws-web-socket-client-library";
+} from "buzzword-keyphrase-web-socket-client-library";
 import {
     Repository,
     PathnameOccurrences,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import { Connection, NewConnectionPort } from "../ports/NewConnectionPort";
 

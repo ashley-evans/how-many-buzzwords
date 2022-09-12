@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import {
     ActiveConnectionsRepository,
     ActiveConnectionsRepositoryPort,
-} from "buzzword-aws-active-connections-repository-library";
+} from "buzzword-keyphrase-active-connections-repository-library";
 
 import { WebSocketAdapter } from "./adapters/WebSocketAdapter";
 import ConnectionManager from "./domain/ConnectionManager";

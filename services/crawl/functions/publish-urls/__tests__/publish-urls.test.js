@@ -4,7 +4,7 @@ const {
 } = require("@aws-sdk/client-eventbridge");
 const { mockClient } = require("aws-sdk-client-mock");
 
-const { URLsTableKeyFields } = require("buzzword-aws-crawl-common");
+const { URLsTableKeyFields } = require("buzzword-crawl-common");
 
 const mockEventBridgeClient = mockClient(EventBridgeClient);
 

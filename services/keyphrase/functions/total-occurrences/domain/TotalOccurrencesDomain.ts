@@ -1,7 +1,7 @@
 import {
     Repository,
     SiteKeyphraseOccurrences,
-} from "buzzword-aws-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
     OccurrenceItem,

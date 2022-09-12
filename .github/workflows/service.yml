@@ -85,8 +85,8 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm ci
-                  ./scripts/helpers/npm-all.sh -c ci -r ${{ inputs.path }}
+                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
+                  npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}"
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
@@ -116,8 +116,8 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm ci
-                  ./scripts/helpers/npm-all.sh -c ci -r ${{ inputs.path }}
+                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
+                  npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}"
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Unit Tests
@@ -136,8 +136,8 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npm ci
-                  ./scripts/helpers/npm-all.sh -c ci -r ${{ inputs.path }}
+                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
+                  npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}"
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Setup DynamoDB local

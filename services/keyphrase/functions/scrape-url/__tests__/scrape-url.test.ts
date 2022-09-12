@@ -1,4 +1,4 @@
-jest.mock("buzzword-aws-text-repository-library");
+jest.mock("buzzword-keyphrase-text-repository-library");
 
 beforeEach(() => {
     process.env.CRAWL_SERVICE_REST_ENDPOINT = "https://www.example.com/";

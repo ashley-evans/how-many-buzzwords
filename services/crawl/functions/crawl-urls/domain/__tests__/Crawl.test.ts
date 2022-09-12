@@ -4,8 +4,8 @@ import { EMPTY, of, throwError, concat, Observable } from "rxjs";
 import {
     CrawlStatus,
     Repository,
-} from "buzzword-aws-crawl-urls-repository-library";
-import { ContentRepository } from "buzzword-aws-crawl-content-repository-library";
+} from "buzzword-crawl-urls-repository-library";
+import { ContentRepository } from "buzzword-crawl-content-repository-library";
 
 import { CrawlerResponse } from "../../ports/CrawlPort";
 import { CrawlProvider, CrawlResult } from "../../ports/CrawlProvider";

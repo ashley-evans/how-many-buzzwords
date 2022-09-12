@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-crawl-node-common",
+    "name": "buzzword-crawl-node-common",
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-object-validator": "1.0.0",
