@@ -56,15 +56,11 @@ jobs:
                   node-version: "16"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
-            - name: Install dependencies
-              run: |
-                  package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
-                  npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}"
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Build UI
               run: |
                   npm --prefix ${{ inputs.path }} run build
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     format:
         runs-on: ubuntu-latest
         needs: changed
