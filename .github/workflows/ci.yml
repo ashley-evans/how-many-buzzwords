@@ -70,7 +70,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
               run: |
-                  npx lerna bootstrap --scope=how-many-buzzwords
+                  npx lerna bootstrap --scope "{how-many-buzzwords,how-many-buzzwords-ui}"
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters
