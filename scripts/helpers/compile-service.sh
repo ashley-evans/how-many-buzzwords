@@ -49,9 +49,9 @@ if [ $clean ]; then
         exit 1
     fi
 
-    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --ci
+    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --ignore "{@ashley-evans/*,}" --ci
 else
-    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --no-ci
+    npx lerna bootstrap --scope "{how-many-buzzwords,${package_name}*}" --ignore "{@ashley-evans/*,}" --no-ci
 fi
 
 if [ $? -ne 0 ]; then

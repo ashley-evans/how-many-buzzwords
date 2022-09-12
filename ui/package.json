@@ -46,7 +46,11 @@
         "webpack-dev-server": "^4.9.0"
     },
     "scripts": {
+        "i": "npx lerna bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\" --no-ci",
+        "ci": "npx lerna bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\"",
+        "prebuild": "npm run ci",
         "build": "./node_modules/.bin/webpack --mode=production --config webpack.config.js",
+        "prestart": "npm run ci",
         "start": "./node_modules/.bin/webpack serve --mode=development --config webpack.config.js",
         "test-ct": "playwright test -c playwright-ct.config.ts"
     }
