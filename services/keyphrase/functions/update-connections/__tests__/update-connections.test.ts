@@ -1,6 +1,4 @@
-jest.mock(
-    "buzzword-aws-keyphrase-service-active-connections-repository-library"
-);
+jest.mock("buzzword-keyphrase-active-connections-repository-library");
 
 test("throws error if table name is undefined", async () => {
     delete process.env.TABLE_NAME;

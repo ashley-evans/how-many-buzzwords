@@ -1,7 +1,7 @@
 import {
     TextRepository,
     TextS3Repository,
-} from "buzzword-aws-keyphrase-service-text-repository-library";
+} from "buzzword-keyphrase-text-repository-library";
 
 import EventAdapter from "./adapters/KeyphraseEventAdapter";
 import KeyphraseFinder from "./domain/KeyphraseFinder";

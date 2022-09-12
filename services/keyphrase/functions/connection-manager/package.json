@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-keyphrase-service-connection-manager-lambda",
+    "name": "buzzword-keyphrase-connection-manager-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-object-validator": "1.0.0",

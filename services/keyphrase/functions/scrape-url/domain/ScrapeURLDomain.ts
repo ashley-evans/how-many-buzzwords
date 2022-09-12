@@ -1,5 +1,5 @@
 import { CrawlClient } from "@ashley-evans/buzzword-crawl-client";
-import { TextRepository } from "buzzword-aws-keyphrase-service-text-repository-library";
+import { TextRepository } from "buzzword-keyphrase-text-repository-library";
 
 import HTMLParsingProvider from "../ports/HTMLParsingProvider";
 import ScrapeURLPort from "../ports/ScrapeURLPort";

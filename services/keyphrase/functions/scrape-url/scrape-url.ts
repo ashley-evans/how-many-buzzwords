@@ -5,7 +5,7 @@ import {
 import {
     TextRepository,
     TextS3Repository,
-} from "buzzword-aws-keyphrase-service-text-repository-library";
+} from "buzzword-keyphrase-text-repository-library";
 
 import {
     ScrapeURLEvent,

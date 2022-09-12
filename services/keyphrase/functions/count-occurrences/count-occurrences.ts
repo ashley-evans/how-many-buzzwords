@@ -1,11 +1,11 @@
 import {
     TextRepository,
     TextS3Repository,
-} from "buzzword-aws-keyphrase-service-text-repository-library";
+} from "buzzword-keyphrase-text-repository-library";
 import {
     Repository,
     KeyphraseRepository,
-} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import CountOccurrencesDomain from "./domain/CountOccurrencesDomain";
 import CountOccurrencesEvent from "./types/CountOccurrencesEvent";

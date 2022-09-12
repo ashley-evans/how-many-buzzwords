@@ -7,7 +7,7 @@ import {
     KeyphraseTableConstants,
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
-} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 

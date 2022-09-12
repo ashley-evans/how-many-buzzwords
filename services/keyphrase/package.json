@@ -1,10 +1,10 @@
 {
-    "name": "buzzword-aws-keyphrase-service",
+    "name": "buzzword-keyphrase",
     "version": "1.0.0",
     "devDependencies": {
-        "buzzword-aws-keyphrase-service-active-connections-repository-library": "1.0.0",
-        "buzzword-aws-keyphrase-service-keyphrase-repository-library": "1.0.0",
-        "buzzword-aws-keyphrase-service-text-repository-library": "1.0.0",
-        "buzzword-aws-keyphrase-service-web-socket-client-library": "1.0.0"
+        "buzzword-keyphrase-active-connections-repository-library": "1.0.0",
+        "buzzword-keyphrase-keyphrase-repository-library": "1.0.0",
+        "buzzword-keyphrase-text-repository-library": "1.0.0",
+        "buzzword-keyphrase-web-socket-client-library": "1.0.0"
     }
 }

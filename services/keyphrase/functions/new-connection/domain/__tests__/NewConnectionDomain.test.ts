@@ -4,11 +4,11 @@ import { On, method } from "ts-auto-mock/extension";
 import {
     PathnameOccurrences,
     Repository,
-} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 import {
     WebSocketClient,
     WebSocketClientFactory,
-} from "buzzword-aws-keyphrase-service-web-socket-client-library";
+} from "buzzword-keyphrase-web-socket-client-library";
 
 import NewConnectionDomain from "../NewConnectionDomain";
 import { Connection } from "../../ports/NewConnectionPort";

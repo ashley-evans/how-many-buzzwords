@@ -2,7 +2,7 @@ import { mock } from "jest-mock-extended";
 import {
     Repository,
     SiteKeyphraseOccurrences,
-} from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import TotalOccurrencesDomain from "../TotalOccurrencesDomain";
 import {

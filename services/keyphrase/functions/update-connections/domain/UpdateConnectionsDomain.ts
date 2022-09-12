@@ -2,9 +2,9 @@ import { chain } from "lodash";
 import {
     WebSocketClient,
     WebSocketClientFactory,
-} from "buzzword-aws-keyphrase-service-web-socket-client-library";
-import { ActiveConnectionsRepositoryPort } from "buzzword-aws-keyphrase-service-active-connections-repository-library";
-import { PathnameOccurrences } from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+} from "buzzword-keyphrase-web-socket-client-library";
+import { ActiveConnectionsRepositoryPort } from "buzzword-keyphrase-active-connections-repository-library";
+import { PathnameOccurrences } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
     BaseURLOccurrences,

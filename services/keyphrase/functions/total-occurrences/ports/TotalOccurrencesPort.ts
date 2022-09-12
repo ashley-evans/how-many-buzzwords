@@ -1,4 +1,4 @@
-import { SiteKeyphraseOccurrences } from "buzzword-aws-keyphrase-service-keyphrase-repository-library";
+import { SiteKeyphraseOccurrences } from "buzzword-keyphrase-keyphrase-repository-library";
 
 type OccurrenceTotalImage = {
     baseURL?: string;

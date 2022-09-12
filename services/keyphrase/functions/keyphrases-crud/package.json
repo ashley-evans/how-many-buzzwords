@@ -1,5 +1,5 @@
 {
-    "name": "buzzword-aws-keyphrase-service-keyphrases-crud-lambda",
+    "name": "buzzword-keyphrase-keyphrases-crud-lambda",
     "version": "1.0.0",
     "dependencies": {
         "@middy/core": "2.5.1",
