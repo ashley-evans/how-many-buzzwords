@@ -23,6 +23,7 @@ jobs:
                       ui:
                         - ${{ inputs.path }}/**
                         - ./.github/workflows/ui.yml
+                        - ./scripts/deploy-ui.sh
     audit:
         runs-on: ubuntu-latest
         steps:
