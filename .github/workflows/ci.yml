@@ -37,10 +37,6 @@ jobs:
             path: ./ui
         secrets:
             DEPLOY_ROLE: ${{ secrets.AWS_DEPLOY_ROLE }}
-            REGION: ${{ secrets.REGION }}
-            CRAWL_SERVICE_GRAPHQL_ENDPOINT: ${{ secrets.CRAWL_SERVICE_GRAPHQL_ENDPOINT }}
-            CRAWL_IDENTITY_POOL_ID: ${{ secrets.CRAWL_IDENTITY_POOL_ID }}
-            KEYPHRASE_SERVICE_WS_ENDPOINT: ${{ secrets.KEYPHRASE_SERVICE_WS_ENDPOINT }}
     validate:
         runs-on: ubuntu-latest
         steps:

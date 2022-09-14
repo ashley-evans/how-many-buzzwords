@@ -35,6 +35,30 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
+crawl_config_path="$root_dir/services/crawl/samconfig.toml"
+if [ ! -f $crawl_config_path ]; then
+    echo "Error: Cannot find crawl config file."
+    exit 1
+fi
+
+crawl_stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $crawl_config_path -e $environment -v stack_name)
+
+keyphrase_config_path="$root_dir/services/keyphrase/samconfig.toml"
+if [ ! -f $crawl_config_path ]; then
+    echo "Error: Cannot find keyphrase config file."
+    exit 1
+fi
+
+keyphrase_stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $keyphrase_config_path -e $environment -v stack_name)
+
+echo "Creating .env file for environment: $environment..."
+$script_dir/helpers/generate-ui-env.sh -c $crawl_stack_name -k $keyphrase_stack_name -o $root_dir/ui/.env
+
+if [ $? -ne 0 ]; then
+    echo "Error: An error occured generating .env file for environment."
+    exit 1
+fi
+
 echo "Removing existing build artefacts..."
 rm -rf "$root_dir/ui/dist"
 
