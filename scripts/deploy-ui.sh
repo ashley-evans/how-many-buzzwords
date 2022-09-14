@@ -35,6 +35,9 @@ fi
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 root_dir="$( dirname "$script_dir")"
 
+echo "Installing UI dependencies..."
+npm --prefix "$root_dir/ui/" run ci
+
 crawl_config_path="$root_dir/services/crawl/samconfig.toml"
 if [ ! -f $crawl_config_path ]; then
     echo "Error: Cannot find crawl config file."
