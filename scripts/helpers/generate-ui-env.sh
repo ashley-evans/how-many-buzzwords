@@ -4,11 +4,12 @@ usage() {
     echo "Usage:
     -c [Mandatory: Name of the crawl service stack to target]
     -k [Mandatory: Name of the keyphrase service stack to target]
-    -r [The region the stacks reside in]" 1>&2;
+    -r [The region the stacks reside in]
+    -o [The location to create the .env in]" 1>&2;
     exit 1; 
 }
 
-while getopts "c:k:r:h" opt; do
+while getopts "c:k:r:o:h" opt; do
     case $opt in
         c)
             crawl_stack=$OPTARG
@@ -18,6 +19,9 @@ while getopts "c:k:r:h" opt; do
             ;;
         r)
             region=$OPTARG
+            ;;
+        o)
+            output_path=$OPTARG
             ;;
         h)
             usage
@@ -34,6 +38,18 @@ fi
 
 if [ -z $region]; then
     region="eu-west-2"
+fi
+
+if [ -z $output_path ]; then
+    output_path=".env"
+elif [ -d $output_path ]; then
+    output_path="$output_path/.env"
+else
+    file_name=$(basename $output_path)
+    if [ $file_name != ".env" ]; then
+        echo "Error: Provided output file must be named .env"
+        exit 1
+    fi
 fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -61,7 +77,7 @@ if [ -z $keyphrase_service_ws_endpoint ]; then
     exit 1
 fi
 
-echo "REGION=\"$region\"" > .env
-echo "CRAWL_SERVICE_GRAPHQL_ENDPOINT=\"$crawl_graphql_endpoint\"" >> .env
-echo "CRAWL_IDENTITY_POOL_ID=\"$crawl_identity_pool_id\"" >> .env
-echo "KEYPHRASE_WS_SERVICE_ENDPOINT=\"$keyphrase_service_ws_endpoint/\$default\"" >> .env
+echo "REGION=\"$region\"" > $output_path
+echo "CRAWL_SERVICE_GRAPHQL_ENDPOINT=\"$crawl_graphql_endpoint\"" >> $output_path
+echo "CRAWL_IDENTITY_POOL_ID=\"$crawl_identity_pool_id\"" >> $output_path
+echo "KEYPHRASE_WS_SERVICE_ENDPOINT=\"$keyphrase_service_ws_endpoint/\$default\"" >> $output_path
