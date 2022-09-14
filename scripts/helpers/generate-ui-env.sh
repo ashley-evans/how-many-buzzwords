@@ -36,7 +36,7 @@ if [ -z $crawl_stack ] || [ -z $keyphrase_stack ]; then
     usage 
 fi
 
-if [ -z $region]; then
+if [ -z $region ]; then
     region="eu-west-2"
 fi
 
