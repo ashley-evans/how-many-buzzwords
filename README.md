@@ -73,12 +73,14 @@ Run the following commands to teardown all deployed components, along with their
 
 ### Running the SPA component locally
 
-Requires a `.env` file in the `./ui/` folder with the following values configured to the environment at test:
+Generate a `.env` file in the `./ui` folder by running the following the command:
 
-| Environment Variable          | Description                                                  |
-| ----------------------------- | ------------------------------------------------------------ |
-| CRAWL_SERVICE_ENDPOINT        | The HTTP API Gateway endpoint for the crawl service          |
-| KEYPHRASE_WS_SERVICE_ENDPOINT | The WebSocket API Gateway endpoint for the keyphrase service |
+```
+./scripts/helpers/generate-ui-env.sh \
+    -c $INSERT_NAME_OF_CRAWL_STACK \
+    -k $INSERT_NAME_OF_KEYPHRASE_STACK \
+    -o ./ui/.env
+```
 
 Run the following script to run the UI locally:
 
