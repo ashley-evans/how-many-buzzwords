@@ -1,8 +1,40 @@
 #!/bin/bash
 
-crawl_stack="buzzword-crawl-service-dev"
-keyphrase_stack="buzzword-keyphrase-service-dev"
-region="eu-west-2"
+usage() {
+    echo "Usage:
+    -c [Mandatory: Name of the crawl service stack to target]
+    -k [Mandatory: Name of the keyphrase service stack to target]
+    -r [The region the stacks reside in]" 1>&2;
+    exit 1; 
+}
+
+while getopts "c:k:r:h" opt; do
+    case $opt in
+        c)
+            crawl_stack=$OPTARG
+            ;;
+        k)
+            keyphrase_stack=$OPTARG
+            ;;
+        r)
+            region=$OPTARG
+            ;;
+        h)
+            usage
+            ;;
+        ?)
+            usage
+            ;;
+    esac
+done
+
+if [ -z $crawl_stack ] || [ -z $keyphrase_stack ]; then
+    usage 
+fi
+
+if [ -z $region]; then
+    region="eu-west-2"
+fi
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
@@ -20,7 +52,6 @@ if [ -z $crawl_identity_pool_id ]; then
     echo "Error: No Crawl Identity Pool ID found in crawl stack output."
     exit 1
 fi
-
 
 keyphrase_stack_output=$($script_dir/fetch-stack-outputs.sh -s $keyphrase_stack -r $region)
 keyphrase_service_ws_endpoint=$(echo $keyphrase_stack_output | jq -r 'select ( .OutputKey == "WebSocketAPIEndpoint") | .OutputValue')
