@@ -1,4 +1,4 @@
-import React, { Fragment, Suspense } from "react";
+import React, { Fragment, ReactElement, Suspense } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { Spin } from "antd";
 
@@ -14,7 +14,17 @@ type AppProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
 
-const LOADING_MESSAGE = "Loading...";
+type LazyLoadingProps = {
+    children: ReactElement;
+};
+
+function LazyLoadingWrapper(props: LazyLoadingProps): ReactElement {
+    return (
+        <Suspense fallback={<Spin tip="Loading..." />}>
+            {props.children}
+        </Suspense>
+    );
+}
 
 function App(props: AppProps) {
     return (
@@ -24,35 +34,33 @@ function App(props: AppProps) {
                     <Route
                         index
                         element={
-                            <Suspense fallback={<Spin tip={LOADING_MESSAGE} />}>
+                            <LazyLoadingWrapper>
                                 <Search />
-                            </Suspense>
+                            </LazyLoadingWrapper>
                         }
                     />
                     <Route
                         path="results"
                         element={
-                            <Suspense fallback={<Spin tip={LOADING_MESSAGE} />}>
+                            <LazyLoadingWrapper>
                                 <Results
                                     keyphraseServiceClientFactory={
                                         props.keyphraseServiceClientFactory
                                     }
                                 />
-                            </Suspense>
+                            </LazyLoadingWrapper>
                         }
                     >
                         <Route
                             path=":url"
                             element={
-                                <Suspense
-                                    fallback={<Spin tip={LOADING_MESSAGE} />}
-                                >
+                                <LazyLoadingWrapper>
                                     <Results
                                         keyphraseServiceClientFactory={
                                             props.keyphraseServiceClientFactory
                                         }
                                     />
-                                </Suspense>
+                                </LazyLoadingWrapper>
                             }
                         />
                     </Route>
