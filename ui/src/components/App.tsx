@@ -1,6 +1,6 @@
 import React, { Fragment, ReactElement, Suspense } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { Spin } from "antd";
+import { Button, Spin } from "antd";
 
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import SiteLayout from "./SiteLayout";
@@ -69,7 +69,9 @@ function App(props: AppProps) {
                         element={
                             <Fragment>
                                 <p>Oh no! You&apos;ve gotten lost!</p>
-                                <Link to="/">Return to search</Link>
+                                <Button type="primary">
+                                    <Link to="/">Return to search</Link>
+                                </Button>
                             </Fragment>
                         }
                     />
