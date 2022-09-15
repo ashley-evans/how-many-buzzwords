@@ -21,7 +21,14 @@ function App(props: AppProps) {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<SiteLayout />}>
-                    <Route index element={<Search />} />
+                    <Route
+                        index
+                        element={
+                            <Suspense fallback={<Spin tip={LOADING_MESSAGE} />}>
+                                <Search />
+                            </Suspense>
+                        }
+                    />
                     <Route
                         path="results"
                         element={

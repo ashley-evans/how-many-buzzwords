@@ -36,19 +36,7 @@ beforeEach(() => {
 });
 
 describe("navigating to root", () => {
-    test("displays the title of the site in a header", async () => {
-        const { getByRole } = renderWithMockProvider(
-            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
-        );
-
-        await waitFor(() =>
-            expect(
-                getByRole("heading", { name: APPLICATION_TITLE })
-            ).toBeInTheDocument()
-        );
-    });
-
-    test("displays a URL textbox with an appropriate label", async () => {
+    test("displays the title of the site alongside the search input", async () => {
         const { getByRole } = renderWithMockProvider(
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
@@ -58,18 +46,12 @@ describe("navigating to root", () => {
                 getByRole("textbox", { name: URL_INPUT_LABEL })
             ).toBeInTheDocument()
         );
-    });
-
-    test("displays a search button", async () => {
-        const { getByRole } = renderWithMockProvider(
-            <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
-        );
-
-        await waitFor(() =>
-            expect(
-                getByRole("button", { name: SEARCH_BUTTON_TEXT })
-            ).toBeInTheDocument()
-        );
+        expect(
+            getByRole("button", { name: SEARCH_BUTTON_TEXT })
+        ).toBeInTheDocument();
+        expect(
+            getByRole("heading", { name: APPLICATION_TITLE })
+        ).toBeInTheDocument();
     });
 });
 
