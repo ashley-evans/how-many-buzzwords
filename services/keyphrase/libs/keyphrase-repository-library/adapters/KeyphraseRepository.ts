@@ -420,6 +420,10 @@ class KeyphraseRepository implements Repository {
                 },
                 { condition }
             );
+
+            console.log(
+                `Successfully set aggregated flag for: ${JSON.stringify(item)}`
+            );
         } catch (ex) {
             console.error(
                 `An error occurred setting aggregated flag for: ${JSON.stringify(
