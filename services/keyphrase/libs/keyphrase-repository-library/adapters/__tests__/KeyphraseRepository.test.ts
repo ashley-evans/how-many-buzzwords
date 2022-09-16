@@ -796,6 +796,46 @@ describe("setting keyphrase to aggregated", () => {
         }
     );
 
+    test("returns success if item is already set to aggregated", async () => {
+        const occurrence = TEST_KEYPHRASES[0];
+        const keyphrase = extractKeyphraseKeys(VALID_URL, occurrence);
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            occurrence
+        );
+        await repository.setKeyphraseAggregated(keyphrase);
+
+        const actual = await repository.setKeyphraseAggregated(keyphrase);
+
+        expect(actual).toBe(true);
+    });
+
+    describe("updating non-existent keyphrase", () => {
+        const keyphrase = extractKeyphraseKeys(
+            VALID_URL,
+            TEST_KEYPHRASES[0]
+        ) as SiteKeyphrase;
+
+        test("returns failure", async () => {
+            const actual = await repository.setKeyphraseAggregated(keyphrase);
+
+            expect(actual).toBe(false);
+        });
+
+        test("does not create a item for this keyphrase", async () => {
+            await repository.setKeyphraseAggregated(keyphrase);
+
+            const actual = await repository.getOccurrences(
+                keyphrase.baseURL,
+                keyphrase.pathname,
+                keyphrase.keyphrase
+            );
+
+            expect(actual).toBeUndefined();
+        });
+    });
+
     afterEach(async () => {
         await repository.empty();
     });
