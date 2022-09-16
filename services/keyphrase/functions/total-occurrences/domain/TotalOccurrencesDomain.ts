@@ -36,12 +36,14 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
                     ? item.current.occurrences - item.previous.occurrences
                     : item.current.occurrences;
 
-                acc.push({
-                    baseURL: item.current.baseURL,
-                    pathname: item.current.pathname,
-                    keyphrase: item.current.keyphrase,
-                    occurrences: newOccurrences,
-                });
+                if (newOccurrences != 0) {
+                    acc.push({
+                        baseURL: item.current.baseURL,
+                        pathname: item.current.pathname,
+                        keyphrase: item.current.keyphrase,
+                        occurrences: newOccurrences,
+                    });
+                }
             }
 
             return acc;

@@ -243,3 +243,35 @@ test.each([
         );
     }
 );
+
+test.each([
+    [
+        "a single occurrence item",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 3),
+                previous: createOccurrenceImage(VALID_URL, "test", 3),
+            },
+        ],
+    ],
+    [
+        "multiple occurrence items",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 3),
+                previous: createOccurrenceImage(VALID_URL, "test", 3),
+            },
+            {
+                current: createOccurrenceImage(VALID_URL, "wibble", 5),
+                previous: createOccurrenceImage(VALID_URL, "wibble", 5),
+            },
+        ],
+    ],
+])(
+    "does not attempt to persist addition given %s whose occurrence count has not changed",
+    async (message: string, items: OccurrenceItem[]) => {
+        await domain.updateTotal(items);
+
+        expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
+    }
+);
