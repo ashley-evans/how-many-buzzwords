@@ -2,6 +2,7 @@ import { mock } from "jest-mock-extended";
 import {
     Repository,
     SiteKeyphraseOccurrences,
+    SiteKeyphrase,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import TotalOccurrencesDomain from "../TotalOccurrencesDomain";
@@ -40,10 +41,19 @@ function createTotalImage(
     };
 }
 
+function extractOccurrenceKeys(items: OccurrenceItem[]): SiteKeyphrase[] {
+    return items.map((item) => ({
+        baseURL: item.current.baseURL,
+        pathname: item.current.pathname,
+        keyphrase: item.current.keyphrase,
+    }));
+}
+
 const VALID_URL = new URL("https://www.example.com/");
 
 beforeEach(() => {
     mockRepository.addOccurrencesToTotals.mockReset();
+    mockRepository.setKeyphraseAggregated.mockReset();
 });
 
 describe("handles no items", () => {
@@ -244,9 +254,9 @@ test.each([
     }
 );
 
-test.each([
+describe.each([
     [
-        "a single occurrence item",
+        "a single occurrence item that has",
         [
             {
                 current: createOccurrenceImage(VALID_URL, "test", 3),
@@ -255,7 +265,7 @@ test.each([
         ],
     ],
     [
-        "multiple occurrence items",
+        "multiple occurrence items that have",
         [
             {
                 current: createOccurrenceImage(VALID_URL, "test", 3),
@@ -267,11 +277,21 @@ test.each([
             },
         ],
     ],
-])(
-    "does not attempt to persist addition given %s whose occurrence count has not changed",
-    async (message: string, items: OccurrenceItem[]) => {
+])("given %s not changed", (message: string, items: OccurrenceItem[]) => {
+    test("does not attempt to add to site and global totals", async () => {
         await domain.updateTotal(items);
 
         expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
-    }
-);
+    });
+
+    test("sets the aggregated flag for items", async () => {
+        const expected = extractOccurrenceKeys(items);
+
+        await domain.updateTotal(items);
+
+        expect(mockRepository.setKeyphraseAggregated).toHaveBeenCalledTimes(1);
+        expect(mockRepository.setKeyphraseAggregated).toHaveBeenCalledWith(
+            expect.arrayContaining(expected)
+        );
+    });
+});
