@@ -1,6 +1,7 @@
 import {
     Repository,
     SiteKeyphraseOccurrences,
+    SiteKeyphrase,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
@@ -13,39 +14,79 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
     constructor(private repository: Repository) {}
 
     async updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean> {
-        const occurrencesToTotal = this.createTotalUpdates(items);
-        if (occurrencesToTotal.length == 0) {
-            return true;
-        }
+        const totals = this.createTotalUpdates(items);
+        const occurrenceUpdates = this.addOccurrences(totals.additions);
+        const aggregateFlagUpdates = this.updateAggregateFlags(
+            totals.aggregated
+        );
 
-        try {
-            return await this.repository.addOccurrencesToTotals(
-                occurrencesToTotal
-            );
-        } catch {
-            return false;
-        }
+        return (
+            await Promise.all([occurrenceUpdates, aggregateFlagUpdates])
+        ).every(Boolean);
     }
 
-    private createTotalUpdates(
-        items: (OccurrenceItem | TotalItem)[]
-    ): SiteKeyphraseOccurrences[] {
-        return items.reduce((acc: SiteKeyphraseOccurrences[], item) => {
+    private async addOccurrences(
+        additions: SiteKeyphraseOccurrences[]
+    ): Promise<boolean> {
+        if (additions.length > 0) {
+            try {
+                return await this.repository.addOccurrencesToTotals(additions);
+            } catch {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private async updateAggregateFlags(
+        items: SiteKeyphrase[]
+    ): Promise<boolean> {
+        if (items.length > 0) {
+            try {
+                return await this.repository.setKeyphraseAggregated(items);
+            } catch {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private createTotalUpdates(items: (OccurrenceItem | TotalItem)[]): {
+        additions: SiteKeyphraseOccurrences[];
+        aggregated: SiteKeyphrase[];
+    } {
+        const newAdditions: SiteKeyphraseOccurrences[] = [];
+        const alreadyAggregated: SiteKeyphrase[] = [];
+
+        for (const item of items) {
             if (this.isOccurrenceItem(item)) {
                 const newOccurrences = item.previous
                     ? item.current.occurrences - item.previous.occurrences
                     : item.current.occurrences;
 
-                acc.push({
-                    baseURL: item.current.baseURL,
-                    pathname: item.current.pathname,
-                    keyphrase: item.current.keyphrase,
-                    occurrences: newOccurrences,
-                });
+                if (newOccurrences != 0) {
+                    newAdditions.push({
+                        baseURL: item.current.baseURL,
+                        pathname: item.current.pathname,
+                        keyphrase: item.current.keyphrase,
+                        occurrences: newOccurrences,
+                    });
+                } else {
+                    alreadyAggregated.push({
+                        baseURL: item.current.baseURL,
+                        pathname: item.current.pathname,
+                        keyphrase: item.current.keyphrase,
+                    });
+                }
             }
+        }
 
-            return acc;
-        }, []);
+        return {
+            additions: newAdditions,
+            aggregated: alreadyAggregated,
+        };
     }
 
     private isOccurrenceItem(

@@ -8,6 +8,10 @@ type SiteKeyphraseOccurrences = {
 
 type PathnameOccurrences = Omit<SiteKeyphraseOccurrences, "baseURL">;
 type KeyphraseOccurrences = Omit<PathnameOccurrences, "pathname">;
+type SiteKeyphrase = Omit<
+    SiteKeyphraseOccurrences,
+    "occurrences" | "aggregated"
+>;
 
 interface Repository {
     empty(): Promise<boolean>;
@@ -31,6 +35,9 @@ interface Repository {
         occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
     ): Promise<boolean>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
+    setKeyphraseAggregated(
+        keyphrases: SiteKeyphrase | SiteKeyphrase[]
+    ): Promise<boolean>;
 }
 
 export {
@@ -38,4 +45,5 @@ export {
     PathnameOccurrences,
     Repository,
     SiteKeyphraseOccurrences,
+    SiteKeyphrase,
 };

@@ -2,6 +2,7 @@ import { mock } from "jest-mock-extended";
 import {
     Repository,
     SiteKeyphraseOccurrences,
+    SiteKeyphrase,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import TotalOccurrencesDomain from "../TotalOccurrencesDomain";
@@ -40,10 +41,19 @@ function createTotalImage(
     };
 }
 
+function extractOccurrenceKeys(items: OccurrenceItem[]): SiteKeyphrase[] {
+    return items.map((item) => ({
+        baseURL: item.current.baseURL,
+        pathname: item.current.pathname,
+        keyphrase: item.current.keyphrase,
+    }));
+}
+
 const VALID_URL = new URL("https://www.example.com/");
 
 beforeEach(() => {
     mockRepository.addOccurrencesToTotals.mockReset();
+    mockRepository.setKeyphraseAggregated.mockReset();
 });
 
 describe("handles no items", () => {
@@ -243,3 +253,73 @@ test.each([
         );
     }
 );
+
+describe.each([
+    [
+        "a single occurrence item that has",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 3),
+                previous: createOccurrenceImage(VALID_URL, "test", 3),
+            },
+        ],
+    ],
+    [
+        "multiple occurrence items that have",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 3),
+                previous: createOccurrenceImage(VALID_URL, "test", 3),
+            },
+            {
+                current: createOccurrenceImage(VALID_URL, "wibble", 5),
+                previous: createOccurrenceImage(VALID_URL, "wibble", 5),
+            },
+        ],
+    ],
+])("given %s not changed", (message: string, items: OccurrenceItem[]) => {
+    test("does not attempt to add to site and global totals", async () => {
+        await domain.updateTotal(items);
+
+        expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
+    });
+
+    test("sets the aggregated flag for items", async () => {
+        const expected = extractOccurrenceKeys(items);
+
+        await domain.updateTotal(items);
+
+        expect(mockRepository.setKeyphraseAggregated).toHaveBeenCalledTimes(1);
+        expect(mockRepository.setKeyphraseAggregated).toHaveBeenCalledWith(
+            expect.arrayContaining(expected)
+        );
+    });
+});
+
+test("returns failure if updating aggregated flag throws an error", async () => {
+    mockRepository.setKeyphraseAggregated.mockRejectedValue(new Error());
+    const items = [
+        {
+            current: createOccurrenceImage(VALID_URL, "test", 3),
+            previous: createOccurrenceImage(VALID_URL, "test", 3),
+        },
+    ];
+
+    const actual = await domain.updateTotal(items);
+
+    expect(actual).toBe(false);
+});
+
+test("returns failure if updating aggregated flag does not succeed", async () => {
+    mockRepository.setKeyphraseAggregated.mockResolvedValue(false);
+    const items = [
+        {
+            current: createOccurrenceImage(VALID_URL, "test", 3),
+            previous: createOccurrenceImage(VALID_URL, "test", 3),
+        },
+    ];
+
+    const actual = await domain.updateTotal(items);
+
+    expect(actual).toBe(false);
+});

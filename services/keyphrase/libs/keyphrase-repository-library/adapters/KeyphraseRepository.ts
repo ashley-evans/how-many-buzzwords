@@ -10,6 +10,7 @@ import {
     KeyphraseOccurrences,
     PathnameOccurrences,
     Repository,
+    SiteKeyphrase,
     SiteKeyphraseOccurrences,
 } from "../ports/Repository";
 import KeyphraseTableOccurrenceItem from "../schemas/KeyphraseTableOccurrenceItem";
@@ -165,6 +166,19 @@ class KeyphraseRepository implements Repository {
         }
 
         return this.addItemToTotal(items);
+    }
+
+    async setKeyphraseAggregated(
+        keyphrases: SiteKeyphrase | SiteKeyphrase[]
+    ): Promise<boolean> {
+        if (Array.isArray(keyphrases)) {
+            const promises = keyphrases.map((keyphrase) =>
+                this.setAggregatedFlag(keyphrase)
+            );
+            return (await Promise.all(promises)).every(Boolean);
+        }
+
+        return this.setAggregatedFlag(keyphrases);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -386,6 +400,41 @@ class KeyphraseRepository implements Repository {
 
             return false;
         }
+    }
+
+    private async setAggregatedFlag(item: SiteKeyphrase): Promise<boolean> {
+        const condition = new dynamoose.Condition()
+            .filter(KeyphraseTableNonKeyFields.Aggregated)
+            .exists();
+        const itemKey = this.createOccurrenceKey(
+            item.baseURL,
+            item.pathname,
+            item.keyphrase
+        );
+
+        try {
+            await this.occurrenceModel.update(
+                itemKey,
+                {
+                    [KeyphraseTableNonKeyFields.Aggregated]: true,
+                },
+                { condition }
+            );
+
+            console.log(
+                `Successfully set aggregated flag for: ${JSON.stringify(item)}`
+            );
+        } catch (ex) {
+            console.error(
+                `An error occurred setting aggregated flag for: ${JSON.stringify(
+                    item
+                )}. Error: ${ex}`
+            );
+
+            return false;
+        }
+
+        return true;
     }
 
     private createSiteTotalKey(
