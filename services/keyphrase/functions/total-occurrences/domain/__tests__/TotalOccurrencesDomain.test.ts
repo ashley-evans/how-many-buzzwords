@@ -295,3 +295,31 @@ describe.each([
         );
     });
 });
+
+test("returns failure if updating aggregated flag throws an error", async () => {
+    mockRepository.setKeyphraseAggregated.mockRejectedValue(new Error());
+    const items = [
+        {
+            current: createOccurrenceImage(VALID_URL, "test", 3),
+            previous: createOccurrenceImage(VALID_URL, "test", 3),
+        },
+    ];
+
+    const actual = await domain.updateTotal(items);
+
+    expect(actual).toBe(false);
+});
+
+test("returns failure if updating aggregated flag does not succeed", async () => {
+    mockRepository.setKeyphraseAggregated.mockResolvedValue(false);
+    const items = [
+        {
+            current: createOccurrenceImage(VALID_URL, "test", 3),
+            previous: createOccurrenceImage(VALID_URL, "test", 3),
+        },
+    ];
+
+    const actual = await domain.updateTotal(items);
+
+    expect(actual).toBe(false);
+});

@@ -41,7 +41,11 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
     private async updateAggregateFlags(
         items: SiteKeyphrase[]
     ): Promise<boolean> {
-        return await this.repository.setKeyphraseAggregated(items);
+        try {
+            return await this.repository.setKeyphraseAggregated(items);
+        } catch {
+            return false;
+        }
     }
 
     private createTotalUpdates(items: (OccurrenceItem | TotalItem)[]): {
