@@ -754,6 +754,12 @@ describe("setting keyphrase to aggregated", () => {
         await repository.empty();
     });
 
+    test("returns success given no items", async () => {
+        const actual = await repository.setKeyphraseAggregated([]);
+
+        expect(actual).toBe(true);
+    });
+
     describe.each([
         ["a single item", TEST_KEYPHRASES[0]],
         ["less than 25 items", TEST_KEYPHRASES],
@@ -835,6 +841,33 @@ describe("setting keyphrase to aggregated", () => {
             expect(actual).toBeUndefined();
         });
     });
+
+    test.each([
+        ["a single occurrence", TEST_KEYPHRASES[0]],
+        ["multiple occurrences", TEST_KEYPHRASES],
+    ])(
+        "returns failure when setting aggregated flag fails on %s",
+        async (
+            message: string,
+            input: KeyphraseOccurrences | KeyphraseOccurrences[]
+        ) => {
+            const updateItemSpy = jest.spyOn(dynamoDB, "updateItem");
+            updateItemSpy.mockImplementation(() => {
+                throw new Error("test error");
+            });
+            const keyphrases = extractKeyphraseKeys(VALID_URL, input);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                input
+            );
+
+            const actual = await repository.setKeyphraseAggregated(keyphrases);
+            updateItemSpy.mockRestore();
+
+            expect(actual).toBe(false);
+        }
+    );
 
     afterEach(async () => {
         await repository.empty();
