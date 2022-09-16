@@ -15,37 +15,42 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
 
     async updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean> {
         const totals = this.createTotalUpdates(items);
+        const occurrenceUpdates = this.addOccurrences(totals.additions);
+        const aggregateFlagUpdates = this.updateAggregateFlags(
+            totals.aggregated
+        );
 
-        let result = true;
-        if (totals.additions.length > 0) {
-            result = await this.addOccurrences(totals.additions);
-        }
-
-        if (totals.aggregated.length > 0) {
-            result = await this.updateAggregateFlags(totals.aggregated);
-        }
-
-        return result;
+        return (
+            await Promise.all([occurrenceUpdates, aggregateFlagUpdates])
+        ).every(Boolean);
     }
 
     private async addOccurrences(
         additions: SiteKeyphraseOccurrences[]
     ): Promise<boolean> {
-        try {
-            return await this.repository.addOccurrencesToTotals(additions);
-        } catch {
-            return false;
+        if (additions.length > 0) {
+            try {
+                return await this.repository.addOccurrencesToTotals(additions);
+            } catch {
+                return false;
+            }
         }
+
+        return true;
     }
 
     private async updateAggregateFlags(
         items: SiteKeyphrase[]
     ): Promise<boolean> {
-        try {
-            return await this.repository.setKeyphraseAggregated(items);
-        } catch {
-            return false;
+        if (items.length > 0) {
+            try {
+                return await this.repository.setKeyphraseAggregated(items);
+            } catch {
+                return false;
+            }
         }
+
+        return true;
     }
 
     private createTotalUpdates(items: (OccurrenceItem | TotalItem)[]): {
