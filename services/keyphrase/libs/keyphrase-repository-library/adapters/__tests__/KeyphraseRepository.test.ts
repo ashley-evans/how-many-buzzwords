@@ -10,6 +10,7 @@ import dynamoose from "dynamoose";
 
 import {
     KeyphraseOccurrences,
+    SiteKeyphrase,
     SiteKeyphraseOccurrences,
 } from "../../ports/Repository";
 import KeyphraseRepository from "../KeyphraseRepository";
@@ -64,6 +65,27 @@ function createOccurrenceItem(
     }
 
     return createSiteOccurrence(url, keyphraseOccurrences);
+}
+
+function createSiteKeyphrase(url: URL, keyphrase: string): SiteKeyphrase {
+    return {
+        baseURL: url.hostname,
+        pathname: url.pathname,
+        keyphrase,
+    };
+}
+
+function extractKeyphraseKeys(
+    url: URL,
+    keyphraseOccurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
+): SiteKeyphrase | SiteKeyphrase[] {
+    if (Array.isArray(keyphraseOccurrences)) {
+        return keyphraseOccurrences.map((occurrence) =>
+            createSiteKeyphrase(url, occurrence.keyphrase)
+        );
+    }
+
+    return createSiteKeyphrase(url, keyphraseOccurrences.keyphrase);
 }
 
 const TABLE_NAME = "keyphrase-table";
@@ -719,6 +741,58 @@ describe("total handling", () => {
                 expectedError
             );
             querySpy.mockRestore();
+        }
+    );
+
+    afterEach(async () => {
+        await repository.empty();
+    });
+});
+
+describe("setting keyphrase to aggregated", () => {
+    beforeEach(async () => {
+        await repository.empty();
+    });
+
+    describe.each([
+        ["a single item", TEST_KEYPHRASES[0]],
+        ["less than 25 items", TEST_KEYPHRASES],
+        ["greater than 25 items", TEST_BATCH_KEYPHRASES],
+    ])(
+        "aggregated state update given %s",
+        (
+            message: string,
+            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
+        ) => {
+            const siteKeyphrases = extractKeyphraseKeys(VALID_URL, occurrences);
+
+            beforeEach(async () => {
+                await repository.storeKeyphrases(
+                    VALID_URL.hostname,
+                    VALID_URL.pathname,
+                    occurrences
+                );
+            });
+
+            test("returns success when update succeeds", async () => {
+                const actual = await repository.setKeyphraseAggregated(
+                    siteKeyphrases
+                );
+
+                expect(actual).toBe(true);
+            });
+
+            test("updates aggregated flag to true", async () => {
+                await repository.setKeyphraseAggregated(siteKeyphrases);
+
+                const actual = await repository.getOccurrences(
+                    VALID_URL.hostname
+                );
+
+                for (const item of actual) {
+                    expect(item.aggregated).toBe(true);
+                }
+            });
         }
     );
 

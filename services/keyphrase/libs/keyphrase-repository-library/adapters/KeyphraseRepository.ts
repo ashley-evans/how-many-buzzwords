@@ -10,6 +10,7 @@ import {
     KeyphraseOccurrences,
     PathnameOccurrences,
     Repository,
+    SiteKeyphrase,
     SiteKeyphraseOccurrences,
 } from "../ports/Repository";
 import KeyphraseTableOccurrenceItem from "../schemas/KeyphraseTableOccurrenceItem";
@@ -165,6 +166,19 @@ class KeyphraseRepository implements Repository {
         }
 
         return this.addItemToTotal(items);
+    }
+
+    async setKeyphraseAggregated(
+        keyphrases: SiteKeyphrase | SiteKeyphrase[]
+    ): Promise<boolean> {
+        if (Array.isArray(keyphrases)) {
+            const promises = keyphrases.map((keyphrase) =>
+                this.setAggregatedFlag(keyphrase)
+            );
+            return (await Promise.all(promises)).every(Boolean);
+        }
+
+        return this.setAggregatedFlag(keyphrases);
     }
 
     async getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]> {
@@ -386,6 +400,19 @@ class KeyphraseRepository implements Repository {
 
             return false;
         }
+    }
+
+    private async setAggregatedFlag(item: SiteKeyphrase): Promise<boolean> {
+        const itemKey = this.createOccurrenceKey(
+            item.baseURL,
+            item.pathname,
+            item.keyphrase
+        );
+        await this.occurrenceModel.update(itemKey, {
+            [KeyphraseTableNonKeyFields.Aggregated]: true,
+        });
+
+        return true;
     }
 
     private createSiteTotalKey(
