@@ -23,6 +23,10 @@ const mockParsedContentProvider = mock<TextRepository>();
 
 const keyphraseFinder = new KeyphraseFinder(mockParsedContentProvider);
 
+beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+
 beforeEach(() => {
     mockParsedContentProvider.getPageText.mockReset();
 });

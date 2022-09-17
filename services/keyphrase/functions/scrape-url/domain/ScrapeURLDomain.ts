@@ -14,7 +14,11 @@ class ScrapeURLDomain implements ScrapeURLPort {
     async scrapeURL(url: URL): Promise<boolean> {
         try {
             const html = await this.crawlClient.getContent(url);
+
+            console.log(`Starting HTML parsing for: ${url.toString()}`);
             const parsedHTML = this.htmlParser.parseHTML(html);
+            console.log(`Finished HTML parsing for: ${url.toString()}`);
+
             return await this.repository.storePageText(url, parsedHTML);
         } catch (ex) {
             const errorContent =
