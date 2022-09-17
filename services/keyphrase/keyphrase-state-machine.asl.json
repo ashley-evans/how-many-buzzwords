@@ -18,14 +18,8 @@
                         "Resource": "${ScrapeURLARN}",
                         "Retry": [
                             {
-                                "ErrorEquals": [
-                                    "Lambda.ServiceException",
-                                    "Lambda.AWSLambdaException",
-                                    "Lambda.SdkClientException",
-                                    "Lambda.TooManyRequestsException",
-                                    "Lambda.Unknown"
-                                ],
-                                "IntervalSeconds": 3,
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": 2,
                                 "BackoffRate": 2.0,
                                 "MaxAttempts": 3
                             }
@@ -38,14 +32,8 @@
                         "Resource": "${FindKeyphrasesARN}",
                         "Retry": [
                             {
-                                "ErrorEquals": [
-                                    "Lambda.ServiceException",
-                                    "Lambda.AWSLambdaException",
-                                    "Lambda.SdkClientException",
-                                    "Lambda.TooManyRequestsException",
-                                    "Lambda.Unknown"
-                                ],
-                                "IntervalSeconds": 3,
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": 2,
                                 "BackoffRate": 2.0,
                                 "MaxAttempts": 3
                             }
@@ -73,14 +61,8 @@
                         "Resource": "${CountOccurrencesARN}",
                         "Retry": [
                             {
-                                "ErrorEquals": [
-                                    "Lambda.ServiceException",
-                                    "Lambda.AWSLambdaException",
-                                    "Lambda.SdkClientException",
-                                    "Lambda.TooManyRequestsException",
-                                    "Lambda.Unknown"
-                                ],
-                                "IntervalSeconds": 3,
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": 2,
                                 "BackoffRate": 2.0,
                                 "MaxAttempts": 3
                             }

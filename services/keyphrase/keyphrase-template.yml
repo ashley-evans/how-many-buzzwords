@@ -140,7 +140,7 @@ Resources:
             Layers:
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 1536
             Architectures:
                 - arm64
             Environment:
@@ -593,6 +593,7 @@ Resources:
             Layers:
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            MemorySize: 512
             Architectures:
                 - arm64
             Environment:
@@ -644,6 +645,7 @@ Resources:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            MemorySize: 512
             Architectures:
                 - arm64
             Environment:
