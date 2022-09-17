@@ -20,6 +20,7 @@ const domain = new ScrapeURLDomain(
 );
 
 beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
