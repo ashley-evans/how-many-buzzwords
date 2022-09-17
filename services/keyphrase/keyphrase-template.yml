@@ -140,6 +140,7 @@ Resources:
             Layers:
                 - Ref: TextRepositoryLibraryLayer
             Timeout: 10
+            MemorySize: 256
             Architectures:
                 - arm64
             Environment:
