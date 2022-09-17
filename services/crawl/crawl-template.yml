@@ -49,6 +49,16 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
+    EventClientLibraryLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: !Sub EventClientLibraryLayer-${EnvironmentNameSuffix}
+            ContentUri: ./libs/event-client-library
+            CompatibleRuntimes:
+                - nodejs16.x
+            RetentionPolicy: Delete
+        Metadata:
+            BuildMethod: makefile
     URLsTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -731,6 +741,7 @@ Resources:
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
+                - Ref: EventClientLibraryLayer
             Timeout: 6
             Architectures:
                 - arm64
