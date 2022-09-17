@@ -18,11 +18,13 @@ class KeyphraseFinder implements KeyphrasesPort {
         const uniqueKeyphrases = new Set<string>();
         const content = await this.parsedContentRepository.getPageText(url);
         if (content) {
+            console.log(`Starting keyphrase analysis for: ${url.toString()}`);
             const parsedFile = await retext()
                 .use(retextPos)
                 .use(retextKeywords)
                 .process(content);
 
+            console.log(`Completed keyphrase analysis for: ${url.toString()}`);
             for (const keyword of parsedFile.data.keywords) {
                 const current = toString(keyword.matches[0].node).toLowerCase();
                 uniqueKeyphrases.add(current);
