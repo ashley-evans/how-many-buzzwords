@@ -278,6 +278,7 @@ Resources:
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
+            MemorySize: 1024
             Architectures:
                 - arm64
             Environment:
@@ -295,7 +296,7 @@ Resources:
                 - Ref: ContentRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
             Timeout: 6
-            MemorySize: 256
+            MemorySize: 512
             Policies:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
                 - Version: "2012-10-17"
