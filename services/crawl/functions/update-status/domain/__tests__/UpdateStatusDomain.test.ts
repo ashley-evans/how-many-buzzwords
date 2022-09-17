@@ -3,9 +3,9 @@ import {
     CrawlStatus,
     Repository,
 } from "buzzword-crawl-urls-repository-library";
+import { EventClient } from "buzzword-crawl-event-client-library";
 
 import UpdateStatusDomain from "../UpdateStatusDomain";
-import EventClient from "../../ports/EventClient";
 
 const mockRepository = mock<Repository>();
 const mockEventClient = mock<EventClient>();

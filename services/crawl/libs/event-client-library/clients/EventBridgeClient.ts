@@ -5,7 +5,7 @@ import {
     PutEventsRequestEntry,
 } from "@aws-sdk/client-eventbridge";
 
-import EventClient from "../ports/EventClient";
+import EventClient from "../interfaces/EventClient";
 
 const CRAWL_STATUS_UPDATE_DETAIL = "Crawl Status Update";
 const CRAWL_SERVICE_SOURCE = "crawl.aws.buzzword";
