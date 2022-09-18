@@ -19,16 +19,6 @@ Resources:
             RetentionPolicy: Delete
         Metadata:
             BuildMethod: makefile
-    CrawlCommonLayer:
-        Type: AWS::Serverless::LayerVersion
-        Properties:
-            LayerName: !Sub CrawlCommonLayer-${EnvironmentNameSuffix}
-            ContentUri: ./common
-            CompatibleRuntimes:
-                - nodejs16.x
-            RetentionPolicy: Delete
-        Metadata:
-            BuildMethod: makefile
     URLsRepositoryLibraryLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -193,8 +183,6 @@ Resources:
             Runtime: nodejs16.x
             CodeUri: ./functions/publish-urls
             Description: Publishes crawled URLs to an SNS Topic for subscribers
-            Layers:
-                - Ref: CrawlCommonLayer
             Events:
                 URLsTableStreamEvent:
                     Type: DynamoDB

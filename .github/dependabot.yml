@@ -32,10 +32,6 @@ updates:
       package-ecosystem: npm
       schedule:
           interval: weekly
-    - directory: /services/crawl/common
-      package-ecosystem: npm
-      schedule:
-          interval: weekly
     - directory: /services/crawl/functions
       package-ecosystem: npm
       schedule:
