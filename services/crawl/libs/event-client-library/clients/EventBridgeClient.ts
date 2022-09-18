@@ -58,9 +58,7 @@ class EventBridgeClient implements EventClient {
         }
     }
 
-    publishURL(url: URL): Promise<boolean>;
-    publishURL(url: URL[]): Promise<URL[]>;
-    async publishURL(url: URL | URL[]): Promise<boolean | URL[]> {
+    async publishURL(url: URL): Promise<boolean> {
         if (Array.isArray(url)) {
             throw "Not implemented";
         }
