@@ -8,11 +8,17 @@ import {
 import EventClient from "../interfaces/EventClient";
 
 const CRAWL_STATUS_UPDATE_DETAIL = "Crawl Status Update";
+const CRAWL_PUBLISH_URL_DETAIL = "New URL Crawled via Crawl Service";
 const CRAWL_SERVICE_SOURCE = "crawl.aws.buzzword";
 
 type StatusUpdateEntryDetail = {
     baseURL: string;
     status: CrawlStatus;
+};
+
+type URLPublishEntryDetail = {
+    baseURL: string;
+    pathname: string;
 };
 
 class EventBridgeClient implements EventClient {
@@ -48,6 +54,37 @@ class EventBridgeClient implements EventClient {
             console.error(
                 `An error occurred sending status update for URL: ${url}. Error: ${ex}`
             );
+            return false;
+        }
+    }
+
+    async publishURL(url: URL): Promise<boolean> {
+        const detail: URLPublishEntryDetail = {
+            baseURL: url.hostname,
+            pathname: url.pathname,
+        };
+
+        const entry: PutEventsRequestEntry = {
+            EventBusName: this.eventBusName,
+            DetailType: CRAWL_PUBLISH_URL_DETAIL,
+            Source: CRAWL_SERVICE_SOURCE,
+            Detail: JSON.stringify(detail),
+        };
+
+        const command = new PutEventsCommand({ Entries: [entry] });
+
+        try {
+            await this.client.send(command);
+            console.log(
+                `Successfully published newly crawled URL: ${url.toString()}`
+            );
+
+            return true;
+        } catch (ex) {
+            console.error(
+                `An error occurred publishing URL: ${url.toString()}. Error: ${ex}`
+            );
+
             return false;
         }
     }
