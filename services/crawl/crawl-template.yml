@@ -140,7 +140,7 @@ Resources:
         Type: AWS::Events::EventBus
         Properties:
             Name: !Sub "CrawlServiceEventBus-${EnvironmentNameSuffix}"
-    PublishURLFunctionRole:
+    PublishURLsRole:
         Type: AWS::IAM::Role
         Properties:
             AssumeRolePolicyDocument:
@@ -175,14 +175,18 @@ Resources:
                             Effect: Allow
             ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-    PublishURLsLambda:
+    PublishURLs:
         Type: AWS::Serverless::Function
         Properties:
             Handler: publish-urls.handler
-            Role: !GetAtt PublishURLFunctionRole.Arn
+            Role: !GetAtt PublishURLsRole.Arn
             Runtime: nodejs16.x
             CodeUri: ./functions/publish-urls
             Description: Publishes crawled URLs to an SNS Topic for subscribers
+            Layers:
+                - Ref: URLsRepositoryLibraryLayer
+                - Ref: CrawlNodeDependencyLayer
+                - Ref: EventClientLibraryLayer
             Events:
                 URLsTableStreamEvent:
                     Type: DynamoDB
@@ -193,7 +197,7 @@ Resources:
                 - arm64
             Environment:
                 Variables:
-                    EVENT_BUS_ARN: !GetAtt CrawlServiceEventBus.Arn
+                    EVENT_BUS_NAME: !GetAtt CrawlServiceEventBus.Arn
     GetURLs:
         Type: AWS::Serverless::Function
         Properties:
