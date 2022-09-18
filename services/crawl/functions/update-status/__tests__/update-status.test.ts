@@ -1,5 +1,4 @@
 jest.mock("buzzword-crawl-urls-repository-library");
-jest.mock("@aws-sdk/client-eventbridge");
 
 beforeEach(() => {
     process.env.TABLE_NAME = "test_table_name";
