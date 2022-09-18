@@ -15,7 +15,7 @@ Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
     Component(crawl_urls_lambda, "Crawl URLs Lambda", "Lambda and TypeScript", "Crawls all pages linked from a given URL if on same domain")
     Component(get_content_lambda, "Get Content Lambda", "Lambda and TypeScript", "Retrieves content of recently crawled pages")
     Component(get_urls_lambda, "Get URLs Lambda", "Lambda and TypeScript", "Gets all URLs crawled from a given URL")
-    Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and JavaScript", "Publishes newly crawled URLs as event to event bus")
+    Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and TypeScript", "Publishes newly crawled URLs as event to event bus")
     Component(update_status_lambda, "Update Status Lambda", "Lambda and TypeScript", "Updates the crawl status in DynamoDB and publishes crawl status update messages to subscribed clients")
     Component(event_bus, "Event Bus", "Event Bridge", "Event bus service that provides subscribers relevant events")
 }
