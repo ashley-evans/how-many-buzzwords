@@ -28,11 +28,11 @@ updates:
       package-ecosystem: npm
       schedule:
           interval: weekly
-    - directory: /services/crawl/libs/urls-repository-library
+    - directory: /services/crawl/libs/event-client-library
       package-ecosystem: npm
       schedule:
           interval: weekly
-    - directory: /services/crawl/common
+    - directory: /services/crawl/libs/urls-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
@@ -110,6 +110,10 @@ updates:
       schedule:
           interval: weekly
     - directory: /services/keyphrase/functions/scrape-url
+      package-ecosystem: npm
+      schedule:
+          interval: weekly
+    - directory: /services/keyphrase/functions/total-occurrences
       package-ecosystem: npm
       schedule:
           interval: weekly

@@ -2,9 +2,9 @@ import {
     CrawlStatus,
     Repository,
 } from "buzzword-crawl-urls-repository-library";
+import { EventClient } from "buzzword-crawl-event-client-library";
 
 import UpdateStatusPort from "../ports/UpdateStatusPort";
-import EventClient from "../ports/EventClient";
 
 class UpdateStatusDomain implements UpdateStatusPort {
     constructor(

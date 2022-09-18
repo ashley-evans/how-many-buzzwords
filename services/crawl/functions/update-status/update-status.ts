@@ -2,6 +2,10 @@ import {
     Repository,
     URLsTableRepository,
 } from "buzzword-crawl-urls-repository-library";
+import {
+    EventClient,
+    EventBridgeClient,
+} from "buzzword-crawl-event-client-library";
 
 import {
     UpdateStatusEvent,
@@ -9,8 +13,6 @@ import {
 } from "./ports/UpdateStatusPrimaryAdapter";
 import UpdateStatusDomain from "./domain/UpdateStatusDomain";
 import UpdateStatusEventAdapter from "./adapters/UpdateStatusEventAdapter";
-import EventClient from "./ports/EventClient";
-import EventBridgeClient from "./adapters/EventBridgeClient";
 
 function createRepository(): Repository {
     if (!process.env.TABLE_NAME) {
