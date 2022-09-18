@@ -12,8 +12,8 @@ import EventBridgeClient from "../EventBridgeClient";
 
 const VALID_URL = new URL("https://www.example.com/test");
 const VALID_STATUS = CrawlStatus.COMPLETE;
-
 const EXPECTED_EVENT_BUS_NAME = "test_event_bus";
+const EXPECTED_BATCH_SIZE = 10;
 
 const mockEventBridgeClient = mockClient(EBClient);
 
@@ -26,6 +26,15 @@ beforeAll(() => {
 beforeEach(() => {
     mockEventBridgeClient.reset();
 });
+
+function createURLs(num: number): URL[] {
+    const urls: URL[] = [];
+    for (let i = 0; i < num; i++) {
+        urls.push(new URL(`https://www.example${i}.com`));
+    }
+
+    return urls;
+}
 
 describe("status update publishing", () => {
     test("sends a single event for the provided status", async () => {
@@ -151,7 +160,7 @@ describe("status update publishing", () => {
     });
 });
 
-describe("new URL publishing", () => {
+describe("new URL publishing given a single URL", () => {
     test("returns success given event is successfully sent", async () => {
         const actual = await client.publishURL(VALID_URL);
 
@@ -266,5 +275,272 @@ describe("new URL publishing", () => {
         const actual = await client.publishURL(VALID_URL);
 
         expect(actual).toEqual(false);
+    });
+});
+
+describe("new URL publishing given 10 URLs", () => {
+    const urls = createURLs(10);
+
+    test("returns an empty array given event is successfully sent", async () => {
+        const actual = await client.publishURL(urls);
+
+        expect(actual).toEqual([]);
+    });
+
+    test("sends a single event for the provided URLs", async () => {
+        await client.publishURL(urls);
+
+        expect(mockEventBridgeClient).toHaveReceivedCommandTimes(
+            PutEventsCommand,
+            1
+        );
+    });
+
+    test("sends the crawl event bus name in every entry in the event", async () => {
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
+
+        expect(entries).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        for (const entry of entries!) {
+            expect(entry).toEqual(
+                expect.objectContaining({
+                    EventBusName: EXPECTED_EVENT_BUS_NAME,
+                })
+            );
+        }
+    });
+
+    test("sends the new crawl detail type in every entry in the event", async () => {
+        const expectedDetailType = "New URL Crawled via Crawl Service";
+
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
+
+        expect(entries).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        for (const entry of entries!) {
+            expect(entry).toEqual(
+                expect.objectContaining({
+                    DetailType: expectedDetailType,
+                })
+            );
+        }
+    });
+
+    test("sends the buzzword crawl source in the every entry in the event", async () => {
+        const expectedSource = "crawl.aws.buzzword";
+
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
+
+        expect(entries).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        for (const entry of entries!) {
+            expect(entry).toEqual(
+                expect.objectContaining({
+                    Source: expectedSource,
+                })
+            );
+        }
+    });
+
+    test("sends a valid JSON message in the every entry in the event", async () => {
+        await client.publishURL(VALID_URL);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
+
+        expect(entries).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        for (const entry of entries!) {
+            expect(() =>
+                JSON.parse(entry.Detail || "invalid")
+            ).not.toThrowError();
+        }
+    });
+
+    test("sends the provided URLs in seperate entries in the event", async () => {
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
+
+        for (const url of urls) {
+            const expectedDetail = JSON.stringify({
+                baseURL: url.hostname,
+                pathname: url.pathname,
+            });
+
+            expect(entries).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        Detail: expectedDetail,
+                    }),
+                ])
+            );
+        }
+    });
+
+    test("returns each provided URL if an error occurs sending the event", async () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
+
+        const actual = await client.publishURL(urls);
+
+        expect(actual).toEqual(expect.arrayContaining(urls));
+    });
+});
+
+describe("new URL publishing given more than 10 urls", () => {
+    const urls = createURLs(15);
+
+    test("returns an empty array given event is successfully sent", async () => {
+        const actual = await client.publishURL(urls);
+
+        expect(actual).toEqual([]);
+    });
+
+    test("sends an event for each batch of 10 URLs provided", async () => {
+        await client.publishURL(urls);
+
+        expect(mockEventBridgeClient).toHaveReceivedCommandTimes(
+            PutEventsCommand,
+            2
+        );
+    });
+
+    test("sends the expected number of entries per event", async () => {
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+
+        expect(calls[0].args[0].input.Entries).toHaveLength(
+            EXPECTED_BATCH_SIZE
+        );
+        expect(calls[1].args[0].input.Entries).toHaveLength(
+            urls.length - EXPECTED_BATCH_SIZE
+        );
+    });
+
+    test("sends the crawl event bus name in every entry in each event", async () => {
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+
+        for (const call of calls) {
+            const entries = call.args[0].input.Entries;
+
+            expect(entries).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            for (const entry of entries!) {
+                expect(entry).toEqual(
+                    expect.objectContaining({
+                        EventBusName: EXPECTED_EVENT_BUS_NAME,
+                    })
+                );
+            }
+        }
+    });
+
+    test("sends the new crawl detail type in every entry in each event", async () => {
+        const expectedDetailType = "New URL Crawled via Crawl Service";
+
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+
+        for (const call of calls) {
+            const entries = call.args[0].input.Entries;
+
+            expect(entries).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            for (const entry of entries!) {
+                expect(entry).toEqual(
+                    expect.objectContaining({
+                        DetailType: expectedDetailType,
+                    })
+                );
+            }
+        }
+    });
+
+    test("sends the buzzword crawl source in the every entry in each event", async () => {
+        const expectedSource = "crawl.aws.buzzword";
+
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+
+        for (const call of calls) {
+            const entries = call.args[0].input.Entries;
+
+            expect(entries).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            for (const entry of entries!) {
+                expect(entry).toEqual(
+                    expect.objectContaining({
+                        Source: expectedSource,
+                    })
+                );
+            }
+        }
+    });
+
+    test("sends each URL in a seperate entry in the sent events", async () => {
+        await client.publishURL(urls);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+
+        const entries = calls.map((call) => call.args[0].input.Entries).flat();
+        for (const url of urls) {
+            const expectedDetail = JSON.stringify({
+                baseURL: url.hostname,
+                pathname: url.pathname,
+            });
+
+            expect(entries).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        Detail: expectedDetail,
+                    }),
+                ])
+            );
+        }
+    });
+
+    test("returns each provided URL if an error occurs sending the event", async () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
+
+        const actual = await client.publishURL(urls);
+
+        expect(actual).toEqual(expect.arrayContaining(urls));
     });
 });

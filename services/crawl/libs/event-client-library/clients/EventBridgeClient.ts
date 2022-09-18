@@ -22,6 +22,7 @@ type URLPublishEntryDetail = {
 };
 
 class EventBridgeClient implements EventClient {
+    private static BATCH_SIZE = 10;
     private client: EBClient;
 
     constructor(private eventBusName: string) {
@@ -58,25 +59,20 @@ class EventBridgeClient implements EventClient {
         }
     }
 
-    async publishURL(url: URL): Promise<boolean> {
+    publishURL(url: URL): Promise<boolean>;
+    publishURL(url: URL[]): Promise<URL[]>;
+    async publishURL(url: URL | URL[]): Promise<boolean | URL[]> {
         if (Array.isArray(url)) {
-            throw "Not implemented";
+            const batches = this.createBatches(url);
+            const promises = batches.map((batch) =>
+                this.publishURLBatch(batch)
+            );
+
+            return (await Promise.all(promises)).flat();
         }
 
-        const detail: URLPublishEntryDetail = {
-            baseURL: url.hostname,
-            pathname: url.pathname,
-        };
-
-        const entry: PutEventsRequestEntry = {
-            EventBusName: this.eventBusName,
-            DetailType: CRAWL_PUBLISH_URL_DETAIL,
-            Source: CRAWL_SERVICE_SOURCE,
-            Detail: JSON.stringify(detail),
-        };
-
+        const entry = this.createPublishURLEntry(url);
         const command = new PutEventsCommand({ Entries: [entry] });
-
         try {
             await this.client.send(command);
             console.log(
@@ -91,6 +87,49 @@ class EventBridgeClient implements EventClient {
 
             return false;
         }
+    }
+
+    private async publishURLBatch(batch: URL[]): Promise<URL[]> {
+        const entries = batch.map((url) => this.createPublishURLEntry(url));
+        const command = new PutEventsCommand({ Entries: entries });
+        try {
+            await this.client.send(command);
+            console.log(`Successfully published URLs: ${batch.toString()}`);
+
+            return [];
+        } catch (ex) {
+            console.error(
+                `An error occurred publishing URL: ${batch.toString()}. Error: ${ex}`
+            );
+
+            return batch;
+        }
+    }
+
+    private createPublishURLEntry(url: URL): PutEventsRequestEntry {
+        const detail: URLPublishEntryDetail = {
+            baseURL: url.hostname,
+            pathname: url.pathname,
+        };
+
+        return {
+            EventBusName: this.eventBusName,
+            DetailType: CRAWL_PUBLISH_URL_DETAIL,
+            Source: CRAWL_SERVICE_SOURCE,
+            Detail: JSON.stringify(detail),
+        };
+    }
+
+    private createBatches<Type>(inputArray: Type[]): Type[][] {
+        return inputArray.reduce((result: Type[][], item, index) => {
+            const batchIndex = Math.floor(index / EventBridgeClient.BATCH_SIZE);
+            if (!result[batchIndex]) {
+                result[batchIndex] = [];
+            }
+
+            result[batchIndex].push(item);
+            return result;
+        }, []);
     }
 }
 
