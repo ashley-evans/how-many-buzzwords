@@ -182,7 +182,7 @@ Resources:
             Role: !GetAtt PublishURLsRole.Arn
             Runtime: nodejs16.x
             CodeUri: ./functions/publish-urls
-            Description: Publishes crawled URLs to an SNS Topic for subscribers
+            Description: Publishes crawled URLs to service event bridge for subscribers
             Layers:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
