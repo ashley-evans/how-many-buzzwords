@@ -1,13 +1,16 @@
 import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-jest";
 import {
     EventBridgeClient as EBClient,
     PutEventsCommand,
+    PutEventsCommandOutput,
 } from "@aws-sdk/client-eventbridge";
+import { SinonSpyCall } from "sinon";
 import { CrawlStatus } from "buzzword-crawl-urls-repository-library";
 
 import EventBridgeClient from "../EventBridgeClient";
 
-const VALID_HOSTNAME = "www.example.com";
+const VALID_URL = new URL("https://www.example.com/test");
 const VALID_STATUS = CrawlStatus.COMPLETE;
 
 const EXPECTED_EVENT_BUS_NAME = "test_event_bus";
@@ -24,101 +27,126 @@ beforeEach(() => {
     mockEventBridgeClient.reset();
 });
 
-test("sends a single event and entry for the provided status", async () => {
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
+describe("status update publishing", () => {
+    test("sends a single event and entry for the provided status", async () => {
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0].args).toHaveLength(1);
-});
+        expect(mockEventBridgeClient).toHaveReceivedCommandTimes(
+            PutEventsCommand,
+            1
+        );
+    });
 
-test("sends a single entry in the event", async () => {
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const entries = calls[0].args[0].input.Entries;
+    test("sends the event bus name in the event", async () => {
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
-    expect(entries).toHaveLength(1);
-});
+        expect(mockEventBridgeClient).toHaveReceivedCommandWith(
+            PutEventsCommand,
+            {
+                Entries: [
+                    expect.objectContaining({
+                        EventBusName: EXPECTED_EVENT_BUS_NAME,
+                    }),
+                ],
+            }
+        );
+    });
 
-test("sends the event bus name in the event entry", async () => {
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const entries = calls[0].args[0].input.Entries;
+    test("sends the crawl status detail type in the event entry", async () => {
+        const expectedDetailType = "Crawl Status Update";
 
-    expect(entries?.[0].EventBusName).toEqual(EXPECTED_EVENT_BUS_NAME);
-});
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
-test("sends the crawl status detail type in the event entry", async () => {
-    const expectedDetailType = "Crawl Status Update";
+        expect(mockEventBridgeClient).toHaveReceivedCommandWith(
+            PutEventsCommand,
+            {
+                Entries: [
+                    expect.objectContaining({
+                        DetailType: expectedDetailType,
+                    }),
+                ],
+            }
+        );
+    });
 
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const entries = calls[0].args[0].input.Entries;
+    test("sends the buzzword crawl source in the event entry", async () => {
+        const expectedSource = "crawl.aws.buzzword";
 
-    expect(entries?.[0].DetailType).toEqual(expectedDetailType);
-});
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
-test("sends the buzzword crawl source in the event entry", async () => {
-    const expectedSource = "crawl.aws.buzzword";
+        expect(mockEventBridgeClient).toHaveReceivedCommandWith(
+            PutEventsCommand,
+            {
+                Entries: [
+                    expect.objectContaining({
+                        Source: expectedSource,
+                    }),
+                ],
+            }
+        );
+    });
 
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const entries = calls[0].args[0].input.Entries;
+    test("sends a JSON message in the entry detail", async () => {
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const entries = calls[0].args[0].input.Entries;
 
-    expect(entries?.[0].Source).toEqual(expectedSource);
-});
+        expect(() =>
+            JSON.parse(entries?.[0].Detail || "invalid")
+        ).not.toThrowError();
+    });
 
-test("sends a JSON message in the entry detail", async () => {
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const entries = calls[0].args[0].input.Entries;
+    test("sends the provided URL in the entry detail", async () => {
+        const expectedURLKey = "baseURL";
 
-    expect(() =>
-        JSON.parse(entries?.[0].Detail || "invalid")
-    ).not.toThrowError();
-});
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const detail = JSON.parse(
+            calls[0].args[0].input.Entries?.[0].Detail || "unexpected"
+        );
 
-test("sends the provided URL in the entry detail", async () => {
-    const expectedURLKey = "baseURL";
+        expect(detail[expectedURLKey]).toEqual(VALID_URL.hostname);
+    });
 
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const detail = JSON.parse(
-        calls[0].args[0].input.Entries?.[0].Detail || "unexpected"
-    );
+    test("sends the provided status in the entry detail", async () => {
+        const expectedStatusKey = "status";
 
-    expect(detail[expectedURLKey]).toEqual(VALID_HOSTNAME);
-});
+        await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
+        const calls: SinonSpyCall<
+            [PutEventsCommand],
+            Promise<PutEventsCommandOutput>
+        >[] = mockEventBridgeClient.commandCalls(PutEventsCommand);
+        const detail = JSON.parse(
+            calls[0].args[0].input.Entries?.[0].Detail || "unexpected"
+        );
 
-test("sends the provided status in the entry detail", async () => {
-    const expectedStatusKey = "status";
+        expect(detail[expectedStatusKey]).toEqual(VALID_STATUS);
+    });
 
-    await client.sentStatusUpdate(VALID_HOSTNAME, VALID_STATUS);
-    const calls = mockEventBridgeClient.commandCalls(PutEventsCommand);
-    const detail = JSON.parse(
-        calls[0].args[0].input.Entries?.[0].Detail || "unexpected"
-    );
+    test("returns success given event is succesfully sent", async () => {
+        const response = await client.sentStatusUpdate(
+            VALID_URL.hostname,
+            VALID_STATUS
+        );
 
-    expect(detail[expectedStatusKey]).toEqual(VALID_STATUS);
-});
+        expect(response).toEqual(true);
+    });
 
-test("returns success given event is succesfully sent", async () => {
-    const response = await client.sentStatusUpdate(
-        VALID_HOSTNAME,
-        VALID_STATUS
-    );
+    test("returns failure if an unknown error occurs during sending of event", async () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
-    expect(response).toEqual(true);
-});
+        const response = await client.sentStatusUpdate(
+            VALID_URL.hostname,
+            VALID_STATUS
+        );
 
-test("returns failure if an unknown error occurs during sending of event", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
-    mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
-
-    const response = await client.sentStatusUpdate(
-        VALID_HOSTNAME,
-        VALID_STATUS
-    );
-
-    expect(response).toEqual(false);
+        expect(response).toEqual(false);
+    });
 });
