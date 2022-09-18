@@ -1,6 +1,6 @@
 import {
-    DynamoDBRecord,
     DynamoDBStreamEvent,
+    SQSBatchItemFailure,
     SQSBatchResponse,
 } from "aws-lambda";
 import { EventClient } from "buzzword-crawl-event-client-library";
@@ -71,10 +71,13 @@ class PublishURLsStreamAdapter implements DynamoDBStreamAdapter {
             return this.createResponse();
         }
 
+        const validRecords: ValidRecord[] = [];
         const urls: URL[] = [];
         for (const record of event.Records) {
             try {
-                urls.push(this.parseRecord(record));
+                const validatedRecord = this.validator.validate(record);
+                urls.push(this.parseRecord(validatedRecord));
+                validRecords.push(validatedRecord);
             } catch {
                 console.log(
                     `Skipping invalid record: ${JSON.stringify(record)}`
@@ -83,15 +86,19 @@ class PublishURLsStreamAdapter implements DynamoDBStreamAdapter {
         }
 
         if (urls.length != 0) {
-            await this.client.publishURL(urls);
+            try {
+                const failures = await this.client.publishURL(urls);
+                return this.createResponse(failures, validRecords);
+            } catch {
+                return this.createResponse(urls, validRecords);
+            }
         }
 
         return this.createResponse();
     }
 
-    private parseRecord(record: DynamoDBRecord): URL {
-        const validRecord = this.validator.validate(record);
-        const newURLImage = validRecord.dynamodb.NewImage;
+    private parseRecord(record: ValidRecord): URL {
+        const newURLImage = record.dynamodb.NewImage;
         const hostname = newURLImage[URLsTableKeyFields.HashKey].S;
         const pathname = newURLImage[URLsTableKeyFields.SortKey].S;
 
@@ -106,9 +113,36 @@ class PublishURLsStreamAdapter implements DynamoDBStreamAdapter {
         return new URL(`https://${hostname}${pathname}`);
     }
 
-    private createResponse(): SQSBatchResponse {
+    private createResponse(
+        failedURLs?: URL[],
+        records?: ValidRecord[]
+    ): SQSBatchResponse {
+        const batchItemFailures: SQSBatchItemFailure[] = [];
+        if (failedURLs && records) {
+            for (const url of failedURLs) {
+                const matchingRecord = records.find((record) => {
+                    const newImage = record.dynamodb.NewImage;
+                    return (
+                        newImage[URLsTableKeyFields.HashKey].S ==
+                            url.hostname &&
+                        newImage[URLsTableKeyFields.SortKey].S == url.pathname
+                    );
+                });
+
+                if (!matchingRecord) {
+                    throw new Error(
+                        `Unable to find matching record for URL: ${url}`
+                    );
+                }
+
+                batchItemFailures.push({
+                    itemIdentifier: matchingRecord.dynamodb.SequenceNumber,
+                });
+            }
+        }
+
         return {
-            batchItemFailures: [],
+            batchItemFailures,
         };
     }
 }

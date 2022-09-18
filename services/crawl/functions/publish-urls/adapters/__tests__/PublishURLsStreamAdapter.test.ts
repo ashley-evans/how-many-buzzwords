@@ -143,3 +143,42 @@ describe.each([
         expect(actual.batchItemFailures).toHaveLength(0);
     });
 });
+
+test("returns all provided sequence numbers if an unhandled error is thrown while publishing URLs", async () => {
+    mockEventClient.publishURL.mockRejectedValue(new Error());
+    const expectedSequenceNumbers = ["1", "2"];
+    const event = createEvent([
+        createNewURLRecord(VALID_URL, expectedSequenceNumbers[0]),
+        createNewURLRecord(
+            new URL("https://www.test.com/"),
+            expectedSequenceNumbers[1]
+        ),
+    ]);
+
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(
+        expectedSequenceNumbers.length
+    );
+    for (const expected of expectedSequenceNumbers) {
+        expect(actual.batchItemFailures).toContainEqual({
+            itemIdentifier: expected,
+        });
+    }
+});
+
+test("returns sequence numbers related to failed URL given a URL fails to publish", async () => {
+    mockEventClient.publishURL.mockResolvedValue([VALID_URL]);
+    const expectedSequnceNumber = "1";
+    const event = createEvent([
+        createNewURLRecord(VALID_URL, expectedSequnceNumber),
+        createNewURLRecord(new URL("https://www.test.com/"), "100"),
+    ]);
+
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(1);
+    expect(actual.batchItemFailures[0]).toEqual({
+        itemIdentifier: expectedSequnceNumber,
+    });
+});
