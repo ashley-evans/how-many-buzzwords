@@ -45,7 +45,19 @@ class EventBridgeClient implements EventClient {
         const command = new PutEventsCommand({ Entries: [entry] });
 
         try {
-            await this.client.send(command);
+            const response = await this.client.send(command);
+            if (
+                response.FailedEntryCount &&
+                response.Entries &&
+                response.FailedEntryCount > 0
+            ) {
+                console.error(
+                    `An error occurred sending status update for URL: ${url}. Error: ${response.Entries[0].ErrorCode}`
+                );
+
+                return false;
+            }
+
             console.log(
                 `Successfully sent status update: ${status} for URL: ${url}`
             );
@@ -55,6 +67,7 @@ class EventBridgeClient implements EventClient {
             console.error(
                 `An error occurred sending status update for URL: ${url}. Error: ${ex}`
             );
+
             return false;
         }
     }

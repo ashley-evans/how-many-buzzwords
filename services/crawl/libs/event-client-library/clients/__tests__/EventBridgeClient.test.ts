@@ -38,8 +38,6 @@ function createURLs(num: number): URL[] {
 
 describe("status update publishing", () => {
     test("sends a single event for the provided status", async () => {
-        mockEventBridgeClient.on(PutEventsCommand).resolves({});
-
         await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
         expect(mockEventBridgeClient).toHaveReceivedCommandTimes(
@@ -141,6 +139,8 @@ describe("status update publishing", () => {
     });
 
     test("returns success given event is succesfully sent", async () => {
+        mockEventBridgeClient.on(PutEventsCommand).resolves({});
+
         const response = await client.sentStatusUpdate(
             VALID_URL.hostname,
             VALID_STATUS
@@ -161,7 +161,7 @@ describe("status update publishing", () => {
         expect(response).toEqual(false);
     });
 
-    test("returns failure if entry fails to be ingested", async () => {
+    test("returns failure if the status update entry fails to be ingested", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
         mockEventBridgeClient.on(PutEventsCommand).resolves({
             FailedEntryCount: 1,
@@ -173,7 +173,10 @@ describe("status update publishing", () => {
             ],
         });
 
-        const actual = await client.publishURL(VALID_URL);
+        const actual = await client.sentStatusUpdate(
+            VALID_URL.hostname,
+            VALID_STATUS
+        );
 
         expect(actual).toEqual(false);
     });
@@ -292,6 +295,23 @@ describe("new URL publishing given a single URL", () => {
     test("returns failure if an unknown error occurs during sending of event", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
         mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
+
+        const actual = await client.publishURL(VALID_URL);
+
+        expect(actual).toEqual(false);
+    });
+
+    test("returns failure if the URL publish entry fails to be ingested", async () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.on(PutEventsCommand).resolves({
+            FailedEntryCount: 1,
+            Entries: [
+                {
+                    ErrorCode: "Test",
+                    ErrorMessage: "Test Failure",
+                },
+            ],
+        });
 
         const actual = await client.publishURL(VALID_URL);
 
