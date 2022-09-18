@@ -38,6 +38,8 @@ function createURLs(num: number): URL[] {
 
 describe("status update publishing", () => {
     test("sends a single event for the provided status", async () => {
+        mockEventBridgeClient.on(PutEventsCommand).resolves({});
+
         await client.sentStatusUpdate(VALID_URL.hostname, VALID_STATUS);
 
         expect(mockEventBridgeClient).toHaveReceivedCommandTimes(
@@ -158,10 +160,29 @@ describe("status update publishing", () => {
 
         expect(response).toEqual(false);
     });
+
+    test("returns failure if entry fails to be ingested", async () => {
+        jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.on(PutEventsCommand).resolves({
+            FailedEntryCount: 1,
+            Entries: [
+                {
+                    ErrorCode: "Test",
+                    ErrorMessage: "Test Failure",
+                },
+            ],
+        });
+
+        const actual = await client.publishURL(VALID_URL);
+
+        expect(actual).toEqual(false);
+    });
 });
 
 describe("new URL publishing given a single URL", () => {
     test("returns success given event is successfully sent", async () => {
+        mockEventBridgeClient.on(PutEventsCommand).resolves({});
+
         const actual = await client.publishURL(VALID_URL);
 
         expect(actual).toBe(true);
@@ -282,6 +303,8 @@ describe("new URL publishing given 10 URLs", () => {
     const urls = createURLs(10);
 
     test("returns an empty array given event is successfully sent", async () => {
+        mockEventBridgeClient.on(PutEventsCommand).resolves({});
+
         const actual = await client.publishURL(urls);
 
         expect(actual).toEqual([]);
@@ -412,6 +435,8 @@ describe("new URL publishing given more than 10 urls", () => {
     const urls = createURLs(15);
 
     test("returns an empty array given event is successfully sent", async () => {
+        mockEventBridgeClient.on(PutEventsCommand).resolves({});
+
         const actual = await client.publishURL(urls);
 
         expect(actual).toEqual([]);
@@ -543,4 +568,26 @@ describe("new URL publishing given more than 10 urls", () => {
 
         expect(actual).toEqual(expect.arrayContaining(urls));
     });
+});
+
+test("returns failed URLs given one entry in batch failed", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const urls = createURLs(2);
+    const expectedFailedURL = urls[1];
+    mockEventBridgeClient.on(PutEventsCommand).resolves({
+        FailedEntryCount: 1,
+        Entries: [
+            {
+                EventId: "worked",
+            },
+            {
+                ErrorCode: "Test",
+                ErrorMessage: "Test Failure",
+            },
+        ],
+    });
+
+    const actual = await client.publishURL(urls);
+
+    expect(actual).toEqual(expect.arrayContaining([expectedFailedURL]));
 });

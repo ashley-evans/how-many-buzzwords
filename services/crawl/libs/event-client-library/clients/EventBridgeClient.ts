@@ -71,31 +71,36 @@ class EventBridgeClient implements EventClient {
             return (await Promise.all(promises)).flat();
         }
 
-        const entry = this.createPublishURLEntry(url);
-        const command = new PutEventsCommand({ Entries: [entry] });
-        try {
-            await this.client.send(command);
-            console.log(
-                `Successfully published newly crawled URL: ${url.toString()}`
-            );
-
-            return true;
-        } catch (ex) {
-            console.error(
-                `An error occurred publishing URL: ${url.toString()}. Error: ${ex}`
-            );
-
-            return false;
-        }
+        const failedURLs = await this.publishURLBatch([url]);
+        return failedURLs.length == 0;
     }
 
     private async publishURLBatch(batch: URL[]): Promise<URL[]> {
         const entries = batch.map((url) => this.createPublishURLEntry(url));
         const command = new PutEventsCommand({ Entries: entries });
         try {
-            await this.client.send(command);
-            console.log(`Successfully published URLs: ${batch.toString()}`);
+            const result = await this.client.send(command);
+            if (
+                result.FailedEntryCount &&
+                result.Entries &&
+                result.FailedEntryCount > 0
+            ) {
+                const failedURLs: URL[] = [];
+                result.Entries.forEach((entry, index) => {
+                    if (entry.ErrorCode) {
+                        const failedURL = batch[index];
+                        console.error(
+                            `An error occurred when publishing URL: ${failedURL}: Error: ${entry.ErrorCode}`
+                        );
 
+                        failedURLs.push(failedURL);
+                    }
+                });
+
+                return failedURLs;
+            }
+
+            console.log(`Successfully published URLs: ${batch.toString()}`);
             return [];
         } catch (ex) {
             console.error(
