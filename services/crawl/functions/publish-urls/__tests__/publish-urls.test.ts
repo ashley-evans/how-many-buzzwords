@@ -1,5 +1,3 @@
-jest.mock("@aws-sdk/client-eventbridge");
-
 beforeEach(() => {
     process.env.EVENT_BUS_NAME = "test_event_bus_name";
 });

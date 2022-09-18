@@ -1,6 +1,9 @@
 import { DynamoDBRecord, DynamoDBStreamEvent } from "aws-lambda";
 import { EventClient } from "buzzword-crawl-event-client-library";
-import { URLsTableKeyFields } from "buzzword-crawl-urls-repository-library";
+import {
+    URLsTableConstants,
+    URLsTableKeyFields,
+} from "buzzword-crawl-urls-repository-library";
 import { mock } from "jest-mock-extended";
 import PublishURLsStreamAdapter from "../PublishURLsStreamAdapter";
 
@@ -47,8 +50,20 @@ function createRecord(
     return record;
 }
 
+function createPartitionKey(hostname: string): string {
+    return `${URLsTableConstants.URLPartitionKeyPrefix}#${hostname}`;
+}
+
+function createSortKey(pathname: string): string {
+    return `${URLsTableConstants.PathSortKeyPrefix}#${pathname}`;
+}
+
 function createNewURLRecord(url: URL, sequenceNumber: string): DynamoDBRecord {
-    return createRecord(url.hostname, url.pathname, sequenceNumber);
+    return createRecord(
+        createPartitionKey(url.hostname),
+        createSortKey(url.pathname),
+        sequenceNumber
+    );
 }
 
 beforeAll(() => {
@@ -64,15 +79,29 @@ describe.each([
     [
         "a record with a missing partition key",
         createEvent([
-            createRecord(undefined, VALID_URL.pathname, VALID_SEQUENCE_NUMBER),
+            createRecord(
+                undefined,
+                createSortKey(VALID_URL.pathname),
+                VALID_SEQUENCE_NUMBER
+            ),
+        ]),
+    ],
+    [
+        "a record with an invalid partition key (missing prefix)",
+        createEvent([
+            createRecord(
+                VALID_URL.hostname,
+                createSortKey(VALID_URL.pathname),
+                VALID_SEQUENCE_NUMBER
+            ),
         ]),
     ],
     [
         "a record with an invalid partition key (spaces)",
         createEvent([
             createRecord(
-                "i am invalid",
-                VALID_URL.pathname,
+                createPartitionKey("i am invalid"),
+                createSortKey(VALID_URL.pathname),
                 VALID_SEQUENCE_NUMBER
             ),
         ]),
@@ -80,30 +109,65 @@ describe.each([
     [
         "a record with an invalid partition key (numeric)",
         createEvent([
-            createRecord("1", VALID_URL.pathname, VALID_SEQUENCE_NUMBER),
+            createRecord(
+                createPartitionKey("1"),
+                createSortKey(VALID_URL.pathname),
+                VALID_SEQUENCE_NUMBER
+            ),
         ]),
     ],
     [
         "a record with a missing sort key",
         createEvent([
-            createRecord(VALID_URL.hostname, undefined, VALID_SEQUENCE_NUMBER),
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                undefined,
+                VALID_SEQUENCE_NUMBER
+            ),
+        ]),
+    ],
+    [
+        "a record with an invalid sort key (missing prefix)",
+        createEvent([
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                VALID_URL.pathname,
+                VALID_SEQUENCE_NUMBER
+            ),
         ]),
     ],
     [
         "a record with a invalid sort key (missing leading forward slash)",
         createEvent([
-            createRecord(VALID_URL.hostname, "test", VALID_SEQUENCE_NUMBER),
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                createSortKey("test"),
+                VALID_SEQUENCE_NUMBER
+            ),
         ]),
     ],
     [
         "a record with a missing DynamoDB sequence number",
-        createEvent([createRecord(VALID_URL.hostname, VALID_URL.pathname)]),
+        createEvent([
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                createSortKey(VALID_URL.pathname)
+            ),
+        ]),
     ],
     [
         "multiple records with invalid properties",
         createEvent([
-            createRecord(VALID_URL.hostname, undefined, VALID_SEQUENCE_NUMBER),
-            createRecord(VALID_URL.hostname, "test", VALID_SEQUENCE_NUMBER),
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                undefined,
+                VALID_SEQUENCE_NUMBER
+            ),
+            createRecord(
+                createPartitionKey(VALID_URL.hostname),
+                createSortKey("test"),
+                VALID_SEQUENCE_NUMBER
+            ),
         ]),
     ],
 ])(

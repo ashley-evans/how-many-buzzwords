@@ -6,7 +6,10 @@ import {
 import { EventClient } from "buzzword-crawl-event-client-library";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
-import { URLsTableKeyFields } from "buzzword-crawl-urls-repository-library";
+import {
+    URLsTableConstants,
+    URLsTableKeyFields,
+} from "buzzword-crawl-urls-repository-library";
 
 import DynamoDBStreamAdapter from "../interfaces/DynamoDBStreamAdapter";
 
@@ -99,9 +102,18 @@ class PublishURLsStreamAdapter implements DynamoDBStreamAdapter {
 
     private parseRecord(record: ValidRecord): URL {
         const newURLImage = record.dynamodb.NewImage;
-        const hostname = newURLImage[URLsTableKeyFields.HashKey].S;
-        const pathname = newURLImage[URLsTableKeyFields.SortKey].S;
+        const pk = newURLImage[URLsTableKeyFields.HashKey].S;
+        if (!pk.startsWith(`${URLsTableConstants.URLPartitionKeyPrefix}#`)) {
+            throw "Invalid PK provided, missing URL prefix";
+        }
 
+        const sk = newURLImage[URLsTableKeyFields.SortKey].S;
+        if (!sk.startsWith(`${URLsTableConstants.PathSortKeyPrefix}#`)) {
+            throw "Invalid SK provided, missing Path prefix";
+        }
+
+        const hostname = pk.split("#")[1];
+        const pathname = sk.split("#")[1];
         if (!isNaN(parseInt(hostname))) {
             throw "Number provided when expecting valid base URL.";
         }
@@ -124,8 +136,9 @@ class PublishURLsStreamAdapter implements DynamoDBStreamAdapter {
                     const newImage = record.dynamodb.NewImage;
                     return (
                         newImage[URLsTableKeyFields.HashKey].S ==
-                            url.hostname &&
-                        newImage[URLsTableKeyFields.SortKey].S == url.pathname
+                            `${URLsTableConstants.URLPartitionKeyPrefix}#${url.hostname}` &&
+                        newImage[URLsTableKeyFields.SortKey].S ==
+                            `${URLsTableConstants.PathSortKeyPrefix}#${url.pathname}`
                     );
                 });
 
