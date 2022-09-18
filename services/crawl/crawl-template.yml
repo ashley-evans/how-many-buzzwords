@@ -187,6 +187,7 @@ Resources:
                 - Ref: URLsRepositoryLibraryLayer
                 - Ref: CrawlNodeDependencyLayer
                 - Ref: EventClientLibraryLayer
+            MemorySize: 256
             Events:
                 URLsTableStreamEvent:
                     Type: DynamoDB
