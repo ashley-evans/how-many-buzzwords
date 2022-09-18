@@ -16,6 +16,7 @@ type ValidRecord = {
             [URLsTableKeyFields.HashKey]: { S: string };
             [URLsTableKeyFields.SortKey]: { S: string };
         };
+        SequenceNumber: string;
     };
 };
 
@@ -48,8 +49,11 @@ const schema: JSONSchemaType<ValidRecord> = {
                         URLsTableKeyFields.SortKey,
                     ],
                 },
+                SequenceNumber: {
+                    type: "string",
+                },
             },
-            required: ["NewImage"],
+            required: ["NewImage", "SequenceNumber"],
         },
     },
     required: ["dynamodb"],
