@@ -28,5 +28,6 @@
         "!Split",
         "!Split sequence"
     ],
-    "jest.jestCommandLine": "node node_modules/.bin/jest"
+    "jest.jestCommandLine": "node node_modules/.bin/jest",
+    "typescript.tsdk": "node_modules/typescript/lib"
 }
