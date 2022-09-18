@@ -25,6 +25,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     mockEventBridgeClient.reset();
+    mockEventBridgeClient.on(PutEventsCommand).resolves({});
 });
 
 function createURLs(num: number): URL[] {
@@ -139,8 +140,6 @@ describe("status update publishing", () => {
     });
 
     test("returns success given event is succesfully sent", async () => {
-        mockEventBridgeClient.on(PutEventsCommand).resolves({});
-
         const response = await client.sentStatusUpdate(
             VALID_URL.hostname,
             VALID_STATUS
@@ -151,6 +150,7 @@ describe("status update publishing", () => {
 
     test("returns failure if an unknown error occurs during sending of event", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
         const response = await client.sentStatusUpdate(
@@ -163,6 +163,7 @@ describe("status update publishing", () => {
 
     test("returns failure if the status update entry fails to be ingested", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).resolves({
             FailedEntryCount: 1,
             Entries: [
@@ -184,8 +185,6 @@ describe("status update publishing", () => {
 
 describe("new URL publishing given a single URL", () => {
     test("returns success given event is successfully sent", async () => {
-        mockEventBridgeClient.on(PutEventsCommand).resolves({});
-
         const actual = await client.publishURL(VALID_URL);
 
         expect(actual).toBe(true);
@@ -294,6 +293,7 @@ describe("new URL publishing given a single URL", () => {
 
     test("returns failure if an unknown error occurs during sending of event", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
         const actual = await client.publishURL(VALID_URL);
@@ -303,6 +303,7 @@ describe("new URL publishing given a single URL", () => {
 
     test("returns failure if the URL publish entry fails to be ingested", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).resolves({
             FailedEntryCount: 1,
             Entries: [
@@ -323,8 +324,6 @@ describe("new URL publishing given 10 URLs", () => {
     const urls = createURLs(10);
 
     test("returns an empty array given event is successfully sent", async () => {
-        mockEventBridgeClient.on(PutEventsCommand).resolves({});
-
         const actual = await client.publishURL(urls);
 
         expect(actual).toEqual([]);
@@ -443,6 +442,7 @@ describe("new URL publishing given 10 URLs", () => {
 
     test("returns each provided URL if an error occurs sending the event", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
         const actual = await client.publishURL(urls);
@@ -455,8 +455,6 @@ describe("new URL publishing given more than 10 urls", () => {
     const urls = createURLs(15);
 
     test("returns an empty array given event is successfully sent", async () => {
-        mockEventBridgeClient.on(PutEventsCommand).resolves({});
-
         const actual = await client.publishURL(urls);
 
         expect(actual).toEqual([]);
@@ -582,6 +580,7 @@ describe("new URL publishing given more than 10 urls", () => {
 
     test("returns each provided URL if an error occurs sending the event", async () => {
         jest.spyOn(console, "error").mockImplementation(() => undefined);
+        mockEventBridgeClient.reset();
         mockEventBridgeClient.on(PutEventsCommand).rejects(new Error());
 
         const actual = await client.publishURL(urls);
@@ -594,6 +593,7 @@ test("returns failed URLs given one entry in batch failed", async () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     const urls = createURLs(2);
     const expectedFailedURL = urls[1];
+    mockEventBridgeClient.reset();
     mockEventBridgeClient.on(PutEventsCommand).resolves({
         FailedEntryCount: 1,
         Entries: [
