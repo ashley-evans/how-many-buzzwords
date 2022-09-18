@@ -4,6 +4,6 @@
     "dependencies": {
         "@aws-sdk/client-dynamodb": "3.55.0",
         "@middy/core": "2.5.1",
-        "@middy/validator": "2.5.1"
+        "@middy/validator": "3.3.2"
     }
 }
