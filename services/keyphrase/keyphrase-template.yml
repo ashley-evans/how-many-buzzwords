@@ -713,6 +713,9 @@ Resources:
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
                         ParallelizationFactor: 5
+                        FilterCriteria:
+                            Filters:
+                                - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
             Architectures:
                 - arm64
             Environment:
