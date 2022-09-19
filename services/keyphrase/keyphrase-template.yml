@@ -540,7 +540,7 @@ Resources:
             CodeUri: ./functions/update-connections
             Description: Provides existing connections with relevant database updates
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 512
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: WebSocketClientLibraryLayer
@@ -550,9 +550,12 @@ Resources:
                     Type: DynamoDB
                     Properties:
                         Stream: !GetAtt KeyphrasesTable.StreamArn
-                        BatchSize: 10
+                        BatchSize: 100
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+                        FilterCriteria:
+                            Filters:
+                                - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
             Architectures:
                 - arm64
             Environment:
@@ -700,7 +703,7 @@ Resources:
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 1024
             Events:
                 KeyphraseStreamEvent:
                     Type: DynamoDB
@@ -710,6 +713,9 @@ Resources:
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
                         ParallelizationFactor: 5
+                        FilterCriteria:
+                            Filters:
+                                - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
             Architectures:
                 - arm64
             Environment:
