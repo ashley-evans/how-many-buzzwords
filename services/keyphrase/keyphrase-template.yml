@@ -540,7 +540,7 @@ Resources:
             CodeUri: ./functions/update-connections
             Description: Provides existing connections with relevant database updates
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 512
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: WebSocketClientLibraryLayer
@@ -700,7 +700,7 @@ Resources:
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
             Timeout: 10
-            MemorySize: 256
+            MemorySize: 1024
             Events:
                 KeyphraseStreamEvent:
                     Type: DynamoDB
