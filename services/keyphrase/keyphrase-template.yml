@@ -550,9 +550,12 @@ Resources:
                     Type: DynamoDB
                     Properties:
                         Stream: !GetAtt KeyphrasesTable.StreamArn
-                        BatchSize: 10
+                        BatchSize: 100
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+                        FilterCriteria:
+                            Filters:
+                                - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
             Architectures:
                 - arm64
             Environment:
