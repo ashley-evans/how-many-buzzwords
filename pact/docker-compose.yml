@@ -1,0 +1,22 @@
+version: "3"
+services:
+    database:
+        image: postgres:14.5-alpine
+        environment:
+            POSTGRES_USER: ${DATABASE_USER}
+            POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+            POSTGRES_DB: "pact_broker"
+    broker:
+        image: pactfoundation/pact-broker:2.104.0.0
+        ports:
+            - "9292:9292"
+        depends_on:
+            - database
+        environment:
+            PACT_BROKER_DATABASE_USERNAME: ${DATABASE_USER}
+            PACT_BROKER_DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+            PACT_BROKER_DATABASE_HOST: "database"
+            PACT_BROKER_DATABASE_NAME: "pact_broker"
+            PACT_BROKER_PORT: "9292"
+            PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: "5"
+            PACT_BROKER_BASE_URL: "http://localhost:9292"
