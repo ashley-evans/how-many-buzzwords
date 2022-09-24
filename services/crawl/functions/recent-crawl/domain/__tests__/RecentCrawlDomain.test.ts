@@ -8,7 +8,8 @@ import {
 import RecentCrawlDomain from "../RecentCrawlDomain";
 
 const MAX_AGE_HOURS = 1;
-const VALID_URL = new URL("https://www.example.com/");
+const EXPECTED_DOMAIN = "example.com";
+const VALID_URL = new URL(`https://www.${EXPECTED_DOMAIN}/`);
 
 const mockRepository = mock<Repository>();
 const domain = new RecentCrawlDomain(mockRepository, MAX_AGE_HOURS);
@@ -46,12 +47,12 @@ describe.each(Object.values(CrawlStatus))(
             mockRepository.getCrawlStatus.mockResolvedValue(crawlStatusRecord);
         });
 
-        test("calls repository with hostname and pathname from provided URL", async () => {
+        test("calls database to get status for last crawl for domain", async () => {
             await domain.hasCrawledRecently(VALID_URL);
 
             expect(mockRepository.getCrawlStatus).toHaveBeenCalledTimes(1);
             expect(mockRepository.getCrawlStatus).toHaveBeenCalledWith(
-                VALID_URL.hostname
+                EXPECTED_DOMAIN
             );
         });
 
@@ -87,12 +88,12 @@ describe.each([CrawlStatus.STARTED, CrawlStatus.COMPLETE])(
             mockRepository.getCrawlStatus.mockResolvedValue(crawlStatusRecord);
         });
 
-        test("calls repository with hostname and pathname from provided URL", async () => {
+        test("calls database to get status for last crawl for domain", async () => {
             await domain.hasCrawledRecently(VALID_URL);
 
             expect(mockRepository.getCrawlStatus).toHaveBeenCalledTimes(1);
             expect(mockRepository.getCrawlStatus).toHaveBeenCalledWith(
-                VALID_URL.hostname
+                EXPECTED_DOMAIN
             );
         });
 
@@ -113,6 +114,21 @@ describe.each([CrawlStatus.STARTED, CrawlStatus.COMPLETE])(
 
             expect(response?.crawlTime).toEqual(crawlStatusRecord.createdAt);
         });
+    }
+);
+
+test.each([
+    ["url with subdomain", VALID_URL],
+    ["url with no subdomain", new URL(`https://${EXPECTED_DOMAIN}`)],
+])(
+    "obtains crawl status using only URL domain name given %s",
+    async (message: string, url: URL) => {
+        await domain.hasCrawledRecently(url);
+
+        expect(mockRepository.getCrawlStatus).toHaveBeenCalledTimes(1);
+        expect(mockRepository.getCrawlStatus).toHaveBeenCalledWith(
+            EXPECTED_DOMAIN
+        );
     }
 );
 

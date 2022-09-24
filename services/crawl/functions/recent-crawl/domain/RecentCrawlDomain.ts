@@ -3,6 +3,7 @@ import {
     CrawlStatus,
     Repository,
 } from "buzzword-crawl-urls-repository-library";
+import { getDomain } from "tldts";
 
 import { RecentCrawlPort, RecentCrawlResponse } from "../ports/RecentCrawlPort";
 
@@ -15,10 +16,13 @@ class RecentCrawlDomain implements RecentCrawlPort {
     async hasCrawledRecently(
         baseURL: URL
     ): Promise<RecentCrawlResponse | undefined> {
-        const crawlStatusRecord = await this.repository.getCrawlStatus(
-            baseURL.hostname
-        );
+        const url = baseURL.toString();
+        const domain = getDomain(url);
+        if (!domain) {
+            throw new Error(`Unable to find domain in URL: ${url}`);
+        }
 
+        const crawlStatusRecord = await this.repository.getCrawlStatus(domain);
         if (crawlStatusRecord) {
             const recentlyCrawled =
                 crawlStatusRecord.status == CrawlStatus.FAILED
