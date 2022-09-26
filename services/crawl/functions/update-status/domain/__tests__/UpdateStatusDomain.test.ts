@@ -31,14 +31,19 @@ test("returns success if the crawl status update and event publish were successf
     expect(actual).toEqual(true);
 });
 
-test.each(Object.values(CrawlStatus))(
-    "calls the url repository to update the crawl status to %s for the provided URL",
-    async (expectedStatus: CrawlStatus) => {
-        await domain.updateCrawlStatus(EXPECTED_URL, expectedStatus);
+test.each([
+    ["without subdomain", new URL("https://example.com/"), "example.com"],
+    ["with subdomain", new URL("https://www.example.com/"), "example.com"],
+])(
+    "updates the crawl status for the domain given URL %s",
+    async (message: string, url: URL, expectedDomain: string) => {
+        const expectedStatus = CrawlStatus.STARTED;
+
+        await domain.updateCrawlStatus(url, expectedStatus);
 
         expect(mockRepository.updateCrawlStatus).toHaveBeenCalledTimes(1);
         expect(mockRepository.updateCrawlStatus).toHaveBeenCalledWith(
-            EXPECTED_URL.hostname,
+            expectedDomain,
             expectedStatus
         );
     }
