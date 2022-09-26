@@ -7,7 +7,6 @@ import {
 } from "buzzword-crawl-urls-repository-library";
 import { ContentRepository } from "buzzword-crawl-content-repository-library";
 
-import { CrawlerResponse } from "../../ports/CrawlPort";
 import { CrawlProvider, CrawlResult } from "../../ports/CrawlProvider";
 import Crawl from "../Crawl";
 
@@ -40,28 +39,26 @@ describe("crawl provides results", () => {
         const baseURL = new URL(`${protocol}://${EXPECTED_BASE_URL_HOSTNAME}`);
         const childURL = new URL(`${baseURL.toString()}${EXPECTED_PATHNAME}`);
 
-        let response: CrawlerResponse;
-
-        beforeAll(async () => {
-            jest.resetAllMocks();
-
+        beforeEach(() => {
             const source = of(createCrawlerResult(childURL, EXPECTED_CONTENT));
             mockCrawlProvider.crawl.mockReturnValue(source);
             mockURLRepository.storePathname.mockResolvedValue(true);
             mockURLRepository.updateCrawlStatus.mockResolvedValue(true);
             mockContentRepository.storePageContent.mockResolvedValue(true);
-
-            response = await crawler.crawl(baseURL);
         });
 
-        test("calls crawl provider with URL", () => {
+        test("calls crawl provider with URL", async () => {
+            await crawler.crawl(baseURL);
+
             expect(mockCrawlProvider.crawl).toHaveBeenCalledWith(
                 baseURL,
                 undefined
             );
         });
 
-        test("updates the crawl status related to the provided base URL to started and complete", () => {
+        test("updates the crawl status related to the provided base URL to started and complete", async () => {
+            await crawler.crawl(baseURL);
+
             expect(mockURLRepository.updateCrawlStatus).toHaveBeenCalledTimes(
                 2
             );
@@ -77,7 +74,9 @@ describe("crawl provides results", () => {
             );
         });
 
-        test("provides child pathname and url to repository without protocol", () => {
+        test("provides child pathname and url to repository without protocol", async () => {
+            await crawler.crawl(baseURL);
+
             expect(mockURLRepository.storePathname).toHaveBeenCalledTimes(1);
             expect(mockURLRepository.storePathname).toHaveBeenCalledWith(
                 EXPECTED_BASE_URL_HOSTNAME,
@@ -85,7 +84,9 @@ describe("crawl provides results", () => {
             );
         });
 
-        test("provides content repository with crawled url and content", () => {
+        test("provides content repository with crawled url and content", async () => {
+            await crawler.crawl(baseURL);
+
             expect(
                 mockContentRepository.storePageContent
             ).toHaveBeenCalledTimes(1);
@@ -95,11 +96,15 @@ describe("crawl provides results", () => {
             );
         });
 
-        test("returns success if storage succeeds", () => {
+        test("returns success if storage succeeds", async () => {
+            const response = await crawler.crawl(baseURL);
+
             expect(response.success).toBe(true);
         });
 
-        test("returns child url pathname if storage succeeds", () => {
+        test("returns child url pathname if storage succeeds", async () => {
+            const response = await crawler.crawl(baseURL);
+
             expect(response.pathnames).toHaveLength(1);
             expect(response.pathnames).toContainEqual(
                 DEFAULT_CHILD_URL.pathname
@@ -126,27 +131,29 @@ describe("crawl provides results", () => {
 });
 
 describe("crawl returns no results", () => {
-    let response: CrawlerResponse;
-
-    beforeAll(async () => {
+    beforeEach(() => {
         jest.resetAllMocks();
 
         const source = EMPTY;
         mockCrawlProvider.crawl.mockReturnValue(source);
         mockURLRepository.updateCrawlStatus.mockResolvedValue(true);
-
-        response = await crawler.crawl(DEFAULT_BASE_URL);
     });
 
-    test("does not store any crawled urls in the url repository", () => {
+    test("does not store any crawled urls in the url repository", async () => {
+        await crawler.crawl(DEFAULT_BASE_URL);
+
         expect(mockURLRepository.storePathname).not.toBeCalled();
     });
 
-    test("does not call content repository", () => {
+    test("does not call content repository", async () => {
+        await crawler.crawl(DEFAULT_BASE_URL);
+
         expect(mockContentRepository.storePageContent).not.toBeCalled();
     });
 
-    test("updates the crawl status to running but not complete", () => {
+    test("updates the crawl status to running but not complete", async () => {
+        await crawler.crawl(DEFAULT_BASE_URL);
+
         expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
         expect(mockURLRepository.updateCrawlStatus).toHaveBeenCalledWith(
             EXPECTED_BASE_URL_HOSTNAME,
@@ -154,11 +161,15 @@ describe("crawl returns no results", () => {
         );
     });
 
-    test("returns failure", () => {
+    test("returns failure", async () => {
+        const response = await crawler.crawl(DEFAULT_BASE_URL);
+
         expect(response.success).toBe(false);
     });
 
-    test("returns no pathnames", () => {
+    test("returns no pathnames", async () => {
+        const response = await crawler.crawl(DEFAULT_BASE_URL);
+
         expect(response.pathnames).toHaveLength(0);
     });
 });
@@ -209,32 +220,34 @@ describe("Error handling", () => {
             crawlResults: Observable<CrawlResult>,
             expectedPathnames: string[] = []
         ) => {
-            let response: CrawlerResponse;
-
-            beforeAll(async () => {
+            beforeEach(() => {
                 jest.resetAllMocks();
 
                 mockCrawlProvider.crawl.mockReturnValue(crawlResults);
                 mockURLRepository.storePathname.mockResolvedValue(true);
                 mockURLRepository.updateCrawlStatus.mockResolvedValue(true);
                 mockContentRepository.storePageContent.mockResolvedValue(true);
-
-                response = await crawler.crawl(DEFAULT_BASE_URL);
             });
 
-            test("calls the url repository for each success", () => {
+            test("calls the url repository for each success", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.storePathname).toHaveBeenCalledTimes(
                     expectedPathnames.length
                 );
             });
 
-            test("calls the content repository for each success", () => {
+            test("calls the content repository for each success", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(
                     mockContentRepository.storePageContent
                 ).toHaveBeenCalledTimes(expectedPathnames.length);
             });
 
-            test("updates the crawl status to running but not complete", () => {
+            test("updates the crawl status to running but not complete", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
                 expect(
                     mockURLRepository.updateCrawlStatus
@@ -244,15 +257,18 @@ describe("Error handling", () => {
                 );
             });
 
-            test("returns failure", () => {
+            test("returns failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.success).toBe(false);
             });
 
-            test("returns pathnames crawled up to failure", () => {
+            test("returns pathnames crawled up to failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.pathnames).toHaveLength(
                     expectedPathnames.length
                 );
-
                 expect(response.pathnames).toEqual(
                     expect.arrayContaining(expectedPathnames)
                 );
@@ -279,9 +295,7 @@ describe("Error handling", () => {
             failureSequence: boolean[],
             expectedPathnames: string[] = []
         ) => {
-            let response: CrawlerResponse;
-
-            beforeAll(async () => {
+            beforeEach(() => {
                 jest.resetAllMocks();
 
                 mockCrawlProvider.crawl.mockReturnValue(crawlResults);
@@ -292,17 +306,19 @@ describe("Error handling", () => {
                     );
                 }
                 mockContentRepository.storePageContent.mockResolvedValue(true);
-
-                response = await crawler.crawl(DEFAULT_BASE_URL);
             });
 
-            test("only calls content repository after url stored successfully", () => {
+            test("only calls content repository after url stored successfully", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockContentRepository.storePageContent).toBeCalledTimes(
                     expectedPathnames.length
                 );
             });
 
-            test("updates the crawl status to running but not complete", () => {
+            test("updates the crawl status to running but not complete", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
                 expect(
                     mockURLRepository.updateCrawlStatus
@@ -312,15 +328,18 @@ describe("Error handling", () => {
                 );
             });
 
-            test("returns failure", () => {
+            test("returns failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.success).toBe(false);
             });
 
-            test("returns pathnames crawled up to failure", () => {
+            test("returns pathnames crawled up to failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.pathnames).toHaveLength(
                     expectedPathnames.length
                 );
-
                 expect(response.pathnames).toEqual(
                     expect.arrayContaining(expectedPathnames)
                 );
@@ -347,9 +366,7 @@ describe("Error handling", () => {
             failureSequence: boolean[],
             expectedPathnames: string[] = []
         ) => {
-            let response: CrawlerResponse;
-
-            beforeAll(async () => {
+            beforeEach(() => {
                 jest.resetAllMocks();
 
                 mockCrawlProvider.crawl.mockReturnValue(crawlResults);
@@ -360,11 +377,11 @@ describe("Error handling", () => {
                         result
                     );
                 }
-
-                response = await crawler.crawl(DEFAULT_BASE_URL);
             });
 
-            test("updates the crawl status to running but not complete", () => {
+            test("updates the crawl status to running but not complete", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
                 expect(
                     mockURLRepository.updateCrawlStatus
@@ -374,15 +391,18 @@ describe("Error handling", () => {
                 );
             });
 
-            test("returns failure", () => {
+            test("returns failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.success).toBe(false);
             });
 
-            test("returns pathnames crawled up to failure", () => {
+            test("returns pathnames crawled up to failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.pathnames).toHaveLength(
                     expectedPathnames.length
                 );
-
                 expect(response.pathnames).toEqual(
                     expect.arrayContaining(expectedPathnames)
                 );
@@ -413,9 +433,7 @@ describe("Error handling", () => {
             failureSequence: (Error | undefined)[],
             expectedPathnames: string[] = []
         ) => {
-            let response: CrawlerResponse;
-
-            beforeAll(async () => {
+            beforeEach(() => {
                 jest.resetAllMocks();
 
                 mockCrawlProvider.crawl.mockReturnValue(crawlResults);
@@ -432,17 +450,19 @@ describe("Error handling", () => {
                     }
                 }
                 mockContentRepository.storePageContent.mockResolvedValue(true);
-
-                response = await crawler.crawl(DEFAULT_BASE_URL);
             });
 
-            test("only calls content repository after url stored successfully", () => {
+            test("only calls content repository after url stored successfully", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockContentRepository.storePageContent).toBeCalledTimes(
                     expectedPathnames.length
                 );
             });
 
-            test("updates the crawl status to running but not complete", () => {
+            test("updates the crawl status to running but not complete", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
                 expect(
                     mockURLRepository.updateCrawlStatus
@@ -452,15 +472,18 @@ describe("Error handling", () => {
                 );
             });
 
-            test("returns failure", () => {
+            test("returns failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.success).toBe(false);
             });
 
-            test("returns pathnames crawled up to failure", () => {
+            test("returns pathnames crawled up to failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.pathnames).toHaveLength(
                     expectedPathnames.length
                 );
-
                 expect(response.pathnames).toEqual(
                     expect.arrayContaining(expectedPathnames)
                 );
@@ -491,9 +514,7 @@ describe("Error handling", () => {
             failureSequence: (Error | undefined)[],
             expectedPathnames: string[] = []
         ) => {
-            let response: CrawlerResponse;
-
-            beforeAll(async () => {
+            beforeEach(() => {
                 jest.resetAllMocks();
 
                 mockCrawlProvider.crawl.mockReturnValue(crawlResults);
@@ -510,11 +531,11 @@ describe("Error handling", () => {
                         );
                     }
                 }
-
-                response = await crawler.crawl(DEFAULT_BASE_URL);
             });
 
-            test("updates the crawl status to running but not complete", () => {
+            test("updates the crawl status to running but not complete", async () => {
+                await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(mockURLRepository.updateCrawlStatus).toBeCalledTimes(1);
                 expect(
                     mockURLRepository.updateCrawlStatus
@@ -524,15 +545,18 @@ describe("Error handling", () => {
                 );
             });
 
-            test("returns failure", () => {
+            test("returns failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.success).toBe(false);
             });
 
-            test("returns pathnames crawled up to failure", () => {
+            test("returns pathnames crawled up to failure", async () => {
+                const response = await crawler.crawl(DEFAULT_BASE_URL);
+
                 expect(response.pathnames).toHaveLength(
                     expectedPathnames.length
                 );
-
                 expect(response.pathnames).toEqual(
                     expect.arrayContaining(expectedPathnames)
                 );
