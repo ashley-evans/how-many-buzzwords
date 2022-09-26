@@ -3,6 +3,7 @@ import {
     Repository,
 } from "buzzword-crawl-urls-repository-library";
 import { ContentRepository } from "buzzword-crawl-content-repository-library";
+import { getDomain } from "tldts";
 
 import { CrawlerResponse, CrawlPort } from "../ports/CrawlPort";
 import { CrawlProvider, CrawlResult } from "../ports/CrawlProvider";
@@ -100,15 +101,16 @@ class Crawl implements CrawlPort {
         baseURL: URL,
         crawlResult: CrawlResult
     ): Promise<PathnameStored> {
+        const domain = this.getDomain(baseURL);
         const isURLStored = await this.urlRepository.storePathname(
-            baseURL.hostname,
+            domain,
             crawlResult.url.pathname
         );
 
         let isAllDataStored = false;
         if (isURLStored) {
             isAllDataStored = await this.contentRepository.storePageContent(
-                crawlResult.url,
+                this.removeSubDomains(crawlResult.url),
                 crawlResult.content
             );
         }
@@ -141,14 +143,27 @@ class Crawl implements CrawlPort {
         url: URL,
         status: CrawlStatus
     ): Promise<boolean> {
+        const domain = this.getDomain(url);
         try {
-            return await this.urlRepository.updateCrawlStatus(
-                url.hostname,
-                status
-            );
+            return await this.urlRepository.updateCrawlStatus(domain, status);
         } catch {
             return false;
         }
+    }
+
+    private removeSubDomains(url: URL): URL {
+        const domain = this.getDomain(url);
+        return new URL(`${url.protocol}//${domain}${url.pathname}`);
+    }
+
+    private getDomain(url: URL): string {
+        const urlString = url.toString();
+        const domain = getDomain(urlString);
+        if (!domain) {
+            throw new Error(`Unable to find domain in URL: ${urlString}`);
+        }
+
+        return domain;
     }
 }
 
