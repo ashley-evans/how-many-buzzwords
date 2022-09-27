@@ -12,8 +12,15 @@ class QueryKeyphrasesAppSyncAdapter
     async handleQuery(
         event: AppSyncResolverEvent<QueryKeyphrasesArgs>
     ): Promise<Keyphrase[]> {
-        await this.port.queryKeyphrases(event.arguments.baseURL);
-        return [];
+        const baseURL = event.arguments.baseURL;
+        const keyphrases = await this.port.queryKeyphrases(baseURL);
+
+        return keyphrases.map((item) => ({
+            id: `${baseURL}${item.pathname}#${item.keyphrase}`,
+            keyphrase: item.keyphrase,
+            pathname: item.pathname,
+            occurrences: item.occurrences,
+        }));
     }
 }
 
