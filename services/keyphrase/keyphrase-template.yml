@@ -668,6 +668,46 @@ Resources:
             Environment:
                 Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+    QueryKeyphrasesRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: KeyphrasesTableQueryPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:Query
+                            Resource: !GetAtt KeyphrasesTable.Arn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    QueryKeyphrases:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: query-keyphrases.handler
+            Role: !GetAtt QueryKeyphrasesRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/query-keyphrases
+            Description: Enables queries against keyphrases analyzed on websites
+            Layers:
+                - Ref: KeyphraseRepositoryLibraryLayer
+            Architectures:
+                - arm64
+            Environment:
+                Variables:
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
 Outputs:
     WebSocketAPIEndpoint:
         Description: The endpoint for the Keyhrase service's WebSocket API
