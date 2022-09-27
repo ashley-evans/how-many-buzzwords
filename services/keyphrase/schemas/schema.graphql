@@ -1,0 +1,18 @@
+schema {
+    query: Query
+}
+
+type Query {
+    keyphrases(url: ID!): [Keyphrase]!
+}
+
+interface Node {
+    id: ID!
+}
+
+type Keyphrase implements Node {
+    id: ID!
+    pathname: String!
+    keyphrase: String!
+    occurrences: Int!
+}
