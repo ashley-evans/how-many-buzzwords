@@ -708,6 +708,63 @@ Resources:
             Environment:
                 Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+    QueryKeyphrasesAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeQueryKeyphrasesPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt QueryKeyphrases.Arn
+                            Effect: Allow
+    GraphQLAPI:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+            Name: !Sub buzzword-keyphrase-service-graphql-api-${EnvironmentNameSuffix}
+            AuthenticationType: AWS_IAM
+    GraphQLAPISchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            DefinitionS3Location: ./schemas/schema.graphql
+    KeyphrasesDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: AWS_LAMBDA
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            Name: !Sub buzzword_keyphrases_data_source_${EnvironmentNameSuffix}
+            LambdaConfig:
+                LambdaFunctionArn: !GetAtt QueryKeyphrases.Arn
+            ServiceRoleArn: !GetAtt QueryKeyphrasesAccessRole.Arn
+    KeyphrasesQueryResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Query
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            FieldName: keyphrases
+            DataSourceName: !GetAtt KeyphrasesDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2017-02-28",
+                    "operation": "Invoke",
+                    "payload": {
+                        "field": "urls",
+                        "arguments": $utils.toJson($context.arguments)
+                    }
+                }
+            ResponseMappingTemplate: "$utils.toJson($context.result)"
 Outputs:
     WebSocketAPIEndpoint:
         Description: The endpoint for the Keyhrase service's WebSocket API
