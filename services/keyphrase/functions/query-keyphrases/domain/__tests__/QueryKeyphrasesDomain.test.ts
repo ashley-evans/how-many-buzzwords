@@ -19,29 +19,26 @@ beforeEach(() => {
 describe.each([
     ["a number", "1"],
     ["invalid base URL (space)", "invalid base URL"],
-])(
-    "invalid base URL handling given a number",
-    (message: string, input: string) => {
-        test("throws an invalid input error", async () => {
-            const expectedErrorMessage = "Invalid base URL provided.";
+])("invalid base URL handling given %s", (message: string, input: string) => {
+    test("throws an invalid input error", async () => {
+        const expectedErrorMessage = "Invalid base URL provided.";
 
-            expect.assertions(1);
-            await expect(domain.queryKeyphrases(input)).rejects.toThrowError(
-                expectedErrorMessage
-            );
-        });
+        expect.assertions(1);
+        await expect(domain.queryKeyphrases(input)).rejects.toThrowError(
+            expectedErrorMessage
+        );
+    });
 
-        test("does not call port to get keyphrases", async () => {
-            try {
-                await domain.queryKeyphrases(input);
-            } catch {
-                // Expected Error
-            }
+    test("does not call port to get keyphrases", async () => {
+        try {
+            await domain.queryKeyphrases(input);
+        } catch {
+            // Expected Error
+        }
 
-            expect(mockRepository.getOccurrences).not.toHaveBeenCalled();
-        });
-    }
-);
+        expect(mockRepository.getOccurrences).not.toHaveBeenCalled();
+    });
+});
 
 test.each([
     ["excludes a protocol", EXPECTED_BASE_URL, EXPECTED_BASE_URL],
