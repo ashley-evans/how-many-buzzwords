@@ -14,8 +14,15 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         baseURL: string
     ): Promise<PathKeyphraseOccurrences[]> {
         const validatedURL = this.validateURL(baseURL);
-        await this.repository.getOccurrences(validatedURL.hostname);
-        return [];
+        const stored = await this.repository.getOccurrences(
+            validatedURL.hostname
+        );
+
+        return stored.map((item) => ({
+            keyphrase: item.keyphrase,
+            pathname: item.pathname,
+            occurrences: item.occurrences,
+        }));
     }
 
     private validateURL(baseURL: string): URL {

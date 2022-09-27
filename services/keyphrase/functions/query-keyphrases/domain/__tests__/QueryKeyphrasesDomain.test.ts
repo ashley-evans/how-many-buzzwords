@@ -1,7 +1,11 @@
 import { mock } from "jest-mock-extended";
-import { Repository } from "buzzword-keyphrase-keyphrase-repository-library";
+import {
+    Repository,
+    PathnameOccurrences,
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import QueryKeyphrasesDomain from "../QueryKeyphrasesDomain";
+import { PathKeyphraseOccurrences } from "../../ports/QueryKeyphrasesPort";
 
 const EXPECTED_BASE_URL = "www.example.com";
 
@@ -46,6 +50,8 @@ test.each([
 ])(
     "calls the repository to get the keyphrases related to hostname provided base URL that %s",
     async (message: string, input: string, expectedBaseURL: string) => {
+        mockRepository.getOccurrences.mockResolvedValue([]);
+
         await domain.queryKeyphrases(input);
 
         expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(1);
@@ -55,13 +61,70 @@ test.each([
     }
 );
 
-test("returns an empty array if no keyphrases have been found for provided URL", async () => {
+test("returns an empty array if no keyphrases have been found on provided base URL", async () => {
     mockRepository.getOccurrences.mockResolvedValue([]);
 
     const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
 
     expect(actual).toEqual([]);
 });
+
+test.each([
+    [
+        "a single keyphrase has",
+        [
+            {
+                pathname: "/test",
+                keyphrase: "wibble",
+                occurrences: 12,
+                aggregated: true,
+            },
+        ],
+        [{ pathname: "/test", keyphrase: "wibble", occurrences: 12 }],
+    ],
+    [
+        "multiple keyphrases have",
+        [
+            {
+                pathname: "/dyson",
+                keyphrase: "sphere",
+                occurrences: 9,
+                aggregated: true,
+            },
+            {
+                pathname: "/procedural",
+                keyphrase: "code",
+                occurrences: 14,
+                aggregated: false,
+            },
+        ],
+        [
+            {
+                pathname: "/dyson",
+                keyphrase: "sphere",
+                occurrences: 9,
+            },
+            {
+                pathname: "/procedural",
+                keyphrase: "code",
+                occurrences: 14,
+            },
+        ],
+    ],
+])(
+    "returns stored keyphrases if %s been found on provided base URL",
+    async (
+        message: string,
+        stored: PathnameOccurrences[],
+        expected: PathKeyphraseOccurrences[]
+    ) => {
+        mockRepository.getOccurrences.mockResolvedValue(stored);
+
+        const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
+
+        expect(actual).toEqual(expected);
+    }
+);
 
 test("throws an error if an unexpected error occurs getting the keyphrases for a provided base URL", async () => {
     const expectedError = new Error("test error");
