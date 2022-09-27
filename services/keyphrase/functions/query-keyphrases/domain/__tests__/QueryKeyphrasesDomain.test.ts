@@ -21,6 +21,7 @@ describe.each([
         test("throws an invalid input error", async () => {
             const expectedErrorMessage = "Invalid base URL provided.";
 
+            expect.assertions(1);
             await expect(domain.queryKeyphrases(input)).rejects.toThrowError(
                 expectedErrorMessage
             );
@@ -60,4 +61,14 @@ test("returns an empty array if no keyphrases have been found for provided URL",
     const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
 
     expect(actual).toEqual([]);
+});
+
+test("throws an error if an unexpected error occurs getting the keyphrases for a provided base URL", async () => {
+    const expectedError = new Error("test error");
+    mockRepository.getOccurrences.mockRejectedValue(expectedError);
+
+    expect.assertions(1);
+    await expect(
+        domain.queryKeyphrases(EXPECTED_BASE_URL)
+    ).rejects.toThrowError(expectedError);
 });
