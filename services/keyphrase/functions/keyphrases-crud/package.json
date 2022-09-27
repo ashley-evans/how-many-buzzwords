@@ -5,6 +5,6 @@
         "@middy/core": "2.5.1",
         "@middy/http-error-handler": "2.5.1",
         "@middy/validator": "2.5.1",
-        "http-status-codes": "2.1.4"
+        "http-status-codes": "2.2.0"
     }
 }
