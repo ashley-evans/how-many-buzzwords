@@ -146,51 +146,6 @@ Resources:
             Environment:
                 Variables:
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
-    KeyphrasesCRUD:
-        Type: AWS::Serverless::Function
-        Properties:
-            Handler: keyphrases-crud.handler
-            Runtime: nodejs16.x
-            CodeUri: ./functions/keyphrases-crud
-            Description: CRUD function for the Keyphrases Table
-            Layers:
-                - Ref: KeyphraseNodeDependencyLayer
-            Policies:
-                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-                - Version: "2012-10-17"
-                  Statement:
-                      - Sid: KeyphrasesTableCRUDPolicy
-                        Effect: Allow
-                        Action:
-                            - dynamodb:Query
-                        Resource: !GetAtt KeyphrasesTable.Arn
-            Architectures:
-                - arm64
-            Environment:
-                Variables:
-                    TABLE_NAME: !Ref KeyphrasesTable
-                    ERROR_LOGGING_ENABLED: true
-    KeyphrasesCRUDAccessRole:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Version: "2012-10-17"
-                Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service:
-                              - apigateway.amazonaws.com
-                      Action:
-                          - sts:AssumeRole
-            Policies:
-                - PolicyName: InvokeKeyphrasesCRUD
-                  PolicyDocument:
-                      Version: "2012-10-17"
-                      Statement:
-                          - Action:
-                                - lambda:InvokeFunction
-                            Resource: !GetAtt KeyphrasesCRUD.Arn
-                            Effect: Allow
     KeyphraseStateMachineRole:
         Type: AWS::IAM::Role
         Properties:
@@ -285,14 +240,6 @@ Resources:
                             "baseURL" : <baseURL>,
                             "pathnames" : <pathnames>
                           }
-    KeyphraseHTTPGateway:
-        Type: AWS::Serverless::HttpApi
-        Properties:
-            DefinitionBody:
-                Fn::Transform:
-                    Name: AWS::Include
-                    Parameters:
-                        Location: ./keyphrase-openapi.yml
     ActiveConnectionsTable:
         Type: AWS::DynamoDB::Table
         Properties:
