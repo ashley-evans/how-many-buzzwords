@@ -3,7 +3,7 @@ schema {
 }
 
 type Query {
-    keyphrases(url: ID!): [Keyphrase]!
+    keyphrases(baseURL: ID!): [Keyphrase]!
 }
 
 interface Node {
