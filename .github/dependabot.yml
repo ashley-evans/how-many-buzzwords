@@ -101,11 +101,11 @@ updates:
       package-ecosystem: npm
       schedule:
           interval: weekly
-    - directory: /services/keyphrase/functions/keyphrases-crud
+    - directory: /services/keyphrase/functions/new-connection
       package-ecosystem: npm
       schedule:
           interval: weekly
-    - directory: /services/keyphrase/functions/new-connection
+    - directory: /services/keyphrase/functions/query-keyphrases
       package-ecosystem: npm
       schedule:
           interval: weekly
