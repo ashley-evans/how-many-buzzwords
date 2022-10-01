@@ -1,17 +1,20 @@
 import { AppSyncResolverEvent } from "aws-lambda";
 
-import { QueryKeyphrasesArgs, Keyphrase } from "../../../schemas/schema";
+import {
+    QueryKeyphrasesArgs,
+    KeyphraseOccurrence,
+} from "../../../schemas/schema";
 import AppSyncAdapter from "../interfaces/AppSyncAdapter";
 import { QueryKeyphrasesPort } from "../ports/QueryKeyphrasesPort";
 
 class QueryKeyphrasesAppSyncAdapter
-    implements AppSyncAdapter<QueryKeyphrasesArgs, Keyphrase[]>
+    implements AppSyncAdapter<QueryKeyphrasesArgs, KeyphraseOccurrence[]>
 {
     constructor(private port: QueryKeyphrasesPort) {}
 
     async handleQuery(
         event: AppSyncResolverEvent<QueryKeyphrasesArgs>
-    ): Promise<Keyphrase[]> {
+    ): Promise<KeyphraseOccurrence[]> {
         const baseURL = event.arguments.baseURL;
         const keyphrases = await this.port.queryKeyphrases(baseURL);
 
