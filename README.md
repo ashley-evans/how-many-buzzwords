@@ -115,7 +115,7 @@ npm run test:integration
 Run the following command to validate all template definitions within the project:
 
 ```shell
-xargs -n1 -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) cfn-lint
+xargs -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002'
 ```
 
 ### Programatically starting a crawl

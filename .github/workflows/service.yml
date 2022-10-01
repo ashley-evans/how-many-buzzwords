@@ -28,6 +28,7 @@ jobs:
                   filters: |
                       service:
                           - ${{ inputs.path }}/**
+                          - ./.github/workflows/service.yml
     compile:
         runs-on: ubuntu-latest
         needs: changed
@@ -102,7 +103,7 @@ jobs:
             - uses: scottbrenner/cfn-lint-action@v2
             - name: Validate Templates
               run: |
-                  xargs -n1 -r0a <(find ${{ inputs.path }} -name *-template.yml -print0) cfn-lint
+                  xargs -r0a <(find ${{ inputs.path }} -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002'
     unit-test:
         runs-on: ubuntu-latest
         needs: changed
