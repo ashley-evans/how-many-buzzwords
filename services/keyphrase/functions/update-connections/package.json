@@ -2,8 +2,6 @@
     "name": "buzzword-keyphrase-update-connections-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@ashley-evans/buzzword-object-validator": "1.0.0",
-        "ajv": "8.8.2",
         "lodash": "4.17.21"
     },
     "devDependencies": {
