@@ -139,6 +139,7 @@ Resources:
             Description: Finds the top keywords and phrases in parsed HTML content
             Layers:
                 - Ref: TextRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Timeout: 10
             MemorySize: 1536
             Architectures:
@@ -299,6 +300,7 @@ Resources:
             Description: Manages active web socket connections
             Layers:
                 - Ref: ActiveConnectionsRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Architectures:
                 - arm64
             Environment:
@@ -425,6 +427,7 @@ Resources:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: WebSocketClientLibraryLayer
                 - Ref: ActiveConnectionsRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Events:
                 ActiveConnectionsStreamEvent:
                     Type: DynamoDB
@@ -492,6 +495,7 @@ Resources:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: WebSocketClientLibraryLayer
                 - Ref: ActiveConnectionsRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Events:
                 UpdatesStreamEvent:
                     Type: DynamoDB
@@ -542,6 +546,7 @@ Resources:
             Description: Obtains the content for a given URL, scrapes all text from page then stores result in S3
             Layers:
                 - Ref: TextRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Timeout: 10
             MemorySize: 512
             Architectures:
@@ -594,6 +599,7 @@ Resources:
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
                 - Ref: TextRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Timeout: 10
             MemorySize: 512
             Architectures:
@@ -649,6 +655,7 @@ Resources:
             Description: Aggregates keyphrase occurrences at a site and global level, storing aggregated results in DynamoDB
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
+                - Ref: KeyphraseNodeDependencyLayer
             Timeout: 10
             MemorySize: 1024
             Events:
