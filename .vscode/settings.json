@@ -29,5 +29,7 @@
         "!Split sequence"
     ],
     "jest.jestCommandLine": "node node_modules/.bin/jest",
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

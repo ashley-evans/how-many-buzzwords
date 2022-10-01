@@ -83,4 +83,5 @@ $root_dir/node_modules/.bin/copyfiles -E -u 2 \
     "$path/**/Makefile" \
     "$path/**/*.asl.json" \
     "$path/**/schema.graphql" \
+    "$path/**/.npmrc" \
     $output_path

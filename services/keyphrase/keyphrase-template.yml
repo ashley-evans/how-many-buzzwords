@@ -146,51 +146,6 @@ Resources:
             Environment:
                 Variables:
                     PARSED_CONTENT_S3_BUCKET_NAME: !Ref ParsedContentBucket
-    KeyphrasesCRUD:
-        Type: AWS::Serverless::Function
-        Properties:
-            Handler: keyphrases-crud.handler
-            Runtime: nodejs16.x
-            CodeUri: ./functions/keyphrases-crud
-            Description: CRUD function for the Keyphrases Table
-            Layers:
-                - Ref: KeyphraseNodeDependencyLayer
-            Policies:
-                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-                - Version: "2012-10-17"
-                  Statement:
-                      - Sid: KeyphrasesTableCRUDPolicy
-                        Effect: Allow
-                        Action:
-                            - dynamodb:Query
-                        Resource: !GetAtt KeyphrasesTable.Arn
-            Architectures:
-                - arm64
-            Environment:
-                Variables:
-                    TABLE_NAME: !Ref KeyphrasesTable
-                    ERROR_LOGGING_ENABLED: true
-    KeyphrasesCRUDAccessRole:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Version: "2012-10-17"
-                Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service:
-                              - apigateway.amazonaws.com
-                      Action:
-                          - sts:AssumeRole
-            Policies:
-                - PolicyName: InvokeKeyphrasesCRUD
-                  PolicyDocument:
-                      Version: "2012-10-17"
-                      Statement:
-                          - Action:
-                                - lambda:InvokeFunction
-                            Resource: !GetAtt KeyphrasesCRUD.Arn
-                            Effect: Allow
     KeyphraseStateMachineRole:
         Type: AWS::IAM::Role
         Properties:
@@ -285,14 +240,6 @@ Resources:
                             "baseURL" : <baseURL>,
                             "pathnames" : <pathnames>
                           }
-    KeyphraseHTTPGateway:
-        Type: AWS::Serverless::HttpApi
-        Properties:
-            DefinitionBody:
-                Fn::Transform:
-                    Name: AWS::Include
-                    Parameters:
-                        Location: ./keyphrase-openapi.yml
     ActiveConnectionsTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -721,6 +668,103 @@ Resources:
             Environment:
                 Variables:
                     KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+    QueryKeyphrasesRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: KeyphrasesTableQueryPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - dynamodb:DescribeTable
+                                - dynamodb:Query
+                            Resource: !GetAtt KeyphrasesTable.Arn
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    QueryKeyphrases:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: query-keyphrases.handler
+            Role: !GetAtt QueryKeyphrasesRole.Arn
+            Runtime: nodejs16.x
+            CodeUri: ./functions/query-keyphrases
+            Description: Enables queries against keyphrases analyzed on websites
+            Layers:
+                - Ref: KeyphraseRepositoryLibraryLayer
+            Architectures:
+                - arm64
+            Environment:
+                Variables:
+                    KEYPHRASE_TABLE_NAME: !Ref KeyphrasesTable
+    QueryKeyphrasesAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeQueryKeyphrasesPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt QueryKeyphrases.Arn
+                            Effect: Allow
+    GraphQLAPI:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+            Name: !Sub buzzword-keyphrase-service-graphql-api-${EnvironmentNameSuffix}
+            AuthenticationType: AWS_IAM
+    GraphQLAPISchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            DefinitionS3Location: ./schemas/schema.graphql
+    KeyphrasesDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: AWS_LAMBDA
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            Name: !Sub buzzword_keyphrases_data_source_${EnvironmentNameSuffix}
+            LambdaConfig:
+                LambdaFunctionArn: !GetAtt QueryKeyphrases.Arn
+            ServiceRoleArn: !GetAtt QueryKeyphrasesAccessRole.Arn
+    KeyphrasesQueryResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Query
+            ApiId: !GetAtt GraphQLAPI.ApiId
+            FieldName: keyphrases
+            DataSourceName: !GetAtt KeyphrasesDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2017-02-28",
+                    "operation": "Invoke",
+                    "payload": {
+                        "field": "urls",
+                        "arguments": $utils.toJson($context.arguments)
+                    }
+                }
+            ResponseMappingTemplate: "$utils.toJson($context.result)"
 Outputs:
     WebSocketAPIEndpoint:
         Description: The endpoint for the Keyhrase service's WebSocket API
