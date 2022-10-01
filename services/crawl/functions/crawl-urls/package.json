@@ -2,7 +2,7 @@
     "name": "buzzword-crawl-crawl-urls-lambda",
     "version": "1.0.0",
     "dependencies": {
-        "@crawlee/cheerio": "3.0.3",
+        "@crawlee/cheerio": "3.0.4",
         "rxjs": "7.4.0"
     }
 }
