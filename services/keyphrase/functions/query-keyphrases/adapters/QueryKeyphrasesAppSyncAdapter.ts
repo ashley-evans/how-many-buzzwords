@@ -16,8 +16,21 @@ class QueryKeyphrasesAppSyncAdapter
         event: AppSyncResolverEvent<QueryKeyphrasesArgs>
     ): Promise<KeyphraseOccurrence[]> {
         const baseURL = event.arguments.baseURL;
-        const keyphrases = await this.port.queryKeyphrases(baseURL);
+        const pathname = event.arguments.pathname;
+        if (pathname) {
+            const keyphrases = await this.port.queryKeyphrases(
+                baseURL,
+                pathname
+            );
 
+            return keyphrases.map((item) => ({
+                id: `${baseURL}${pathname}#${item.keyphrase}`,
+                keyphrase: item.keyphrase,
+                occurrences: item.occurrences,
+            }));
+        }
+
+        const keyphrases = await this.port.queryKeyphrases(baseURL);
         return keyphrases.map((item) => ({
             id: `${baseURL}${item.pathname}#${item.keyphrase}`,
             keyphrase: item.keyphrase,
