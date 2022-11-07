@@ -1,4 +1,5 @@
-import { mock } from "jest-mock-extended";
+import { createMock } from "ts-auto-mock";
+import { On, method } from "ts-auto-mock/extension";
 import {
     Repository,
     PathnameOccurrences,
@@ -8,12 +9,16 @@ import QueryKeyphrasesDomain from "../QueryKeyphrasesDomain";
 import { PathKeyphraseOccurrences } from "../../ports/QueryKeyphrasesPort";
 
 const EXPECTED_BASE_URL = "www.example.com";
+const EXPECTED_PATH = "/wibble";
 
-const mockRepository = mock<Repository>();
+const mockRepository = createMock<Repository>();
+const mockGetOccurrences: jest.Mock = On(mockRepository).get(
+    method((mock) => mock.getOccurrences)
+);
 const domain = new QueryKeyphrasesDomain(mockRepository);
 
 beforeEach(() => {
-    mockRepository.getOccurrences.mockReset();
+    mockGetOccurrences.mockReset();
 });
 
 describe.each([
@@ -47,7 +52,7 @@ test.each([
 ])(
     "calls the repository to get the keyphrases related to hostname provided base URL that %s",
     async (message: string, input: string, expectedBaseURL: string) => {
-        mockRepository.getOccurrences.mockResolvedValue([]);
+        mockGetOccurrences.mockResolvedValue([]);
 
         await domain.queryKeyphrases(input);
 
@@ -59,7 +64,7 @@ test.each([
 );
 
 test("returns an empty array if no keyphrases have been found on provided base URL", async () => {
-    mockRepository.getOccurrences.mockResolvedValue([]);
+    mockGetOccurrences.mockResolvedValue([]);
 
     const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
 
@@ -115,7 +120,7 @@ test.each([
         stored: PathnameOccurrences[],
         expected: PathKeyphraseOccurrences[]
     ) => {
-        mockRepository.getOccurrences.mockResolvedValue(stored);
+        mockGetOccurrences.mockResolvedValue(stored);
 
         const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
 
@@ -125,10 +130,81 @@ test.each([
 
 test("throws an error if an unexpected error occurs getting the keyphrases for a provided base URL", async () => {
     const expectedError = new Error("test error");
-    mockRepository.getOccurrences.mockRejectedValue(expectedError);
+    mockGetOccurrences.mockRejectedValue(expectedError);
 
     expect.assertions(1);
     await expect(
         domain.queryKeyphrases(EXPECTED_BASE_URL)
     ).rejects.toThrowError(expectedError);
 });
+
+test("calls repository to get keyphrases on given path of URL", async () => {
+    mockGetOccurrences.mockResolvedValue([]);
+
+    await domain.queryKeyphrases(EXPECTED_BASE_URL, EXPECTED_PATH);
+
+    expect(mockRepository.getOccurrences).toHaveBeenCalledTimes(1);
+    expect(mockRepository.getOccurrences).toHaveBeenCalledWith(
+        EXPECTED_BASE_URL,
+        EXPECTED_PATH
+    );
+});
+
+test("returns an empty array if no keyphrases stored against path", async () => {
+    mockGetOccurrences.mockResolvedValue([]);
+
+    const actual = await domain.queryKeyphrases(
+        EXPECTED_BASE_URL,
+        EXPECTED_PATH
+    );
+
+    expect(actual).toEqual([]);
+});
+
+test.each([
+    [
+        "a single keyphrase has",
+        [
+            {
+                keyphrase: "wibble",
+                occurrences: 12,
+                aggregated: true,
+            },
+        ],
+        [{ keyphrase: "wibble", occurrences: 12 }],
+    ],
+    [
+        "multiple keyphrases have",
+        [
+            {
+                keyphrase: "sphere",
+                occurrences: 9,
+                aggregated: true,
+            },
+            {
+                keyphrase: "code",
+                occurrences: 14,
+                aggregated: false,
+            },
+        ],
+        [
+            {
+                keyphrase: "sphere",
+                occurrences: 9,
+            },
+            {
+                keyphrase: "code",
+                occurrences: 14,
+            },
+        ],
+    ],
+])(
+    "returns stored keyphrases if %s been found on provided path",
+    async (message, stored, expected) => {
+        mockGetOccurrences.mockResolvedValue(stored);
+
+        const actual = await domain.queryKeyphrases(EXPECTED_BASE_URL);
+
+        expect(actual).toEqual(expected);
+    }
+);

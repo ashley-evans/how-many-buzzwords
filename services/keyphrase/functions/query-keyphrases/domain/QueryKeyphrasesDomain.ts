@@ -1,6 +1,7 @@
 import { Repository } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
+    KeyphraseOccurrences,
     PathKeyphraseOccurrences,
     QueryKeyphrasesPort,
 } from "../ports/QueryKeyphrasesPort";
@@ -10,10 +11,29 @@ const INVALID_BASE_URL_ERROR = "Invalid base URL provided.";
 class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
     constructor(private repository: Repository) {}
 
+    queryKeyphrases(baseURL: string): Promise<PathKeyphraseOccurrences[]>;
+    queryKeyphrases(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
+
     async queryKeyphrases(
-        baseURL: string
-    ): Promise<PathKeyphraseOccurrences[]> {
+        baseURL: string,
+        pathname?: string
+    ): Promise<PathKeyphraseOccurrences[] | KeyphraseOccurrences[]> {
         const validatedURL = this.validateURL(baseURL);
+        if (pathname) {
+            const stored = await this.repository.getOccurrences(
+                validatedURL.hostname,
+                pathname
+            );
+
+            return stored.map((item) => ({
+                keyphrase: item.keyphrase,
+                occurrences: item.occurrences,
+            }));
+        }
+
         const stored = await this.repository.getOccurrences(
             validatedURL.hostname
         );

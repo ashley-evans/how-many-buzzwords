@@ -1,11 +1,18 @@
-type PathKeyphraseOccurrences = {
+type KeyphraseOccurrences = {
     keyphrase: string;
-    pathname: string;
     occurrences: number;
+};
+
+type PathKeyphraseOccurrences = KeyphraseOccurrences & {
+    pathname: string;
 };
 
 interface QueryKeyphrasesPort {
     queryKeyphrases(baseURL: string): Promise<PathKeyphraseOccurrences[]>;
+    queryKeyphrases(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
 }
 
-export { PathKeyphraseOccurrences, QueryKeyphrasesPort };
+export { KeyphraseOccurrences, PathKeyphraseOccurrences, QueryKeyphrasesPort };
