@@ -6,7 +6,7 @@ import {
     QueryKeyphrasesPort,
 } from "../ports/QueryKeyphrasesPort";
 
-const INVALID_BASE_URL_ERROR = "Invalid base URL provided.";
+const INVALID_URL_ERROR = "Invalid URL provided.";
 
 class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
     constructor(private repository: Repository) {}
@@ -21,11 +21,11 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         baseURL: string,
         pathname?: string
     ): Promise<PathKeyphraseOccurrences[] | KeyphraseOccurrences[]> {
-        const validatedURL = this.validateURL(baseURL);
+        const validatedURL = this.validateURL(baseURL, pathname);
         if (pathname) {
             const stored = await this.repository.getOccurrences(
                 validatedURL.hostname,
-                pathname
+                validatedURL.pathname
             );
 
             return stored.map((item) => ({
@@ -45,10 +45,14 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }));
     }
 
-    private validateURL(baseURL: string): URL {
+    private validateURL(baseURL: string, pathname?: string): URL {
         let url = baseURL;
         if (!isNaN(parseInt(url))) {
-            throw new Error(INVALID_BASE_URL_ERROR);
+            throw new Error(INVALID_URL_ERROR);
+        }
+
+        if (pathname && !pathname.startsWith("/")) {
+            throw new Error(INVALID_URL_ERROR);
         }
 
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
@@ -56,9 +60,9 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }
 
         try {
-            return new URL(url);
+            return new URL(pathname ? `${url}${pathname}` : url);
         } catch {
-            throw new Error(INVALID_BASE_URL_ERROR);
+            throw new Error(INVALID_URL_ERROR);
         }
     }
 }

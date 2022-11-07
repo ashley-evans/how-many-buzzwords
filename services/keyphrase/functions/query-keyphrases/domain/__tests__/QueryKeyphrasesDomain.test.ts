@@ -26,7 +26,7 @@ describe.each([
     ["invalid base URL (space)", "invalid base URL"],
 ])("invalid base URL handling given %s", (message: string, input: string) => {
     test("throws an invalid input error", async () => {
-        const expectedErrorMessage = "Invalid base URL provided.";
+        const expectedErrorMessage = "Invalid URL provided.";
 
         expect.assertions(1);
         await expect(domain.queryKeyphrases(input)).rejects.toThrowError(
@@ -138,6 +138,28 @@ test("throws an error if an unexpected error occurs getting the keyphrases for a
     ).rejects.toThrowError(expectedError);
 });
 
+describe("invalid pathname handling given a path with a missing forward slash", () => {
+    const pathname = "test";
+    test("throws an invalid input error", async () => {
+        const expectedErrorMessage = "Invalid URL provided.";
+
+        expect.assertions(1);
+        await expect(
+            domain.queryKeyphrases(EXPECTED_BASE_URL, pathname)
+        ).rejects.toThrowError(expectedErrorMessage);
+    });
+
+    test("does not call port to get keyphrases", async () => {
+        try {
+            await domain.queryKeyphrases(EXPECTED_BASE_URL, pathname);
+        } catch {
+            // Expected Error
+        }
+
+        expect(mockRepository.getOccurrences).not.toHaveBeenCalled();
+    });
+});
+
 test("calls repository to get keyphrases on given path of URL", async () => {
     mockGetOccurrences.mockResolvedValue([]);
 
@@ -208,3 +230,13 @@ test.each([
         expect(actual).toEqual(expected);
     }
 );
+
+test("throws an error if an unexpected error occurs getting the keyphrases for a provided path", async () => {
+    const expectedError = new Error("test error");
+    mockGetOccurrences.mockRejectedValue(expectedError);
+
+    expect.assertions(1);
+    await expect(
+        domain.queryKeyphrases(EXPECTED_BASE_URL, EXPECTED_PATH)
+    ).rejects.toThrowError(expectedError);
+});
