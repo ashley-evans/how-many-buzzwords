@@ -1,4 +1,6 @@
 import { mock } from "jest-mock-extended";
+import { createMock } from "ts-auto-mock";
+import { On, method } from "ts-auto-mock/extension";
 import { AppSyncResolverEvent } from "aws-lambda";
 
 import {
@@ -11,8 +13,11 @@ import { QueryKeyphrasesArgs } from "../../../../schemas/schema";
 const VALID_BASE_URL = "www.example.com";
 const VALID_EVENT = createEvent(VALID_BASE_URL);
 
-const mockPort = mock<QueryKeyphrasesPort>();
+const mockPort = createMock<QueryKeyphrasesPort>();
 const adapter = new QueryKeyphrasesAppSyncAdapter(mockPort);
+const mockQueryKeyphrases: jest.Mock = On(mockPort).get(
+    method((mock) => mock.queryKeyphrases)
+);
 
 function createEvent(
     baseURL: string
@@ -26,11 +31,11 @@ function createEvent(
 }
 
 beforeEach(() => {
-    mockPort.queryKeyphrases.mockReset();
+    mockQueryKeyphrases.mockReset();
 });
 
 test("calls the port with the provided base URL", async () => {
-    mockPort.queryKeyphrases.mockResolvedValue([]);
+    mockQueryKeyphrases.mockResolvedValue([]);
 
     await adapter.handleQuery(VALID_EVENT);
 
@@ -39,7 +44,7 @@ test("calls the port with the provided base URL", async () => {
 });
 
 test("returns empty array if no keyphrases returned", async () => {
-    mockPort.queryKeyphrases.mockResolvedValue([]);
+    mockQueryKeyphrases.mockResolvedValue([]);
 
     const actual = await adapter.handleQuery(VALID_EVENT);
 
@@ -66,7 +71,7 @@ describe.each([
     "response mapping given %s",
     (message: string, stored: PathKeyphraseOccurrences[]) => {
         beforeEach(() => {
-            mockPort.queryKeyphrases.mockResolvedValue(stored);
+            mockQueryKeyphrases.mockResolvedValue(stored);
         });
 
         test("returns the base URL, path and keyphrase combined as unique ID for each object", async () => {
@@ -122,7 +127,7 @@ describe.each([
 
 test("throws an error if an unexpected error occurs getting the keyphrases for a provided base URL", async () => {
     const expectedError = new Error("test error");
-    mockPort.queryKeyphrases.mockRejectedValue(expectedError);
+    mockQueryKeyphrases.mockRejectedValue(expectedError);
 
     expect.assertions(1);
     await expect(adapter.handleQuery(VALID_EVENT)).rejects.toThrowError(
