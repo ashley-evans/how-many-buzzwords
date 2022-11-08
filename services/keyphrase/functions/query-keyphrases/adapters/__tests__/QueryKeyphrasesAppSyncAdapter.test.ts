@@ -88,6 +88,18 @@ describe.each([
             mockQueryKeyphrases.mockResolvedValue(stored);
         });
 
+        test("returns the typename for each object", async () => {
+            const actual = await adapter.handleQuery(VALID_BASE_URL_EVENT);
+
+            for (const item of actual) {
+                expect(item).toEqual(
+                    expect.objectContaining({
+                        __typename: "SiteOccurrence",
+                    })
+                );
+            }
+        });
+
         test("returns the base URL, path and keyphrase combined as unique ID for each object", async () => {
             const actual = await adapter.handleQuery(VALID_BASE_URL_EVENT);
 
@@ -187,6 +199,18 @@ describe.each([
     (message: string, stored: KeyphraseOccurrences[]) => {
         beforeEach(() => {
             mockQueryKeyphrases.mockResolvedValue(stored);
+        });
+
+        test("returns the typename for each object", async () => {
+            const actual = await adapter.handleQuery(VALID_PATH_EVENT);
+
+            for (const item of actual) {
+                expect(item).toEqual(
+                    expect.objectContaining({
+                        __typename: "PathOccurrence",
+                    })
+                );
+            }
         });
 
         test("returns the provided base URL, provided pathname, and keyphrase combined as unique ID for each object", async () => {

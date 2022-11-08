@@ -24,6 +24,7 @@ class QueryKeyphrasesAppSyncAdapter
             );
 
             return keyphrases.map((item) => ({
+                __typename: "PathOccurrence",
                 id: `${baseURL}${pathname}#${item.keyphrase}`,
                 keyphrase: item.keyphrase,
                 occurrences: item.occurrences,
@@ -32,6 +33,7 @@ class QueryKeyphrasesAppSyncAdapter
 
         const keyphrases = await this.port.queryKeyphrases(baseURL);
         return keyphrases.map((item) => ({
+            __typename: "SiteOccurrence",
             id: `${baseURL}${item.pathname}#${item.keyphrase}`,
             keyphrase: item.keyphrase,
             pathname: item.pathname,

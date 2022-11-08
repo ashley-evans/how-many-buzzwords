@@ -11,6 +11,7 @@ interface Node {
 }
 
 interface KeyphraseOccurrence {
+    id: ID!
     keyphrase: String!
     occurrences: Int!
 }
