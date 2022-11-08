@@ -3,6 +3,7 @@ import { On, method } from "ts-auto-mock/extension";
 import {
     Repository,
     PathnameOccurrences,
+    KeyphraseTableConstants,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import QueryKeyphrasesDomain from "../QueryKeyphrasesDomain";
@@ -15,10 +16,14 @@ const mockRepository = createMock<Repository>();
 const mockGetOccurrences: jest.Mock = On(mockRepository).get(
     method((mock) => mock.getOccurrences)
 );
+const mockGetTotals: jest.Mock = On(mockRepository).get(
+    method((mock) => mock.getTotals)
+);
 const domain = new QueryKeyphrasesDomain(mockRepository);
 
 beforeEach(() => {
     mockGetOccurrences.mockReset();
+    mockGetTotals.mockReset();
 });
 
 describe.each([
@@ -239,4 +244,63 @@ test("throws an error if an unexpected error occurs getting the keyphrases for a
     await expect(
         domain.queryKeyphrases(EXPECTED_BASE_URL, EXPECTED_PATH)
     ).rejects.toThrowError(expectedError);
+});
+
+describe("handles obtaining global totals", () => {
+    test("calls repository to get global totals given total constant as base URL", async () => {
+        mockGetTotals.mockResolvedValue([]);
+
+        await domain.queryKeyphrases(KeyphraseTableConstants.TotalKey);
+
+        expect(mockRepository.getTotals).toHaveBeenCalledTimes(1);
+        expect(mockRepository.getTotals).toHaveBeenCalledWith();
+    });
+
+    test("returns an empty array if no global totals stored", async () => {
+        mockGetTotals.mockResolvedValue([]);
+
+        const actual = await domain.queryKeyphrases(
+            KeyphraseTableConstants.TotalKey
+        );
+
+        expect(actual).toEqual([]);
+    });
+
+    test.each([
+        ["one is", [{ keyphrase: "wibble", occurrences: 12 }]],
+        [
+            "multiple are",
+            [
+                {
+                    keyphrase: "sphere",
+                    occurrences: 9,
+                },
+                {
+                    keyphrase: "code",
+                    occurrences: 14,
+                },
+            ],
+        ],
+    ])(
+        "returns stored global totals totals if %s stored",
+        async (message, totals) => {
+            mockGetTotals.mockResolvedValue(totals);
+
+            const actual = await domain.queryKeyphrases(
+                KeyphraseTableConstants.TotalKey
+            );
+
+            expect(actual).toEqual(totals);
+        }
+    );
+
+    test("throws an error if an unexpected error occurs getting the global totals", async () => {
+        const expectedError = new Error("test error");
+        mockGetTotals.mockRejectedValue(expectedError);
+
+        expect.assertions(1);
+        await expect(
+            domain.queryKeyphrases(KeyphraseTableConstants.TotalKey)
+        ).rejects.toThrowError(expectedError);
+    });
 });

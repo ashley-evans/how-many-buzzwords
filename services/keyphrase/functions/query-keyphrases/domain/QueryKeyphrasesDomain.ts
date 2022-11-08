@@ -1,4 +1,7 @@
-import { Repository } from "buzzword-keyphrase-keyphrase-repository-library";
+import {
+    Repository,
+    KeyphraseTableConstants,
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
     KeyphraseOccurrences,
@@ -21,11 +24,20 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         baseURL: string,
         pathname?: string
     ): Promise<PathKeyphraseOccurrences[] | KeyphraseOccurrences[]> {
-        const validatedURL = this.validateURL(baseURL, pathname);
+        if (baseURL === KeyphraseTableConstants.TotalKey) {
+            const totals = await this.repository.getTotals();
+            return totals.map((item) => ({
+                keyphrase: item.keyphrase,
+                occurrences: item.occurrences,
+            }));
+        }
+
+        const validatedBaseURL = this.validateBaseURL(baseURL);
         if (pathname) {
+            const validatedPath = this.validatePath(pathname);
             const stored = await this.repository.getOccurrences(
-                validatedURL.hostname,
-                validatedURL.pathname
+                validatedBaseURL,
+                validatedPath
             );
 
             return stored.map((item) => ({
@@ -34,9 +46,7 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
             }));
         }
 
-        const stored = await this.repository.getOccurrences(
-            validatedURL.hostname
-        );
+        const stored = await this.repository.getOccurrences(validatedBaseURL);
 
         return stored.map((item) => ({
             keyphrase: item.keyphrase,
@@ -45,13 +55,9 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }));
     }
 
-    private validateURL(baseURL: string, pathname?: string): URL {
+    private validateBaseURL(baseURL: string): string {
         let url = baseURL;
         if (!isNaN(parseInt(url))) {
-            throw new Error(INVALID_URL_ERROR);
-        }
-
-        if (pathname && !pathname.startsWith("/")) {
             throw new Error(INVALID_URL_ERROR);
         }
 
@@ -60,10 +66,18 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }
 
         try {
-            return new URL(pathname ? `${url}${pathname}` : url);
+            return new URL(url).hostname;
         } catch {
             throw new Error(INVALID_URL_ERROR);
         }
+    }
+
+    private validatePath(pathname: string): string {
+        if (pathname && !pathname.startsWith("/")) {
+            throw new Error(INVALID_URL_ERROR);
+        }
+
+        return pathname;
     }
 }
 
