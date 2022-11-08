@@ -3,16 +3,28 @@ schema {
 }
 
 type Query {
-    keyphrases(baseURL: ID!): [Keyphrase]!
+    keyphrases(baseURL: ID!, pathname: String): [KeyphraseOccurrence]!
 }
 
 interface Node {
     id: ID!
 }
 
-type Keyphrase implements Node {
+interface KeyphraseOccurrence {
+    id: ID!
+    keyphrase: String!
+    occurrences: Int!
+}
+
+type SiteOccurrence implements Node & KeyphraseOccurrence {
     id: ID!
     pathname: String!
+    keyphrase: String!
+    occurrences: Int!
+}
+
+type PathOccurrence implements Node & KeyphraseOccurrence {
+    id: ID!
     keyphrase: String!
     occurrences: Int!
 }

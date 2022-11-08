@@ -710,6 +710,8 @@ Resources:
             Description: Enables queries against keyphrases analyzed on websites
             Layers:
                 - Ref: KeyphraseRepositoryLibraryLayer
+            Timeout: 8
+            MemorySize: 1536
             Architectures:
                 - arm64
             Environment:
@@ -767,7 +769,7 @@ Resources:
                     "version": "2017-02-28",
                     "operation": "Invoke",
                     "payload": {
-                        "field": "urls",
+                        "field": "keyphrases",
                         "arguments": $utils.toJson($context.arguments)
                     }
                 }

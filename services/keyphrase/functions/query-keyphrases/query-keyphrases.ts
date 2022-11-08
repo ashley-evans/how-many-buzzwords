@@ -4,7 +4,7 @@ import {
     KeyphraseRepository,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
-import { Keyphrase, QueryKeyphrasesArgs } from "../../schemas/schema";
+import { KeyphraseOccurrence, QueryKeyphrasesArgs } from "../../schemas/schema";
 import QueryKeyphrasesAppSyncAdapter from "./adapters/QueryKeyphrasesAppSyncAdapter";
 import QueryKeyphrasesDomain from "./domain/QueryKeyphrasesDomain";
 
@@ -22,7 +22,7 @@ const adapter = new QueryKeyphrasesAppSyncAdapter(domain);
 
 async function handler(
     event: AppSyncResolverEvent<QueryKeyphrasesArgs>
-): Promise<Keyphrase[]> {
+): Promise<KeyphraseOccurrence[]> {
     return adapter.handleQuery(event);
 }
 

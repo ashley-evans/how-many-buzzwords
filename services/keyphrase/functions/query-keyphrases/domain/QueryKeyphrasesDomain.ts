@@ -1,19 +1,39 @@
 import { Repository } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
+    KeyphraseOccurrences,
     PathKeyphraseOccurrences,
     QueryKeyphrasesPort,
 } from "../ports/QueryKeyphrasesPort";
 
-const INVALID_BASE_URL_ERROR = "Invalid base URL provided.";
+const INVALID_URL_ERROR = "Invalid URL provided.";
 
 class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
     constructor(private repository: Repository) {}
 
+    queryKeyphrases(baseURL: string): Promise<PathKeyphraseOccurrences[]>;
+    queryKeyphrases(
+        baseURL: string,
+        pathname: string
+    ): Promise<KeyphraseOccurrences[]>;
+
     async queryKeyphrases(
-        baseURL: string
-    ): Promise<PathKeyphraseOccurrences[]> {
-        const validatedURL = this.validateURL(baseURL);
+        baseURL: string,
+        pathname?: string
+    ): Promise<PathKeyphraseOccurrences[] | KeyphraseOccurrences[]> {
+        const validatedURL = this.validateURL(baseURL, pathname);
+        if (pathname) {
+            const stored = await this.repository.getOccurrences(
+                validatedURL.hostname,
+                validatedURL.pathname
+            );
+
+            return stored.map((item) => ({
+                keyphrase: item.keyphrase,
+                occurrences: item.occurrences,
+            }));
+        }
+
         const stored = await this.repository.getOccurrences(
             validatedURL.hostname
         );
@@ -25,10 +45,14 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }));
     }
 
-    private validateURL(baseURL: string): URL {
+    private validateURL(baseURL: string, pathname?: string): URL {
         let url = baseURL;
         if (!isNaN(parseInt(url))) {
-            throw new Error(INVALID_BASE_URL_ERROR);
+            throw new Error(INVALID_URL_ERROR);
+        }
+
+        if (pathname && !pathname.startsWith("/")) {
+            throw new Error(INVALID_URL_ERROR);
         }
 
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
@@ -36,9 +60,9 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }
 
         try {
-            return new URL(url);
+            return new URL(pathname ? `${url}${pathname}` : url);
         } catch {
-            throw new Error(INVALID_BASE_URL_ERROR);
+            throw new Error(INVALID_URL_ERROR);
         }
     }
 }
