@@ -45,7 +45,10 @@ test("calls the port with the provided base URL", async () => {
     await adapter.handleQuery(VALID_BASE_URL_EVENT);
 
     expect(mockPort.queryKeyphrases).toHaveBeenCalledTimes(1);
-    expect(mockPort.queryKeyphrases).toHaveBeenCalledWith(VALID_BASE_URL);
+    expect(mockPort.queryKeyphrases).toHaveBeenCalledWith(
+        VALID_BASE_URL,
+        undefined
+    );
 });
 
 test.each([

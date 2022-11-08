@@ -15,12 +15,6 @@ const INVALID_URL_ERROR = "Invalid URL provided.";
 class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
     constructor(private repository: Repository) {}
 
-    queryKeyphrases(baseURL: string): Promise<PathKeyphraseOccurrences[]>;
-    queryKeyphrases(
-        baseURL: string,
-        pathname: string
-    ): Promise<DomainKeyphraseOccurrences[]>;
-
     async queryKeyphrases(
         baseURL: string,
         pathname?: string
