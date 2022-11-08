@@ -1,10 +1,11 @@
 import {
     Repository,
     KeyphraseTableConstants,
+    KeyphraseOccurrences,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 
 import {
-    KeyphraseOccurrences,
+    KeyphraseOccurrences as DomainKeyphraseOccurrences,
     PathKeyphraseOccurrences,
     QueryKeyphrasesPort,
 } from "../ports/QueryKeyphrasesPort";
@@ -18,32 +19,29 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
     queryKeyphrases(
         baseURL: string,
         pathname: string
-    ): Promise<KeyphraseOccurrences[]>;
+    ): Promise<DomainKeyphraseOccurrences[]>;
 
     async queryKeyphrases(
         baseURL: string,
         pathname?: string
-    ): Promise<PathKeyphraseOccurrences[] | KeyphraseOccurrences[]> {
+    ): Promise<PathKeyphraseOccurrences[] | DomainKeyphraseOccurrences[]> {
         if (baseURL === KeyphraseTableConstants.TotalKey) {
             const totals = await this.repository.getTotals();
-            return totals.map((item) => ({
-                keyphrase: item.keyphrase,
-                occurrences: item.occurrences,
-            }));
+            return this.mapKeyphraseOccurrences(totals);
         }
 
         const validatedBaseURL = this.validateBaseURL(baseURL);
-        if (pathname) {
+        if (pathname === KeyphraseTableConstants.TotalKey) {
+            const totals = await this.repository.getTotals(validatedBaseURL);
+            return this.mapKeyphraseOccurrences(totals);
+        } else if (pathname) {
             const validatedPath = this.validatePath(pathname);
             const stored = await this.repository.getOccurrences(
                 validatedBaseURL,
                 validatedPath
             );
 
-            return stored.map((item) => ({
-                keyphrase: item.keyphrase,
-                occurrences: item.occurrences,
-            }));
+            return this.mapKeyphraseOccurrences(stored);
         }
 
         const stored = await this.repository.getOccurrences(validatedBaseURL);
@@ -78,6 +76,15 @@ class QueryKeyphrasesDomain implements QueryKeyphrasesPort {
         }
 
         return pathname;
+    }
+
+    private mapKeyphraseOccurrences(
+        occurrences: KeyphraseOccurrences[]
+    ): DomainKeyphraseOccurrences[] {
+        return occurrences.map((occurrence) => ({
+            keyphrase: occurrence.keyphrase,
+            occurrences: occurrence.occurrences,
+        }));
     }
 }
 

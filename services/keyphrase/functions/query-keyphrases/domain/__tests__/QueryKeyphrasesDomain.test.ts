@@ -281,18 +281,15 @@ describe("handles obtaining global totals", () => {
                 },
             ],
         ],
-    ])(
-        "returns stored global totals totals if %s stored",
-        async (message, totals) => {
-            mockGetTotals.mockResolvedValue(totals);
+    ])("returns stored global totals if %s stored", async (message, totals) => {
+        mockGetTotals.mockResolvedValue(totals);
 
-            const actual = await domain.queryKeyphrases(
-                KeyphraseTableConstants.TotalKey
-            );
+        const actual = await domain.queryKeyphrases(
+            KeyphraseTableConstants.TotalKey
+        );
 
-            expect(actual).toEqual(totals);
-        }
-    );
+        expect(actual).toEqual(totals);
+    });
 
     test("throws an error if an unexpected error occurs getting the global totals", async () => {
         const expectedError = new Error("test error");
@@ -301,6 +298,72 @@ describe("handles obtaining global totals", () => {
         expect.assertions(1);
         await expect(
             domain.queryKeyphrases(KeyphraseTableConstants.TotalKey)
+        ).rejects.toThrowError(expectedError);
+    });
+});
+
+describe("handles obtaining site totals", () => {
+    test("calls repository to get site totals given total constant as pathname", async () => {
+        mockGetTotals.mockResolvedValue([]);
+
+        await domain.queryKeyphrases(
+            EXPECTED_BASE_URL,
+            KeyphraseTableConstants.TotalKey
+        );
+
+        expect(mockRepository.getTotals).toHaveBeenCalledTimes(1);
+        expect(mockRepository.getTotals).toHaveBeenCalledWith(
+            EXPECTED_BASE_URL
+        );
+    });
+
+    test("returns an empty array if no site totals stored", async () => {
+        mockGetTotals.mockResolvedValue([]);
+
+        const actual = await domain.queryKeyphrases(
+            EXPECTED_BASE_URL,
+            KeyphraseTableConstants.TotalKey
+        );
+
+        expect(actual).toEqual([]);
+    });
+
+    test.each([
+        ["one is", [{ keyphrase: "wibble", occurrences: 12 }]],
+        [
+            "multiple are",
+            [
+                {
+                    keyphrase: "sphere",
+                    occurrences: 9,
+                },
+                {
+                    keyphrase: "code",
+                    occurrences: 14,
+                },
+            ],
+        ],
+    ])("returns stored site totals if %s stored", async (message, totals) => {
+        mockGetTotals.mockResolvedValue(totals);
+
+        const actual = await domain.queryKeyphrases(
+            EXPECTED_BASE_URL,
+            KeyphraseTableConstants.TotalKey
+        );
+
+        expect(actual).toEqual(totals);
+    });
+
+    test("throws an error if an unexpected error occurs getting the site totals", async () => {
+        const expectedError = new Error("test error");
+        mockGetTotals.mockRejectedValue(expectedError);
+
+        expect.assertions(1);
+        await expect(
+            domain.queryKeyphrases(
+                EXPECTED_BASE_URL,
+                KeyphraseTableConstants.TotalKey
+            )
         ).rejects.toThrowError(expectedError);
     });
 });
