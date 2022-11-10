@@ -20,7 +20,7 @@ jobs:
         outputs:
             service: ${{ steps.filter.outputs.service }}
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: dorny/paths-filter@v2
               id: filter
               with:
@@ -34,8 +34,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -48,8 +48,8 @@ jobs:
     audit:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -64,8 +64,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -78,8 +78,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -99,8 +99,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: scottbrenner/cfn-lint-action@v2
+            - uses: actions/checkout@v3
+            - uses: scottbrenner/cfn-lint-action@v2.2.8
             - name: Validate Templates
               run: |
                   xargs -r0a <(find ${{ inputs.path }} -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002'
@@ -109,8 +109,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -129,8 +129,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -142,7 +142,7 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Setup DynamoDB local
-              uses: rrainn/dynamodb-action@v2.0.1
+              uses: rrainn/dynamodb-action@v3.0.0
               with:
                   port: 8000
                   cors: "*"
@@ -167,9 +167,9 @@ jobs:
             contents: read
             packages: read
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"

@@ -11,7 +11,7 @@ jobs:
         outputs:
             package: ${{ steps.filter.outputs.package }}
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: dorny/paths-filter@v2
               id: filter
               with:
@@ -24,8 +24,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.package == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             - name: Compile Package
@@ -34,8 +34,8 @@ jobs:
     audit:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             - name: Audit Dependencies
@@ -46,8 +46,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.package == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             - name: Run formatters
@@ -58,8 +58,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.package == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             - name: Install Dependencies
@@ -75,8 +75,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.package == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             - name: Install Dependencies
@@ -91,8 +91,8 @@ jobs:
         needs: [compile, audit, format, lint, unit-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
