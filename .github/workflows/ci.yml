@@ -41,7 +41,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
-            - uses: scottbrenner/cfn-lint-action@v2
+            - uses: scottbrenner/cfn-lint-action@v2.2.8
             - name: Validate Templates
               run: |
                   xargs -n1 -r0a <(find ./templates/ -name *-template.yml -print0) cfn-lint

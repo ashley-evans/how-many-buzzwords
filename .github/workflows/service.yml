@@ -100,7 +100,7 @@ jobs:
         if: ${{ needs.changed.outputs.service == 'true' }}
         steps:
             - uses: actions/checkout@v3
-            - uses: scottbrenner/cfn-lint-action@v2
+            - uses: scottbrenner/cfn-lint-action@v2.2.8
             - name: Validate Templates
               run: |
                   xargs -r0a <(find ${{ inputs.path }} -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002'
