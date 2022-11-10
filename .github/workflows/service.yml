@@ -142,7 +142,7 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Setup DynamoDB local
-              uses: rrainn/dynamodb-action@v2.0.1
+              uses: rrainn/dynamodb-action@v3
               with:
                   port: 8000
                   cors: "*"
