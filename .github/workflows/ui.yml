@@ -14,7 +14,7 @@ jobs:
         outputs:
             ui: ${{ steps.filter.outputs.ui }}
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: dorny/paths-filter@v2
               id: filter
               with:
@@ -27,8 +27,8 @@ jobs:
     audit:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -43,8 +43,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -59,8 +59,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -73,8 +73,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -93,8 +93,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -112,8 +112,8 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
@@ -143,9 +143,9 @@ jobs:
             contents: read
             packages: read
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - uses: actions/setup-python@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
