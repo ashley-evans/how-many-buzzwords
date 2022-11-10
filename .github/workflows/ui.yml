@@ -144,14 +144,14 @@ jobs:
             packages: read
         steps:
             - uses: actions/checkout@v3
-            - uses: actions/setup-python@v2
+            - uses: actions/setup-python@v4
             - uses: actions/setup-node@v3
               with:
                   node-version: "16"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
-            - uses: aws-actions/setup-sam@v1
-            - uses: aws-actions/configure-aws-credentials@v1
+            - uses: aws-actions/setup-sam@v2
+            - uses: aws-actions/configure-aws-credentials@v1-node16
               with:
                   aws-region: eu-west-2
                   role-to-assume: ${{ secrets.DEPLOY_ROLE }}
