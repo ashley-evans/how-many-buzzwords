@@ -62,3 +62,13 @@ test.each([
 
     expect(result).toEqual("This is actual text!");
 });
+
+test("returns text with structure respected given multiple paragraphs", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "multi-paragraph.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual(
+        `First paragraph\n\nSecond paragraph\n\nThird paragraph`
+    );
+});

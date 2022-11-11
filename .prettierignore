@@ -25,3 +25,7 @@ schema.d.ts
 test-results/
 playwright-report/
 **/playwright/.cache/
+
+# Test Assets
+
+whitespace.html
