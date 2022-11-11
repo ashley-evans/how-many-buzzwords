@@ -62,3 +62,47 @@ test.each([
 
     expect(result).toEqual("This is actual text!");
 });
+
+test("returns text with structure respected given multiple paragraphs", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "multi-paragraph.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual(
+        "First paragraph\n\nSecond paragraph\n\nThird paragraph"
+    );
+});
+
+test("ignores href of any links in page", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "link.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("Ignores href text");
+});
+
+test("ignores src of any image on page", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "image-source.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("Ignores image source");
+});
+
+test("adds no text if no image alt available", () => {
+    const html = readFile(path.join(ASSET_FOLDER, "no-image-alt.html"));
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("No image alt provided");
+});
+
+test("adds whitespace between images alt texts on same line", () => {
+    const html = readFile(
+        path.join(ASSET_FOLDER, "multi-img-alt-same-line.html")
+    );
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("First Second");
+});

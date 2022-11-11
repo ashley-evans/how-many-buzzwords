@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "dependencies": {
         "@ashley-evans/buzzword-crawl-client": "1.0.0",
-        "htmlparser2": "8.0.1"
+        "html-to-text": "8.2.1"
+    },
+    "devDependencies": {
+        "@types/html-to-text": "^8.1.1"
     }
 }
