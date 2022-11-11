@@ -9,7 +9,7 @@ class HTMLParser implements HTMLParsingProvider {
                 noSourceImageFormatter: function (elem, _walk, builder) {
                     const attribs = elem.attribs || {};
                     if (attribs.alt) {
-                        builder.addInline(attribs.alt);
+                        builder.addInline(`${attribs.alt} `);
                     }
                 },
             },

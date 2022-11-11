@@ -96,3 +96,13 @@ test("adds no text if no image alt available", () => {
 
     expect(result).toEqual("No image alt provided");
 });
+
+test("adds whitespace between images alt texts on same line", () => {
+    const html = readFile(
+        path.join(ASSET_FOLDER, "multi-img-alt-same-line.html")
+    );
+
+    const result = parser.parseHTML(html);
+
+    expect(result).toEqual("First Second");
+});
