@@ -8,5 +8,6 @@ module.exports = {
     setupFilesAfterEnv: ["<rootDir>/config/jest-setup.ts"],
     moduleNameMapper: {
         "\\.(css|less)$": "identity-obj-proxy",
+        uuid: require.resolve("uuid"), // See: https://github.com/uuidjs/uuid/issues/451. Required until dependencies update to uuid v9+
     },
 };
