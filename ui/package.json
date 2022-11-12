@@ -10,7 +10,7 @@
         "ajv": "8.8.2",
         "antd": "4.21.7",
         "aws-appsync-auth-link": "3.0.7",
-        "aws-appsync-subscription-link": "3.1.0",
+        "aws-appsync-subscription-link": "3.1.1",
         "graphql": "16.5.0",
         "react": "18.1.0",
         "react-dom": "18.1.0",
