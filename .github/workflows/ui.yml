@@ -30,7 +30,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Audit Dependencies
@@ -46,7 +46,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Build UI
@@ -62,7 +62,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Run formatters
@@ -76,7 +76,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
@@ -96,7 +96,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
@@ -115,7 +115,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - name: Install Dependencies
@@ -149,7 +149,7 @@ jobs:
                   python-version: "3.8"
             - uses: actions/setup-node@v3
               with:
-                  node-version: "16"
+                  node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v2
