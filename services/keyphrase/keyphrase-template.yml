@@ -18,7 +18,7 @@ Resources:
             LayerName: !Sub KeyphraseNodeDependencyLayer-${EnvironmentNameSuffix}
             Description: Common keyphrase service node module layer
             CompatibleRuntimes:
-                - nodejs16.x
+                - nodejs18.x
             ContentUri: ./functions
             RetentionPolicy: Delete
         Metadata:
@@ -29,7 +29,7 @@ Resources:
             LayerName: !Sub KeyphraseRepositoryLibraryLayer-${EnvironmentNameSuffix}
             Description: Library layer enabling typed access to Keyphrase Table in DynamoDB
             CompatibleRuntimes:
-                - nodejs16.x
+                - nodejs18.x
             ContentUri: ./libs/keyphrase-repository-library
             RetentionPolicy: Delete
         Metadata:
@@ -40,7 +40,7 @@ Resources:
             LayerName: !Sub ActiveConnectionsRepositoryLibraryLayer-${EnvironmentNameSuffix}
             Description: Library layer enabling typed access to Active Connections Table in DynamoDB
             CompatibleRuntimes:
-                - nodejs16.x
+                - nodejs18.x
             ContentUri: ./libs/active-connections-repository-library
             RetentionPolicy: Delete
         Metadata:
@@ -51,7 +51,7 @@ Resources:
             LayerName: !Sub WebSocketClientLibraryLayer-${EnvironmentNameSuffix}
             Description: Library layer containing web socket API client implementations
             CompatibleRuntimes:
-                - nodejs16.x
+                - nodejs18.x
             ContentUri: ./libs/web-socket-client-library
             RetentionPolicy: Delete
         Metadata:
@@ -62,7 +62,7 @@ Resources:
             LayerName: !Sub TextRepositoryLibraryLayer-${EnvironmentNameSuffix}
             Description: Library layer containing S3 repository client for page parsed text
             CompatibleRuntimes:
-                - nodejs16.x
+                - nodejs18.x
             ContentUri: ./libs/text-repository-library
             RetentionPolicy: Delete
         Metadata:
@@ -134,7 +134,7 @@ Resources:
         Properties:
             Handler: find-keyphrases.handler
             Role: !GetAtt FindKeyphrasesRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/find-keyphrases
             Description: Finds the top keywords and phrases in parsed HTML content
             Layers:
@@ -295,7 +295,7 @@ Resources:
         Properties:
             Handler: connection-manager.handler
             Role: !GetAtt ConnectionManagerRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/connection-manager
             Description: Manages active web socket connections
             Layers:
@@ -418,7 +418,7 @@ Resources:
         Properties:
             Handler: new-connection.handler
             Role: !GetAtt NewConnectionRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/new-connection
             Description: Provides new connections with current database state
             Timeout: 10
@@ -486,7 +486,7 @@ Resources:
         Properties:
             Handler: update-connections.handler
             Role: !GetAtt UpdateConnectionsRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/update-connections
             Description: Provides existing connections with relevant database updates
             Timeout: 10
@@ -541,7 +541,7 @@ Resources:
         Properties:
             Handler: scrape-url.handler
             Role: !GetAtt ScrapeURLRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/scrape-url
             Description: Obtains the content for a given URL, scrapes all text from page then stores result in S3
             Layers:
@@ -593,7 +593,7 @@ Resources:
         Properties:
             Handler: count-occurrences.handler
             Role: !GetAtt CountOccurrencesRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/count-occurrences
             Description: Obtains the content for a given URL, counts all occurrences of the provided keyphrases storing the result in DynamoDB
             Layers:
@@ -650,7 +650,7 @@ Resources:
         Properties:
             Handler: total-occurrences.handler
             Role: !GetAtt TotalOccurrencesRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/total-occurrences
             Description: Aggregates keyphrase occurrences at a site and global level, storing aggregated results in DynamoDB
             Layers:
@@ -705,7 +705,7 @@ Resources:
         Properties:
             Handler: query-keyphrases.handler
             Role: !GetAtt QueryKeyphrasesRole.Arn
-            Runtime: nodejs16.x
+            Runtime: nodejs18.x
             CodeUri: ./functions/query-keyphrases
             Description: Enables queries against keyphrases analyzed on websites
             Layers:
