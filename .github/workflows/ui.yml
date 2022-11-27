@@ -126,6 +126,7 @@ jobs:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Browser Component Tests
               run: |
+                  export NODE_OPTIONS=--max_old_space_size=4096
                   npm --prefix ${{ inputs.path }} run test-ct
             - uses: actions/upload-artifact@v3
               if: always()
