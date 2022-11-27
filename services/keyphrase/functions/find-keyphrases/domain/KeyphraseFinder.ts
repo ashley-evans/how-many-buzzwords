@@ -1,4 +1,8 @@
 import { TextRepository } from "buzzword-keyphrase-text-repository-library";
+import { retext } from "retext";
+import retextPos from "retext-pos";
+import retextKeywords from "retext-keywords";
+import { toString } from "nlcst-to-string";
 
 import KeyphrasesPort from "../ports/KeyphrasePort.js";
 
@@ -9,11 +13,6 @@ class KeyphraseFinder implements KeyphrasesPort {
         const uniqueKeyphrases = new Set<string>();
         const content = await this.parsedContentRepository.getPageText(url);
         if (content) {
-            const { retext } = await import("retext");
-            const retextPos = (await import("retext-pos")).default;
-            const retextKeywords = (await import("retext-keywords")).default;
-            const { toString } = await import("nlcst-to-string");
-
             console.log(`Starting keyphrase analysis for: ${url.toString()}`);
             const parsedFile = await retext()
                 .use(retextPos)
