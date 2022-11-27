@@ -13,3 +13,7 @@
 .results-header-row .ant-col:last-child {
     justify-content: flex-end;
 }
+
+.ant-empty-description > :first-child {
+    color: white;
+}

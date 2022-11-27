@@ -125,6 +125,8 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Browser Component Tests
+              env:
+                  NODE_OPTIONS: "--max_old_space_size=4096"
               run: |
                   npm --prefix ${{ inputs.path }} run test-ct
             - uses: actions/upload-artifact@v3

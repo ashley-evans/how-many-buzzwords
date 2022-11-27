@@ -2,11 +2,14 @@ import React from "react";
 import { ApolloProvider } from "@apollo/client";
 import { Auth } from "@aws-amplify/auth";
 import { createRoot } from "react-dom/client";
+import { ConfigProvider, theme } from "antd";
 
 import CrawlGraphQLClientFactory from "./clients/factories/CrawlGraphQLClientFactory";
 import KeyphraseServiceWSClientFactory from "./clients/factories/KeyphraseServiceWSClientFactory";
 
 import App from "./components/App";
+
+import "antd/dist/reset.css";
 
 if (!process.env.REGION) {
     throw new Error("Application misconfigured: Missing AWS region");
@@ -53,7 +56,11 @@ if (!container) {
 
 const root = createRoot(container);
 root.render(
-    <ApolloProvider client={factory.createClient()}>
-        <App keyphraseServiceClientFactory={keyphraseServiceClientFactory} />
-    </ApolloProvider>
+    <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+        <ApolloProvider client={factory.createClient()}>
+            <App
+                keyphraseServiceClientFactory={keyphraseServiceClientFactory}
+            />
+        </ApolloProvider>
+    </ConfigProvider>
 );

@@ -963,7 +963,7 @@ describe("given valid encoded url", () => {
             );
             fireEvent.click(
                 within(table).getByRole("columnheader", {
-                    name: EXPECTED_OCCURRENCE_HEADER_NAME,
+                    name: "this column's title is Occurrences,this column is sortable",
                 })
             );
             const rows = getAllByRole("row");

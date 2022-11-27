@@ -8,8 +8,6 @@ import SiteLayout from "./SiteLayout";
 const Search = React.lazy(() => import("./Search"));
 const Results = React.lazy(() => import("./Results"));
 
-import "../css/App.css";
-
 type AppProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
 };
