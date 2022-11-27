@@ -1,11 +1,11 @@
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
 
-import KeyphrasesPort from "../ports/KeyphrasePort";
+import KeyphrasesPort from "../ports/KeyphrasePort.js";
 import {
     KeyphrasesEvent,
     KeyphrasePrimaryAdapter,
-} from "../ports/KeyphrasePrimaryAdapter";
+} from "../ports/KeyphrasePrimaryAdapter.js";
 
 const schema: JSONSchemaType<KeyphrasesEvent> = {
     type: "object",

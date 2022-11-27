@@ -1,8 +1,8 @@
 import { mock } from "jest-mock-extended";
 
-import KeyphrasesPort from "../../ports/KeyphrasePort";
-import { KeyphrasesEvent } from "../../ports/KeyphrasePrimaryAdapter";
-import KeyphraseSQSAdapter from "../KeyphraseEventAdapter";
+import KeyphrasesPort from "../../ports/KeyphrasePort.js";
+import { KeyphrasesEvent } from "../../ports/KeyphrasePrimaryAdapter.js";
+import KeyphraseSQSAdapter from "../KeyphraseEventAdapter.js";
 
 const mockKeyphrasesPort = mock<KeyphrasesPort>();
 
