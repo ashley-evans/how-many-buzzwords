@@ -1,3 +1,5 @@
+import { jest } from "@jest/globals";
+
 jest.mock("buzzword-keyphrase-text-repository-library");
 
 beforeEach(() => {
@@ -9,6 +11,6 @@ test("throws error if parsed content S3 bucket name is undefined", async () => {
 
     expect.assertions(1);
     await expect(async () => {
-        await import("../find-keyphrases");
+        await import("../find-keyphrases.js");
     }).rejects.toThrow(new Error("Parsed Content S3 bucket has not been set."));
 });

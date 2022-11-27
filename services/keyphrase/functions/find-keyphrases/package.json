@@ -1,10 +1,11 @@
 {
     "name": "buzzword-keyphrase-find-keyphrases-lambda",
     "version": "1.0.0",
+    "type": "module",
     "dependencies": {
-        "nlcst-to-string": "2.0.4",
-        "retext": "7.0.1",
-        "retext-keywords": "6.0.0",
-        "retext-pos": "3.0.0"
+        "nlcst-to-string": "3.1.0",
+        "retext": "8.1.0",
+        "retext-keywords": "7.2.0",
+        "retext-pos": "4.1.0"
     }
 }

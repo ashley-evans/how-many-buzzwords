@@ -3,9 +3,9 @@ import {
     TextS3Repository,
 } from "buzzword-keyphrase-text-repository-library";
 
-import EventAdapter from "./adapters/KeyphraseEventAdapter";
-import KeyphraseFinder from "./domain/KeyphraseFinder";
-import { KeyphrasesEvent } from "./ports/KeyphrasePrimaryAdapter";
+import EventAdapter from "./adapters/KeyphraseEventAdapter.js";
+import KeyphraseFinder from "./domain/KeyphraseFinder.js";
+import { KeyphrasesEvent } from "./ports/KeyphrasePrimaryAdapter.js";
 
 function createParsedContentRepository(): TextRepository {
     if (!process.env.PARSED_CONTENT_S3_BUCKET_NAME) {

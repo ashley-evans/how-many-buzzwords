@@ -14,4 +14,8 @@ module.exports = {
         },
     },
     setupFiles: ["<rootDir>/config/ts-auto-mock-config.ts"],
+    testPathIgnorePatterns: [
+        "/node_modules/",
+        "<rootDir>/functions/find-keyphrases/",
+    ],
 };

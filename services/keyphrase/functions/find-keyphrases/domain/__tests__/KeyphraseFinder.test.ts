@@ -1,7 +1,8 @@
 import { mock } from "jest-mock-extended";
 import { TextRepository } from "buzzword-keyphrase-text-repository-library";
+import { jest } from "@jest/globals";
 
-import KeyphraseFinder from "../KeyphraseFinder";
+import KeyphraseFinder from "../KeyphraseFinder.js";
 
 const VALID_URL = new URL("https://www.example.com/");
 const TERM_CONTENT =
