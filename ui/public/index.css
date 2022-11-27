@@ -1,0 +1,7 @@
+body > div#root {
+    height: 100%;
+}
+
+body > div#root > :first-child {
+    height: 100%;
+}
