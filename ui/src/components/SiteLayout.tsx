@@ -7,7 +7,7 @@ import "../css/SiteLayout.css";
 
 function SiteLayout() {
     return (
-        <Layout>
+        <Layout style={{ height: "100vh", overflow: "auto" }}>
             <Layout.Header className="site-layout-header">
                 <h1>How many buzzwords</h1>
                 <Button
