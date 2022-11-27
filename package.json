@@ -58,7 +58,7 @@
         "ci": "npx lerna bootstrap --ci --ignore=how-many-buzzwords-ui && npm --prefix ./ui/ run ci",
         "clean": "rm -rf `find . -type d -name node_modules`",
         "test": "npm run test:unit && npm run test:integration",
-        "test:unit": "node node_modules/.bin/jest --verbose --group=-integration",
+        "test:unit": "node --experimental-vm-modules node_modules/.bin/jest --verbose --group=-integration",
         "test:integration": "node node_modules/.bin/jest --verbose --group=integration",
         "prepare": "husky install"
     }
