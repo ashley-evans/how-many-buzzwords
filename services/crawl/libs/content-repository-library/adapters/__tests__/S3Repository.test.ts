@@ -7,6 +7,7 @@ import {
     PutObjectCommandOutput,
     S3Client,
 } from "@aws-sdk/client-s3";
+import { sdkStreamMixin } from "@aws-sdk/util-stream-node";
 import { SinonSpyCall } from "sinon";
 import { Readable } from "stream";
 
@@ -49,7 +50,7 @@ describe.each([
         beforeAll(async () => {
             mockS3Client.reset();
             const mockResponse = mock<GetObjectCommandOutput>();
-            mockResponse.Body = Readable.from([VALID_CONTENT]);
+            mockResponse.Body = sdkStreamMixin(Readable.from([VALID_CONTENT]));
             mockS3Client.on(GetObjectCommand).resolves(mockResponse);
 
             response = await repository.getPageContent(url);

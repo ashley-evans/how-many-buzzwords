@@ -5,7 +5,6 @@ import {
     PutObjectCommandInput,
     PutObjectCommand,
 } from "@aws-sdk/client-s3";
-import { Readable } from "stream";
 
 import ContentRepository from "../ports/ContentRepository";
 
@@ -23,7 +22,11 @@ class S3Repository implements ContentRepository {
         };
 
         const response = await this.client.send(new GetObjectCommand(params));
-        return this.convertStreamToString(response.Body as Readable);
+        if (!response.Body) {
+            throw "No content returned from S3";
+        }
+
+        return response.Body.transformToString();
     }
 
     async storePageContent(url: URL, content: string): Promise<boolean> {
@@ -58,22 +61,6 @@ class S3Repository implements ContentRepository {
         }
 
         return `${storagePath}.html`;
-    }
-
-    private async convertStreamToString(stream?: Readable): Promise<string> {
-        if (!stream) {
-            throw "No content returned from S3";
-        }
-
-        return new Promise((resolve, reject) => {
-            const chunks: Buffer[] = [];
-
-            stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-            stream.on("error", reject);
-            stream.on("end", () => {
-                resolve(Buffer.concat(chunks).toString("utf-8"));
-            });
-        });
     }
 }
 

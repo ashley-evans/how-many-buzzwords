@@ -7,6 +7,7 @@ import {
     S3Client,
 } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
+import { sdkStreamMixin } from "@aws-sdk/util-stream-node";
 
 import TextS3Repository from "../TextS3Repository";
 
@@ -19,7 +20,7 @@ const repository = new TextS3Repository(BUCKET_NAME);
 
 function createResponse(text: string): GetObjectCommandOutput {
     const response = mock<GetObjectCommandOutput>();
-    response.Body = Readable.from([text]);
+    response.Body = sdkStreamMixin(Readable.from([text]));
     return response;
 }
 
