@@ -6,7 +6,7 @@
         "@ant-design/plots": "1.2.1",
         "@apollo/client": "3.6.9",
         "@ashley-evans/buzzword-object-validator": "1.0.0",
-        "@aws-amplify/auth": "4.5.9",
+        "@aws-amplify/auth": "5.0.4",
         "ajv": "8.8.2",
         "antd": "5.0.2",
         "aws-appsync-auth-link": "3.0.7",
