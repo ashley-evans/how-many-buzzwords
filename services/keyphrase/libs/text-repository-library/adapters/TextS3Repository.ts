@@ -5,7 +5,6 @@ import {
     PutObjectCommandInput,
     PutObjectCommand,
 } from "@aws-sdk/client-s3";
-import { Readable } from "stream";
 
 import TextRepository from "../ports/TextRepository";
 
@@ -23,7 +22,11 @@ class TextS3Repository implements TextRepository {
         };
 
         const response = await this.client.send(new GetObjectCommand(params));
-        return this.convertStreamToString(response.Body as Readable);
+        if (!response.Body) {
+            throw "No data returned from S3";
+        }
+
+        return response.Body.transformToString();
     }
 
     async storePageText(url: URL, text: string): Promise<boolean> {
@@ -58,22 +61,6 @@ class TextS3Repository implements TextRepository {
         }
 
         return `${storagePath}.txt`;
-    }
-
-    private async convertStreamToString(stream?: Readable): Promise<string> {
-        if (!stream) {
-            throw "No data returned from S3";
-        }
-
-        return new Promise((resolve, reject) => {
-            const chunks: Buffer[] = [];
-
-            stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-            stream.on("error", reject);
-            stream.on("end", () => {
-                resolve(Buffer.concat(chunks).toString("utf-8"));
-            });
-        });
     }
 }
 
