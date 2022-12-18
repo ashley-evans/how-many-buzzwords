@@ -34,13 +34,15 @@ function createExpectedOccurrenceItem(
 function createOccurrence(
     url: URL,
     keyphrase: string,
-    occurrences: number
+    occurrences: number,
+    aggregated: boolean
 ): SiteKeyphraseOccurrences {
     return {
         baseURL: url.hostname,
         pathname: url.pathname,
         keyphrase,
         occurrences,
+        aggregated,
     };
 }
 
@@ -84,13 +86,22 @@ function createRecord(
     pk?: string,
     sk?: string,
     newOccurrences?: number | string,
-    oldOccurrences?: number | string
+    oldOccurrences?: number | string,
+    newAggregated?: boolean,
+    oldAggregated?: boolean
 ): DynamoDBRecord {
     const record: DynamoDBRecord = {
         eventName,
     };
 
-    if (pk || sk || newOccurrences || oldOccurrences) {
+    if (
+        pk ||
+        sk ||
+        newOccurrences ||
+        oldOccurrences ||
+        newAggregated ||
+        oldAggregated
+    ) {
         record.dynamodb = {
             Keys: {
                 ...(pk && {
@@ -104,18 +115,32 @@ function createRecord(
                     },
                 }),
             },
-            ...(newOccurrences && {
+            ...((newOccurrences || newAggregated) && {
                 NewImage: {
-                    [KeyphraseTableNonKeyFields.Occurrences]: {
-                        N: newOccurrences.toString(),
-                    },
+                    ...(newOccurrences && {
+                        [KeyphraseTableNonKeyFields.Occurrences]: {
+                            N: newOccurrences.toString(),
+                        },
+                    }),
+                    ...(newAggregated != undefined && {
+                        [KeyphraseTableNonKeyFields.Aggregated]: {
+                            BOOL: newAggregated,
+                        },
+                    }),
                 },
             }),
-            ...(oldOccurrences && {
+            ...((oldOccurrences || oldAggregated) && {
                 OldImage: {
-                    [KeyphraseTableNonKeyFields.Occurrences]: {
-                        N: oldOccurrences.toString(),
-                    },
+                    ...(oldOccurrences && {
+                        [KeyphraseTableNonKeyFields.Occurrences]: {
+                            N: oldOccurrences.toString(),
+                        },
+                    }),
+                    ...(oldAggregated != undefined && {
+                        [KeyphraseTableNonKeyFields.Aggregated]: {
+                            BOOL: oldAggregated,
+                        },
+                    }),
                 },
             }),
         };
@@ -133,7 +158,9 @@ function createOccurrenceInsertRecord(
         "INSERT",
         url.hostname,
         createSortKey(url.pathname, keyphrase),
-        occurrences
+        occurrences,
+        undefined,
+        false
     );
 }
 
@@ -141,14 +168,18 @@ function createOccurrenceModifyRecord(
     url: URL,
     keyphrase: string,
     newOccurrences: number,
-    oldOccurrences: number
+    oldOccurrences: number,
+    newAggregated?: boolean,
+    oldAggregated?: boolean
 ): DynamoDBRecord {
     return createRecord(
         "MODIFY",
         url.hostname,
         createSortKey(url.pathname, keyphrase),
         newOccurrences,
-        oldOccurrences
+        oldOccurrences,
+        newAggregated,
+        oldAggregated
     );
 }
 
@@ -290,7 +321,7 @@ describe.each([
 );
 
 describe("given an event with both valid and invalid insert occurrence records", () => {
-    const expected = createOccurrence(VALID_URL, "test", 15);
+    const expected = createOccurrence(VALID_URL, "test", 15, false);
     const event = createEvent([
         createRecord("INSERT", "test", createSortKey("test", "test")),
         createOccurrenceInsertRecord(
@@ -317,12 +348,12 @@ describe("given an event with both valid and invalid insert occurrence records",
 });
 
 describe.each([
-    ["a single", [createOccurrence(VALID_URL, "test", 15)]],
+    ["a single", [createOccurrence(VALID_URL, "test", 15, false)]],
     [
         "multiple",
         [
-            createOccurrence(VALID_URL, "test", 15),
-            createOccurrence(VALID_URL, "dyson", 16),
+            createOccurrence(VALID_URL, "test", 15, false),
+            createOccurrence(VALID_URL, "dyson", 16, false),
         ],
     ],
 ])(
@@ -360,13 +391,25 @@ describe.each([
 
 describe("given a valid modify occurrence record", () => {
     const expectedKeyphrase = "test";
-    const oldOccurences = createOccurrence(VALID_URL, expectedKeyphrase, 1);
-    const newOccurrences = createOccurrence(VALID_URL, expectedKeyphrase, 5);
+    const oldOccurences = createOccurrence(
+        VALID_URL,
+        expectedKeyphrase,
+        1,
+        false
+    );
+    const newOccurrences = createOccurrence(
+        VALID_URL,
+        expectedKeyphrase,
+        5,
+        false
+    );
     const record = createOccurrenceModifyRecord(
         VALID_URL,
         expectedKeyphrase,
         newOccurrences.occurrences,
-        oldOccurences.occurrences
+        oldOccurences.occurrences,
+        newOccurrences.aggregated,
+        oldOccurences.aggregated
     );
     const event = createEvent([record]);
 

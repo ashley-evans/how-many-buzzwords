@@ -32,10 +32,12 @@ type ValidOccurrenceRecord = {
         };
         NewImage: {
             [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
+            [KeyphraseTableNonKeyFields.Aggregated]?: { BOOL: boolean };
         };
-        OldImage:
-            | { [KeyphraseTableNonKeyFields.Occurrences]: { N: string } }
-            | undefined;
+        OldImage?: {
+            [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
+            [KeyphraseTableNonKeyFields.Aggregated]?: { BOOL: boolean };
+        };
     };
 };
 
@@ -82,6 +84,14 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                             },
                             required: ["N"],
                         },
+                        [KeyphraseTableNonKeyFields.Aggregated]: {
+                            type: "object",
+                            properties: {
+                                BOOL: { type: "boolean" },
+                            },
+                            required: ["BOOL"],
+                            nullable: true,
+                        },
                     },
                     required: [KeyphraseTableNonKeyFields.Occurrences],
                 },
@@ -94,6 +104,14 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                                 N: { type: "string" },
                             },
                             required: ["N"],
+                        },
+                        [KeyphraseTableNonKeyFields.Aggregated]: {
+                            type: "object",
+                            properties: {
+                                BOOL: { type: "boolean" },
+                            },
+                            required: ["BOOL"],
+                            nullable: true,
                         },
                     },
                     required: [KeyphraseTableNonKeyFields.Occurrences],
@@ -153,6 +171,12 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             streamRecord.NewImage[KeyphraseTableNonKeyFields.Occurrences].N;
         const oldOccurrences =
             streamRecord.OldImage?.[KeyphraseTableNonKeyFields.Occurrences].N;
+        const newAggregated =
+            streamRecord.NewImage[KeyphraseTableNonKeyFields.Aggregated]?.BOOL;
+        const oldAggregated =
+            streamRecord.OldImage?.[KeyphraseTableNonKeyFields.Aggregated]
+                ?.BOOL;
+
         if (
             validatedRecord.eventName == AcceptedEventNames.Modify &&
             !streamRecord.OldImage
@@ -191,7 +215,9 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
             pathname,
             keyphrase,
             newOccurrences,
-            oldOccurrences
+            oldOccurrences,
+            newAggregated,
+            oldAggregated
         );
     }
 
@@ -200,14 +226,17 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         pathname: string,
         keyphrase: string,
         newOccurrences: string,
-        oldOccurences?: string
-    ) {
+        oldOccurences?: string,
+        newAggregated?: boolean,
+        oldAggregated?: boolean
+    ): OccurrenceItem {
         return {
             current: {
                 baseURL: partitionKey,
                 pathname,
                 keyphrase,
                 occurrences: this.parseOccurrence(newOccurrences),
+                aggregated: newAggregated,
             },
             previous: oldOccurences
                 ? {
@@ -215,6 +244,7 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
                       pathname,
                       keyphrase,
                       occurrences: this.parseOccurrence(oldOccurences),
+                      aggregated: oldAggregated,
                   }
                 : undefined,
         };
