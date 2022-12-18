@@ -19,13 +19,15 @@ const domain = new TotalOccurrencesDomain(mockRepository);
 function createOccurrenceImage(
     url: URL,
     keyphrase: string,
-    occurrences: number
+    occurrences: number,
+    aggregated?: boolean
 ): SiteKeyphraseOccurrences {
     return {
         baseURL: url.hostname,
         pathname: url.pathname,
         keyphrase,
         occurrences,
+        aggregated,
     };
 }
 
@@ -323,3 +325,32 @@ test("returns failure if updating aggregated flag does not succeed", async () =>
 
     expect(actual).toBe(false);
 });
+
+test.each([
+    [
+        "a single occurrence item",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 5, true),
+            },
+        ],
+    ],
+    [
+        "multiple occurrence items",
+        [
+            {
+                current: createOccurrenceImage(VALID_URL, "test", 5, true),
+            },
+            {
+                current: createOccurrenceImage(VALID_URL, "wibble", 7, true),
+            },
+        ],
+    ],
+])(
+    "ignores %s if already set to aggregated",
+    async (message: string, items: OccurrenceItem[]) => {
+        await domain.updateTotal(items);
+
+        expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
+    }
+);
