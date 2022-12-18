@@ -115,7 +115,7 @@ function createRecord(
                     },
                 }),
             },
-            ...((newOccurrences || newAggregated) && {
+            ...((newOccurrences || newAggregated != undefined) && {
                 NewImage: {
                     ...(newOccurrences && {
                         [KeyphraseTableNonKeyFields.Occurrences]: {
@@ -129,7 +129,7 @@ function createRecord(
                     }),
                 },
             }),
-            ...((oldOccurrences || oldAggregated) && {
+            ...((oldOccurrences || oldAggregated != undefined) && {
                 OldImage: {
                     ...(oldOccurrences && {
                         [KeyphraseTableNonKeyFields.Occurrences]: {
