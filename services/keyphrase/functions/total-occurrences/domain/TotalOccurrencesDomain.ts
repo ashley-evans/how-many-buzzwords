@@ -17,7 +17,7 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
         const totals = this.createTotalUpdates(items);
         const occurrenceUpdates = this.addOccurrences(totals.additions);
         const aggregateFlagUpdates = this.updateAggregateFlags(
-            totals.aggregated
+            totals.unchanged
         );
 
         return (
@@ -55,13 +55,17 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
 
     private createTotalUpdates(items: (OccurrenceItem | TotalItem)[]): {
         additions: SiteKeyphraseOccurrences[];
-        aggregated: SiteKeyphrase[];
+        unchanged: SiteKeyphrase[];
     } {
         const newAdditions: SiteKeyphraseOccurrences[] = [];
-        const alreadyAggregated: SiteKeyphrase[] = [];
+        const unchanged: SiteKeyphrase[] = [];
 
         for (const item of items) {
             if (this.isOccurrenceItem(item)) {
+                if (item.current.aggregated) {
+                    continue;
+                }
+
                 const newOccurrences = item.previous
                     ? item.current.occurrences - item.previous.occurrences
                     : item.current.occurrences;
@@ -74,7 +78,7 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
                         occurrences: newOccurrences,
                     });
                 } else {
-                    alreadyAggregated.push({
+                    unchanged.push({
                         baseURL: item.current.baseURL,
                         pathname: item.current.pathname,
                         keyphrase: item.current.keyphrase,
@@ -85,7 +89,7 @@ class TotalOccurrencesDomain implements TotalOccurrencesPort {
 
         return {
             additions: newAdditions,
-            aggregated: alreadyAggregated,
+            unchanged: unchanged,
         };
     }
 
