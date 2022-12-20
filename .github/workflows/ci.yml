@@ -64,6 +64,17 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              env:
+                  cache-name: ci-lint
+              with:
+                  path: |
+                      ./node_modules
+                      ./ui/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ env.cache-name }}-${{ hashFiles('./package-lock.json', './ui/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ env.cache-name }}-
             - name: Install Dependencies
               run: |
                   npx lerna bootstrap --scope "{how-many-buzzwords,how-many-buzzwords-ui}"
