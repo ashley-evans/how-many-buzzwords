@@ -1,6 +1,7 @@
 import React, { Fragment, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { Navigate } from "react-router-dom";
+import { Typography } from "antd";
 
 import { URLInput } from "./URLInput";
 import { CrawlingSpinner } from "./CrawlingSpinner";
@@ -73,10 +74,10 @@ function Search() {
                 <URLInput onURLSubmit={handleURLSubmit} />
             )}
             {(error || state?.crawlStatus == CrawlStatus.FAILED) && (
-                <p>
+                <Typography.Paragraph type="danger">
                     An error occurred when searching for buzzwords, please try
                     again.
-                </p>
+                </Typography.Paragraph>
             )}
         </Fragment>
     );
