@@ -56,6 +56,14 @@ function createRandomOccurrences(
 
 function createOccurrenceItem(
     url: URL,
+    keyphraseOccurrence: KeyphraseOccurrences
+): SiteKeyphraseOccurrences;
+function createOccurrenceItem(
+    url: URL,
+    keyphraseOccurrences: KeyphraseOccurrences[]
+): SiteKeyphraseOccurrences[];
+function createOccurrenceItem(
+    url: URL,
     keyphraseOccurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
 ): SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[] {
     if (Array.isArray(keyphraseOccurrences)) {
@@ -527,17 +535,47 @@ describe("total handling", () => {
         await repository.empty();
     });
 
+    describe("new total storage given a single item", () => {
+        const occurrence = TEST_KEYPHRASES[0];
+        const total = createOccurrenceItem(VALID_URL, occurrence);
+
+        beforeEach(async () => {
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrence
+            );
+        });
+
+        test("returns success when total storage succeeds", async () => {
+            const actual = await repository.addOccurrencesToTotals(total);
+
+            expect(actual).toBe(true);
+        });
+
+        test("stores site totals successfully", async () => {
+            await repository.addOccurrencesToTotals(total);
+
+            const stored = await repository.getTotals(VALID_URL.hostname);
+
+            expect(stored).toEqual(expect.arrayContaining([occurrence]));
+        });
+
+        test("stores global total successfully", async () => {
+            await repository.addOccurrencesToTotals(total);
+
+            const stored = await repository.getTotals();
+
+            expect(stored).toEqual(expect.arrayContaining([occurrence]));
+        });
+    });
+
     describe.each([
-        ["a single item", TEST_KEYPHRASES[0], [TEST_KEYPHRASES[0]]],
         ["less than 25 items", TEST_KEYPHRASES, TEST_KEYPHRASES],
         ["greater than 25 items", TEST_BATCH_KEYPHRASES, TEST_BATCH_KEYPHRASES],
     ])(
         "new total storage given %s",
-        (
-            message: string,
-            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[],
-            expected: KeyphraseOccurrences[]
-        ) => {
+        (message: string, occurrences: KeyphraseOccurrences[]) => {
             const items = createOccurrenceItem(VALID_URL, occurrences);
 
             beforeEach(async () => {
@@ -548,10 +586,10 @@ describe("total handling", () => {
                 );
             });
 
-            test("returns success when total storage succeeds", async () => {
+            test("returns no failed items when total storage succeeds", async () => {
                 const actual = await repository.addOccurrencesToTotals(items);
 
-                expect(actual).toBe(true);
+                expect(actual).toEqual([]);
             });
 
             test("stores site totals successfully", async () => {
@@ -559,41 +597,48 @@ describe("total handling", () => {
 
                 const stored = await repository.getTotals(VALID_URL.hostname);
 
-                expect(stored).toEqual(expect.arrayContaining(expected));
+                expect(stored).toEqual(expect.arrayContaining(occurrences));
             });
 
-            test("stores global total successfully", async () => {
+            test("stores global totals successfully", async () => {
                 await repository.addOccurrencesToTotals(items);
 
                 const stored = await repository.getTotals();
 
-                expect(stored).toEqual(expect.arrayContaining(expected));
+                expect(stored).toEqual(expect.arrayContaining(occurrences));
             });
         }
     );
 
-    test.each([
-        ["a single item", TEST_KEYPHRASES[0]],
-        ["multiple items", TEST_KEYPHRASES],
-    ])(
-        "returns success given %s that have been totalled before",
-        async (
-            message: string,
-            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            const items = createOccurrenceItem(VALID_URL, occurrences);
-            await repository.storeKeyphrases(
-                VALID_URL.hostname,
-                VALID_URL.pathname,
-                occurrences
-            );
-            await repository.addOccurrencesToTotals(items);
+    test("returns success given storage succeeds for a single item that has been totalled before", async () => {
+        const occurrence = TEST_KEYPHRASES[0];
+        const total = createOccurrenceItem(VALID_URL, occurrence);
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            occurrence
+        );
+        await repository.addOccurrencesToTotals(total);
 
-            const actual = await repository.addOccurrencesToTotals(items);
+        const actual = await repository.addOccurrencesToTotals(total);
 
-            expect(actual).toBe(true);
-        }
-    );
+        expect(actual).toBe(true);
+    });
+
+    test("returns no failed items given storage succeeds for multiple items that have been totalled before", async () => {
+        const occurrences = TEST_KEYPHRASES;
+        const totals = createOccurrenceItem(VALID_URL, occurrences);
+        await repository.storeKeyphrases(
+            VALID_URL.hostname,
+            VALID_URL.pathname,
+            occurrences
+        );
+        await repository.addOccurrencesToTotals(totals);
+
+        const actual = await repository.addOccurrencesToTotals(totals);
+
+        expect(actual).toEqual([]);
+    });
 
     describe("existing total storage", () => {
         test("does not increment site total given item has already been added to total", async () => {
@@ -710,18 +755,18 @@ describe("total handling", () => {
         expect(actual).toBe(false);
     });
 
-    test("returns failure when storage fails given multiple totals", async () => {
+    test("returns all provided totals when storage fails given multiple totals", async () => {
+        const occurrences = TEST_KEYPHRASES;
+        const expected = createOccurrenceItem(VALID_URL, occurrences);
         const putItemSpy = jest.spyOn(dynamoDB, "transactWriteItems");
         putItemSpy.mockImplementation(() => {
             throw new Error("test error");
         });
 
-        const actual = await repository.addOccurrencesToTotals(
-            createOccurrenceItem(VALID_URL, TEST_KEYPHRASES)
-        );
+        const actual = await repository.addOccurrencesToTotals(expected);
         putItemSpy.mockRestore();
 
-        expect(actual).toBe(false);
+        expect(actual).toEqual(expected);
     });
 
     test.each([
@@ -911,16 +956,47 @@ describe("empty table behaviour", () => {
         }
     );
 
+    describe("empty clears all totals given a single total stored", () => {
+        const occurrence = TEST_KEYPHRASES[0];
+
+        beforeEach(async () => {
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrence
+            );
+            await repository.addOccurrencesToTotals(
+                createOccurrenceItem(VALID_URL, occurrence)
+            );
+        });
+
+        test("returns success", async () => {
+            const actual = await repository.empty();
+
+            expect(actual).toBe(true);
+        });
+
+        test("empties table of site totals", async () => {
+            await repository.empty();
+            const actual = await repository.getTotals(VALID_URL.hostname);
+
+            expect(actual).toHaveLength(0);
+        });
+
+        test("empties table of global totals", async () => {
+            await repository.empty();
+            const actual = await repository.getTotals();
+
+            expect(actual).toHaveLength(0);
+        });
+    });
+
     describe.each([
-        ["a single total", TEST_KEYPHRASES[0]],
         ["less than 25 totals", TEST_KEYPHRASES],
         ["more than 25 totals", TEST_BATCH_KEYPHRASES],
     ])(
         "Empty clears all totals given %s stored",
-        (
-            message: string,
-            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
+        (message: string, occurrences: KeyphraseOccurrences[]) => {
             beforeEach(async () => {
                 await repository.storeKeyphrases(
                     VALID_URL.hostname,

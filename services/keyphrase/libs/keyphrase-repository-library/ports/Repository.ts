@@ -32,8 +32,11 @@ interface Repository {
     ): Promise<boolean>;
     getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
     addOccurrencesToTotals(
-        occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
+        occurrences: SiteKeyphraseOccurrences
     ): Promise<boolean>;
+    addOccurrencesToTotals(
+        occurrences: SiteKeyphraseOccurrences[]
+    ): Promise<Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
     setKeyphraseAggregated(
         keyphrases: SiteKeyphrase | SiteKeyphrase[]
