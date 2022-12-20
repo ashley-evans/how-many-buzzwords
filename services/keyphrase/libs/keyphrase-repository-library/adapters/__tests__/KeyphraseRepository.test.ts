@@ -62,6 +62,7 @@ function createOccurrenceItem(
     url: URL,
     keyphraseOccurrences: KeyphraseOccurrences[]
 ): SiteKeyphraseOccurrences[];
+
 function createOccurrenceItem(
     url: URL,
     keyphraseOccurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
@@ -83,7 +84,16 @@ function createSiteKeyphrase(url: URL, keyphrase: string): SiteKeyphrase {
     };
 }
 
-function extractKeyphraseKeys(
+function createKeyphraseKeys(
+    url: URL,
+    keyphraseOccurrence: KeyphraseOccurrences
+): SiteKeyphrase;
+function createKeyphraseKeys(
+    url: URL,
+    keyphraseOccurrences: KeyphraseOccurrences[]
+): SiteKeyphrase[];
+
+function createKeyphraseKeys(
     url: URL,
     keyphraseOccurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
 ): SiteKeyphrase | SiteKeyphrase[] {
@@ -799,23 +809,47 @@ describe("setting keyphrase to aggregated", () => {
         await repository.empty();
     });
 
-    test("returns success given no items", async () => {
+    test("returns no failed items given no items", async () => {
         const actual = await repository.setKeyphraseAggregated([]);
 
-        expect(actual).toBe(true);
+        expect(actual).toEqual([]);
+    });
+
+    describe("updates aggregated state given a single item", () => {
+        const occurrence = TEST_KEYPHRASES[0];
+        const key = createKeyphraseKeys(VALID_URL, occurrence);
+
+        beforeEach(async () => {
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrence
+            );
+        });
+
+        test("returns success when update succeeds", async () => {
+            const actual = await repository.setKeyphraseAggregated(key);
+
+            expect(actual).toBe(true);
+        });
+
+        test("updates aggregated flag to true", async () => {
+            await repository.setKeyphraseAggregated(key);
+
+            const actual = await repository.getOccurrences(VALID_URL.hostname);
+
+            expect(actual).toHaveLength(1);
+            expect(actual[0].aggregated).toBe(true);
+        });
     });
 
     describe.each([
-        ["a single item", TEST_KEYPHRASES[0]],
         ["less than 25 items", TEST_KEYPHRASES],
         ["greater than 25 items", TEST_BATCH_KEYPHRASES],
     ])(
-        "aggregated state update given %s",
-        (
-            message: string,
-            occurrences: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            const siteKeyphrases = extractKeyphraseKeys(VALID_URL, occurrences);
+        "updates aggregated state given %s",
+        (message: string, occurrences: KeyphraseOccurrences[]) => {
+            const keys = createKeyphraseKeys(VALID_URL, occurrences);
 
             beforeEach(async () => {
                 await repository.storeKeyphrases(
@@ -825,16 +859,14 @@ describe("setting keyphrase to aggregated", () => {
                 );
             });
 
-            test("returns success when update succeeds", async () => {
-                const actual = await repository.setKeyphraseAggregated(
-                    siteKeyphrases
-                );
+            test("returns no failed items when update succeeds", async () => {
+                const actual = await repository.setKeyphraseAggregated(keys);
 
-                expect(actual).toBe(true);
+                expect(actual).toEqual([]);
             });
 
-            test("updates aggregated flag to true", async () => {
-                await repository.setKeyphraseAggregated(siteKeyphrases);
+            test("updates aggregated flag to true on all occurrences", async () => {
+                await repository.setKeyphraseAggregated(keys);
 
                 const actual = await repository.getOccurrences(
                     VALID_URL.hostname
@@ -849,7 +881,7 @@ describe("setting keyphrase to aggregated", () => {
 
     test("returns success if item is already set to aggregated", async () => {
         const occurrence = TEST_KEYPHRASES[0];
-        const keyphrase = extractKeyphraseKeys(VALID_URL, occurrence);
+        const keyphrase = createKeyphraseKeys(VALID_URL, occurrence);
         await repository.storeKeyphrases(
             VALID_URL.hostname,
             VALID_URL.pathname,
@@ -863,7 +895,7 @@ describe("setting keyphrase to aggregated", () => {
     });
 
     describe("updating non-existent keyphrase", () => {
-        const keyphrase = extractKeyphraseKeys(
+        const keyphrase = createKeyphraseKeys(
             VALID_URL,
             TEST_KEYPHRASES[0]
         ) as SiteKeyphrase;
@@ -887,32 +919,47 @@ describe("setting keyphrase to aggregated", () => {
         });
     });
 
-    test.each([
-        ["a single occurrence", TEST_KEYPHRASES[0]],
-        ["multiple occurrences", TEST_KEYPHRASES],
-    ])(
-        "returns failure when setting aggregated flag fails on %s",
-        async (
-            message: string,
-            input: KeyphraseOccurrences | KeyphraseOccurrences[]
-        ) => {
-            const updateItemSpy = jest.spyOn(dynamoDB, "updateItem");
+    describe("failure handling", () => {
+        const updateItemSpy = jest.spyOn(dynamoDB, "updateItem");
+
+        beforeAll(() => {
             updateItemSpy.mockImplementation(() => {
                 throw new Error("test error");
             });
-            const keyphrases = extractKeyphraseKeys(VALID_URL, input);
+        });
+
+        test("returns failure when updating aggregated flag fails for a single occurrence", async () => {
+            const occurrence = TEST_KEYPHRASES[0];
+            const key = createKeyphraseKeys(VALID_URL, occurrence);
             await repository.storeKeyphrases(
                 VALID_URL.hostname,
                 VALID_URL.pathname,
-                input
+                occurrence
             );
 
-            const actual = await repository.setKeyphraseAggregated(keyphrases);
-            updateItemSpy.mockRestore();
+            const actual = await repository.setKeyphraseAggregated(key);
 
             expect(actual).toBe(false);
-        }
-    );
+        });
+
+        test("returns all item keys when updating aggregated flag fails for all occurrences", async () => {
+            const occurrences = TEST_KEYPHRASES;
+            const keys = createKeyphraseKeys(VALID_URL, occurrences);
+            await repository.storeKeyphrases(
+                VALID_URL.hostname,
+                VALID_URL.pathname,
+                occurrences
+            );
+
+            const actual = await repository.setKeyphraseAggregated(keys);
+
+            expect(actual).toEqual(keys);
+        });
+
+        afterAll(() => {
+            updateItemSpy.mockRestore();
+        });
+    });
 
     afterEach(async () => {
         await repository.empty();

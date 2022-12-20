@@ -38,9 +38,10 @@ interface Repository {
         occurrences: SiteKeyphraseOccurrences[]
     ): Promise<Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
+    setKeyphraseAggregated(keyphrase: SiteKeyphrase): Promise<boolean>;
     setKeyphraseAggregated(
-        keyphrases: SiteKeyphrase | SiteKeyphrase[]
-    ): Promise<boolean>;
+        keyphrases: SiteKeyphrase[]
+    ): Promise<SiteKeyphrase[]>;
 }
 
 export {

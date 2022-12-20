@@ -186,14 +186,25 @@ class KeyphraseRepository implements Repository {
         return this.addItemToTotal(occurrences);
     }
 
+    setKeyphraseAggregated(keyphrase: SiteKeyphrase): Promise<boolean>;
+    setKeyphraseAggregated(
+        keyphrases: SiteKeyphrase[]
+    ): Promise<SiteKeyphrase[]>;
+
     async setKeyphraseAggregated(
         keyphrases: SiteKeyphrase | SiteKeyphrase[]
-    ): Promise<boolean> {
+    ): Promise<boolean | SiteKeyphrase[]> {
         if (Array.isArray(keyphrases)) {
-            const promises = keyphrases.map((keyphrase) =>
-                this.setAggregatedFlag(keyphrase)
+            const promises = keyphrases.map(async (keyphrase) => {
+                const success = await this.setAggregatedFlag(keyphrase);
+                if (!success) {
+                    return keyphrase;
+                }
+            });
+
+            return (await Promise.all(promises)).filter(
+                (keyphrase): keyphrase is SiteKeyphrase => keyphrase !== null
             );
-            return (await Promise.all(promises)).every(Boolean);
         }
 
         return this.setAggregatedFlag(keyphrases);
