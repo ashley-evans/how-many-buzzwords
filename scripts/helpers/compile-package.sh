@@ -33,6 +33,7 @@ if [ -z $path ]; then
 fi
 
 root_dir="$( dirname "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+package_name=$(jq -r ".name" $path/package.json)
 
 if [ -z $output_path ]; then
     output_path="$root_dir/dist"
@@ -41,11 +42,9 @@ fi
 if [ $clean ]; then
     echo "Clean installing..."
     rm -rf $output_path
-    npm --prefix $root_dir ci
-    npm --prefix $path ci
+    npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}" --ci
 else 
-    npm --prefix $root_dir i
-    npm --prefix $path i
+    npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}" --no-ci
 fi
 
 if [ -f $path/tsconfig.build.json ]; then
