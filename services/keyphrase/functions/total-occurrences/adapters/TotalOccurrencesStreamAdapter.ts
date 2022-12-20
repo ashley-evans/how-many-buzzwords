@@ -149,8 +149,8 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
 
         if (itemsToTotal.length != 0) {
             try {
-                const success = await this.port.updateTotal(itemsToTotal);
-                if (!success) {
+                const failures = await this.port.updateTotal(itemsToTotal);
+                if (failures.length > 0) {
                     this.throwFailureError(itemsToTotal);
                 }
             } catch {

@@ -236,7 +236,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     mockPort.updateTotal.mockReset();
-    mockPort.updateTotal.mockResolvedValue(true);
+    mockPort.updateTotal.mockResolvedValue([]);
 });
 
 describe.each([
@@ -494,10 +494,15 @@ describe.each([
     });
 });
 
-test("throws an error if update to totals fails", async () => {
-    mockPort.updateTotal.mockResolvedValue(false);
+test("throws an error if update to totals returns item failures", async () => {
+    const occurrence = createOccurrence(VALID_URL, "test", 15, false);
+    mockPort.updateTotal.mockResolvedValue([occurrence]);
     const event = createEvent([
-        createOccurrenceInsertRecord(VALID_URL, "test", 15),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrence.keyphrase,
+            occurrence.occurrences
+        ),
     ]);
 
     expect.assertions(1);
