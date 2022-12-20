@@ -179,7 +179,7 @@ class KeyphraseRepository implements Repository {
 
             return (await Promise.all(promises)).filter(
                 (occurrence): occurrence is SiteKeyphraseOccurrences =>
-                    occurrence !== null
+                    occurrence != undefined
             );
         }
 
@@ -203,7 +203,8 @@ class KeyphraseRepository implements Repository {
             });
 
             return (await Promise.all(promises)).filter(
-                (keyphrase): keyphrase is SiteKeyphrase => keyphrase !== null
+                (keyphrase): keyphrase is SiteKeyphrase =>
+                    keyphrase != undefined
             );
         }
 
