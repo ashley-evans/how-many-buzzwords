@@ -83,6 +83,7 @@ function createEvent(records?: DynamoDBRecord[]) {
 
 function createRecord(
     eventName?: "INSERT" | "MODIFY",
+    sequenceNumber?: string,
     pk?: string,
     sk?: string,
     newOccurrences?: number | string,
@@ -100,7 +101,8 @@ function createRecord(
         newOccurrences ||
         oldOccurrences ||
         newAggregated ||
-        oldAggregated
+        oldAggregated ||
+        sequenceNumber
     ) {
         record.dynamodb = {
             Keys: {
@@ -115,6 +117,7 @@ function createRecord(
                     },
                 }),
             },
+            SequenceNumber: sequenceNumber,
             ...((newOccurrences || newAggregated != undefined) && {
                 NewImage: {
                     ...(newOccurrences && {
@@ -152,10 +155,12 @@ function createRecord(
 function createOccurrenceInsertRecord(
     url: URL,
     keyphrase: string,
-    occurrences: number
+    occurrences: number,
+    sequenceNumber: string
 ): DynamoDBRecord {
     return createRecord(
         "INSERT",
+        sequenceNumber,
         url.hostname,
         createSortKey(url.pathname, keyphrase),
         occurrences,
@@ -169,11 +174,13 @@ function createOccurrenceModifyRecord(
     keyphrase: string,
     newOccurrences: number,
     oldOccurrences: number,
+    sequenceNumber: string,
     newAggregated?: boolean,
     oldAggregated?: boolean
 ): DynamoDBRecord {
     return createRecord(
         "MODIFY",
+        sequenceNumber,
         url.hostname,
         createSortKey(url.pathname, keyphrase),
         newOccurrences,
@@ -186,11 +193,13 @@ function createOccurrenceModifyRecord(
 function createTotalInsertRecord(
     keyphrase: string,
     occurrences: number,
+    sequenceNumber: string,
     url?: URL
 ) {
     if (url) {
         return createRecord(
             "INSERT",
+            sequenceNumber,
             url.hostname,
             createSortKey(KeyphraseTableConstants.TotalKey, keyphrase),
             occurrences
@@ -199,6 +208,7 @@ function createTotalInsertRecord(
 
     return createRecord(
         "INSERT",
+        sequenceNumber,
         KeyphraseTableConstants.TotalKey,
         keyphrase,
         occurrences
@@ -208,12 +218,14 @@ function createTotalInsertRecord(
 function createTotalModifyRecord(
     keyphrase: string,
     newOccurrences: number,
+    sequenceNumber: string,
     oldOccurences?: number,
     url?: URL
 ) {
     if (url) {
         return createRecord(
             "MODIFY",
+            sequenceNumber,
             url.hostname,
             createSortKey(KeyphraseTableConstants.TotalKey, keyphrase),
             newOccurrences,
@@ -223,6 +235,7 @@ function createTotalModifyRecord(
 
     return createRecord(
         "MODIFY",
+        sequenceNumber,
         KeyphraseTableConstants.TotalKey,
         keyphrase,
         newOccurrences,
@@ -232,11 +245,12 @@ function createTotalModifyRecord(
 
 beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
 beforeEach(() => {
     mockPort.updateTotal.mockReset();
-    mockPort.updateTotal.mockResolvedValue(true);
+    mockPort.updateTotal.mockResolvedValue([]);
 });
 
 describe.each([
@@ -244,27 +258,60 @@ describe.each([
     [
         "a record with no event name",
         createEvent([
-            createRecord(undefined, "test", createSortKey("test", "test"), 1),
+            createRecord(
+                undefined,
+                "sequence_number",
+                "test",
+                createSortKey("test", "test"),
+                1
+            ),
+        ]),
+    ],
+    [
+        "a record with no sequence number",
+        createEvent([
+            createRecord(
+                "INSERT",
+                undefined,
+                "test",
+                createSortKey("test", "test"),
+                1
+            ),
         ]),
     ],
     [
         "a record with a missing partition key",
         createEvent([
-            createRecord("INSERT", undefined, createSortKey("test", "test"), 1),
+            createRecord(
+                "INSERT",
+                "sequence_number",
+                undefined,
+                createSortKey("test", "test"),
+                1
+            ),
         ]),
     ],
     [
         "a record with a missing sort key",
-        createEvent([createRecord("INSERT", "test", undefined, 1)]),
+        createEvent([
+            createRecord("INSERT", "sequence_number", "test", undefined, 1),
+        ]),
     ],
     [
         "a record with a invalid sort key (missing hierarchy seperator)",
-        createEvent([createRecord("INSERT", "test", "test/test", 1)]),
+        createEvent([
+            createRecord("INSERT", "sequence_number", "test", "test/test", 1),
+        ]),
     ],
     [
         "a record with a missing number of new occurrences",
         createEvent([
-            createRecord("INSERT", "test", createSortKey("test", "test")),
+            createRecord(
+                "INSERT",
+                "sequence_number",
+                "test",
+                createSortKey("test", "test")
+            ),
         ]),
     ],
     [
@@ -272,6 +319,7 @@ describe.each([
         createEvent([
             createRecord(
                 "INSERT",
+                "sequence_number",
                 "test",
                 createSortKey("test", "test"),
                 "this is not a number"
@@ -281,7 +329,13 @@ describe.each([
     [
         "a modify record with a missing number of old occurrences",
         createEvent([
-            createRecord("MODIFY", "test", createSortKey("test", "test"), 1),
+            createRecord(
+                "MODIFY",
+                "sequence_number",
+                "test",
+                createSortKey("test", "test"),
+                1
+            ),
         ]),
     ],
     [
@@ -289,6 +343,7 @@ describe.each([
         createEvent([
             createRecord(
                 "MODIFY",
+                "sequence_number",
                 "test",
                 createSortKey("test", "test"),
                 1,
@@ -299,8 +354,19 @@ describe.each([
     [
         "multiple records with invalid properties",
         createEvent([
-            createRecord("INSERT", undefined, createSortKey("test", "test"), 1),
-            createRecord("INSERT", "test", createSortKey("test", "test")),
+            createRecord(
+                "INSERT",
+                "sequence_number",
+                undefined,
+                createSortKey("test", "test"),
+                1
+            ),
+            createRecord(
+                "INSERT",
+                "sequence_number",
+                "test",
+                createSortKey("test", "test")
+            ),
         ]),
     ],
 ])(
@@ -323,11 +389,17 @@ describe.each([
 describe("given an event with both valid and invalid insert occurrence records", () => {
     const expected = createOccurrence(VALID_URL, "test", 15, false);
     const event = createEvent([
-        createRecord("INSERT", "test", createSortKey("test", "test")),
+        createRecord(
+            "INSERT",
+            "sequence_number",
+            "test",
+            createSortKey("test", "test")
+        ),
         createOccurrenceInsertRecord(
             VALID_URL,
             expected.keyphrase,
-            expected.occurrences
+            expected.occurrences,
+            "sequence_number"
         ),
     ]);
 
@@ -363,7 +435,8 @@ describe.each([
             createOccurrenceInsertRecord(
                 VALID_URL,
                 current.keyphrase,
-                current.occurrences
+                current.occurrences,
+                "sequence_number"
             )
         );
         const event = createEvent(records);
@@ -408,6 +481,7 @@ describe("given a valid modify occurrence record", () => {
         expectedKeyphrase,
         newOccurrences.occurrences,
         oldOccurences.occurrences,
+        "sequence_number",
         newOccurrences.aggregated,
         oldOccurences.aggregated
     );
@@ -440,7 +514,12 @@ describe.each([
 ])("given a valid insert %s total record", (message: string, site?: URL) => {
     const total = createTotalOccurrence("test", 15, site);
     const event = createEvent([
-        createTotalInsertRecord(total.keyphrase, total.occurrences, site),
+        createTotalInsertRecord(
+            total.keyphrase,
+            total.occurrences,
+            "sequence_number",
+            site
+        ),
     ]);
 
     test("calls domain with provided total record", async () => {
@@ -471,6 +550,7 @@ describe.each([
     const record = createTotalModifyRecord(
         expectedKeyphrase,
         newOccurrences.occurrences,
+        "sequence_number",
         oldOccurences.occurrences,
         site
     );
@@ -494,26 +574,74 @@ describe.each([
     });
 });
 
-test("throws an error if update to totals fails", async () => {
-    mockPort.updateTotal.mockResolvedValue(false);
+test("returns all sequence numbers as batch failures if totals returns all failed", async () => {
+    const occurrences = [
+        createOccurrence(VALID_URL, "test", 15, false),
+        createOccurrence(VALID_URL, "wibble", 12, false),
+    ];
+    mockPort.updateTotal.mockResolvedValue(occurrences);
+    const expectedSequenceNumbers = ["sequence_number_1", "sequence_number_2"];
     const event = createEvent([
-        createOccurrenceInsertRecord(VALID_URL, "test", 15),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[0].keyphrase,
+            occurrences[0].occurrences,
+            expectedSequenceNumbers[0]
+        ),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[1].keyphrase,
+            occurrences[1].occurrences,
+            expectedSequenceNumbers[1]
+        ),
     ]);
 
-    expect.assertions(1);
-    await expect(adapter.handleEvent(event)).rejects.toEqual(
-        expect.objectContaining({
-            message: expect.stringContaining(
-                "Failed to update totals for provided records:"
-            ),
-        })
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(2);
+    expect(actual.batchItemFailures).toEqual(
+        expect.arrayContaining(
+            expectedSequenceNumbers.map((sequenceNumber) => ({
+                itemIdentifier: sequenceNumber,
+            }))
+        )
     );
+});
+
+test("returns only related sequence numbers as batch failures if totals returns partial failures", async () => {
+    const occurrences = [
+        createOccurrence(VALID_URL, "test", 15, false),
+        createOccurrence(VALID_URL, "wibble", 12, false),
+    ];
+    mockPort.updateTotal.mockResolvedValue([occurrences[1]]);
+    const sequenceNumbers = ["sequence_number_1", "sequence_number_2"];
+    const event = createEvent([
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[0].keyphrase,
+            occurrences[0].occurrences,
+            sequenceNumbers[0]
+        ),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[1].keyphrase,
+            occurrences[1].occurrences,
+            sequenceNumbers[1]
+        ),
+    ]);
+
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(1);
+    expect(actual.batchItemFailures[0]).toEqual({
+        itemIdentifier: sequenceNumbers[1],
+    });
 });
 
 test("throws an error if an unhandled exception occurs while updating totals", async () => {
     mockPort.updateTotal.mockRejectedValue(new Error());
     const event = createEvent([
-        createOccurrenceInsertRecord(VALID_URL, "test", 15),
+        createOccurrenceInsertRecord(VALID_URL, "test", 15, "sequence_number"),
     ]);
 
     expect.assertions(1);

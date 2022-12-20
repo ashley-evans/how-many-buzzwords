@@ -1,12 +1,13 @@
 import {
-    DynamoDBRecord,
     DynamoDBStreamEvent,
+    SQSBatchItemFailure,
     SQSBatchResponse,
 } from "aws-lambda";
 import {
     KeyphraseTableConstants,
     KeyphraseTableKeyFields,
     KeyphraseTableNonKeyFields,
+    SiteKeyphrase,
 } from "buzzword-keyphrase-keyphrase-repository-library";
 import { JSONSchemaType } from "ajv";
 import { AjvValidator } from "@ashley-evans/buzzword-object-validator";
@@ -30,6 +31,7 @@ type ValidOccurrenceRecord = {
             [KeyphraseTableKeyFields.HashKey]: { S: string };
             [KeyphraseTableKeyFields.RangeKey]: { S: string };
         };
+        SequenceNumber: string;
         NewImage: {
             [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
             [KeyphraseTableNonKeyFields.Aggregated]?: { BOOL: boolean };
@@ -73,6 +75,9 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                         KeyphraseTableKeyFields.HashKey,
                         KeyphraseTableKeyFields.RangeKey,
                     ],
+                },
+                SequenceNumber: {
+                    type: "string",
                 },
                 NewImage: {
                     type: "object",
@@ -118,7 +123,7 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                     nullable: true,
                 },
             },
-            required: ["Keys", "NewImage"],
+            required: ["Keys", "NewImage", "SequenceNumber"],
         },
     },
     required: ["eventName", "dynamodb"],
@@ -137,9 +142,12 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         }
 
         const itemsToTotal: (OccurrenceItem | TotalItem)[] = [];
+        const validRecords: ValidOccurrenceRecord[] = [];
         for (const record of event.Records) {
             try {
-                itemsToTotal.push(this.parseRecord(record));
+                const validRecord = this.validator.validate(record);
+                validRecords.push(validRecord);
+                itemsToTotal.push(this.parseRecord(validRecord));
             } catch {
                 console.log(
                     `Skipping invalid record: ${JSON.stringify(record)}`
@@ -149,21 +157,26 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
 
         if (itemsToTotal.length != 0) {
             try {
-                const success = await this.port.updateTotal(itemsToTotal);
-                if (!success) {
-                    this.throwFailureError(itemsToTotal);
+                const failures = await this.port.updateTotal(itemsToTotal);
+                if (failures.length > 0) {
+                    return this.createPartialFailureResponse(
+                        validRecords,
+                        failures
+                    );
                 }
-            } catch {
-                this.throwFailureError(itemsToTotal);
+            } catch (ex) {
+                console.error(`An error occurred while totalling: ${ex}`);
+                this.throwFullError(itemsToTotal);
             }
         }
 
         return this.createResponse();
     }
 
-    private parseRecord(record: DynamoDBRecord): OccurrenceItem | TotalItem {
-        const validatedRecord = this.validator.validate(record);
-        const streamRecord = validatedRecord.dynamodb;
+    private parseRecord(
+        validRecord: ValidOccurrenceRecord
+    ): OccurrenceItem | TotalItem {
+        const streamRecord = validRecord.dynamodb;
         const partitionKey =
             streamRecord.Keys[KeyphraseTableKeyFields.HashKey].S;
         const sortKey = streamRecord.Keys[KeyphraseTableKeyFields.RangeKey].S;
@@ -178,7 +191,7 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
                 ?.BOOL;
 
         if (
-            validatedRecord.eventName == AcceptedEventNames.Modify &&
+            validRecord.eventName == AcceptedEventNames.Modify &&
             !streamRecord.OldImage
         ) {
             throw new Error(
@@ -286,12 +299,49 @@ class TotalOccurrencesStreamAdapter implements DynamoDBSteamAdapter {
         return { batchItemFailures: [] };
     }
 
-    private throwFailureError(items: (OccurrenceItem | TotalItem)[]) {
+    private throwFullError(items: (OccurrenceItem | TotalItem)[]) {
         throw new Error(
             `Failed to update totals for provided records: ${JSON.stringify(
                 items
             )}`
         );
+    }
+
+    private createPartialFailureResponse(
+        validRecords: ValidOccurrenceRecord[],
+        failures: SiteKeyphrase[]
+    ): SQSBatchResponse {
+        console.error(
+            `Failed to update totals for: ${JSON.stringify(failures)}`
+        );
+
+        const batchItemFailures: SQSBatchItemFailure[] = failures.map(
+            (failure) => {
+                const matchingRecord = validRecords.find((record) => {
+                    const keys = record.dynamodb.Keys;
+                    return (
+                        keys[KeyphraseTableKeyFields.HashKey].S ==
+                            failure.baseURL,
+                        keys[KeyphraseTableKeyFields.RangeKey].S ==
+                            `${failure.pathname}#${failure.keyphrase}`
+                    );
+                });
+
+                if (!matchingRecord) {
+                    throw new Error(
+                        `Unable to find matching record for: ${JSON.stringify(
+                            failure
+                        )}`
+                    );
+                }
+
+                return {
+                    itemIdentifier: matchingRecord.dynamodb.SequenceNumber,
+                };
+            }
+        );
+
+        return { batchItemFailures };
     }
 }
 

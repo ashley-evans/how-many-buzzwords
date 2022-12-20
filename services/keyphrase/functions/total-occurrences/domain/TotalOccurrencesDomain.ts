@@ -13,44 +13,48 @@ import {
 class TotalOccurrencesDomain implements TotalOccurrencesPort {
     constructor(private repository: Repository) {}
 
-    async updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean> {
+    async updateTotal(
+        items: (OccurrenceItem | TotalItem)[]
+    ): Promise<SiteKeyphrase[]> {
         const totals = this.createTotalUpdates(items);
-        const occurrenceUpdates = this.addOccurrences(totals.additions);
-        const aggregateFlagUpdates = this.updateAggregateFlags(
-            totals.unchanged
-        );
+        const failedTotals = this.addOccurrences(totals.additions);
+        const failedFlagUpdates = this.updateAggregateFlags(totals.unchanged);
 
-        return (
-            await Promise.all([occurrenceUpdates, aggregateFlagUpdates])
-        ).every(Boolean);
+        return (await Promise.all([failedTotals, failedFlagUpdates]))
+            .flat()
+            .map((item) => ({
+                baseURL: item.baseURL,
+                pathname: item.pathname,
+                keyphrase: item.keyphrase,
+            }));
     }
 
     private async addOccurrences(
         additions: SiteKeyphraseOccurrences[]
-    ): Promise<boolean> {
+    ): Promise<Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]> {
         if (additions.length > 0) {
             try {
                 return await this.repository.addOccurrencesToTotals(additions);
             } catch {
-                return false;
+                return additions;
             }
         }
 
-        return true;
+        return [];
     }
 
     private async updateAggregateFlags(
         items: SiteKeyphrase[]
-    ): Promise<boolean> {
+    ): Promise<SiteKeyphrase[]> {
         if (items.length > 0) {
             try {
                 return await this.repository.setKeyphraseAggregated(items);
             } catch {
-                return false;
+                return items;
             }
         }
 
-        return true;
+        return [];
     }
 
     private createTotalUpdates(items: (OccurrenceItem | TotalItem)[]): {

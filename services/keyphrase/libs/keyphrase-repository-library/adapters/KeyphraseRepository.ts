@@ -157,25 +157,55 @@ class KeyphraseRepository implements Repository {
         return this.storeIndividualKeyphrase(item);
     }
 
+    addOccurrencesToTotals(
+        occurrences: SiteKeyphraseOccurrences
+    ): Promise<boolean>;
+    addOccurrencesToTotals(
+        occurrences: SiteKeyphraseOccurrences[]
+    ): Promise<Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]>;
+
     async addOccurrencesToTotals(
-        items: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
-    ): Promise<boolean> {
-        if (Array.isArray(items)) {
-            const promises = items.map((item) => this.addItemToTotal(item));
-            return (await Promise.all(promises)).every(Boolean);
+        occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
+    ): Promise<
+        boolean | Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]
+    > {
+        if (Array.isArray(occurrences)) {
+            const promises = occurrences.map(async (occurrence) => {
+                const success = await this.addItemToTotal(occurrence);
+                if (!success) {
+                    return occurrence;
+                }
+            });
+
+            return (await Promise.all(promises)).filter(
+                (occurrence): occurrence is SiteKeyphraseOccurrences =>
+                    occurrence != undefined
+            );
         }
 
-        return this.addItemToTotal(items);
+        return this.addItemToTotal(occurrences);
     }
+
+    setKeyphraseAggregated(keyphrase: SiteKeyphrase): Promise<boolean>;
+    setKeyphraseAggregated(
+        keyphrases: SiteKeyphrase[]
+    ): Promise<SiteKeyphrase[]>;
 
     async setKeyphraseAggregated(
         keyphrases: SiteKeyphrase | SiteKeyphrase[]
-    ): Promise<boolean> {
+    ): Promise<boolean | SiteKeyphrase[]> {
         if (Array.isArray(keyphrases)) {
-            const promises = keyphrases.map((keyphrase) =>
-                this.setAggregatedFlag(keyphrase)
+            const promises = keyphrases.map(async (keyphrase) => {
+                const success = await this.setAggregatedFlag(keyphrase);
+                if (!success) {
+                    return keyphrase;
+                }
+            });
+
+            return (await Promise.all(promises)).filter(
+                (keyphrase): keyphrase is SiteKeyphrase =>
+                    keyphrase != undefined
             );
-            return (await Promise.all(promises)).every(Boolean);
         }
 
         return this.setAggregatedFlag(keyphrases);

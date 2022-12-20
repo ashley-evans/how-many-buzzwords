@@ -32,12 +32,16 @@ interface Repository {
     ): Promise<boolean>;
     getTotals(baseURL?: string): Promise<KeyphraseOccurrences[]>;
     addOccurrencesToTotals(
-        occurrences: SiteKeyphraseOccurrences | SiteKeyphraseOccurrences[]
+        occurrences: SiteKeyphraseOccurrences
     ): Promise<boolean>;
+    addOccurrencesToTotals(
+        occurrences: SiteKeyphraseOccurrences[]
+    ): Promise<Omit<SiteKeyphraseOccurrences, "occurrences" | "aggregated">[]>;
     getKeyphraseUsages(keyphrase: string): Promise<string[]>;
+    setKeyphraseAggregated(keyphrase: SiteKeyphrase): Promise<boolean>;
     setKeyphraseAggregated(
-        keyphrases: SiteKeyphrase | SiteKeyphrase[]
-    ): Promise<boolean>;
+        keyphrases: SiteKeyphrase[]
+    ): Promise<SiteKeyphrase[]>;
 }
 
 export {

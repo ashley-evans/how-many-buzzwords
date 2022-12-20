@@ -56,13 +56,16 @@ const VALID_URL = new URL("https://www.example.com/");
 beforeEach(() => {
     mockRepository.addOccurrencesToTotals.mockReset();
     mockRepository.setKeyphraseAggregated.mockReset();
+
+    mockRepository.addOccurrencesToTotals.mockResolvedValue([]);
+    mockRepository.setKeyphraseAggregated.mockResolvedValue([]);
 });
 
 describe("handles no items", () => {
-    test("returns success if called with an no items to total", async () => {
+    test("returns no failures if called with an no items to total", async () => {
         const actual = await domain.updateTotal([]);
 
-        expect(actual).toBe(true);
+        expect(actual).toEqual([]);
     });
 
     test("does not call repository to total any items", async () => {
@@ -72,26 +75,33 @@ describe("handles no items", () => {
     });
 });
 
-test("returns failure if updating totals in repository fails", async () => {
-    mockRepository.addOccurrencesToTotals.mockResolvedValue(false);
-    const item: OccurrenceItem = {
-        current: createOccurrenceImage(VALID_URL, "dyson", 15),
-    };
+test("only returns specific failed items if partial failure occurs while updating totals", async () => {
+    const items: OccurrenceItem[] = [
+        {
+            current: createOccurrenceImage(VALID_URL, "dyson", 12),
+        },
+        { current: createOccurrenceImage(VALID_URL, "wibble", 11) },
+    ];
+    const expected = extractOccurrenceKeys([items[0]]);
+    mockRepository.addOccurrencesToTotals.mockResolvedValue(expected);
 
-    const actual = await domain.updateTotal([item]);
+    const actual = await domain.updateTotal(items);
 
-    expect(actual).toBe(false);
+    expect(actual).toEqual(expected);
 });
 
-test("returns failure if an unhandled exception occurs while updating totals in repository", async () => {
+test("returns all items if an unhandled exception occurs while updating totals in repository", async () => {
     mockRepository.addOccurrencesToTotals.mockRejectedValue(new Error());
-    const item: OccurrenceItem = {
-        current: createOccurrenceImage(VALID_URL, "dyson", 15),
-    };
+    const items: OccurrenceItem[] = [
+        {
+            current: createOccurrenceImage(VALID_URL, "dyson", 12),
+        },
+        { current: createOccurrenceImage(VALID_URL, "wibble", 11) },
+    ];
 
-    const actual = await domain.updateTotal([item]);
+    const actual = await domain.updateTotal(items);
 
-    expect(actual).toBe(false);
+    expect(actual).toEqual(extractOccurrenceKeys(items));
 });
 
 describe.each([
@@ -119,7 +129,6 @@ describe.each([
     (message: string, items: OccurrenceItem[]) => {
         test("calls repository to add all occurrences to total", async () => {
             const expected = items.map((item) => item.current);
-            mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
 
             await domain.updateTotal(items);
 
@@ -131,12 +140,10 @@ describe.each([
             );
         });
 
-        test("returns success if updating totals in repository succeeds", async () => {
-            mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
-
+        test("returns no failed items if updating totals in repository succeeds", async () => {
             const actual = await domain.updateTotal(items);
 
-            expect(actual).toBe(true);
+            expect(actual).toEqual([]);
         });
     }
 );
@@ -183,10 +190,10 @@ describe.each([
         expect(mockRepository.addOccurrencesToTotals).not.toHaveBeenCalled();
     });
 
-    test("returns success", async () => {
+    test("returns no failed items", async () => {
         const actual = await domain.updateTotal(items);
 
-        expect(actual).toBe(true);
+        expect(actual).toEqual([]);
     });
 });
 
@@ -200,7 +207,6 @@ test("only calls repository to update totals with provided occurrence items give
             current: createTotalImage("wibble", 12),
         },
     ];
-    mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
 
     await domain.updateTotal(items);
 
@@ -245,8 +251,6 @@ test.each([
         items: OccurrenceItem[],
         expected: SiteKeyphraseOccurrences[]
     ) => {
-        mockRepository.addOccurrencesToTotals.mockResolvedValue(true);
-
         await domain.updateTotal(items);
 
         expect(mockRepository.addOccurrencesToTotals).toHaveBeenCalledTimes(1);
@@ -298,32 +302,41 @@ describe.each([
     });
 });
 
-test("returns failure if updating aggregated flag throws an error", async () => {
+test("returns all items as failure if updating aggregated flag throws an error", async () => {
     mockRepository.setKeyphraseAggregated.mockRejectedValue(new Error());
     const items = [
         {
             current: createOccurrenceImage(VALID_URL, "test", 3),
             previous: createOccurrenceImage(VALID_URL, "test", 3),
         },
-    ];
-
-    const actual = await domain.updateTotal(items);
-
-    expect(actual).toBe(false);
-});
-
-test("returns failure if updating aggregated flag does not succeed", async () => {
-    mockRepository.setKeyphraseAggregated.mockResolvedValue(false);
-    const items = [
         {
-            current: createOccurrenceImage(VALID_URL, "test", 3),
-            previous: createOccurrenceImage(VALID_URL, "test", 3),
+            current: createOccurrenceImage(VALID_URL, "wibble", 4),
+            previous: createOccurrenceImage(VALID_URL, "wibble", 4),
         },
     ];
 
     const actual = await domain.updateTotal(items);
 
-    expect(actual).toBe(false);
+    expect(actual).toEqual(extractOccurrenceKeys(items));
+});
+
+test("returns only failed items if updating aggregated flag has partial failures", async () => {
+    const items = [
+        {
+            current: createOccurrenceImage(VALID_URL, "test", 3),
+            previous: createOccurrenceImage(VALID_URL, "test", 3),
+        },
+        {
+            current: createOccurrenceImage(VALID_URL, "wibble", 4),
+            previous: createOccurrenceImage(VALID_URL, "wibble", 4),
+        },
+    ];
+    const expected = extractOccurrenceKeys([items[0]]);
+    mockRepository.setKeyphraseAggregated.mockResolvedValue(expected);
+
+    const actual = await domain.updateTotal(items);
+
+    expect(actual).toEqual(expected);
 });
 
 test.each([
