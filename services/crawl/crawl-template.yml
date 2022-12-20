@@ -194,6 +194,8 @@ Resources:
                     Properties:
                         Stream: !GetAtt URLsTable.StreamArn
                         StartingPosition: LATEST
+                        FunctionResponseTypes:
+                            - ReportBatchItemFailures
             Architectures:
                 - arm64
             Environment:

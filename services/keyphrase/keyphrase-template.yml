@@ -436,6 +436,8 @@ Resources:
                         BatchSize: 10
                         StartingPosition: TRIM_HORIZON
                         MaximumRetryAttempts: 5
+                        FunctionResponseTypes:
+                            - ReportBatchItemFailures
             Architectures:
                 - arm64
             Environment:
@@ -507,6 +509,8 @@ Resources:
                         FilterCriteria:
                             Filters:
                                 - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
+                        FunctionResponseTypes:
+                            - ReportBatchItemFailures
             Architectures:
                 - arm64
             Environment:
@@ -670,6 +674,8 @@ Resources:
                         FilterCriteria:
                             Filters:
                                 - Pattern: '{ "dynamodb": { "Keys": { "pk": { "S": [ { "anything-but": [ "TOTAL" ] } ] } } } }'
+                        FunctionResponseTypes:
+                            - ReportBatchItemFailures
             Architectures:
                 - arm64
             Environment:
