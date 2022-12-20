@@ -4,6 +4,9 @@ on:
             path:
                 required: true
                 type: string
+            node_cache_key:
+                required: true
+                type: string
 
 jobs:
     changed:
@@ -28,6 +31,14 @@ jobs:
             - uses: actions/setup-node@v3
               with:
                   node-version: "18"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Compile Package
               run: |
                   ./scripts/helpers/compile-package.sh -c -p ${{ inputs.path }}
@@ -62,6 +73,14 @@ jobs:
             - uses: actions/setup-node@v3
               with:
                   node-version: "18"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Install Dependencies
               run: |
                   package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
@@ -79,6 +98,14 @@ jobs:
             - uses: actions/setup-node@v3
               with:
                   node-version: "18"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Install Dependencies
               run: |
                   package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
@@ -97,6 +124,14 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Compile Package
               run: |
                   ./scripts/helpers/compile-package.sh -c -p ${{ inputs.path }}

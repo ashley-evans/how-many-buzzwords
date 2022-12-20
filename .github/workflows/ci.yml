@@ -7,11 +7,13 @@ jobs:
         uses: ./.github/workflows/package.yml
         with:
             path: ./packages/object-validator
+            node_cache_key: object-validator
     build-deploy-crawl-client-package:
         name: Crawl Client Package
         uses: ./.github/workflows/package.yml
         with:
             path: ./packages/crawl-client
+            node_cache_key: crawl-client
     build-deploy-crawl-service:
         name: Crawl Service
         uses: ./.github/workflows/service.yml
