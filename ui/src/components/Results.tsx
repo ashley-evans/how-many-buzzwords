@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useState, ReactNode } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import { Button, Col, Row, Table, Typography, Empty } from "antd";
+import { Navigate, useParams } from "react-router-dom";
+import { Col, Row, Table, Typography, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { PathnameOccurrences } from "../clients/interfaces/KeyphraseServiceClient";
@@ -11,6 +11,7 @@ import ResultConstants from "../enums/Constants";
 import { UniqueOccurrenceKey } from "../types/UniqueOccurrenceKey";
 
 import "../css/Results.css";
+import ButtonLink from "./ButtonLink";
 
 type ResultsProps = {
     keyphraseServiceClientFactory: KeyphraseServiceClientFactory;
@@ -141,9 +142,7 @@ function Results(props: ResultsProps) {
                     >{`Results for: ${validatedURL}`}</Typography.Title>
                 </Col>
                 <Col flex={1}>
-                    <Button>
-                        <Link to="/">Return to search</Link>
-                    </Button>
+                    <ButtonLink to="/">Return to search</ButtonLink>
                 </Col>
             </Row>
             <Row>

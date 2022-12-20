@@ -1,9 +1,10 @@
 import React, { Fragment, ReactElement, Suspense } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { Button, Spin } from "antd";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Spin, Typography } from "antd";
 
 import KeyphraseServiceClientFactory from "../clients/interfaces/KeyphraseServiceClientFactory";
 import SiteLayout from "./SiteLayout";
+import ButtonLink from "./ButtonLink";
 
 const Search = React.lazy(() => import("./Search"));
 const Results = React.lazy(() => import("./Results"));
@@ -66,10 +67,12 @@ function App(props: AppProps) {
                         path="*"
                         element={
                             <Fragment>
-                                <p>Oh no! You&apos;ve gotten lost!</p>
-                                <Button type="primary">
-                                    <Link to="/">Return to search</Link>
-                                </Button>
+                                <Typography.Paragraph>
+                                    Oh no! You&apos;ve gotten lost!
+                                </Typography.Paragraph>
+                                <ButtonLink type="primary" to="/">
+                                    Return to search
+                                </ButtonLink>
                             </Fragment>
                         }
                     />
