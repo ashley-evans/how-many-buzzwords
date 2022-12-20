@@ -245,6 +245,7 @@ function createTotalModifyRecord(
 
 beforeAll(() => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
 beforeEach(() => {
@@ -573,26 +574,68 @@ describe.each([
     });
 });
 
-test("throws an error if update to totals returns item failures", async () => {
-    const occurrence = createOccurrence(VALID_URL, "test", 15, false);
-    mockPort.updateTotal.mockResolvedValue([occurrence]);
+test("returns all sequence numbers as batch failures if totals returns all failed", async () => {
+    const occurrences = [
+        createOccurrence(VALID_URL, "test", 15, false),
+        createOccurrence(VALID_URL, "wibble", 12, false),
+    ];
+    mockPort.updateTotal.mockResolvedValue(occurrences);
+    const expectedSequenceNumbers = ["sequence_number_1", "sequence_number_2"];
     const event = createEvent([
         createOccurrenceInsertRecord(
             VALID_URL,
-            occurrence.keyphrase,
-            occurrence.occurrences,
-            "sequence_number"
+            occurrences[0].keyphrase,
+            occurrences[0].occurrences,
+            expectedSequenceNumbers[0]
+        ),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[1].keyphrase,
+            occurrences[1].occurrences,
+            expectedSequenceNumbers[1]
         ),
     ]);
 
-    expect.assertions(1);
-    await expect(adapter.handleEvent(event)).rejects.toEqual(
-        expect.objectContaining({
-            message: expect.stringContaining(
-                "Failed to update totals for provided records:"
-            ),
-        })
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(2);
+    expect(actual.batchItemFailures).toEqual(
+        expect.arrayContaining(
+            expectedSequenceNumbers.map((sequenceNumber) => ({
+                itemIdentifier: sequenceNumber,
+            }))
+        )
     );
+});
+
+test("returns only related sequence numbers as batch failures if totals returns partial failures", async () => {
+    const occurrences = [
+        createOccurrence(VALID_URL, "test", 15, false),
+        createOccurrence(VALID_URL, "wibble", 12, false),
+    ];
+    mockPort.updateTotal.mockResolvedValue([occurrences[1]]);
+    const sequenceNumbers = ["sequence_number_1", "sequence_number_2"];
+    const event = createEvent([
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[0].keyphrase,
+            occurrences[0].occurrences,
+            sequenceNumbers[0]
+        ),
+        createOccurrenceInsertRecord(
+            VALID_URL,
+            occurrences[1].keyphrase,
+            occurrences[1].occurrences,
+            sequenceNumbers[1]
+        ),
+    ]);
+
+    const actual = await adapter.handleEvent(event);
+
+    expect(actual.batchItemFailures).toHaveLength(1);
+    expect(actual.batchItemFailures[0]).toEqual({
+        itemIdentifier: sequenceNumbers[1],
+    });
 });
 
 test("throws an error if an unhandled exception occurs while updating totals", async () => {
