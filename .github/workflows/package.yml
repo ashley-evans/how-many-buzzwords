@@ -36,8 +36,9 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: |
+                      ./node_modules
                       ${{ inputs.path }}/**/node_modules
-                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
                   restore-keys: |
                       ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Compile Package
@@ -78,8 +79,9 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: |
+                      ./node_modules
                       ${{ inputs.path }}/**/node_modules
-                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
                   restore-keys: |
                       ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Install Dependencies
@@ -103,8 +105,9 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: |
+                      ./node_modules
                       ${{ inputs.path }}/**/node_modules
-                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
                   restore-keys: |
                       ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Install Dependencies
@@ -129,8 +132,9 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: |
+                      ./node_modules
                       ${{ inputs.path }}/**/node_modules
-                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
                   restore-keys: |
                       ${{ runner.os }}-node-v1-${{ inputs.node_cache_key }}-
             - name: Compile Package
