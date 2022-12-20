@@ -1,4 +1,7 @@
-import { SiteKeyphraseOccurrences } from "buzzword-keyphrase-keyphrase-repository-library";
+import {
+    SiteKeyphrase,
+    SiteKeyphraseOccurrences,
+} from "buzzword-keyphrase-keyphrase-repository-library";
 
 type OccurrenceTotalImage = {
     baseURL?: string;
@@ -15,7 +18,9 @@ type OccurrenceItem = ItemState<SiteKeyphraseOccurrences>;
 type TotalItem = ItemState<OccurrenceTotalImage>;
 
 interface TotalOccurrencesPort {
-    updateTotal(items: (OccurrenceItem | TotalItem)[]): Promise<boolean>;
+    updateTotal(
+        items: (OccurrenceItem | TotalItem)[]
+    ): Promise<SiteKeyphrase[]>;
 }
 
 export {
