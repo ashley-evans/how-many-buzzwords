@@ -40,6 +40,15 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ./node_modules
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Compile Package
               run: |
                   ./scripts/helpers/compile-service.sh -c -p ${{ inputs.path }}
@@ -84,6 +93,15 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ./node_modules
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Install Dependencies
               run: |
                   package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
@@ -115,6 +133,15 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ./node_modules
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Install Dependencies
               run: |
                   package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
@@ -135,6 +162,15 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ./node_modules
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Install Dependencies
               run: |
                   package_name=$(jq -r ".name" ${{ inputs.path }}/package.json)
@@ -181,6 +217,15 @@ jobs:
               with:
                   aws-region: eu-west-2
                   role-to-assume: ${{ secrets.deploy_role }}
+            - name: Cache Node Dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ./node_modules
+                      ${{ inputs.path }}/**/node_modules
+                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Cache deployment packages
               uses: actions/cache@v3
               env:
