@@ -30,6 +30,7 @@ type ValidOccurrenceRecord = {
             [KeyphraseTableKeyFields.HashKey]: { S: string };
             [KeyphraseTableKeyFields.RangeKey]: { S: string };
         };
+        SequenceNumber: string;
         NewImage: {
             [KeyphraseTableNonKeyFields.Occurrences]: { N: string };
             [KeyphraseTableNonKeyFields.Aggregated]?: { BOOL: boolean };
@@ -73,6 +74,9 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                         KeyphraseTableKeyFields.HashKey,
                         KeyphraseTableKeyFields.RangeKey,
                     ],
+                },
+                SequenceNumber: {
+                    type: "string",
                 },
                 NewImage: {
                     type: "object",
@@ -118,7 +122,7 @@ const schema: JSONSchemaType<ValidOccurrenceRecord> = {
                     nullable: true,
                 },
             },
-            required: ["Keys", "NewImage"],
+            required: ["Keys", "NewImage", "SequenceNumber"],
         },
     },
     required: ["eventName", "dynamodb"],
