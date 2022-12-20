@@ -76,10 +76,12 @@ describe("navigating to results with valid encoded URL", () => {
             <App keyphraseServiceClientFactory={mockKeyphraseClientFactory} />
         );
 
-        await waitFor(() =>
-            expect(
-                getByRole("heading", { name: expectedResultsHeader })
-            ).toBeInTheDocument()
+        await waitFor(
+            () =>
+                expect(
+                    getByRole("heading", { name: expectedResultsHeader })
+                ).toBeInTheDocument(),
+            { timeout: 3000 }
         );
         expect(
             getByRole("heading", { name: APPLICATION_TITLE })
@@ -136,10 +138,12 @@ test("navigates to results page if crawl successfully completes", async () => {
     });
     fireEvent.submit(getByRole("button", { name: SEARCH_BUTTON_TEXT }));
 
-    await waitFor(() =>
-        expect(
-            getByRole("heading", { name: expectedHeader })
-        ).toBeInTheDocument()
+    await waitFor(
+        () =>
+            expect(
+                getByRole("heading", { name: expectedHeader })
+            ).toBeInTheDocument(),
+        { timeout: 3000 }
     );
 });
 
