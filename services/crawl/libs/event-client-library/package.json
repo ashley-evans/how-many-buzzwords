@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {
-        "@aws-sdk/client-eventbridge": "3.222.0"
+        "@aws-sdk/client-eventbridge": "3.235.0"
     }
 }
