@@ -1,8 +1,7 @@
-import SortOrder from "../types/SortOrder";
 import Crawl from "../types/Crawl";
 
 interface QueryCrawlPort {
-    queryCrawl(limit?: number, dateSortOrder?: SortOrder): Promise<Crawl[]>;
+    queryCrawl(limit?: number): Promise<Crawl[]>;
 }
 
 export default QueryCrawlPort;

@@ -2,55 +2,32 @@ import { mock } from "jest-mock-extended";
 
 import CrawlRepositoryPort from "../../ports/CrawlRepositoryPort";
 import Crawl from "../../types/Crawl";
-import SortOrder from "../../types/SortOrder";
 import QueryCrawlDomain from "../QueryCrawlDomain";
 
 const mockRepository = mock<CrawlRepositoryPort>();
 
 const DEFAULT_LIMIT = 5;
-const DEFAULT_SORT_ORDER = SortOrder.DESCENDING;
 
-const domain = new QueryCrawlDomain(
-    mockRepository,
-    DEFAULT_LIMIT,
-    DEFAULT_SORT_ORDER
-);
+const domain = new QueryCrawlDomain(mockRepository, DEFAULT_LIMIT);
 
 beforeEach(() => {
     mockRepository.queryCrawl.mockReset();
 });
 
-test("calls repository to get latest crawls with provided limit and sort order", async () => {
+test("calls repository to get latest crawls with provided limit", async () => {
     const expectedLimit = 10;
-    const expectedSortOrder = SortOrder.ASCENDING;
 
-    await domain.queryCrawl(expectedLimit, expectedSortOrder);
+    await domain.queryCrawl(expectedLimit);
 
     expect(mockRepository.queryCrawl).toHaveBeenCalledTimes(1);
-    expect(mockRepository.queryCrawl).toHaveBeenCalledWith(
-        expectedLimit,
-        expectedSortOrder
-    );
+    expect(mockRepository.queryCrawl).toHaveBeenCalledWith(expectedLimit);
 });
 
 test("defaults to the default configured limit if no limit provided", async () => {
-    await domain.queryCrawl(undefined, SortOrder.ASCENDING);
+    await domain.queryCrawl(undefined);
 
     expect(mockRepository.queryCrawl).toHaveBeenCalledTimes(1);
-    expect(mockRepository.queryCrawl).toHaveBeenCalledWith(
-        DEFAULT_LIMIT,
-        expect.anything()
-    );
-});
-
-test("defaults to the default configured sort order if no sort order provided", async () => {
-    await domain.queryCrawl(10);
-
-    expect(mockRepository.queryCrawl).toHaveBeenCalledTimes(1);
-    expect(mockRepository.queryCrawl).toHaveBeenCalledWith(
-        expect.anything(),
-        DEFAULT_SORT_ORDER
-    );
+    expect(mockRepository.queryCrawl).toHaveBeenCalledWith(DEFAULT_LIMIT);
 });
 
 test.each([
