@@ -8,6 +8,7 @@ schema {
 
 type Query {
     urls(id: ID!): URL
+    crawls(limit: Int): [Crawl]!
 }
 
 interface Node {
@@ -21,6 +22,11 @@ type URL implements Node {
 
 type Pathname {
     name: String!
+    crawledAt: AWSDateTime!
+}
+
+type Crawl implements Node {
+    id: ID!
     crawledAt: AWSDateTime!
 }
 
