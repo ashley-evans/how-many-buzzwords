@@ -786,6 +786,7 @@ Resources:
             Description: Queries the latest crawl executions and returns crawled URL and time
             Layers:
                 - Ref: CrawlNodeDependencyLayer
+            MemorySize: 512
             Architectures:
                 - arm64
             Environment:
