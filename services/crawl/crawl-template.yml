@@ -744,6 +744,101 @@ Resources:
                 Variables:
                     TABLE_NAME: !Ref URLsTable
                     EVENT_BUS_NAME: !GetAtt CrawlServiceEventBus.Arn
+    QueryCrawlRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: CrawlStateMachineReadPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - states:ListExecutions
+                            Resource: !Ref CrawlStateMachine
+                            Effect: Allow
+                - PolicyName: CrawlStateMachineExecutionReadPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - states:DescribeExecution
+                            Resource: !Sub arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:execution:${CrawlStateMachine.Name}:*
+                            Effect: Allow
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    QueryCrawl:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: query-crawl.handler
+            Role: !GetAtt QueryCrawlRole.Arn
+            Runtime: nodejs18.x
+            CodeUri: ./functions/query-crawl
+            Description: Queries the latest crawl executions and returns crawled URL and time
+            Layers:
+                - Ref: CrawlNodeDependencyLayer
+            Architectures:
+                - arm64
+            Environment:
+                Variables:
+                    CRAWL_STATE_MACHINE_ARN: !Ref CrawlStateMachine
+                    DEFAULT_LIMIT: 5
+    QueryCrawlAccessRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: InvokeQueryCrawlPolicy
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                          - Action:
+                                - lambda:InvokeFunction
+                            Resource: !GetAtt QueryCrawl.Arn
+                            Effect: Allow
+    CrawlsQueryDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Type: AWS_LAMBDA
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            Name: !Sub buzzword_crawls_data_source_${EnvironmentNameSuffix}
+            LambdaConfig:
+                LambdaFunctionArn: !GetAtt QueryCrawl.Arn
+            ServiceRoleArn: !GetAtt QueryCrawlAccessRole.Arn
+    CrawlsQueryResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            TypeName: Query
+            ApiId: !GetAtt CrawlGraphQLAPI.ApiId
+            FieldName: crawls
+            DataSourceName: !GetAtt CrawlsQueryDataSource.Name
+            RequestMappingTemplate: |
+                {
+                    "version": "2017-02-28",
+                    "operation": "Invoke",
+                    "payload": {
+                        "field": "crawls",
+                        "arguments": $utils.toJson($context.arguments)
+                    }
+                }
+            ResponseMappingTemplate: "$utils.toJson($context.result)"
 Outputs:
     EventBusARN:
         Description: The ARN for the Crawl Service's Event Bus
