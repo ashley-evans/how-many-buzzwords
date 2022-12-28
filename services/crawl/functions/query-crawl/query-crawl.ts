@@ -22,11 +22,12 @@ function createDomain(repository: CrawlRepositoryPort): QueryCrawlPort {
         throw new Error("Default limit has not been set.");
     }
 
-    if (!Number.isInteger(defaultLimit)) {
+    const limit = parseInt(defaultLimit);
+    if (Number.isNaN(limit)) {
         throw new Error("Provided Default limit is not an integer.");
     }
 
-    return new QueryCrawlDomain(repository, parseInt(defaultLimit));
+    return new QueryCrawlDomain(repository, limit);
 }
 
 const repository = createRepository();
