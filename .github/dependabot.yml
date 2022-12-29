@@ -56,6 +56,10 @@ updates:
       package-ecosystem: npm
       schedule:
           interval: weekly
+    - directory: /services/crawl/functions/query-crawl
+      package-ecosystem: npm
+      schedule:
+          interval: weekly
     - directory: /services/crawl/functions/urls-crud/functions/get-content
       package-ecosystem: npm
       schedule:

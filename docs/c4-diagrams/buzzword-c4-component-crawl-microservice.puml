@@ -17,6 +17,7 @@ Container_Boundary(crawl_microservice_boundary, "Crawl Microservice") {
     Component(get_urls_lambda, "Get URLs Lambda", "Lambda and TypeScript", "Gets all URLs crawled from a given URL")
     Component(publish_urls_lambda, "Publish URLs Lambda", "Lambda and TypeScript", "Publishes newly crawled URLs as event to event bus")
     Component(update_status_lambda, "Update Status Lambda", "Lambda and TypeScript", "Updates the crawl status in DynamoDB and publishes crawl status update messages to subscribed clients")
+    Component(query_crawls_lambda, "Query Crawls Lambda", "Lambda and TypeScript", "Queries the latest crawl executions and returns crawled URL and time")
     Component(event_bus, "Event Bus", "Event Bridge", "Event bus service that provides subscribers relevant events")
 }
 
@@ -30,6 +31,7 @@ Rel(single_page_application, graphql_api, "Initiates crawl", "HTTP")
 Rel(graphql_api, single_page_application, "Sends crawl status updates to", "WebSocket")
 Rel(graphql_api, step_function, "Starts execution")
 Rel(graphql_api, get_urls_lambda, "Routes queries against the urls field to")
+Rel(graphql_api, query_crawls_lambda, "Routes queries against the crawls field to")
 
 Rel(api_gateway, get_content_lambda, "Routes requests to get crawled page content to")
 
@@ -37,6 +39,8 @@ Rel(step_function, recent_crawl_lambda, "Uses")
 Rel(step_function, crawl_urls_lambda, "Initiates crawl if not recently crawled")
 Rel_U(step_function, event_bus, "Sends crawl complete events containing all crawled URLs and status updates to")
 Rel(step_function, update_status_lambda, "Updates crawl status to failure if an error occurs during crawl")
+
+Rel(query_crawls_lambda, step_function, "Queries latest execution details from")
 
 Rel(recent_crawl_lambda, url_db, "Reads from", "Dynamoose")
 

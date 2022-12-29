@@ -1,6 +1,6 @@
 import { AppSyncResolverEvent } from "aws-lambda";
 
-import GraphQLAdapter from "../../../interfaces/GraphQLAdapter";
+import GraphQLAdapter from "../../../../interfaces/GraphQLAdapter";
 import { QueryUrlsArgs, Url } from "../../../../../schemas/schema";
 import { GetURLsPort, PathnameResponse } from "../ports/GetURLsPort";
 
