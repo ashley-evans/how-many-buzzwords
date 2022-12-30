@@ -14,6 +14,9 @@ on:
             deploy_role:
                 required: true
 
+env:
+    deployment_cache_name: cache-deployment-packages
+
 jobs:
     changed:
         runs-on: ubuntu-latest
@@ -29,17 +32,29 @@ jobs:
                       service:
                           - ${{ inputs.path }}/**
                           - ./.github/workflows/service.yml
-    compile:
+    deploy-dryrun:
         runs-on: ubuntu-latest
         needs: changed
         if: ${{ needs.changed.outputs.service == 'true' }}
+        permissions:
+            id-token: write
+            contents: read
+            packages: read
         steps:
             - uses: actions/checkout@v3
+            - uses: actions/setup-python@v4
+              with:
+                  python-version: "3.8"
             - uses: actions/setup-node@v3
               with:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - uses: aws-actions/setup-sam@v2
+            - uses: aws-actions/configure-aws-credentials@v1-node16
+              with:
+                  aws-region: eu-west-2
+                  role-to-assume: ${{ secrets.deploy_role }}
             - name: Cache Node Dependencies
               uses: actions/cache@v3
               with:
@@ -49,9 +64,18 @@ jobs:
                   key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
                   restore-keys: |
                       ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
-            - name: Compile Package
+            - name: Cache deployment packages
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      .aws-sam/cache/**
+                      .aws-sam/build.toml
+                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-
+            - name: Dry Run Deployment
               run: |
-                  ./scripts/helpers/compile-service.sh -c -p ${{ inputs.path }}
+                  ${{ inputs.deploy_script_path }} -e production -d
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     audit:
@@ -133,6 +157,8 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - uses: SimenB/github-actions-cpu-cores@v1
+              id: cpu-cores
             - name: Cache Node Dependencies
               uses: actions/cache@v3
               with:
@@ -150,7 +176,7 @@ jobs:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run Unit Tests
               run: |
-                  npm run test:unit -- --testPathPattern=${{ inputs.path }}
+                  npm run test:unit -- --testPathPattern=${{ inputs.path }} --max-workers ${{ steps.cpu-cores.outputs.count }}
     integration-test:
         runs-on: ubuntu-latest
         needs: changed
@@ -162,6 +188,8 @@ jobs:
                   node-version: "18"
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
+            - uses: SimenB/github-actions-cpu-cores@v1
+              id: cpu-cores
             - name: Cache Node Dependencies
               uses: actions/cache@v3
               with:
@@ -184,12 +212,12 @@ jobs:
                   cors: "*"
             - name: Run Integration Tests
               run: |
-                  npm run test:integration -- --testPathPattern=${{ inputs.path }}
+                  npm run test:integration -- --testPathPattern=${{ inputs.path }} --max-workers ${{ steps.cpu-cores.outputs.count }}
     deploy:
         runs-on: ubuntu-latest
         needs:
             [
-                compile,
+                deploy-dryrun,
                 audit,
                 format,
                 lint,
@@ -228,15 +256,13 @@ jobs:
                       ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
             - name: Cache deployment packages
               uses: actions/cache@v3
-              env:
-                  cache-name: cache-deployment-packages
               with:
                   path: |
                       .aws-sam/cache/**
                       .aws-sam/build.toml
-                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
+                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
                   restore-keys: |
-                      ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.cache-name }}-
+                      ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-
             - name: Deploy stack
               run: |
                   ${{ inputs.deploy_script_path }} -e production

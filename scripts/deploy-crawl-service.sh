@@ -2,14 +2,18 @@
 
 usage() {
     echo "Usage:
-    -e [Environment to deploy]" 1>&2;
+    -e [Environment to deploy]
+    -d [Dry run flag]" 1>&2;
     exit 1;
 }
 
-while getopts "e:h" opt; do
+while getopts "e:dh" opt; do
     case $opt in
         e)
             environment=$OPTARG
+            ;;
+        d)
+            dryrun=true
             ;;
         h)
             usage
@@ -54,10 +58,17 @@ fi
 
 api_key_expiry="$(date -d "+365 days" "+%s")"
 
+deploy_optional_params=()
+if [ $dryrun ]; then
+    deploy_optional_params+=(-d)
+else
+    deploy_optional_params+=(-f)
+fi
+
 $script_dir/helpers/deploy-service.sh \
     -t $template_path \
     -c $config_path \
     -e $environment \
-    -f \
     -o "APIKeyExpiryTime=$api_key_expiry $config_parameters" \
-    --cache
+    --cache \
+    "${deploy_optional_params[@]}"

@@ -4,17 +4,21 @@ usage() {
     echo "Usage:
     -e [Environment to deploy]
     -f [Force deployment flag]
+    -d [Dry run flag]
     -c [Cache build flag]" 1>&2;
     exit 1;
 }
 
-while getopts "e:fch" opt; do
+while getopts "e:fdch" opt; do
     case $opt in
         e)
             environment=$OPTARG
             ;;
         f)
             force=true
+            ;;
+        d)
+            dryrun=true
             ;;
         c)
             cache=true
@@ -91,7 +95,9 @@ $script_dir/helpers/build-stack.sh \
     "${build_optional_params[@]}"
 
 deploy_optional_params=()
-if [ $force ]; then
+if [ $dryrun ]; then
+    deploy_optional_params+=(-d)
+elif [ $force ]; then
     deploy_optional_params+=(-f)
 fi
 
@@ -113,9 +119,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v stack_name)
-deployment_bucket=$(aws cloudformation list-stack-resources --stack-name $stack_name \
-    | jq -r '.StackResourceSummaries[] | select( .LogicalResourceId == "UIDeploymentBucket" ) | .PhysicalResourceId')
+if ! [ $dryrun ]; then
+    stack_name=$(node $script_dir/helpers/get-sam-config-value.js -c $config_path -e $environment -v stack_name)
+    deployment_bucket=$(aws cloudformation list-stack-resources --stack-name $stack_name \
+        | jq -r '.StackResourceSummaries[] | select( .LogicalResourceId == "UIDeploymentBucket" ) | .PhysicalResourceId')
 
-echo "Publishing built files to S3..."
-aws s3 cp "$root_dir/ui/dist" "s3://$deployment_bucket" --recursive
+    echo "Publishing built files to S3..."
+    aws s3 cp "$root_dir/ui/dist" "s3://$deployment_bucket" --recursive
+fi

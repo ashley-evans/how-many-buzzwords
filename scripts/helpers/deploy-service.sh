@@ -6,12 +6,13 @@ usage() {
     -c [Mandatory: Path to config file]
     -e [Mandatory: Environment to deploy]
     -f [Force deployment flag]
+    -d [Dry run flag]
     -o [Environment parameter overrides]
     --cache [Cache build flag]" 1>&2;
     exit 1; 
 }
 
-while getopts "t:c:e:fo:-:h" opt; do
+while getopts "t:c:e:fdo:-:h" opt; do
     if [ $opt = "-" ]; then
         opt="${OPTARG%%=*}"
         OPTARG="${OPTARG#$opt}"
@@ -30,6 +31,9 @@ while getopts "t:c:e:fo:-:h" opt; do
             ;;
         f)
             force=true
+            ;;
+        d)
+            dryrun=true
             ;;
         o)
             overrides=$OPTARG
@@ -60,7 +64,9 @@ fi
 $script_dir/build-stack.sh -t $template "${build_optional_params[@]}"
 
 deploy_optional_params=()
-if [ $force ]; then
+if [ $dryrun ]; then
+    deploy_optional_params+=(-d)
+elif [ $force ]; then
     deploy_optional_params+=(-f)
 fi
 
