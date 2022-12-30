@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {
-        "@aws-sdk/client-apigatewaymanagementapi": "3.236.0"
+        "@aws-sdk/client-apigatewaymanagementapi": "3.241.0"
     }
 }
