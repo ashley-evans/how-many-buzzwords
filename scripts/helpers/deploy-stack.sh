@@ -5,11 +5,12 @@ usage() {
     -c [Mandatory: Path to config file]
     -e [Mandatory: Environment to deploy]
     -f [Force deployment flag]
+    -d [Dry run flag]
     -o [Environment parameter overrides]" 1>&2;
     exit 1; 
 }
 
-while getopts "c:e:fo:h" opt; do
+while getopts "c:e:fdo:h" opt; do
     case $opt in
         c)
             config=$OPTARG
@@ -19,6 +20,9 @@ while getopts "c:e:fo:h" opt; do
             ;;
         f)
             force=true
+            ;;
+        d)
+            dryrun=true
             ;;
         o)
             overrides=$OPTARG
@@ -37,7 +41,9 @@ if [ -z $config ]; then
 fi
 
 optional_params=()
-if [ $force ]; then
+if [ $dryrun ]; then
+    optional_params+=(--no-execute-changeset)
+elif [ $force ]; then
     optional_params+=(--no-confirm-changeset)
 fi
 
