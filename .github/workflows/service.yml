@@ -100,6 +100,11 @@ jobs:
                   issue-number: ${{ github.event.pull_request.number }}
                   comment-author: "github-actions[bot]"
                   body-includes: ${{ inputs.service_name }}
+            - name: Create Multiline changeset YAML variable for template
+              run: |
+                  ./scripts/helpers/multiline-string-to-yml.sh -k changeset \
+                    -v "${{ needs.deploy-dryrun.outputs.CHANGESET_OUTPUT }}" \
+                    -o ./template_vars.yml
             - name: Create comment template
               uses: chuhlomin/render-template@v1.6
               id: template
@@ -107,7 +112,7 @@ jobs:
                   template: .github/comment_template/changeset-template.md
                   vars: |
                       service_name: "${{ inputs.service_name }}"
-                      changeset: "${{ needs.deploy-dryrun.outputs.CHANGESET_OUTPUT }}"
+                  vars_path: ./template_vars.yml
             - name: Create or update comment
               uses: peter-evans/create-or-update-comment@v2
               with:
