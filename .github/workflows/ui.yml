@@ -71,6 +71,7 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-node-v1-ui-
             - name: Dry Run Deployment
+              id: dry-run
               run: |
                   ./scripts/helpers/write-changeset-to-file.sh -c "./scripts/deploy-ui.sh -e production -d -c" \
                     -f $GITHUB_OUTPUT \
@@ -78,6 +79,41 @@ jobs:
                     -d EOF
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        outputs:
+            CHANGESET_OUTPUT: ${{ steps.dry-run.outputs.CHANGESET_OUTPUT }}
+    add-changeset-comment:
+        runs-on: ubuntu-latest
+        needs: deploy-dryrun
+        if: ${{ github.event_name == 'pull_request' && needs.deploy-dryrun.outputs.CHANGESET_OUTPUT != '' }}
+        steps:
+            - uses: actions/checkout@v3
+            - name: Find Comment
+              uses: peter-evans/find-comment@v2
+              id: find-comment
+              with:
+                  issue-number: ${{ github.event.pull_request.number }}
+                  comment-author: "github-actions[bot]"
+                  body-includes: "How Many Buzzwords UI"
+            - name: Create Multiline changeset YAML variable for template
+              run: |
+                  ./scripts/helpers/multiline-string-to-yml.sh -k changeset \
+                    -v "${{ needs.deploy-dryrun.outputs.CHANGESET_OUTPUT }}" \
+                    -o ./template_vars.yml
+            - name: Create comment template
+              uses: chuhlomin/render-template@v1.6
+              id: template
+              with:
+                  template: .github/comment_template/changeset-template.md
+                  vars: |
+                      service_name: "How Many Buzzwords UI"
+                  vars_path: ./template_vars.yml
+            - name: Create or update comment
+              uses: peter-evans/create-or-update-comment@v2
+              with:
+                  comment-id: ${{ steps.find-comment.outputs.comment-id }}
+                  issue-number: ${{ github.event.pull_request.number }}
+                  body: ${{ steps.template.outputs.result }}
+                  edit-mode: replace
     format:
         runs-on: ubuntu-latest
         needs: changed
