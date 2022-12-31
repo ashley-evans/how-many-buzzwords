@@ -72,6 +72,7 @@ jobs:
               with:
                   path: |
                       .aws-sam/cache/**
+                      .aws-sam/deps/**
                       .aws-sam/build.toml
                   key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
                   restore-keys: |
@@ -301,6 +302,7 @@ jobs:
               with:
                   path: |
                       .aws-sam/cache/**
+                      .aws-sam/deps/**
                       .aws-sam/build.toml
                   key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
                   restore-keys: |
