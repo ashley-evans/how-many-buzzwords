@@ -2,7 +2,7 @@
     "name": "buzzword-crawl-event-client-library",
     "version": "1.0.0",
     "main": "./index.js",
-    "dependencies": {
-        "@aws-sdk/client-eventbridge": "3.236.0"
+    "devDependencies": {
+        "@aws-sdk/client-eventbridge": "^3.241.0"
     }
 }

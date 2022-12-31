@@ -2,7 +2,7 @@
     "name": "buzzword-keyphrase-text-repository-library",
     "version": "1.0.0",
     "main": "./index.js",
-    "dependencies": {
-        "@aws-sdk/client-s3": "3.236.0"
+    "devDependencies": {
+        "@aws-sdk/client-s3": "^3.241.0"
     }
 }
