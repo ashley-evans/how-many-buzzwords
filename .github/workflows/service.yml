@@ -91,7 +91,7 @@ jobs:
     add-changeset-comment:
         runs-on: ubuntu-latest
         needs: deploy-dryrun
-        if: ${{ github.event_name == 'pull_request' && needs.deploy-dryrun.outputs.CHANGESET_OUTPUT != '' }}
+        if: ${{ github.event_name == 'pull_request' && needs.deploy-dryrun.outputs.CHANGESET_OUTPUT != '' && github.actor != 'dependabot[bot]' }}
         steps:
             - uses: actions/checkout@v3
             - name: Find Comment
