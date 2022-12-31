@@ -1,5 +1,12 @@
 name: Validate and Deploy
-on: [push]
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
 
 jobs:
     build-deploy-object-validator-package:
@@ -21,6 +28,7 @@ jobs:
             service_cache_key: crawl-service
             path: ./services/crawl
             deploy_script_path: ./scripts/deploy-crawl-service.sh
+            service_name: Crawl Service
         secrets:
             deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
     build-deploy-keyphrase-service:
@@ -30,6 +38,7 @@ jobs:
             service_cache_key: keyphrase-service
             path: ./services/keyphrase
             deploy_script_path: ./scripts/deploy-keyphrase-service.sh
+            service_name: Keyphrase Service
         secrets:
             deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
     build-deploy-ui:
