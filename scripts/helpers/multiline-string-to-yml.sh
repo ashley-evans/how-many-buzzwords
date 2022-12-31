@@ -32,5 +32,5 @@ if [[ -z $key ]] || [[ -z $value ]] || [[ -z $output ]]; then
     usage 
 fi
 
-echo "$key: |
-$(echo "$value" | sed 's/^/  /')" > $output
+echo -n "$key: |
+$(echo "$value" | sed -e 's/[ \t]*$//' -e 's/^/  /')" > $output
