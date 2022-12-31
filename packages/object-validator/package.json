@@ -10,9 +10,9 @@
     },
     "main": "./index.js",
     "devDependencies": {
-        "ajv": "^8.8.2"
+        "ajv": "^8.11.2"
     },
     "peerDependencies": {
-        "ajv": "^8.8.2"
+        "ajv": "^8.11.2"
     }
 }
