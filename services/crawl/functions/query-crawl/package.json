@@ -1,7 +1,7 @@
 {
     "name": "buzzword-crawl-query-crawl-lambda",
     "version": "1.0.0",
-    "dependencies": {
-        "@aws-sdk/client-sfn": "3.236.0"
+    "devDependencies": {
+        "@aws-sdk/client-sfn": "^3.241.0"
     }
 }

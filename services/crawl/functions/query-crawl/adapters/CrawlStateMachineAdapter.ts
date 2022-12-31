@@ -1,7 +1,6 @@
 import {
     DescribeExecutionCommand,
     DescribeExecutionCommandOutput,
-    ExecutionStatus,
     ListExecutionsCommand,
     SFNClient,
 } from "@aws-sdk/client-sfn";
@@ -38,7 +37,7 @@ class CrawlStateMachineAdapter implements CrawlRepositoryPort {
         const command = new ListExecutionsCommand({
             stateMachineArn: this.stateMachineARN,
             maxResults: limit,
-            statusFilter: ExecutionStatus.SUCCEEDED,
+            statusFilter: "SUCCEEDED",
         });
 
         const executions = (await this.client.send(command)).executions;

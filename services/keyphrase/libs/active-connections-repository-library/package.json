@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "main": "./index.js",
     "dependencies": {
-        "dynamoose": "3.0.0"
+        "dynamoose": "3.1.0"
     }
 }
