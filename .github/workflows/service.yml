@@ -75,7 +75,10 @@ jobs:
                       ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-
             - name: Dry Run Deployment
               run: |
-                  ${{ inputs.deploy_script_path }} -e production -d
+                  ./scripts/helpers/write-changeset-to-file.sh -c "${{ inputs.deploy_script_path }} -e production -d" \
+                    -f $GITHUB_OUTPUT \
+                    -v CHANGESET_OUTPUT \
+                    -d EOF
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     audit:

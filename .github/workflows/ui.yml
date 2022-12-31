@@ -72,7 +72,10 @@ jobs:
                       ${{ runner.os }}-node-v1-ui-
             - name: Dry Run Deployment
               run: |
-                  ./scripts/deploy-ui.sh -e production -d -c
+                  ./scripts/helpers/write-changeset-to-file.sh -c "./scripts/deploy-ui.sh -e production -d -c" \
+                    -f $GITHUB_OUTPUT \
+                    -v CHANGESET_OUTPUT \
+                    -d EOF
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     format:
