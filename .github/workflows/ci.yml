@@ -1,5 +1,12 @@
 name: Validate and Deploy
-on: [push]
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
 
 jobs:
     build-deploy-object-validator-package:
