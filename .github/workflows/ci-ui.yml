@@ -1,0 +1,18 @@
+name: Validate and Deploy - UI
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build-deploy:
+        name: UI
+        uses: ./.github/workflows/ui.yml
+        with:
+            path: ./ui
+        secrets:
+            DEPLOY_ROLE: ${{ secrets.AWS_DEPLOY_ROLE }}

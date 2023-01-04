@@ -1,0 +1,21 @@
+name: Validate and Deploy - Crawl Service
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build-deploy:
+        name: Crawl
+        uses: ./.github/workflows/service.yml
+        with:
+            service_cache_key: crawl-service
+            path: ./services/crawl
+            deploy_script_path: ./scripts/deploy-crawl-service.sh
+            service_name: Crawl Service
+        secrets:
+            deploy_role: ${{ secrets.AWS_DEPLOY_ROLE }}
