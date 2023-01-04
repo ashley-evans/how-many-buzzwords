@@ -58,6 +58,7 @@ jobs:
             path: ${{ inputs.path }}
             deploy_script_path: ${{ inputs.deploy_script_path }}
             service_name: ${{ inputs.service_name }}
+            dryrun: ${{ github.actor != 'dependabot[bot]' }}
         secrets:
             deploy_role: ${{ secrets.deploy_role }}
     format:
