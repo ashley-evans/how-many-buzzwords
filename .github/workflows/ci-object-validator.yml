@@ -1,0 +1,17 @@
+name: Validate and Deploy - Object Validator Package
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build-deploy:
+        name: Object Validator
+        uses: ./.github/workflows/package.yml
+        with:
+            path: ./packages/object-validator
+            node_cache_key: object-validator

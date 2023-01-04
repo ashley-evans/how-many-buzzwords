@@ -1,0 +1,17 @@
+name: Validate and Deploy - Crawl Client Package
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build-deploy:
+        name: Crawl Client
+        uses: ./.github/workflows/package.yml
+        with:
+            path: ./packages/crawl-client
+            node_cache_key: crawl-client
