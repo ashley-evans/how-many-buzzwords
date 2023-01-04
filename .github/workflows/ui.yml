@@ -38,82 +38,14 @@ jobs:
                   npm audit --audit-level=critical --prefix ${{ inputs.path }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    deploy-dryrun:
-        runs-on: ubuntu-latest
+    build:
+        uses: ./.github/workflows/ui-build.yml
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
-        permissions:
-            id-token: write
-            contents: read
-            packages: read
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-python@v4
-              with:
-                  python-version: "3.8"
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
-                  scope: "@ashley-evans"
-                  registry-url: "https://npm.pkg.github.com"
-            - uses: aws-actions/setup-sam@v2
-            - uses: aws-actions/configure-aws-credentials@v1-node16
-              with:
-                  aws-region: eu-west-2
-                  role-to-assume: ${{ secrets.DEPLOY_ROLE }}
-            - name: Cache Node Dependencies
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ./node_modules
-                      ./ui/node_modules
-                  key: ${{ runner.os }}-node-v1-ui-${{ hashFiles('./package-lock.json', './ui/package-lock.json') }}
-                  restore-keys: |
-                      ${{ runner.os }}-node-v1-ui-
-            - name: Dry Run Deployment
-              id: dry-run
-              run: |
-                  ./scripts/helpers/write-changeset-to-file.sh -c "./scripts/deploy-ui.sh -e production -d -c" \
-                    -f $GITHUB_OUTPUT \
-                    -v CHANGESET_OUTPUT \
-                    -d EOF
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        outputs:
-            CHANGESET_OUTPUT: ${{ steps.dry-run.outputs.CHANGESET_OUTPUT }}
-    add-changeset-comment:
-        runs-on: ubuntu-latest
-        needs: deploy-dryrun
-        if: ${{ github.event_name == 'pull_request' && needs.deploy-dryrun.outputs.CHANGESET_OUTPUT != '' && github.actor != 'dependabot[bot]' }}
-        steps:
-            - uses: actions/checkout@v3
-            - name: Find Comment
-              uses: peter-evans/find-comment@v2
-              id: find-comment
-              with:
-                  issue-number: ${{ github.event.pull_request.number }}
-                  comment-author: "github-actions[bot]"
-                  body-includes: "How Many Buzzwords UI"
-            - name: Create Multiline changeset YAML variable for template
-              run: |
-                  ./scripts/helpers/multiline-string-to-yml.sh -k changeset \
-                    -v "${{ needs.deploy-dryrun.outputs.CHANGESET_OUTPUT }}" \
-                    -o ./template_vars.yml
-            - name: Create comment template
-              uses: chuhlomin/render-template@v1.6
-              id: template
-              with:
-                  template: .github/comment_template/changeset-template.md
-                  vars: |
-                      service_name: "How Many Buzzwords UI"
-                  vars_path: ./template_vars.yml
-            - name: Create or update comment
-              uses: peter-evans/create-or-update-comment@v2
-              with:
-                  comment-id: ${{ steps.find-comment.outputs.comment-id }}
-                  issue-number: ${{ github.event.pull_request.number }}
-                  body: ${{ steps.template.outputs.result }}
-                  edit-mode: replace
+        with:
+            dryrun: ${{ github.actor != 'dependabot[bot]' }}
+        secrets:
+            DEPLOY_ROLE: ${{ secrets.DEPLOY_ROLE }}
     format:
         runs-on: ubuntu-latest
         needs: changed
@@ -227,15 +159,7 @@ jobs:
                   retention-days: 5
     deploy:
         runs-on: ubuntu-latest
-        needs:
-            [
-                audit,
-                deploy-dryrun,
-                format,
-                lint,
-                unit-test,
-                browser-component-test,
-            ]
+        needs: [audit, build, format, lint, unit-test, browser-component-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         permissions:
             id-token: write
@@ -252,6 +176,8 @@ jobs:
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v2
+            - name: Fix SAM Cryptography
+              run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"
             - uses: aws-actions/configure-aws-credentials@v1-node16
               with:
                   aws-region: eu-west-2
