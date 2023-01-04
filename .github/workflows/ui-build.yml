@@ -1,6 +1,9 @@
 on:
     workflow_call:
         inputs:
+            path:
+                required: true
+                type: string
             dryrun:
                 required: true
                 type: boolean

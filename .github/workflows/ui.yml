@@ -43,6 +43,7 @@ jobs:
         needs: changed
         if: ${{ needs.changed.outputs.ui == 'true' }}
         with:
+            path: ${{ inputs.path }}
             dryrun: ${{ github.actor != 'dependabot[bot]' }}
         secrets:
             DEPLOY_ROLE: ${{ secrets.DEPLOY_ROLE }}
