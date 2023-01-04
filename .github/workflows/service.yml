@@ -52,13 +52,13 @@ jobs:
     build:
         uses: ./.github/workflows/service-build.yml
         needs: changed
-        if: ${{ needs.changed.outputs.service == 'true' }}
         with:
             service_cache_key: ${{ inputs.service_cache_key }}
             path: ${{ inputs.path }}
             deploy_script_path: ${{ inputs.deploy_script_path }}
             service_name: ${{ inputs.service_name }}
             dryrun: ${{ github.actor != 'dependabot[bot]' }}
+            changed: ${{ needs.changed.outputs.service == 'true' }}
         secrets:
             deploy_role: ${{ secrets.deploy_role }}
     format:

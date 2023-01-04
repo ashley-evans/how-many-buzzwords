@@ -1,7 +1,13 @@
 on:
     workflow_call:
         inputs:
+            path:
+                required: true
+                type: string
             dryrun:
+                required: true
+                type: boolean
+            changed:
                 required: true
                 type: boolean
         secrets:
@@ -11,7 +17,7 @@ on:
 jobs:
     bundle:
         runs-on: ubuntu-latest
-        if: ${{ !inputs.dryrun }}
+        if: ${{ !inputs.dryrun && inputs.changed }}
         steps:
             - uses: actions/checkout@v3
             - uses: actions/setup-node@v3
@@ -35,7 +41,7 @@ jobs:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     deploy-dryrun:
         runs-on: ubuntu-latest
-        if: ${{ inputs.dryrun }}
+        if: ${{ inputs.dryrun && inputs.changed }}
         permissions:
             id-token: write
             contents: read

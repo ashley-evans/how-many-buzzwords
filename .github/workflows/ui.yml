@@ -41,9 +41,10 @@ jobs:
     build:
         uses: ./.github/workflows/ui-build.yml
         needs: changed
-        if: ${{ needs.changed.outputs.ui == 'true' }}
         with:
+            path: ${{ inputs.path }}
             dryrun: ${{ github.actor != 'dependabot[bot]' }}
+            changed: ${{ needs.changed.outputs.ui == 'true' }}
         secrets:
             DEPLOY_ROLE: ${{ secrets.DEPLOY_ROLE }}
     format:
