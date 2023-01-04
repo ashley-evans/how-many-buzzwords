@@ -35,6 +35,8 @@ jobs:
                   scope: "@ashley-evans"
                   registry-url: "https://npm.pkg.github.com"
             - uses: aws-actions/setup-sam@v2
+            - name: Fix SAM Cryptography
+              run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"
             - uses: aws-actions/configure-aws-credentials@v1-node16
               with:
                   aws-region: eu-west-2
