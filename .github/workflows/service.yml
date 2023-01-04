@@ -35,92 +35,6 @@ jobs:
                       service:
                           - ${{ inputs.path }}/**
                           - ./.github/workflows/service.yml
-    deploy-dryrun:
-        runs-on: ubuntu-latest
-        needs: changed
-        if: ${{ needs.changed.outputs.service == 'true' }}
-        permissions:
-            id-token: write
-            contents: read
-            packages: read
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-python@v4
-              with:
-                  python-version: "3.8"
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
-                  scope: "@ashley-evans"
-                  registry-url: "https://npm.pkg.github.com"
-            - uses: aws-actions/setup-sam@v2
-            - uses: aws-actions/configure-aws-credentials@v1-node16
-              with:
-                  aws-region: eu-west-2
-                  role-to-assume: ${{ secrets.deploy_role }}
-            - name: Cache Node Dependencies
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ./node_modules
-                      ${{ inputs.path }}/**/node_modules
-                  key: ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path), './package-lock.json') }}
-                  restore-keys: |
-                      ${{ runner.os }}-node-v1-${{ inputs.service_cache_key }}-
-            - name: Cache deployment packages
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      .aws-sam/cache/**
-                      .aws-sam/deps/**
-                      .aws-sam/build.toml
-                  key: ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-${{ hashFiles(format('{0}/**/package-lock.json', inputs.path)) }}
-                  restore-keys: |
-                      ${{ runner.os }}-deploy-${{ inputs.service_cache_key }}-v1-${{ env.deployment_cache_name }}-
-            - name: Dry Run Deployment
-              id: dry-run
-              run: |
-                  ./scripts/helpers/write-changeset-to-file.sh -c "${{ inputs.deploy_script_path }} -e production -d" \
-                    -f $GITHUB_OUTPUT \
-                    -v CHANGESET_OUTPUT \
-                    -d EOF
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        outputs:
-            CHANGESET_OUTPUT: ${{ steps.dry-run.outputs.CHANGESET_OUTPUT }}
-    add-changeset-comment:
-        runs-on: ubuntu-latest
-        needs: deploy-dryrun
-        if: ${{ github.event_name == 'pull_request' && needs.deploy-dryrun.outputs.CHANGESET_OUTPUT != '' && github.actor != 'dependabot[bot]' }}
-        steps:
-            - uses: actions/checkout@v3
-            - name: Find Comment
-              uses: peter-evans/find-comment@v2
-              id: find-comment
-              with:
-                  issue-number: ${{ github.event.pull_request.number }}
-                  comment-author: "github-actions[bot]"
-                  body-includes: ${{ inputs.service_name }}
-            - name: Create Multiline changeset YAML variable for template
-              run: |
-                  ./scripts/helpers/multiline-string-to-yml.sh -k changeset \
-                    -v "${{ needs.deploy-dryrun.outputs.CHANGESET_OUTPUT }}" \
-                    -o ./template_vars.yml
-            - name: Create comment template
-              uses: chuhlomin/render-template@v1.6
-              id: template
-              with:
-                  template: .github/comment_template/changeset-template.md
-                  vars: |
-                      service_name: "${{ inputs.service_name }}"
-                  vars_path: ./template_vars.yml
-            - name: Create or update comment
-              uses: peter-evans/create-or-update-comment@v2
-              with:
-                  comment-id: ${{ steps.find-comment.outputs.comment-id }}
-                  issue-number: ${{ github.event.pull_request.number }}
-                  body: ${{ steps.template.outputs.result }}
-                  edit-mode: replace
     audit:
         runs-on: ubuntu-latest
         steps:
@@ -135,6 +49,17 @@ jobs:
                   ./scripts/helpers/npm-all.sh -c "audit --audit-level=high" -r ${{ inputs.path }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    build:
+        uses: ./.github/workflows/service-build.yml
+        needs: changed
+        if: ${{ needs.changed.outputs.service == 'true' }}
+        with:
+            service_cache_key: ${{ inputs.service_cache_key }}
+            path: ${{ inputs.path }}
+            deploy_script_path: ${{ inputs.deploy_script_path }}
+            service_name: ${{ inputs.service_name }}
+        secrets:
+            deploy_role: ${{ secrets.deploy_role }}
     format:
         runs-on: ubuntu-latest
         needs: changed
@@ -259,15 +184,7 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         needs:
-            [
-                deploy-dryrun,
-                audit,
-                format,
-                lint,
-                validate,
-                unit-test,
-                integration-test,
-            ]
+            [build, audit, format, lint, validate, unit-test, integration-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         permissions:
             id-token: write
