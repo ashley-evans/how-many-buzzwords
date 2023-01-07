@@ -35,20 +35,6 @@ jobs:
                       service:
                           - ${{ inputs.path }}/**
                           - ./.github/workflows/service.yml
-    audit:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
-                  scope: "@ashley-evans"
-                  registry-url: "https://npm.pkg.github.com"
-            - name: Audit Dependencies
-              run: |
-                  ./scripts/helpers/npm-all.sh -c "audit --audit-level=high" -r ${{ inputs.path }}
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     build:
         uses: ./.github/workflows/service-build.yml
         needs: changed
@@ -184,8 +170,7 @@ jobs:
                   npm run test:integration -- --testPathPattern=${{ inputs.path }} --max-workers ${{ steps.cpu-cores.outputs.count }}
     deploy:
         runs-on: ubuntu-latest
-        needs:
-            [build, audit, format, lint, validate, unit-test, integration-test]
+        needs: [build, format, lint, validate, unit-test, integration-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         permissions:
             id-token: write

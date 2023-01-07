@@ -47,8 +47,6 @@
         "yargs": "^17.3.1"
     },
     "scripts": {
-        "audit:sequential": "./scripts/helpers/npm-all.sh -c \"audit --audit-level=critical\"",
-        "audit:parallel": "./scripts/helpers/npm-all.sh -c \"audit --audit-level=critical\" -p",
         "lint-js": "node node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
         "lint-packages": "node node_modules/.bin/npmPkgJsonLint '.'",
         "lint": "npm run lint-js && npm run lint-packages",

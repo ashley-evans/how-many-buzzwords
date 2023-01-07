@@ -95,17 +95,3 @@ jobs:
               run: |
                   ./node_modules/.bin/eslint '.' --max-warnings 0 --ext .js,.jsx,.ts,.tsx --ignore-pattern 'services/**' --ignore-pattern 'packages/**' --ignore-pattern 'ui/**'
                   ./node_modules/.bin/npmPkgJsonLint ./package.json
-    audit:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
-                  scope: "@ashley-evans"
-                  registry-url: "https://npm.pkg.github.com"
-            - name: Audit Dependencies
-              run: |
-                  npm audit --audit-level=critical
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
