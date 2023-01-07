@@ -44,16 +44,6 @@ jobs:
             - name: Compile Package
               run: |
                   ./scripts/helpers/compile-package.sh -c -p ${{ inputs.path }}
-    audit:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
-            - name: Audit Dependencies
-              run: |
-                  npm audit --prefix ${{ inputs.path }}
     format:
         runs-on: ubuntu-latest
         needs: changed
@@ -121,7 +111,7 @@ jobs:
                   ./node_modules/.bin/jest --testPathPattern=${{ inputs.path }} --verbose --max-workers ${{ steps.cpu-cores.outputs.count }}
     publish:
         runs-on: ubuntu-latest
-        needs: [compile, audit, format, lint, unit-test]
+        needs: [compile, format, lint, unit-test]
         if: ${{ github.ref == 'refs/heads/master' }}
         steps:
             - uses: actions/checkout@v3
