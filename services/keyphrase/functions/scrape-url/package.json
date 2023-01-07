@@ -6,6 +6,6 @@
         "html-to-text": "9.0.3"
     },
     "devDependencies": {
-        "@types/html-to-text": "^8.1.1"
+        "@types/html-to-text": "^9.0.0"
     }
 }
