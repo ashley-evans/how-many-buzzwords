@@ -10,9 +10,9 @@
     },
     "main": "./index.js",
     "devDependencies": {
-        "axios": "^0.27.2"
+        "axios": "^1.2.2"
     },
     "peerDependencies": {
-        "axios": "^0.27.2"
+        "axios": "^1.2.2"
     }
 }
