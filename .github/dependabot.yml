@@ -5,123 +5,153 @@ updates:
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     # UI
     - directory: /ui
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     # Packages
     - directory: /packages/crawl-client
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /packages/object-validator
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     # Crawl Service
     - directory: /services/crawl
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/libs/content-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/libs/event-client-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/libs/urls-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/crawl-urls
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/publish-urls
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/recent-crawl
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/update-status
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/query-crawl
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/urls-crud/functions/get-content
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/crawl/functions/urls-crud/functions/get-urls
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     # Keyphrase Service
     - directory: /services/keyphrase
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/libs/active-connections-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/libs/keyphrase-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/libs/text-repository-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/libs/web-socket-client-library
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/connection-manager
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/count-occurrences
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/find-keyphrases
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/new-connection
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/query-keyphrases
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/scrape-url
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/total-occurrences
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
     - directory: /services/keyphrase/functions/update-connections
       package-ecosystem: npm
       schedule:
           interval: weekly
+      versioning-strategy: increase
