@@ -4,7 +4,7 @@
     "dependencies": {
         "@ant-design/icons": "4.7.0",
         "@ant-design/plots": "1.2.1",
-        "@apollo/client": "3.6.9",
+        "@apollo/client": "3.7.4",
         "@ashley-evans/buzzword-object-validator": "1.0.0",
         "@aws-amplify/auth": "5.0.4",
         "ajv": "8.11.2",
