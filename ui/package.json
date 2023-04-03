@@ -41,7 +41,7 @@
         "jest-websocket-mock": "^2.3.0",
         "style-loader": "^3.3.1",
         "ts-loader": "^9.3.0",
-        "webpack": "^5.75.0",
+        "webpack": "^5.77.0",
         "webpack-cli": "^5.0.1",
         "webpack-dev-server": "^4.9.0"
     },
