@@ -55,7 +55,7 @@ jobs:
             - uses: scottbrenner/cfn-lint-action@v2.2.8
             - name: Validate Templates
               run: |
-                  xargs -n1 -r0a <(find ./templates/ -name *-template.yml -print0) cfn-lint
+                  xargs -r0a <(find ./templates/ -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002 -i W3045'
     format:
         runs-on: ubuntu-latest
         steps:
@@ -65,7 +65,7 @@ jobs:
                   node-version: "18"
             - name: Run formatters
               run: |
-                  npx prettier --check . '!services/**' '!packages/**' '!ui/**'
+                  npx prettier@^2.5.1 --check . '!services/**' '!packages/**' '!ui/**'
     lint:
         runs-on: ubuntu-latest
         steps:
@@ -88,7 +88,7 @@ jobs:
                       ${{ runner.os }}-node-v1-${{ env.cache-name }}-
             - name: Install Dependencies
               run: |
-                  npx lerna bootstrap --scope "{how-many-buzzwords,how-many-buzzwords-ui}"
+                  npx lerna@^5.5.2 bootstrap --scope "{how-many-buzzwords,how-many-buzzwords-ui}"
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Run linters

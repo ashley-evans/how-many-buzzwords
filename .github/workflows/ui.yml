@@ -46,7 +46,7 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
             - name: Run formatters
               run: |
-                  npx prettier --check ${{ inputs.path }}
+                  npx prettier@^2.5.1 --check ${{ inputs.path }}
     lint:
         runs-on: ubuntu-latest
         needs: changed

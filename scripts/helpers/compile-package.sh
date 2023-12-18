@@ -42,9 +42,9 @@ fi
 if [ $clean ]; then
     echo "Clean installing..."
     rm -rf $output_path
-    npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}" --ci
+    npx lerna@^5.5.2 bootstrap --scope "{how-many-buzzwords,$package_name}" --ci
 else 
-    npx lerna bootstrap --scope "{how-many-buzzwords,$package_name}" --no-ci
+    npx lerna@^5.5.2 bootstrap --scope "{how-many-buzzwords,$package_name}" --no-ci
 fi
 
 if [ -f $path/tsconfig.build.json ]; then
