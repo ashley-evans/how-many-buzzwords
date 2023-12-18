@@ -115,7 +115,7 @@ npm run test:integration
 Run the following command to validate all template definitions within the project:
 
 ```shell
-xargs -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002'
+xargs -r0a <(find ! -path "*/.aws-sam/*" -name *-template.yml -print0) -I {} sh -c 'cfn-lint {} -i W3002 -i W3045'
 ```
 
 ### Programatically starting a crawl
@@ -164,13 +164,13 @@ aws cloudformation deploy \
     --template-file ./templates/buzzword-ci-users-template.yml \
     --stack-name buzzword-ci-users \
     --capabilities CAPABILITY_IAM \
-    --parameter-overrides GithubOrganisation=$INSERT_VALUE RepositoryName=$INSERT_VALUE
+    --parameter-overrides GithubOrganisation=$INSERT_VALUE RepositoryName=$INSERT_VALUE GithubOIDCProvider=$INSERT_VALUE
 ```
 
 Once the above command has executed, run the following commands to get the role ARNs:
 
 ```shell
-./scripts/fetch-stack-outputs.sh -s buzzword-ci-users
+./scripts/helpers/fetch-stack-outputs.sh -s buzzword-ci-users
 ```
 
 The following GitHub secrets should be created with the appropriate key/value output from the previous command:

@@ -23,7 +23,7 @@
         "@babel/preset-env": "^7.18.2",
         "@babel/preset-react": "^7.17.12",
         "@babel/preset-typescript": "^7.17.12",
-        "@playwright/experimental-ct-react": "1.29.1",
+        "@playwright/experimental-ct-react": "^1.29.1",
         "@testing-library/jest-dom": "^5.16.4",
         "@testing-library/react": "^13.3.0",
         "@types/react": "^18.0.9",
@@ -46,12 +46,13 @@
         "webpack-dev-server": "^4.9.0"
     },
     "scripts": {
-        "i": "npx lerna bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\" --no-ci",
-        "ci": "npx lerna bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\"",
+        "i": "npx lerna@^5.5.2 bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\" --no-ci",
+        "ci": "npx lerna@^5.5.2 bootstrap --scope \"{how-many-buzzwords,how-many-buzzwords-ui}\" --ignore \"{@ashley-evans/*,}\"",
         "prebuild": "npm run ci",
         "build": "./node_modules/.bin/webpack --mode=production --config webpack.config.js",
         "prestart": "npm run ci",
         "start": "./node_modules/.bin/webpack serve --mode=development --config webpack.config.js",
+        "pretest-ct": "npx playwright install",
         "test-ct": "playwright test -c playwright-ct.config.ts"
     }
 }
